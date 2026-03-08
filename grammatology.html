@@ -1,0 +1,214 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Graphemics</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖊️</text></svg>">
+  </head>
+<body>
+    <p>Tool for designing an ergonomic writing system with bezier curves.</p>
+  <input id="path" size="50" value="Path" oninput="refreshSVG()"/>
+  <div id="button-container"></div>
+  <div id="svg-container"></div>
+  <button onclick="downloadSVG()">Download</button>
+<script>
+  function svg(tagName, attrs, textContent) {
+    var defaults = {
+        fill: "none",
+        stroke: "black",
+        "stroke-width": "0.1",
+    };
+    var combinedAttrs = Object.assign({}, defaults, attrs);
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+    for (var key in combinedAttrs) el.setAttribute(key, combinedAttrs[key]);
+    if (textContent !== undefined) el.textContent = textContent;
+    return el;
+  }
+  // transform: https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/transform
+  // group: https://developer.mozilla.org/en-US/docs/Web/SVG/Element/g
+  
+  canvasSize = 20;
+  canvasUnits = 'cm';
+
+  gridSize = 5;
+  // q: quadratic (3 control points)
+  // c: cubic     (4 control points)
+  var beziers = 'cccc';
+  ctrlCnt = [...beziers].reduce((acc, c) => acc + (c=='q' ? 2: 3), 1);
+  snap2Grid = (x)=>Math.max(Math.min(gridSize,Math.round(x)),1)
+
+  //missing: xjrcfgat
+  const chars = {'i': 'q2,0 2,-2 q0,2 2,2',
+  'e': 'q3,0 3,-1 c0,-1 -2,-1 -2,0 q0,1 3,1',
+  'n': 'q2,0 1,-1 c-1,-1 3,-1 2,0 q-1,1 1,1',
+  'd': 'q2,0 3,-2 c0,4 -2,4 -2,3 q0,-1 3,-1',
+  'b': 'q3,0 3,1 c0,1 -2,1 -2,-3 q1,2 3,2',
+  'w': 'q2,0 3,-2 c1,4 -3,4 -2,0 q1,2 3,2',
+  'j': 'q2,0 3,-2 q-1,2 -2,4 q1,-2 3,-2',
+  's': 'q3,0 3,-1 c0,-1 -3,-1 -1,1 c2,2 -1,2 -1,1 q0,-1 3,-1',
+  'y': 'q2,0 3,-2 q-1,2 -1,4 q0,-2 -1,-4 q1,2 3,2',
+  '-': 'q2,0 4,0',
+  'v': 'q2,0 2,2 q0,-2 2,-2',
+  'q': 'q2,0 3,2 c0,-4 -2,-4 -2,-3 q0,1 3,1',
+  'p': 'q3,0 3,-1 c0,-1 -2,-1 -2,3 q1,-2 3,-2',
+  'o': 'q3,0 3,1 c0,1 -2,1 -2,0 q0,-1 3,-1',
+  'u': 'q2,0 1,1 c-1,1 3,1 2,0 q-1,-1 1,-1',
+  'm': 'q2,0 3,2 c1,-4 -3,-4 -2,0 q1,-2 3,-2',
+  'l': 'q2,0 3,2 q-1,-2 -2,-4 q1,2 3,2',
+  'z': 'q3,0 3,1 c0,1 -3,1 -1,-1 c2,-2 -1,-2 -1,-1 q0,1 3,1',
+  'h': 'q2,0 3,2 q-1,-2 -1,-4 q0,2 -1,4 q1,-2 3,-2'}
+  const buttonContainer = document.getElementById('button-container');
+  for (let char of Object.keys(chars)) {
+      const button = document.createElement('button');
+      button.textContent = char;  // Set the button text to the character
+      button.onclick = () => setBezier(char);  // Attach the event listener
+      buttonContainer.appendChild(button);  // Add the button to the container
+  }
+
+  function setBezier(char){
+    document.getElementById('path').value = 'M1,3 '+chars[char];
+    createControlPoints(chars[char].split(",").length);
+    refreshSVG();
+  }
+
+  function writeWord(word, lineLength=30){
+    const numChunks = Math.ceil(word.length / (lineLength-1))
+    const chunks = new Array(numChunks)
+    for (let i = 0, o = 0; i < numChunks; ++i, o += lineLength-1) {
+      chunks[i] = word.substr(o, lineLength)
+      console.log(chunks[i])
+    }
+    scribble = chunks.map((chunk,i)=>`M0,${gridSize*i} `+[...chunk].map(c=>chars[c]).join(' m-1,0 '));
+    return scribble
+  }
+  
+  const canvas = svg('svg', {
+    width: `${canvasSize}${canvasUnits}`,
+    height: `${canvasSize}${canvasUnits}`,
+    viewBox: `0 0 ${canvasSize} ${canvasSize}`
+  });
+
+  const path = svg('path', {d:'',stroke:'red'})
+  canvas.appendChild(path);
+  
+  var ctrlPts = [];
+  createControlPoints(ctrlCnt);
+  
+  function createControlPoints(num){
+    while (ctrlPts.length > 0) {
+      let pt = ctrlPts.pop();
+      canvas.removeChild(pt);
+    }
+    for (let i=0; i<num; i++){
+      pt = svg('circle',{cx:i%gridSize+1, cy:Math.floor(i/gridSize)+1, r:0.1, fill:'black'})
+      pt.addEventListener('mousedown', startDrag);
+      ctrlPts.push(pt);
+      canvas.appendChild(pt);
+    }
+  }
+
+  const ctrlPtPos = (i) => [ctrlPts[i].getAttribute('cx'),ctrlPts[i].getAttribute('cy')];
+
+  function getBezierString(){
+    let [x,y] = ctrlPtPos(0);
+    let d = `M${x},${y} `;
+    let ctrlIdx = 0;
+    for (let curve of beziers){
+      d+=curve.toLowerCase();
+      numPts = ctrlIdx + (curve == 'q' ? 2 : 3);
+      while (ctrlIdx < numPts){
+        ctrlIdx++;
+        let [a,b] = ctrlPtPos(ctrlIdx)
+        d+=`${a-x},${b-y} `;
+      }
+      [x,y] = ctrlPtPos(ctrlIdx);
+    }
+    return d.slice(0,-1);
+  }
+
+  let bs = getBezierString();
+  path.setAttribute('d',bs);
+  document.getElementById('path').value = bs;
+
+  let [scaleX, scaleY] = [0.2,0.2];
+  let scaleString = `scale(${scaleX},${scaleY})`
+
+  //alphabet
+  canvas.appendChild(svg('path', {
+    transform:`translate(0,${1.25*gridSize}),${scaleString}`,
+    d: writeWord(Object.keys(chars).join(''))
+  }))
+  //demo
+  canvas.appendChild(svg('path', {
+    transform:`translate(${1.25*gridSize},2),${scaleString}`,
+    d: writeWord('sleep-loves-oblique-obelisks')
+  }))
+  //superpermutation
+  canvas.appendChild(svg('path', {
+    transform:`translate(0,${1.6*gridSize}),${scaleString}`,
+    d: writeWord('iieinidibiwijisiyiviqipioiuimilizihieenedebewejeseyeveqepeoeuemelezehenndnbnwnjnsnynvnqnpnonunmnlnznhnddbdwdjdsdydvdqdpdodudmdldzdhdbbwbjbsbybvbqbpbobubmblbzbhbwwjwswywvwqwpwowuwmwlwzwhwjjsjyjvjqjpjojujmjljzjhjssysvsqspsosusmslszshsyyvyqypyoyuymylyzyhyvvqvpvovuvmvlvzvhvqqpqoquqmqlqzqhqppopupmplpzphpoouomolozohouumuluzuhummlmzmhmllzlhlzzhzhh')
+  }))
+
+  canvas.appendChild(svg('rect',{x:0.5,y:0.5,width:gridSize, height:gridSize}))
+
+  document.getElementById('svg-container').appendChild(canvas);
+
+  const parseCoords = (string)=>string.split(',').map(x=>Number(x))
+
+  const moveCtrlPt = (i,x,y)=>{
+    ctrlPts[i].setAttribute('cx', x);
+    ctrlPts[i].setAttribute('cy', y);
+  }
+
+  function refreshSVG(){
+    let bezierString = document.getElementById('path').value;
+    beziers = [...bezierString].map(c=>(c=='q' || c=='c') ? c: '').join('');
+    let strokes = bezierString.split(/ q| c/)
+    let [x,y] = parseCoords(strokes[0].substr(1))
+    let pointCounter = 0;
+    moveCtrlPt(pointCounter,x,y);
+    for (stroke of strokes.slice(1)){
+      for (p of stroke.split(' ')){
+        pointCounter++;
+        let [a,b] = parseCoords(p);
+        if (Number.isNaN(a) || Number.isNaN(b) || a===undefined || b===undefined) return;
+        moveCtrlPt(pointCounter,x+a,y+b)
+        lastX = x + a;
+        lastY = y + b;
+      }
+      x=lastX;
+      y=lastY;
+    }
+    path.setAttribute('d',document.getElementById('path').value);
+  }
+
+  function startDrag(event) {
+    event.preventDefault();
+    const point = event.target;
+
+    function onMouseMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      const viewBox = canvas.viewBox.baseVal;
+      let x = (e.clientX - rect.left)*viewBox.width/rect.width;
+      let y = (e.clientY - rect.top)*viewBox.height/rect.height;
+      point.setAttribute('cx', snap2Grid(x));
+      point.setAttribute('cy', snap2Grid(y));
+      let bs = getBezierString();
+      path.setAttribute('d',bs);
+      document.getElementById('path').value = bs;
+    }
+
+    function onMouseUp() {
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseup', onMouseUp);
+    }
+
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
+  }
+
+  function downloadSVG() {
+    var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/))source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "square_grid.svg";document.body.appendChild(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+  }
+</script></body></html>

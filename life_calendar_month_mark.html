@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Life Calendar</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <label for="birthday">Birthday:</label>
+    <input type="datetime-local" id="birthday" name="birthday" value="2000-04-04T15:12">
+    <br/>
+    <label for="lifespan">Lifespan:</label>
+    <input type="number" id="lifespan" value="30">
+    <br/>
+    <label for="labelToggle">Labels:</label>
+    <input type="checkbox" id="labelToggle" checked>
+    <br/>
+    <label for="bounding-rectangle-size">Bounding Box:</label>
+    <p id="bounding-rectangle-size"></p>
+    <!-- Container for the SVG -->
+    <div id="svg" width="50vw" height="auto" display="block"></div>
+    
+        <!-- Button to download the SVG -->
+    <button onclick="downloadSVG()">Download SVG</button>
+
+    <!-- Inline JavaScript -->
+    <script>
+        // This function creates an SVG element with specified attributes
+        function createSVGElement(tagName, attrs, textContent) {
+            var defaults = {
+                fill: "none",
+                stroke: "black",
+                "stroke-width": "0.1"
+            };
+            
+            // Merge defaults with attrs, allowing attrs to override defaults
+            var combinedAttrs = Object.assign({}, defaults, attrs);
+            
+            var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+            for (var key in combinedAttrs) {
+                el.setAttribute(key, combinedAttrs[key]);
+            }
+            // If textContent is provided, set it
+            if (textContent !== undefined) {
+                el.textContent = textContent;
+            }
+            return el;
+        }
+        
+        let day = 5;
+        let week_start = 0; // Sunday = 0
+        let year_margin = day;
+        let horizontal_years = true;
+        let week = 7;
+        let month_lengths = [31,28,31,30,31,30,31,31,30,31,30,31];
+        let month = month_lengths.length;
+        let month_height = 6;
+        let year_text_margin = 8;
+        let label_font = 8
+        let marker_stroke_width = 0.4
+
+        function monthMarker(x,y){
+            return createSVGElement('path', {
+                d: `M${x} ${y} h${day}  l${-day/2} ${day/2} l${day/2}  ${day/2}
+                               h${-day} l${day/2} ${-day/2} l${-day/2} ${-day/2}`,
+                fill:'black',
+                "stroke-width":marker_stroke_width
+            })
+        }
+
+        function dayBox(x,y){
+            return createSVGElement('rect', {
+                x: x,
+                y: y,
+                width: day,
+                height: day
+            })
+        }
+
+        function drawClock(x,y, radius, date, svg){
+            radius = day/3;
+            hours = birthday.getHours()
+            face = createSVGElement('circle',{
+                cx:x,
+                cy:y,
+                r:radius,
+                fill:hours>11 ? 'black' : 'white'
+            })
+            hour_hand_angle = -Math.PI/2 + (hours%12 + birthday.getMinutes()/60) * Math.PI/6;
+            hand = createSVGElement('line',{
+                x1:x,
+                y1:y,
+                x2:x+radius*Math.cos(hour_hand_angle),
+                y2:y+radius*Math.sin(hour_hand_angle),
+                stroke:hours<12 ? 'black' : 'white',
+                "stroke-width": marker_stroke_width
+            })
+            return [face, hand]
+        }
+
+        let round = x=>Math.round(x*100)/100
+
+        // This function initializes the SVG with mm units and adds it to the page
+        function drawCalendar() {
+            $('#svg').empty()
+            lifespan = Number($('#lifespan').val());
+            labels = $('#labelToggle').is(":checked")
+            width = day*(54 +(labels?1:0));
+            height = (week*day + year_margin)*(lifespan+1) - year_margin;
+
+            $("#bounding-rectangle-size").html(`${width+year_text_margin} mm x ${height} mm <br>
+            (${round(width/25.4)} in x ${round(height/25.4)} in)`);
+
+            var svg = createSVGElement('svg', {
+                width: `${year_text_margin+width}mm`, // Set width in mm
+                height: `${height}mm`, // Set height in mm
+                viewBox: `${labels ? -year_text_margin: 0} 0 ${width} ${height}` // viewbox coordinates (unitless)
+            });
+            birthday = new Date($('#birthday').val())
+            birthyear = birthday.getFullYear()
+            birthday_index = Math.floor((birthday-new Date(birthyear,0,1))/(1000 * 60 * 60 * 24))
+
+            for (year = birthyear; year<=birthyear+lifespan; year++){
+                //year label
+                if (labels) {
+                    x = -year_text_margin*2/3
+                    y = (year-birthyear)*(week*day + year_margin) + day*week/2
+                    svg.append(createSVGElement('text', {
+                        x:x,
+                        y:y,
+                        fill:'black',
+                        "font-size":label_font,
+                        transform:`rotate(-90, ${x}, ${y})`,
+                        "text-anchor":"middle",
+                        "dominant-baseline":"middle"
+                    }, year))
+                }
+
+                months = [0,...month_lengths];
+                if (year%4 == 0 && (year%100 != 0 || year%400 == 0)) months[2]+=1;
+                months = months.map((sum => value => sum += value)(0))
+                start = (new Date(year,0,1).getDay() + week_start)%week;
+
+                for(day_index=0; day_index<months[months.length-1]; day_index++){
+                    x = Math.floor((start+day_index)/week)*day
+                    y = (start+day_index)%week*day + (year-birthyear)*(week*day + year_margin)
+                    svg.append(dayBox(x,y))
+                    if (year == birthyear && day_index == birthday_index){
+                        drawClock(x+day/2, y+day/2, day/3, birthday).forEach(part=>svg.append(part));
+                    }
+                    if (months.includes(day_index)){
+                        svg.append(monthMarker(x,y))
+                    }
+                    if (day_index>363) console.log(year,day_index,x,y)
+                }
+            }
+            $('#svg').append(svg);
+        }
+
+        $( document ).ready(function() {
+            $('#lifespan').change(drawCalendar)
+            $('#labelToggle').change(drawCalendar)
+            $('#birthday').change(drawCalendar).trigger("change")
+        });
+
+        // This function triggers the download of the SVG
+        function downloadSVG() {
+
+            var svgEl = document.querySelector('svg');
+            var serializer = new XMLSerializer();
+            var source = serializer.serializeToString(svgEl);
+
+            // Add namespaces
+            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+            }
+
+            // Add XML declaration
+            source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+            // Convert SVG source to URI data scheme
+            var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+
+            // Create a download link and trigger the download
+            var downloadLink = document.createElement("a");
+            downloadLink.href = url;
+            downloadLink.download = "life_calendar.svg";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+    </script>
+</body>
+</html>

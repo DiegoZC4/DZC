@@ -1,0 +1,1567 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alg Cycles</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: rgba(15,23,42,.95);
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #93a0b4;
+    }
+    html, body { width: 100%; height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: ui-monospace, Menlo, monospace; overflow: hidden; }
+    #graph { width: 100%; height: 100%; }
+    #panel { position: absolute; top: 10px; right: 10px; z-index: 10; max-width: 440px; max-height: 82vh; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+    #title { font-weight: 700; }
+    #hint { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    #controls { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    button { background: #111827; color: var(--text); border: 1px solid #475569; border-radius: 6px; padding: 4px 8px; cursor: pointer; font: inherit; }
+    #spreadRow { margin-top: 8px; font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+    #spreadRange { width: 100%; }
+    #focusFollowRow { margin-top: 8px; font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+    #focusFollowRange { width: 100%; }
+    #filterGrid { margin-top: 8px; display: grid; grid-template-columns: repeat(4, minmax(80px, 1fr)); gap: 6px; font-size: 12px; }
+    .it { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .it input { margin: 0; }
+
+    #tabBar { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; gap: 8px; }
+    .tabBtn { background: #111827; color: var(--text); border: 1px solid #475569; border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+    .tabBtn.active { border-color: #22c55e; box-shadow: inset 0 0 0 1px rgba(34,197,94,.45); }
+    #pllPane { position: absolute; inset: 0; z-index: 12; overflow: hidden; }
+    #pllPane.hidden { display: none; }
+    #pllCyclesText { margin: 0; white-space: pre; font-size: 12px; line-height: 1.35; }
+    #pllGraph2d { width: 100%; height: 100%; background: #0f1115; }
+    #pllPanel { position: absolute; top: 10px; right: 10px; z-index: 14; max-width: 440px; max-height: 82vh; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+    #pllControls { margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    #pllFilterGrid { margin: 8px 0 10px 0; display: grid; grid-template-columns: repeat(6, minmax(54px, 1fr)); gap: 6px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="tabBar">
+    <button id="tabOllBtn" class="tabBtn active" type="button">OLL</button>
+    <button id="tabPllBtn" class="tabBtn" type="button">PLL</button>
+  </div>
+  <div id="graph"></div>
+  <aside id="panel">
+    <div id="title">OLL Cycles 3D</div>
+    <div id="hint">Toggle edge visibility by case (edge weight).</div>
+    <div id="controls">
+      <button id="allBtn" type="button">All</button>
+      <button id="noneBtn" type="button">None</button>
+    </div>
+    <div id="spreadRow">
+      <span>Spread</span>
+      <input id="spreadRange" type="range" min="0.6" max="8" step="0.05" value="4" />
+      <span id="spreadValue">4.00x</span>
+    </div>
+    <div id="focusFollowRow">
+      <span>Focus Follow</span>
+      <input id="focusFollowRange" type="range" min="300" max="2600" step="50" value="1100" />
+      <span id="focusFollowValue">1100ms</span>
+    </div>
+    <div id="filterGrid"></div>
+  </aside>
+
+  <section id="pllPane" class="hidden">
+    <div id="pllGraph2d"></div>
+    <aside id="pllPanel">
+      <div id="title">PLL Cycles 3D</div>
+      <div id="hint">Toggle edge visibility by case (edge weight).</div>
+      <div id="pllControls">
+        <button id="pllAllBtn" type="button">All</button>
+        <button id="pllNoneBtn" type="button">None</button>
+      </div>
+      <div id="pllFilterGrid"></div>
+    </aside>
+    <pre id="pllCyclesText" style="display:none"></pre>
+  </section>
+
+  <script id="ollAppearanceJson" type="application/json">
+{
+  "appearance": {
+    "OLL 01": "010100011010110001010",
+    "OLL 02": "110000011010100001110",
+    "OLL 03": "011100001010100010110",
+    "OLL 04": "110000011010101000011",
+    "OLL 05": "000011010110110000011",
+    "OLL 06": "000101101011000001110",
+    "OLL 07": "100001010110101000011",
+    "OLL 08": "001101001011000010110",
+    "OLL 09": "010100100110100101100",
+    "OLL 10": "100001010110110010010",
+    "OLL 11": "110000011011001100001",
+    "OLL 12": "011100000110100110100",
+    "OLL 13": "110000010111001000011",
+    "OLL 14": "011100000111000010110",
+    "OLL 15": "010010010111010000011",
+    "OLL 16": "010100100111000001110",
+    "OLL 17": "010010011010100010110",
+    "OLL 18": "010100101010110010010",
+    "OLL 19": "110000101010100010110",
+    "OLL 20": "010010101010101010010",
+    "OLL 21": "000101010111010101000",
+    "OLL 22": "001101000111010100001",
+    "OLL 23": "000011100111000100101",
+    "OLL 24": "001011000111001100001",
+    "OLL 25": "000011010111000110100",
+    "OLL 26": "000101100111000101100",
+    "OLL 27": "100001010111001100001",
+    "OLL 28": "000011100110101010010",
+    "OLL 29": "100001100110100010110",
+    "OLL 30": "110000100110100110100",
+    "OLL 31": "100001101011000010110",
+    "OLL 32": "110000101011000110100",
+    "OLL 33": "110000100111000010110",
+    "OLL 34": "100001101010100110100",
+    "OLL 35": "010010011011000110100",
+    "OLL 36": "001011001011010010010",
+    "OLL 37": "000011010110100010110",
+    "OLL 38": "100001100110101001010",
+    "OLL 39": "010100100111001000011",
+    "OLL 40": "011010000111010010010",
+    "OLL 41": "101001000110101010010",
+    "OLL 42": "000101100110110010010",
+    "OLL 43": "000011100110100000111",
+    "OLL 44": "000011010110101001010",
+    "OLL 45": "101001001010101110000",
+    "OLL 46": "000011011010101101000",
+    "OLL 47": "011100000110110100001",
+    "OLL 48": "110000011011000101100",
+    "OLL 49": "110000010110100101100",
+    "OLL 50": "100001010110100001110",
+    "OLL 51": "110000010111000001110",
+    "OLL 52": "001101001010110100001",
+    "OLL 53": "000101010110110001010",
+    "OLL 54": "000101011011010001010",
+    "OLL 55": "111000000111000000111",
+    "OLL 56": "010100010111010001010",
+    "OLL 57": "000011101010101110000"
+  }
+}
+  </script>
+  <script id="ollCyclesJson" type="application/json">
+{
+  "meta": {
+    "source": "trainer.html#ollJson.cases[*][0]",
+    "rules": "apply alg repeatedly from solved; classify each intermediate via 21-bit rotational symmetry map",
+    "entries": 57,
+    "collisions": 0
+  },
+  "cycles": {
+    "OLL 01": [
+      "OLL 02",
+      "OLL 25",
+      "OLL 03",
+      "OLL 27",
+      "OLL 03",
+      "OLL 27",
+      "OLL 18",
+      "OLL 21",
+      "OLL 20",
+      "OLL 22",
+      "OLL 17",
+      "OLL 26",
+      "OLL 04",
+      "OLL 26",
+      "OLL 04",
+      "OLL 23",
+      "OLL 01"
+    ],
+    "OLL 02": [
+      "OLL 02",
+      "OLL 22",
+      "OLL 20",
+      "OLL 22",
+      "OLL 02"
+    ],
+    "OLL 03": [
+      "OLL 04",
+      "OLL 26",
+      "OLL 20",
+      "OLL 27",
+      "OLL 03"
+    ],
+    "OLL 04": [
+      "OLL 03",
+      "OLL 21",
+      "OLL 04",
+      "OLL 24",
+      "OLL 17",
+      "OLL 26",
+      "OLL 02",
+      "OLL 27",
+      "OLL 20",
+      "OLL 26",
+      "OLL 01",
+      "OLL 27",
+      "OLL 19",
+      "OLL 25",
+      "OLL 03",
+      "OLL 22",
+      "OLL 04"
+    ],
+    "OLL 05": [
+      "OLL 08",
+      "OLL 53",
+      "OLL 25",
+      "OLL 53",
+      "OLL 05"
+    ],
+    "OLL 06": [
+      "OLL 07",
+      "OLL 54",
+      "OLL 25",
+      "OLL 54",
+      "OLL 06"
+    ],
+    "OLL 07": [
+      "OLL 06",
+      "OLL 54",
+      "OLL 25",
+      "OLL 54",
+      "OLL 07"
+    ],
+    "OLL 08": [
+      "OLL 05",
+      "OLL 53",
+      "OLL 25",
+      "OLL 53",
+      "OLL 08"
+    ],
+    "OLL 09": [
+      "OLL 07",
+      "OLL 54",
+      "OLL 17",
+      "OLL 54",
+      "OLL 09"
+    ],
+    "OLL 10": [
+      "OLL 14",
+      "OLL 10"
+    ],
+    "OLL 11": [
+      "OLL 09",
+      "OLL 11"
+    ],
+    "OLL 12": [
+      "OLL 10",
+      "OLL 12"
+    ],
+    "OLL 13": [
+      "OLL 06",
+      "OLL 47",
+      "OLL 13"
+    ],
+    "OLL 14": [
+      "OLL 10",
+      "OLL 14"
+    ],
+    "OLL 15": [
+      "OLL 08",
+      "OLL 56",
+      "OLL 25",
+      "OLL 53",
+      "OLL 15"
+    ],
+    "OLL 16": [
+      "OLL 07",
+      "OLL 56",
+      "OLL 25",
+      "OLL 54",
+      "OLL 16"
+    ],
+    "OLL 17": [
+      "OLL 19",
+      "OLL 25",
+      "OLL 20",
+      "OLL 24",
+      "OLL 17"
+    ],
+    "OLL 18": [
+      "OLL 18",
+      "OLL 22",
+      "OLL 01",
+      "OLL 22",
+      "OLL 18"
+    ],
+    "OLL 19": [
+      "OLL 17",
+      "OLL 24",
+      "OLL 20",
+      "OLL 25",
+      "OLL 19"
+    ],
+    "OLL 20": [
+      "OLL 20",
+      null,
+      "OLL 20"
+    ],
+    "OLL 21": [
+      "OLL 21",
+      "OLL 21"
+    ],
+    "OLL 22": [
+      "OLL 22",
+      null,
+      "OLL 22",
+      null,
+      "OLL 22"
+    ],
+    "OLL 23": [
+      "OLL 25",
+      "OLL 23"
+    ],
+    "OLL 24": [
+      "OLL 25",
+      "OLL 24"
+    ],
+    "OLL 25": [
+      "OLL 24",
+      "OLL 25"
+    ],
+    "OLL 26": [
+      "OLL 27",
+      "OLL 21",
+      "OLL 25",
+      "OLL 21",
+      "OLL 26"
+    ],
+    "OLL 27": [
+      "OLL 26",
+      "OLL 21",
+      "OLL 25",
+      "OLL 21",
+      "OLL 27"
+    ],
+    "OLL 28": [
+      "OLL 57",
+      "OLL 28"
+    ],
+    "OLL 29": [
+      "OLL 39",
+      "OLL 10",
+      "OLL 31",
+      "OLL 26",
+      "OLL 33",
+      "OLL 28",
+      "OLL 36",
+      "OLL 27",
+      "OLL 34",
+      "OLL 09",
+      "OLL 29"
+    ],
+    "OLL 30": [
+      "OLL 40",
+      "OLL 09",
+      "OLL 32",
+      "OLL 27",
+      "OLL 33",
+      "OLL 28",
+      "OLL 38",
+      "OLL 26",
+      "OLL 34",
+      "OLL 10",
+      "OLL 30"
+    ],
+    "OLL 31": [
+      "OLL 40",
+      "OLL 06",
+      "OLL 29",
+      "OLL 27",
+      "OLL 33",
+      "OLL 28",
+      "OLL 36",
+      "OLL 26",
+      "OLL 34",
+      "OLL 05",
+      "OLL 31"
+    ],
+    "OLL 32": [
+      "OLL 40",
+      "OLL 32"
+    ],
+    "OLL 33": [
+      "OLL 37",
+      "OLL 33"
+    ],
+    "OLL 34": [
+      "OLL 37",
+      "OLL 34"
+    ],
+    "OLL 35": [
+      "OLL 37",
+      "OLL 49",
+      "OLL 22",
+      "OLL 48",
+      "OLL 35"
+    ],
+    "OLL 36": [
+      "OLL 32",
+      "OLL 25",
+      "OLL 28",
+      "OLL 24",
+      "OLL 36"
+    ],
+    "OLL 37": [
+      "OLL 33",
+      "OLL 37"
+    ],
+    "OLL 38": [
+      "OLL 31",
+      "OLL 25",
+      "OLL 28",
+      "OLL 24",
+      "OLL 38"
+    ],
+    "OLL 39": [
+      "OLL 31",
+      "OLL 39"
+    ],
+    "OLL 40": [
+      "OLL 31",
+      "OLL 05",
+      "OLL 34",
+      "OLL 26",
+      "OLL 36",
+      "OLL 28",
+      "OLL 33",
+      "OLL 27",
+      "OLL 29",
+      "OLL 06",
+      "OLL 40"
+    ],
+    "OLL 41": [
+      "OLL 43",
+      "OLL 22",
+      "OLL 53",
+      "OLL 22",
+      "OLL 41"
+    ],
+    "OLL 42": [
+      "OLL 46",
+      "OLL 10",
+      "OLL 38",
+      "OLL 26",
+      "OLL 45",
+      "OLL 28",
+      "OLL 43",
+      "OLL 27",
+      "OLL 39",
+      "OLL 09",
+      "OLL 42"
+    ],
+    "OLL 43": [
+      "OLL 45",
+      "OLL 47",
+      "OLL 21",
+      "OLL 51",
+      "OLL 43"
+    ],
+    "OLL 44": [
+      "OLL 45",
+      "OLL 48",
+      "OLL 21",
+      "OLL 51",
+      "OLL 44"
+    ],
+    "OLL 45": [
+      "OLL 43",
+      "OLL 51",
+      "OLL 21",
+      "OLL 47",
+      "OLL 45"
+    ],
+    "OLL 46": [
+      "OLL 43",
+      "OLL 52",
+      "OLL 21",
+      "OLL 47",
+      "OLL 46"
+    ],
+    "OLL 47": [
+      "OLL 51",
+      "OLL 47"
+    ],
+    "OLL 48": [
+      "OLL 51",
+      "OLL 48"
+    ],
+    "OLL 49": [
+      "OLL 50",
+      "OLL 28",
+      "OLL 22",
+      "OLL 28",
+      "OLL 49"
+    ],
+    "OLL 50": [
+      "OLL 49",
+      "OLL 28",
+      "OLL 22",
+      "OLL 28",
+      "OLL 50"
+    ],
+    "OLL 51": [
+      "OLL 48",
+      "OLL 51"
+    ],
+    "OLL 52": [
+      "OLL 52",
+      "OLL 22",
+      "OLL 57",
+      "OLL 22",
+      "OLL 52"
+    ],
+    "OLL 53": [
+      "OLL 53",
+      "OLL 53"
+    ],
+    "OLL 54": [
+      "OLL 54",
+      "OLL 54"
+    ],
+    "OLL 55": [
+      "OLL 50",
+      "OLL 39",
+      "OLL 27",
+      "OLL 12",
+      "OLL 15",
+      "OLL 26",
+      "OLL 31",
+      "OLL 55"
+    ],
+    "OLL 56": [
+      "OLL 55",
+      "OLL 21",
+      "OLL 57",
+      "OLL 21",
+      "OLL 56"
+    ],
+    "OLL 57": [
+      "OLL 28",
+      "OLL 57"
+    ]
+  }
+}
+  </script>
+
+  <script id="pllJson" type="application/json">
+{
+  "_meta": {
+    "set": "PLL",
+    "notes": "21 PLL cases with curated speedsolving alg candidates. Arrays are ordered; index 0 is default.",
+    "sources": [
+      "https://github.com/spencerchubb/cubingapp/blob/main/alg-codegen/algs/PLL.json",
+      "https://www.cubeacademy.com/cube-algorithms/pll-algorithms"
+    ]
+  },
+  "cases": {
+    "Aa": [
+      "x R' U R' D2 R U' R' D2 R2"
+    ],
+    "Ab": [
+      "x R2' D2 R U R' D2 R U' R"
+    ],
+    "E": [
+      "x' R U' R' D R U R' D' R U R' D R U' R' D'"
+    ],
+    "F": [
+      "R' F R f' R' F R2 U R' U' R' F' R2 U R' S"
+    ],
+    "Ga": [
+      "R2 U R' U R' U' R U' R2 D U' R' U R D'"
+    ],
+    "Gb": [
+      "R' d' F R2 u R' U R U' R u' R2'"
+    ],
+    "Gc": [
+      "R2' u' R U' R U R' u R2 f R' f'"
+    ],
+    "Gd": [
+      "R U R' U' D R2 U' R U' R' U R' U R2 D'"
+    ],
+    "H": [
+      "M2' U' M2' U2' M2' U' M2'"
+    ],
+    "Ja": [
+      "L' U' L F L' U' L U L F' L2' U L"
+    ],
+    "Jb": [
+      "R U R' F' R U R' U' R' F R2 U' R'"
+    ],
+    "Na": [
+      "R F U' R' U R U F' R2' F' R U R U' R' F"
+    ],
+    "Nb": [
+      "r' D' F r U' r' F' D r2 U r' U' r' F r F'"
+    ],
+    "Ra": [
+      "R U' R' U' R U R D R' U' R D' R' U2 R'"
+    ],
+    "Rb": [
+      "R' U2 R' D' R U' R' D R U R U' R' U' R"
+    ],
+    "T": [
+      "R U R' U' R' F R2 U' R' U' R U R' F'"
+    ],
+    "Ua": [
+      "M2' U M U2' M' U M2'"
+    ],
+    "Ub": [
+      "M2' U' M U2' M' U' M2'"
+    ],
+    "V": [
+      "R' U R' d' R' F' R2 U' R' U R' F R F"
+    ],
+    "Y": [
+      "F R' F R2 U' R' U' R U R' F' R U R' U' F'"
+    ],
+    "Z": [
+      "M2' U2' M U' M2' U' M2' U' M"
+    ]
+  },
+  "appearance": {
+    "Aa": "bbgorbrgroog",
+    "Ab": "bbrgrgogboor",
+    "E": "obrgrbrgogob",
+    "F": "bgrgrbrbgooo",
+    "Ga": "brrgobrbgogo",
+    "Gb": "bgrgbbrogoro",
+    "Gc": "bbrgogorbogr",
+    "Gd": "borggbrbgoro",
+    "H": "bgbrorgbgoro",
+    "Ja": "bbrggbrrgooo",
+    "Jb": "brrgbbrggooo",
+    "Na": "gbbroobggrro",
+    "Nb": "bbgoorggborr",
+    "Ra": "bbrgrbrogogo",
+    "Rb": "oboborgrbggr",
+    "T": "bbrgobrggoro",
+    "Ua": "brbrorgggobo",
+    "Ub": "bobrbrgggoro",
+    "V": "bbgogrgrboor",
+    "Y": "bbgorrgobogr",
+    "Z": "bobrgrgrgobo"
+  }
+}
+  </script>
+  <script id="pllCyclesJson" type="application/json">
+{
+  "meta": {
+    "source": "trainer.html#pllJson.cases[*][0]",
+    "rules": "apply alg repeatedly from solved; classify each intermediate via 21-char rotational symmetry map",
+    "entries": 21,
+    "collisions": 0
+  },
+  "cycles": {
+    "Aa": [
+      "Ab",
+      "Aa"
+    ],
+    "Ab": [
+      "Aa",
+      "Ab"
+    ],
+    "E": [
+      "E"
+    ],
+    "F": [
+      "F"
+    ],
+    "Ga": [
+      "Gb",
+      "Z",
+      "Ga"
+    ],
+    "Gb": [
+      "Ga",
+      "Z",
+      "Gb"
+    ],
+    "Gc": [
+      "Gd",
+      "Gc"
+    ],
+    "Gd": [
+      "Gc",
+      "Z",
+      "Gd"
+    ],
+    "H": [
+      "H"
+    ],
+    "Ja": [
+      "Ja",
+      "Ja"
+    ],
+    "Jb": [
+      "Jb",
+      "Jb"
+    ],
+    "Na": [
+      "Na"
+    ],
+    "Nb": [
+      "Nb"
+    ],
+    "Ra": [
+      "Ra",
+      "Ra"
+    ],
+    "Rb": [
+      "Rb",
+      "Rb"
+    ],
+    "T": [
+      "T"
+    ],
+    "Ua": [
+      "Ub",
+      "Ua"
+    ],
+    "Ub": [
+      "Ua",
+      "Ub"
+    ],
+    "V": [
+      "V",
+      "Ub",
+      "E",
+      "Ua",
+      "V"
+    ],
+    "Y": [
+      "Y"
+    ],
+    "Z": [
+      "Z",
+      "H",
+      "Z"
+    ]
+  }
+}
+  </script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script>
+    const OLL_APP = JSON.parse(document.getElementById('ollAppearanceJson').textContent || '{\"appearance\":{}}');
+    const OLL_CYCLES = JSON.parse(document.getElementById('ollCyclesJson').textContent || '{\"cycles\":{}}');
+    const PLL_JSON = JSON.parse(document.getElementById('pllJson').textContent || '{\"cases\":{}}');
+    const PLL_CYCLES = JSON.parse(document.getElementById('pllCyclesJson').textContent || '{\"cycles\":{}}');
+    const appearance = OLL_APP.appearance || {};
+    // Hardcoded solved OLL appearance (OLL 0)
+    appearance["0"] = "000011100111001110000";
+    const cycles = OLL_CYCLES.cycles || {};
+
+    const nodeSet = new Set(['0']);
+    for (const [w, arr] of Object.entries(cycles)) {
+      nodeSet.add(String(w));
+      for (const v of (arr || [])) if (v != null) nodeSet.add(String(v));
+    }
+
+    const numericKey = (s) => {
+      const m = String(s).match(/(\d+)/);
+      return m ? Number(m[1]) : Number.POSITIVE_INFINITY;
+    };
+
+    const nodes = [...nodeSet].sort((a,b) => {
+      const na = numericKey(a), nb = numericKey(b);
+      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return String(a).localeCompare(String(b));
+    }).map((id, i) => {
+      const x = ((i * 37) % 19 - 9) * 18;
+      const y = ((i * 53) % 17 - 8) * 18;
+      const z = ((i * 61) % 23 - 11) * 18;
+      if (id === '0') return { id, x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: 0 };
+      return { id, x, y, z };
+    });
+
+    const links = [];
+    for (const [weight, seqRaw] of Object.entries(cycles)) {
+      const seq = (Array.isArray(seqRaw) ? seqRaw.slice() : []).filter(v => v != null).map(String);
+      seq.push('0');
+      if (!seq.length) continue;
+      for (let i = 0; i < seq.length; i += 1) {
+        const src = seq[i];
+        const dst = seq[(i + 1) % seq.length];
+        links.push({
+          source: src,
+          target: dst,
+          weight: String(weight),
+          label: String(weight),
+          color: edgeColorByStep(i, seq.length)
+        });
+      }
+    }
+    // 3D curve spread for OLL edges to avoid overlap/strobing (including self-links).
+    const ollByPair = new Map();
+    for (const e of links) {
+      const key = `${e.source}=>${e.target}`;
+      if (!ollByPair.has(key)) ollByPair.set(key, []);
+      ollByPair.get(key).push(e);
+    }
+    for (const [key, arr] of ollByPair.entries()) {
+      const [a, b] = key.split('=>');
+      const isSelf = a === b;
+      const n = arr.length;
+      for (let i = 0; i < n; i += 1) {
+        const t = n <= 1 ? 0 : (i / (n - 1)) * 2 - 1;
+        if (isSelf) {
+          arr[i].curvature = 1.2 + Math.abs(t) * 0.8;
+          arr[i].curveRotation = t * Math.PI;
+        } else {
+          arr[i].curvature = 0.45 + Math.abs(t) * 0.55;
+          arr[i].curveRotation = t * (Math.PI * 0.9);
+        }
+      }
+    }
+
+    const data = { nodes, links };
+    const allWeights = [...new Set(data.links.map(l => String(l.weight)))].sort((a,b) => {
+      const na = numericKey(a), nb = numericKey(b);
+      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return a.localeCompare(b);
+    });
+    const selected = new Set(allWeights);
+
+    const UI_TAB_KEY = 'algCycles.activeTab.v1';
+    let activeTab = 'OLL';
+    const tabOllBtn = document.getElementById('tabOllBtn');
+    const tabPllBtn = document.getElementById('tabPllBtn');
+    const pllPane = document.getElementById('pllPane');
+    const pllCyclesText = document.getElementById('pllCyclesText');
+    const pllFilterGrid = document.getElementById('pllFilterGrid');
+    const pllCaseKeys = Object.keys(PLL_CYCLES?.cycles || {}).sort((a, b) => String(a).localeCompare(String(b)));
+    const pllSelected = new Set(pllCaseKeys);
+    const pllCaseByLower = new Map(pllCaseKeys.map(k => [k.toLowerCase(), k]));
+
+    function setActiveTab(tabName) {
+      const t = tabName === 'PLL' ? 'PLL' : 'OLL';
+      activeTab = t;
+      tabOllBtn.classList.toggle('active', t === 'OLL');
+      tabPllBtn.classList.toggle('active', t === 'PLL');
+      const showPll = t === 'PLL';
+      document.getElementById('graph').style.display = showPll ? 'none' : 'block';
+      document.getElementById('panel').style.display = showPll ? 'none' : 'block';
+      pllPane.classList.toggle('hidden', !showPll);
+      if (showPll) {
+        renderPllChecks();
+        renderPllGraph2d();
+      }
+      localStorage.setItem(UI_TAB_KEY, t);
+    }
+
+    const initialTab = localStorage.getItem(UI_TAB_KEY) === 'PLL' ? 'PLL' : 'OLL';
+    pllCyclesText.textContent = JSON.stringify(PLL_CYCLES, null, 2);
+    tabOllBtn.addEventListener('click', () => setActiveTab('OLL'));
+    tabPllBtn.addEventListener('click', () => setActiveTab('PLL'));
+
+    const weightByIndex = new Map();
+const PLL_ALG_BY_CASE = Object.fromEntries(
+      Object.entries(PLL_JSON?.cases || {}).map(([k, arr]) => [k, Array.isArray(arr) && arr[0] ? String(arr[0]) : String(k)])
+    );
+
+    function buildPllDisplayCycles(cyclesObj) {
+      const out = {};
+      for (const [k, arr] of Object.entries(cyclesObj || {})) {
+        const seqRaw = Array.isArray(arr) ? arr.map(v => String(v)) : [];
+        const idx0 = seqRaw.indexOf('0');
+        const base = idx0 >= 0 ? seqRaw.slice(0, idx0) : seqRaw.slice();
+        out[k] = [...base, 'Solved'];
+      }
+      return out;
+    }
+
+    const PLL_SOLVED_RING = 'bbbrrrgggooo';
+    let pllGraph3d = null;
+    let pllGraphData = { nodes: [], links: [] };
+    let pllFocusRaf = 0;
+    let pllFocusLastTs = 0;
+    let pllFocusUntilTs = 0;
+
+    function pllCharToHex(ch) {
+      switch (String(ch || '').toLowerCase()) {
+        case 'r': return '#ef4444';
+        case 'g': return '#22c55e';
+        case 'b': return '#3b82f6';
+        case 'o': return '#f97316';
+        case 'y': return '#ffd60a';
+        default: return '#0b1220';
+      }
+    }
+
+    function drawPllNodeCanvas(nodeId) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 320;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(8,12,18,0.92)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(148,163,184,0.7)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 32px Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(nodeId), canvas.width / 2, 28);
+
+      const ringRaw = String(nodeId === 'Solved' ? PLL_SOLVED_RING : (PLL_JSON?.appearance?.[nodeId] || PLL_SOLVED_RING));
+      const ring = /^[rgbo]{12}$/i.test(ringRaw) ? ringRaw.toLowerCase() : PLL_SOLVED_RING;
+
+      const top = 52;
+      const left = 14;
+      const sideRatio = 0.3;
+      const units = [sideRatio, 1, 1, 1, sideRatio];
+      const unitPx = 54;
+      const gap = 3;
+      const starts = [0];
+      for (let i = 1; i < units.length; i += 1) starts[i] = starts[i - 1] + units[i - 1] * unitPx;
+
+      const fillCell = (r, c, color) => {
+        const x = left + starts[c];
+        const y = top + starts[r];
+        const w = units[c] * unitPx - gap;
+        const h = units[r] * unitPx - gap;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+      };
+
+      // Base dark for all visible cells in the 5x5 cross shape.
+      for (let r = 0; r < 5; r += 1) {
+        for (let c = 0; c < 5; c += 1) {
+          if ((r === 0 || r === 4) && (c === 0 || c === 4)) continue; // skip corners
+          fillCell(r, c, '#0b1220');
+        }
+      }
+
+      // Center 3x3 is always yellow (U face).
+      for (let r = 1; r <= 3; r += 1) {
+        for (let c = 1; c <= 3; c += 1) {
+          fillCell(r, c, pllCharToHex('y'));
+        }
+      }
+
+      // 12-char perimeter around the top face.
+      for (let i = 0; i < 3; i += 1) fillCell(0, 1 + i, pllCharToHex(ring[i]));      // top
+      for (let i = 0; i < 3; i += 1) fillCell(1 + i, 4, pllCharToHex(ring[3 + i]));  // right
+      for (let i = 0; i < 3; i += 1) fillCell(4, 3 - i, pllCharToHex(ring[6 + i]));  // bottom
+      for (let i = 0; i < 3; i += 1) fillCell(3 - i, 0, pllCharToHex(ring[9 + i]));  // left
+
+      return canvas;
+    }
+
+    function makePllNodeSprite(node) {
+      const tex = new THREE.CanvasTexture(drawPllNodeCanvas(node.id));
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(36, 45, 1);
+      return sprite;
+    }
+
+    function getPllActivePose() {
+      const g = pllGraph3d?.graphData?.();
+      const liveNodes = Array.isArray(g?.nodes) ? g.nodes : [];
+      const filtered = Array.isArray(g?.links) ? g.links : [];
+      const ids = new Set();
+      for (const l of filtered) {
+        if (l?.source != null) ids.add(typeof l.source === "object" ? l.source.id : l.source);
+        if (l?.target != null) ids.add(typeof l.target === "object" ? l.target.id : l.target);
+      }
+      if (!ids.size) return null;
+      const pts = liveNodes.filter(n => ids.has(n.id) && Number.isFinite(n.x) && Number.isFinite(n.y) && Number.isFinite(n.z));
+      if (!pts.length) return null;
+      let cx = 0, cy = 0, cz = 0;
+      for (const p of pts) { cx += p.x; cy += p.y; cz += p.z; }
+      cx /= pts.length; cy /= pts.length; cz /= pts.length;
+      let maxR = 0;
+      for (const p of pts) {
+        const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
+        const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (r > maxR) maxR = r;
+      }
+      const dist = Math.max(220, maxR * 3.0 + 80);
+      return { cx, cy, cz, dist };
+    }
+
+    function schedulePllSmoothFocus() {
+      const followMs = Number(focusFollowRange.value || 1100);
+      pllFocusUntilTs = performance.now() + followMs;
+      if (pllFocusRaf) return;
+      const step = (ts) => {
+        if (!pllFocusLastTs) pllFocusLastTs = ts;
+        const dt = Math.min(80, ts - pllFocusLastTs);
+        pllFocusLastTs = ts;
+        const pose = getPllActivePose();
+        if (pose && pllGraph3d) {
+          const cam = pllGraph3d.camera();
+          const controls = typeof pllGraph3d.controls === "function" ? pllGraph3d.controls() : null;
+          const desiredCam = { x: pose.cx, y: pose.cy, z: pose.cz + pose.dist };
+          const desiredLook = { x: pose.cx, y: pose.cy, z: pose.cz };
+          const aPos = 1 - Math.exp(-dt / 240);
+          const aLook = 1 - Math.exp(-dt / 190);
+          cam.position.x += (desiredCam.x - cam.position.x) * aPos;
+          cam.position.y += (desiredCam.y - cam.position.y) * aPos;
+          cam.position.z += (desiredCam.z - cam.position.z) * aPos;
+          if (controls && controls.target) {
+            controls.target.x += (desiredLook.x - controls.target.x) * aLook;
+            controls.target.y += (desiredLook.y - controls.target.y) * aLook;
+            controls.target.z += (desiredLook.z - controls.target.z) * aLook;
+            controls.update();
+          } else {
+            cam.lookAt(desiredLook.x, desiredLook.y, desiredLook.z);
+          }
+        }
+        if (ts < pllFocusUntilTs) {
+          pllFocusRaf = requestAnimationFrame(step);
+        } else {
+          pllFocusRaf = 0;
+          pllFocusLastTs = 0;
+        }
+      };
+      pllFocusRaf = requestAnimationFrame(step);
+    }
+
+    function renderPllChecks() {
+      if (!pllFilterGrid) return;
+      pllFilterGrid.innerHTML = '';
+      for (const k of pllCaseKeys) {
+        const lab = document.createElement('label');
+        lab.className = 'it';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = pllSelected.has(k);
+        chk.addEventListener('change', () => {
+          if (chk.checked) pllSelected.add(k); else pllSelected.delete(k);
+          renderPllGraph2d();
+          schedulePllSmoothFocus();
+        });
+        const txt = document.createElement('span');
+        txt.textContent = k;
+        lab.appendChild(chk);
+        lab.appendChild(txt);
+        pllFilterGrid.appendChild(lab);
+      }
+    }
+
+    function togglePllCaseByName(name) {
+      const key = pllCaseByLower.get(String(name || '').toLowerCase());
+      if (!key) return false;
+      if (pllSelected.has(key)) pllSelected.delete(key); else pllSelected.add(key);
+      renderPllChecks();
+      renderPllGraph2d();
+      schedulePllSmoothFocus();
+      return true;
+    }
+
+    function renderPllGraph2d() {
+      const el = document.getElementById('pllGraph2d');
+      const fallback = document.getElementById('pllCyclesText');
+      if (!el) return;
+      const allCyclesObj = buildPllDisplayCycles(PLL_CYCLES?.cycles || {});
+      const cyclesObj = Object.fromEntries(
+        Object.entries(allCyclesObj).filter(([perm]) => pllSelected.has(perm))
+      );
+
+      const nodeSet = new Set(['Solved']);
+      for (const [perm, arr] of Object.entries(cyclesObj)) {
+        nodeSet.add(String(perm));
+        for (const v of arr) nodeSet.add(String(v));
+      }
+      const nodes = [...nodeSet].sort((a, b) => String(a).localeCompare(String(b))).map(id => ({
+        id,
+        label: id,
+        color: id === 'Solved' ? '#22c55e' : '#60a5fa',
+        font: { color: '#e2e8f0', face: 'Menlo, monospace' },
+        shape: 'dot',
+        size: id === 'Solved' ? 20 : 16,
+        ...(id === 'Solved' ? { x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: 0 } : {})
+      }));
+
+      const edges = [];
+      let eid = 1;
+      for (const [perm, seqRaw] of Object.entries(cyclesObj)) {
+        const seq = Array.isArray(seqRaw) ? seqRaw.slice() : [];
+        if (!seq.length) continue;
+        const alg = PLL_ALG_BY_CASE[perm] || perm;
+        for (let i = 0; i < seq.length; i += 1) {
+          const src = seq[i];
+          const dst = seq[(i + 1) % seq.length];
+          const hue = (360 * (i + 2) / seq.length) % 360;
+          edges.push({
+            id: eid++,
+            from: src,
+            to: dst,
+            arrows: 'to',
+            label: String(perm),
+            title: `${perm}: ${alg}`,
+            color: { color: `hsl(${hue} 88% 58%)`, opacity: 0.75 },
+            font: { color: '#cbd5e1', face: 'Menlo, monospace', size: 11, strokeWidth: 0 },
+            smooth: { type: 'curvedCW', roundness: 0.18 }
+          });
+        }
+      }
+
+      // 3D curve spread to avoid edge overlap/strobing (especially self-links).
+      const byPair = new Map();
+      for (const e of edges) {
+        const key = `${e.from}=>${e.to}`;
+        if (!byPair.has(key)) byPair.set(key, []);
+        byPair.get(key).push(e);
+      }
+      for (const [key, arr] of byPair.entries()) {
+        const isSelf = key.split('=>')[0] === key.split('=>')[1];
+        const n = arr.length;
+        for (let i = 0; i < n; i += 1) {
+          const t = n <= 1 ? 0 : (i / (n - 1)) * 2 - 1; // [-1, 1]
+          if (isSelf) {
+            // Large loops for self-edges so they are clearly visible.
+            arr[i].curvature = 1.2 + Math.abs(t) * 0.8;
+            arr[i].curveRotation = t * Math.PI;
+          } else {
+            // Strong arc spread for parallel same-direction edges.
+            arr[i].curvature = 0.45 + Math.abs(t) * 0.55;
+            arr[i].curveRotation = t * (Math.PI * 0.9);
+          }
+        }
+      }
+
+      if (typeof ForceGraph3D === 'undefined') {
+        if (fallback) {
+          fallback.style.display = 'block';
+          fallback.textContent = JSON.stringify(PLL_CYCLES, null, 2);
+        }
+        return;
+      }
+
+      if (fallback) fallback.style.display = 'none';
+      pllGraphData = { nodes, links: edges.map(e => ({ ...e, source: e.from, target: e.to })) };
+      if (!pllGraph3d) {
+        pllGraph3d = ForceGraph3D()(el)
+          .backgroundColor('#0f1115')
+          .nodeId('id')
+          .nodeLabel(() => '')
+          .linkDirectionalArrowLength(9)
+          .linkDirectionalArrowRelPos(0.5)
+          .linkWidth(() => 1)
+          .linkLabel(l => String(l.label || ''))
+          .linkColor(l => (l.color && l.color.color) ? l.color.color : '#7dd3fc')
+          .linkCurvature(l => Number.isFinite(l.curvature) ? l.curvature : 0.55)
+          .linkCurveRotation(l => Number.isFinite(l.curveRotation) ? l.curveRotation : 0)
+          .linkOpacity(0.75)
+          .linkDirectionalParticles(0)
+          .numDimensions(3);
+
+        if (typeof THREE !== 'undefined') {
+          try {
+            pllGraph3d.nodeThreeObject(node => makePllNodeSprite(node)).nodeThreeObjectExtend(false);
+          } catch (err) {
+            console.error('PLL sprite node setup failed; using spheres.', err);
+            pllGraph3d.nodeColor(n => (n.id === 'Solved' ? '#22c55e' : '#60a5fa')).nodeVal(n => (n.id === 'Solved' ? 9 : 4));
+          }
+        } else {
+          pllGraph3d.nodeColor(n => (n.id === 'Solved' ? '#22c55e' : '#60a5fa')).nodeVal(n => (n.id === 'Solved' ? 9 : 4));
+        }
+      } else {
+        pllGraph3d.graphData({ nodes: [], links: [] });
+      }
+      pllGraph3d.graphData(pllGraphData);
+      pllGraph3d.d3Force('charge').strength(-1300);
+      pllGraph3d.d3Force('link').distance(140);
+      pllGraph3d.d3VelocityDecay(0.32);
+      schedulePllSmoothFocus();
+    }
+
+    for (const w of allWeights) {
+      const n = numericKey(w);
+      if (Number.isFinite(n)) weightByIndex.set(n, w);
+    }
+
+    const POS_21 = (
+      [[0,1],[0,2],[0,3]]
+      .concat([[1,0],[1,1],[1,2],[1,3],[1,4]])
+      .concat([[2,0],[2,1],[2,2],[2,3],[2,4]])
+      .concat([[3,0],[3,1],[3,2],[3,3],[3,4]])
+      .concat([[4,1],[4,2],[4,3]])
+    );
+    const POS_21_IDX = new Map(POS_21.map((p, i) => [p.join(','), i]));
+
+    function caseNumber(id) {
+      if (id === '0') return '0';
+      const m = String(id).match(/(\d+)/);
+      return m ? String(Number(m[1])) : String(id);
+    }
+
+    function weightLabel(weight) {
+      return String(weight).replace(/^OLL\s*/i, '');
+    }
+
+    function edgeColorByStep(i, n) {
+      // if (n <= 1) return 'hsl(0 92% 58%)';
+      const hue = (360 * (i + 2) / n) % 360;
+      return `hsl(${hue} 88% 58%)`;
+    }
+
+    function drawNodeCanvas(nodeId) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 320;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(8,12,18,0.92)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(148,163,184,0.7)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 36px Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(caseNumber(nodeId), canvas.width / 2, 28);
+
+      const bits = String(appearance[nodeId] || '');
+      const top = 52;
+      const left = 14;
+      const sideRatio = 0.3;
+      const units = [sideRatio, 1, 1, 1, sideRatio];
+      const unitPx = 54;
+      const gap = 3;
+      const on = '#facc15';
+      const off = '#0b1220';
+      const starts = [0];
+      for (let i = 1; i < units.length; i += 1) starts[i] = starts[i - 1] + units[i - 1] * unitPx;
+
+      for (let r = 0; r < 5; r += 1) {
+        for (let c = 0; c < 5; c += 1) {
+          const idx = POS_21_IDX.get(`${r},${c}`);
+          if (idx === undefined) continue;
+          const x = left + starts[c];
+          const y = top + starts[r];
+          const w = units[c] * unitPx - gap;
+          const h = units[r] * unitPx - gap;
+          const bit = bits[idx] === '1';
+          ctx.fillStyle = bit ? on : off;
+          ctx.fillRect(x, y, w, h);
+        }
+      }
+      return canvas;
+    }
+
+    function makeNodeSprite(node) {
+      const tex = new THREE.CanvasTexture(drawNodeCanvas(node.id));
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(36, 45, 1);
+      return sprite;
+    }
+
+    const Graph = ForceGraph3D()(document.getElementById('graph'))
+      .backgroundColor('#0f1115')
+      .nodeId('id')
+      .nodeLabel(() => '')
+      .linkDirectionalArrowLength(9)
+      .linkDirectionalArrowRelPos(0.5)
+      .linkWidth(() => 1)
+      .linkLabel(l => String(l.label || l.weight || ''))
+      .linkColor(l => l.color || '#7dd3fc')
+      .linkCurvature(l => Number.isFinite(l.curvature) ? l.curvature : 0.55)
+      .linkCurveRotation(l => Number.isFinite(l.curveRotation) ? l.curveRotation : 0)
+      .linkOpacity(0.68)
+      .linkDirectionalParticles(0);
+
+    if (typeof THREE !== 'undefined') {
+      try {
+        Graph.nodeThreeObject(node => makeNodeSprite(node)).nodeThreeObjectExtend(false);
+      } catch (err) {
+        console.error('Sprite node setup failed; falling back to spheres.', err);
+        Graph.nodeColor(n => (n.id === '0' ? '#22c55e' : '#60a5fa')).nodeVal(n => (n.id === '0' ? 9 : 4));
+      }
+    } else {
+      console.warn('THREE not available; using default sphere nodes.');
+      Graph.nodeColor(n => (n.id === '0' ? '#22c55e' : '#60a5fa')).nodeVal(n => (n.id === '0' ? 9 : 4));
+    }
+
+    const spreadRange = document.getElementById('spreadRange');
+    const spreadValue = document.getElementById('spreadValue');
+    const focusFollowRange = document.getElementById('focusFollowRange');
+    const focusFollowValue = document.getElementById('focusFollowValue');
+
+
+
+    function getFilteredLinks() {
+      return data.links.filter(l => selected.has(String(l.weight)));
+    }
+
+    function getActiveComponentPose() {
+      const g = Graph.graphData();
+      const liveNodes = Array.isArray(g?.nodes) ? g.nodes : [];
+      const filtered = getFilteredLinks();
+      const ids = new Set();
+      for (const l of filtered) {
+        if (l?.source != null) ids.add(typeof l.source === "object" ? l.source.id : l.source);
+        if (l?.target != null) ids.add(typeof l.target === "object" ? l.target.id : l.target);
+      }
+      if (!ids.size) return null;
+      const pts = liveNodes.filter(n => ids.has(n.id) && Number.isFinite(n.x) && Number.isFinite(n.y) && Number.isFinite(n.z));
+      if (!pts.length) return null;
+
+      let cx = 0, cy = 0, cz = 0;
+      for (const p of pts) {
+        cx += p.x;
+        cy += p.y;
+        cz += p.z;
+      }
+      cx /= pts.length;
+      cy /= pts.length;
+      cz /= pts.length;
+
+      let maxR = 0;
+      for (const p of pts) {
+        const dx = p.x - cx;
+        const dy = p.y - cy;
+        const dz = p.z - cz;
+        const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (r > maxR) maxR = r;
+      }
+      const dist = Math.max(220, maxR * 3.0 + 80);
+      return { cx, cy, cz, dist };
+    }
+
+    let focusRaf = 0;
+    let focusLastTs = 0;
+    let focusUntilTs = 0;
+    function scheduleSmoothFocus() {
+      const followMs = Number(focusFollowRange.value || 1100);
+      focusFollowValue.textContent = `${Math.round(followMs)}ms`;
+      focusUntilTs = performance.now() + followMs;
+      if (focusRaf) return;
+      const step = (ts) => {
+        if (!focusLastTs) focusLastTs = ts;
+        const dt = Math.min(80, ts - focusLastTs);
+        focusLastTs = ts;
+
+        const pose = getActiveComponentPose();
+        if (pose) {
+          const cam = Graph.camera();
+          const controls = typeof Graph.controls === "function" ? Graph.controls() : null;
+          const desiredCam = { x: pose.cx, y: pose.cy, z: pose.cz + pose.dist };
+          const desiredLook = { x: pose.cx, y: pose.cy, z: pose.cz };
+          const aPos = 1 - Math.exp(-dt / 240);
+          const aLook = 1 - Math.exp(-dt / 190);
+          cam.position.x += (desiredCam.x - cam.position.x) * aPos;
+          cam.position.y += (desiredCam.y - cam.position.y) * aPos;
+          cam.position.z += (desiredCam.z - cam.position.z) * aPos;
+          if (controls && controls.target) {
+            controls.target.x += (desiredLook.x - controls.target.x) * aLook;
+            controls.target.y += (desiredLook.y - controls.target.y) * aLook;
+            controls.target.z += (desiredLook.z - controls.target.z) * aLook;
+            controls.update();
+          } else {
+            cam.lookAt(desiredLook.x, desiredLook.y, desiredLook.z);
+          }
+        }
+
+        const keepRunning = ts < focusUntilTs;
+        if (keepRunning) {
+          focusRaf = requestAnimationFrame(step);
+        } else {
+          focusRaf = 0;
+          focusLastTs = 0;
+        }
+      };
+      focusRaf = requestAnimationFrame(step);
+    }
+
+    function toggleWeightByIndex(index) {
+      if (!Number.isFinite(index)) return false;
+      const key = weightByIndex.get(index);
+      if (!key) return false;
+      if (selected.has(key)) selected.delete(key); else selected.add(key);
+      renderChecks();
+      rebuild();
+      scheduleSmoothFocus();
+      return true;
+    }
+
+    const rebuild = () => {
+      const filtered = getFilteredLinks();
+      Graph.graphData({ nodes: data.nodes, links: filtered });
+      const spread = Number(spreadRange.value || 1);
+      Graph.d3Force('charge').strength(-240 * spread * spread);
+      Graph.d3Force('link').distance(96 * spread);
+      Graph.d3VelocityDecay(0.22);
+      Graph.numDimensions(3);
+      spreadValue.textContent = `${spread.toFixed(2)}x`;
+      focusFollowValue.textContent = `${Math.round(Number(focusFollowRange.value || 1100))}ms`;
+    };
+
+    const grid = document.getElementById('filterGrid');
+    const renderChecks = () => {
+      grid.innerHTML = '';
+      for (const w of allWeights) {
+        const lab = document.createElement('label');
+        lab.className = 'it';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = selected.has(w);
+        chk.addEventListener('change', () => {
+          if (chk.checked) selected.add(w); else selected.delete(w);
+          rebuild();
+          scheduleSmoothFocus();
+        });
+        const txt = document.createElement('span');
+        txt.textContent = weightLabel(w);
+        lab.appendChild(chk);
+        lab.appendChild(txt);
+        grid.appendChild(lab);
+      }
+    };
+
+    document.getElementById('allBtn').addEventListener('click', () => {
+      selected.clear();
+      allWeights.forEach(w => selected.add(w));
+      renderChecks();
+      rebuild();
+      scheduleSmoothFocus();
+    });
+
+    document.getElementById('noneBtn').addEventListener('click', () => {
+      selected.clear();
+      renderChecks();
+      rebuild();
+    });
+    document.getElementById('pllAllBtn').addEventListener('click', () => {
+      pllSelected.clear();
+      pllCaseKeys.forEach(k => pllSelected.add(k));
+      renderPllChecks();
+      renderPllGraph2d();
+    });
+    document.getElementById('pllNoneBtn').addEventListener('click', () => {
+      pllSelected.clear();
+      renderPllChecks();
+      renderPllGraph2d();
+    });
+    spreadRange.addEventListener('input', rebuild);
+    focusFollowRange.addEventListener('input', rebuild);
+    let digitBuffer = '';
+    let digitTimer = null;
+    let pllNameBuffer = '';
+    let pllNameTimer = null;
+    const flushDigitBuffer = () => {
+      if (!digitBuffer) return;
+      const idx = Number(digitBuffer);
+      toggleWeightByIndex(idx);
+      digitBuffer = '';
+      if (digitTimer) {
+        clearTimeout(digitTimer);
+        digitTimer = null;
+      }
+    };
+    const flushPllNameBuffer = () => {
+      if (!pllNameBuffer) return;
+      togglePllCaseByName(pllNameBuffer);
+      pllNameBuffer = '';
+      if (pllNameTimer) {
+        clearTimeout(pllNameTimer);
+        pllNameTimer = null;
+      }
+    };
+    document.addEventListener('keydown', (e) => {
+      const tag = (e.target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) return;
+      if (activeTab === 'PLL') {
+        if (e.code === 'Enter') {
+          e.preventDefault();
+          const noneOn = pllSelected.size === 0;
+          pllSelected.clear();
+          if (noneOn) pllCaseKeys.forEach(k => pllSelected.add(k));
+          renderPllChecks();
+          renderPllGraph2d();
+          return;
+        }
+        if (/^Key[A-Z]$/.test(e.code)) {
+          e.preventDefault();
+          const ch = e.code.slice(3).toLowerCase();
+          const next = (pllNameBuffer + ch).toLowerCase();
+          const candidates = pllCaseKeys.filter(k => k.toLowerCase().startsWith(next));
+          const exact = pllCaseByLower.get(next);
+          if (exact && candidates.length === 1) {
+            // Unambiguous complete match: toggle immediately.
+            if (pllNameTimer) clearTimeout(pllNameTimer);
+            pllNameBuffer = '';
+            togglePllCaseByName(next);
+            return;
+          }
+          if (candidates.length > 0) {
+            // Ambiguous prefix: wait briefly for next key.
+            pllNameBuffer = next;
+            if (pllNameTimer) clearTimeout(pllNameTimer);
+            pllNameTimer = setTimeout(flushPllNameBuffer, 500);
+            return;
+          }
+          // Prefix dead-end: restart from single char if valid.
+          const single = ch.toLowerCase();
+          const singleCandidates = pllCaseKeys.filter(k => k.toLowerCase().startsWith(single));
+          const singleExact = pllCaseByLower.get(single);
+          if (singleExact && singleCandidates.length === 1) {
+            if (pllNameTimer) clearTimeout(pllNameTimer);
+            pllNameBuffer = '';
+            togglePllCaseByName(single);
+          } else if (singleCandidates.length > 0) {
+            pllNameBuffer = single;
+            if (pllNameTimer) clearTimeout(pllNameTimer);
+            pllNameTimer = setTimeout(flushPllNameBuffer, 500);
+          } else {
+            if (pllNameTimer) clearTimeout(pllNameTimer);
+            pllNameBuffer = '';
+          }
+          return;
+        }
+        return;
+      }
+      if (e.code === 'Enter') {
+        e.preventDefault();
+        const noneOn = selected.size === 0;
+        selected.clear();
+        if (noneOn) allWeights.forEach(w => selected.add(w));
+        renderChecks();
+        rebuild();
+        if (noneOn) scheduleSmoothFocus();
+        return;
+      }
+      if (/^Digit\d$/.test(e.code) || /^Numpad\d$/.test(e.code)) {
+        e.preventDefault();
+        const d = e.code.slice(-1);
+        if (!digitBuffer) {
+          digitBuffer = d;
+          digitTimer = setTimeout(flushDigitBuffer, 500);
+        } else {
+          digitBuffer += d;
+          flushDigitBuffer();
+        }
+        return;
+      }
+      if (e.code === 'KeyF') {
+        e.preventDefault();
+        scheduleSmoothFocus();
+      }
+    });
+
+    renderChecks();
+    rebuild();
+    setActiveTab(initialTab);
+  </script>
+</body>
+</html>

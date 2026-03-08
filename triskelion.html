@@ -1,0 +1,385 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Triskelion</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌀</text></svg>">
+  </head>
+<body>
+  <div id="inputs">
+    <input id="fill" type="color" oninput="draw()" value="#6e63bf"/> Fill<br>
+  </div>
+  <div id="svg"></div>
+  <canvas id="raster"></canvas>
+  <button onclick="downloadSVG()">Download</button>
+<style>
+  svg {
+    fill: none;
+    stroke: black;
+    stroke-width: 0.05;
+    stroke-linecap: butt;
+    alignment-baseline: middle;
+    text-anchor: middle;
+  }
+  input[type="range"] {width: 200px;}
+  input[type="number"] {width: 50px;}
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='inputs') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right' 
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+  }
+
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const {sin, cos, PI, sqrt, pow} = Math
+
+const size = 10
+const mid = size/2
+const units = 'cm'
+const canvas = svg('svg', {
+  width: `${size}${units}`,
+  height: `${size}${units}`,
+  viewBox: `0 0 ${size} ${size}`
+});
+document.getElementById('svg').append(canvas)
+const raster = document.getElementById('raster')
+
+const loops = new NumSlider(1,10,1,'loops')
+loops.on('input',draw)
+
+const fill = document.getElementById('fill')
+// space = [0,2,2.3,2.5]
+
+draw()
+function draw(){
+  canvas.innerHTML = ''
+
+  const spacing = 2.31 +.58/loops.value()
+  const loopSize = 2/loops.value()
+
+  const move = svg('g',{
+    fill:'none',
+    stroke:'black',
+    'stroke-width':.05,
+    style:'shape-rendering: crispEdges;',
+    transform:`translate(${size/2},${size*.55})`
+  })
+  canvas.append(move)
+
+  //draw loops
+  ;[-PI/2,PI/6,5*PI/6].map(theta=>{
+    const group = svg('g',{
+    transform:`
+    translate(${polar(spacing,theta)}) 
+    rotate(${theta/PI*180+180})
+    `})
+    move.append(group)
+    
+    ;[0,180].map((rot,i)=>
+      group.append(svg('path',{d:archimedes(
+        {x:0,y:0}, 0, loopSize, 0, 360*loops.value()+1+i*120, 30),
+        transform:`rotate(${rot})`
+      }))
+    )
+  })
+
+  // inner triangle
+  const t = .65 + 1.1/loops.value()-loopSize
+  if (t>0) {
+    move.append(svg('path',{d:`
+      M0,0
+      m${polar(t,-PI/6)}
+      A${spacing},${spacing} 0,0,0 ${polar(t,PI/2)}
+      A${spacing},${spacing} 0,0,0 ${polar(t,-5*PI/6)}
+      A${spacing},${spacing} 0,0,0 ${polar(t,-PI/6)}
+      z
+    `}))
+  }
+
+  rasterizeSvgToCanvas(canvas,raster)
+  
+  setTimeout(() => {
+    
+  }, 10);
+}
+
+function polar(r,theta){
+  return `${r*cos(theta)},${r*sin(theta)}`
+}
+
+function rasterizeSvgToCanvas(svgElement, canvas) {
+    // 1. Get the SVG's XML string representation.
+    const svgString = new XMLSerializer().serializeToString(svgElement);
+
+    // 2. Encode the SVG string in Base64 format to create a data URI.
+    //    We need to handle special characters correctly.
+    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+    const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+
+    // 3. Create a new Image object and set its source to the SVG data URI.
+    const img = new Image();
+
+
+    // Set the image's dimensions based on the SVG's viewBox or width/height.
+
+    canvas.width = 400;
+    canvas.height = 400;
+
+    // 4. Use the onload event to ensure the image is ready to be drawn.
+    img.onload = () => {
+        // 5. Draw the image onto the canvas context.
+        const ctx = canvas.getContext('2d',{ willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+
+        // You can now proceed with the flood fill on the canvas.
+        floodFill(ctx,200,210,hex2ABGR(fill.value))
+    };
+
+    // Set the image source. This triggers the onload event.
+    img.src = svgDataUrl;
+}
+
+function hex2ABGR(hex){
+  return parseInt('ff'+hex.substring(5,7)+hex.substring(3,5)+hex.substring(1,3),16)
+}
+
+function archimedes(center, startRadius, spacePerLoop, startTheta, endTheta, thetaStep=30) {
+  function lineIntersection (m1, b1, m2, b2) {
+    if (m1 === m2) {throw new Error("parallel slopes");}
+    const x = (b2 - b1) / (m1 - m2);
+    return {x: x, y: m1 * x + b1};
+  }
+  
+  function pStr (point) { return `${point.x},${point.y} `;}
+
+  // Rename spiral parameters for the formula r = a + bθ
+  const a = startRadius;  // start distance from center
+  const b = spacePerLoop / Math.PI / 2; // space between each loop
+
+  // convert angles to radians
+  let oldTheta = newTheta = startTheta * Math.PI / 180;
+  endTheta = endTheta * Math.PI / 180;
+  thetaStep = thetaStep * Math.PI / 180;
+
+  // radii
+  let oldR,
+      newR = a + b * newTheta;
+
+  // start and end points
+  const oldPoint = {x: 0, y: 0};
+  const newPoint = {
+      x: center.x + newR * Math.cos(newTheta), 
+      y: center.y + newR * Math.sin(newTheta)
+  };
+
+  // slopes of tangents
+  let oldslope,
+      newSlope = (b * Math.sin(oldTheta) + (a + b * newTheta) * Math.cos(oldTheta)) /
+                  (b * Math.cos(oldTheta) - (a + b * newTheta) * Math.sin(oldTheta));
+
+  let path = "M " + pStr(newPoint);
+  
+  while (oldTheta < endTheta - thetaStep) {
+    oldTheta = newTheta;
+    newTheta += thetaStep;
+
+    oldR = newR;
+    newR = a + b * newTheta;
+
+    oldPoint.x = newPoint.x;
+    oldPoint.y = newPoint.y;
+    newPoint.x = center.x + newR * Math.cos(newTheta);
+    newPoint.y = center.y + newR * Math.sin(newTheta);
+
+    // Slope calculation with the formula:
+    // (b * sinΘ + (a + bΘ) * cosΘ) / (b * cosΘ - (a + bΘ) * sinΘ)
+    const aPlusBTheta = a + b * newTheta;
+
+    oldSlope = newSlope;
+    newSlope = (b * Math.sin(newTheta) + aPlusBTheta * Math.cos(newTheta)) /
+                (b * Math.cos(newTheta) - aPlusBTheta * Math.sin(newTheta));
+
+    const oldIntercept = -(oldSlope * oldR * Math.cos(oldTheta) - oldR * Math.sin(oldTheta));
+    const newIntercept = -(newSlope * newR* Math.cos(newTheta) - newR * Math.sin(newTheta));
+
+    const controlPoint = lineIntersection(oldSlope, oldIntercept, newSlope, newIntercept);
+
+    // Offset the control point by the center offset.
+    controlPoint.x += center.x;
+    controlPoint.y += center.y;
+
+    path += "Q " + pStr(controlPoint) + pStr(newPoint);
+  }
+  
+  return path;
+}
+
+
+
+
+//FLOOD FILL
+// https://stackoverflow.com/questions/2106995/how-can-i-perform-flood-fill-with-html-canvas/56221940#56221940
+function getPixel(pixelData, x, y) {
+  if (x < 0 || y < 0 || x >= pixelData.width || y >= pixelData.height) {
+    return -1;  // impossible color
+  } else {
+    return pixelData.data[y * pixelData.width + x];
+  }
+}
+
+function floodFill(ctx, x, y, fillColor) {
+  // read the pixels in the canvas
+  const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  // make a Uint32Array view on the pixels so we can manipulate pixels
+  // one 32bit value at a time instead of as 4 bytes per pixel
+  const pixelData = {
+    width: imageData.width,
+    height: imageData.height,
+    data: new Uint32Array(imageData.data.buffer),
+  };
+
+  // get the color we're filling
+  const targetColor = getPixel(pixelData, x, y);
+  
+  // check we are actually filling a different color
+  if (targetColor !== fillColor) {
+    const spansToCheck = [];
+    
+    function addSpan(left, right, y, direction) {
+      spansToCheck.push({left, right, y, direction});
+    }
+    
+    function checkSpan(left, right, y, direction) {
+      let inSpan = false;
+      let start;
+      let x;
+      for (x = left; x < right; ++x) {
+        const color = getPixel(pixelData, x, y);
+        if (color === targetColor) {
+          if (!inSpan) {
+            inSpan = true;
+            start = x;
+          }
+        } else {
+          if (inSpan) {
+            inSpan = false;
+            addSpan(start, x - 1, y, direction);
+          }
+        }
+      }
+      if (inSpan) {
+        inSpan = false;
+        addSpan(start, x - 1, y, direction);
+      }
+    }
+    
+    addSpan(x, x, y, 0);
+    
+    while (spansToCheck.length > 0) {
+      const {left, right, y, direction} = spansToCheck.pop();
+      
+      // do left until we hit something, while we do this check above and below and add
+      let l = left;
+      for (;;) {
+        --l;
+        const color = getPixel(pixelData, l, y);
+        if (color !== targetColor) {
+          break;
+        }
+      }
+      ++l
+      
+      let r = right;
+      for (;;) {
+        ++r;
+        const color = getPixel(pixelData, r, y);
+        if (color !== targetColor) {
+          break;
+        }
+      }
+
+      const lineOffset = y * pixelData.width;
+      pixelData.data.fill(fillColor, lineOffset + l, lineOffset + r);
+      
+      if (direction <= 0) {
+        checkSpan(l, r, y - 1, -1);
+      } else {
+        checkSpan(l, left, y - 1, -1);
+        checkSpan(right, r, y - 1, -1);
+      }
+      
+      if (direction >= 0) {
+        checkSpan(l, r, y + 1, +1);
+      } else {
+        checkSpan(l, left, y + 1, +1);
+        checkSpan(right, r, y + 1, +1);
+      }     
+    }
+    // put the data back
+    ctx.putImageData(imageData, 0, 0);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function downloadSVG() {
+  var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "score.svg";document.body.append(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+}
+</script></body></html>

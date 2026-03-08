@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logo</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>©</text></svg>">
+</head>
+<!--<body style="background-color:white;">-->
+<div id="svg"></div>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* hides horizontal scrollbar */
+  width: 100%;
+}
+svg {
+  fill: none;
+  stroke: black;
+  stroke-width: 30;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  font: bold 0px sans-serif;
+}
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+deg2Rad = (deg) => deg * Math.PI/180
+rad2Deg = (rad) => rad * 180/Math.PI
+    
+function circlePoint(cx,cy,r,deg){return [cx+r*Math.cos(deg2Rad(deg)), cy+r*Math.sin(deg2Rad(deg))]}
+    
+// start_deg < end_deg
+function arc(cx,cy,r,start_deg,end_deg){
+  let [sx,sy] = circlePoint(cx,cy,r,start_deg)
+  let [ex,ey] = circlePoint(cx,cy,r,end_deg)
+  return svg('path',{d:["M", sx,sy, // Move to start point
+  "A", r, r, 0, end_deg - start_deg >= 180 ? 1: 0, 1, ex,ey // Draw the arc
+  ].join(" ")})
+}
+    
+const R = 100;
+const angle = 120;
+const [W,H] = [R*5+30, R*2+30]
+const charSpacing = 2*R;
+const zWidth = 1.5*R;
+    
+var canvas = svg('svg', {
+  width: "100%",
+  height: "auto",
+  viewBox: `0 0 ${W} ${H}`,
+  preserveAspectRatio: "xMidYMid meet"
+});
+document.getElementById('svg').append(canvas);
+canvas.addEventListener('mousedown',retract2Middle)
+const strokes = []
+
+// Z
+const Z = svg('path',
+{d:`M${W/2-zWidth/2+zWidth/4},${H/2-R+R/2}
+l${-zWidth/4},${-R/2}
+h${zWidth} l${-zWidth},${2*R} h${zWidth}
+l${-zWidth/4},${-R/2}
+`})
+strokes.push(Z)
+canvas.append(Z)
+
+for (i of [-1,1]){
+  // D and C curve
+  centralAngle = 90+i*90;
+  const a240 = arc(W/2+i*charSpacing, H/2,R,centralAngle-angle,centralAngle+angle)
+  strokes.push(a240)
+  canvas.append(a240)
+  
+  const vert = svg('path',
+  {d:`M${W/2+i*charSpacing},${H/2-R/2} 
+  v${R}`})
+  strokes.push(vert)
+  canvas.append(vert)
+
+}
+const name = [];
+[...'DIEGO'].forEach((x,i)=>{
+  const props = {x:W/2 + (i-2)*R, y:H/2, stroke:'none', fill:'white','stroke-width':'3px'}
+  if (i==2){
+    props['fill'] = 'black'
+    props['stroke'] = 'white'
+    // props['stroke-width'] = '1px';
+  }
+  const letter = svg('text',props,x)
+  name.push(letter)
+  canvas.append(letter)
+})
+
+// const c = svg('circle',{cx:W/2, cy:H/2,r:0.5,stroke:'none', fill:'red'})
+// canvas.append(c)
+let initials = true;
+let animating = false;
+function retract2Middle(){
+  if (animating) return
+  animating = true
+
+  const durations = [{duration: 2000, easing: 'ease-in-out'}, {duration: 1000, easing: 'ease-in-out'}]
+  if (!initials) durations.reverse()
+
+  strokes.forEach(path=>{
+    const length = path.getTotalLength()
+    const states = [
+      {strokeWidth: '30', strokeDasharray:`${length} ${length}`, strokeDashoffset:0},
+      {strokeWidth: '30', strokeDasharray:`1 ${length}`, strokeDashoffset:-length/2},
+      { strokeWidth: '100',strokeDasharray:`1 ${length}`, strokeDashoffset:-length/2},
+    ]
+    if (!initials) states.reverse()
+
+    const retract = path.animate(
+    [states[0],states[1]],
+    durations[0]
+    )
+    retract.onfinish = () => {
+      const inflate = path.animate(
+        [states[1], states[2]],
+        durations[1]
+      );
+      inflate.onfinish = () => Object.assign(path.style, states[2]);
+    };
+  })
+  const sizes = [{fontSize:0, transform:'translate(0)'},{fontSize:'50px', transform:'translate(0,5px)'}]
+  if (!initials) sizes.reverse()
+  name.forEach(letter=>{
+    const inflate = letter.animate(sizes, {...durations[initials?1:0], delay: initials? durations[0]['duration']:0})
+    inflate.onfinish = () => {
+      Object.assign(letter.style, sizes[1])
+      animating = false;
+    }
+  })
+  initials = !initials
+}
+</script>
+</body>
+</html>

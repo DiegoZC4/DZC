@@ -1,0 +1,207 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Lifting</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏋️</text></svg>">
+    <style>
+      .lift {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .lift label {
+        width: 85px; /* Adjust this width to align labels */
+        margin-right: 10px;
+      }
+      .lift input {
+        width: 60px;
+        text-align: right;
+      }
+    </style>
+  </head>
+<body>
+  <form oninput="update()">
+    <fieldset> <legend>Sport</legend> <div id="sport-container"></div></fieldset>
+    <fieldset>
+      <legend>Units</legend>
+      <label><input type="radio" name="unit" value="lb" checked onclick="handleUnitChange()">lb</label><br>
+      <label><input type="radio" name="unit" value="kg" onclick="handleUnitChange()">kg</label>
+    </fieldset>
+    <fieldset> <legend>Lifts</legend> <div id="lifts-container"></div> </fieldset>
+  </form>
+  <div id="svg-container"></div>
+  <button onclick="downloadSVG()">Download</button>
+<script>
+  function svg(tagName, attrs, textContent) {
+      var defaults = {
+        fill: "none",
+        stroke: "black",
+        'stroke-width': "0.1",
+        'stroke-linecap':'butt'
+      };
+      var combinedAttrs = Object.assign({}, defaults, attrs);
+      var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+      for (var key in combinedAttrs) el.setAttribute(key, combinedAttrs[key]);
+      if (textContent !== undefined) el.textContent = textContent;
+      return el;
+    }
+  const sports = {
+    "Powerlifting":   ["Bench", "Squat", "Deadlift"],
+    "Olympic Lifting":["Snatch", "Clean & Jerk"],
+  };
+  const defaultLifts = {
+    "Bench":    205,
+    "Squat":    275,
+    "Deadlift": 315,
+    "Snatch":   135,
+    "Clean & Jerk":165,
+  }
+  const maxLifts = {
+    "Bench":    782,
+    "Squat":    1080,
+    "Deadlift": 1015,
+    "Snatch":   496,
+    "Clean & Jerk":588,
+  }
+  function initForm() {
+    const sportContainer = document.getElementById('sport-container');
+    const liftsContainer = document.getElementById('lifts-container');
+
+    // Create radio buttons for sports
+    Object.keys(sports).forEach((sport,i)=>{
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'sport';
+      input.value = sport;
+      if (i==0) input.checked = true;
+      label.appendChild(input);
+      label.append(sport);
+      sportContainer.appendChild(label);
+      sportContainer.appendChild(document.createElement('br'));
+
+      sports[sport].forEach((lift)=>{
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = lift
+        input.value = defaultLifts[lift];
+        label.append(lift);
+        styleWrapper = document.createElement('div');
+        styleWrapper.classList.add('lift');
+        styleWrapper.appendChild(label);
+        styleWrapper.appendChild(input);
+        liftsContainer.appendChild(styleWrapper);
+      });
+    });
+    update();
+  }
+  function update() {
+    const sport = document.querySelector('input[name="sport"]:checked')?.value;
+    const fields = document.querySelectorAll("input[type='number']");
+    let lifts = []
+    fields.forEach(field=>{
+      //clamp values
+      field.value = Math.min(Math.max(0,field.value),
+        maxLifts[field.id] * (unit=='lb' ? 1: unitConversion['kg'])).toFixed(0)
+      // toggle visibility & aggregate stats
+      let included = sports[sport].includes(field.id);
+      field.parentNode.style.display = included ? "flex": "none";
+      if (included) lifts.push(Number(field.value));
+    });
+    drawLifts(lifts);
+  }
+
+  const unitConversion = {
+    "lb":2.20462262,
+    "kg":0.45359237
+  }
+
+  let unit = "lb";
+  function handleUnitChange() {
+    const newUnit = document.querySelector('input[name="unit"]:checked').value;
+    if (newUnit === unit) return;
+
+    const fields = document.querySelectorAll("input[type='number']");
+    fields.forEach(field => {
+      let value = parseFloat(field.value);
+      field.value = (value * unitConversion[newUnit]).toFixed(0);
+    });
+    unit = newUnit;
+  }
+
+  function drawLifts(vals){
+    //clear
+    canvas.innerHTML = '';
+    
+    // starting angle
+    let start = -90;
+    //length of mini arcs in spiral
+    let step = 5;
+    let strokeWidth = 0.6/Math.ceil(Math.max(...vals)/360);
+    
+    //ticks
+    let tickLength = 0.2
+    let tickArcLength = unit=='lb' ? 90: 40;
+    for (let i = start+tickArcLength/2; i < start+360; i+=tickArcLength){
+      [x0,y0] = circlePoint(center, center, 4, i);
+      [x1,y1] = circlePoint(0, 0, tickLength, i);
+      canvas.appendChild(svg('path',{d:`M${x0},${y0} l${x1},${y1}`}))
+    }
+    
+    vals.forEach((arcLength,i)=>{
+      let end = arcLength+start
+      for (let theta=start; theta<end; theta+=step){
+        radius = i+1;
+        radius += arcLength>360 ? theta/360*strokeWidth: 0
+        miniArc = arc(center,center,radius,theta-0.5,Math.min(theta+step,end));
+        miniArc.setAttribute('stroke-width',strokeWidth)
+        canvas.appendChild(miniArc);
+      }
+    })
+    
+    // unit label
+    canvas.appendChild(svg('text',{
+      x:center,
+      y:center,
+      'text-anchor':'middle',
+      'dominant-baseline':'middle',
+      'font-size':1,
+      'font-weight':'bold',
+      'stroke-width':0,
+      'fill':'black'}, ''))
+  }
+  deg2Rad = (deg) => deg * Math.PI/180
+  rad2Deg = (rad) => rad * 180/Math.PI
+  
+  circlePoint = (cx,cy,r,deg) => [cx+r*Math.cos(deg2Rad(deg)), cy+r*Math.sin(deg2Rad(deg))];
+  // REQUIRED: t0 < t1
+  function arc(cx,cy,r,t0,t1,thick=0.2){
+    let [x0,y0] = circlePoint(cx,cy,r,t0)
+    let [x1,y1] = circlePoint(cx,cy,r,t1)
+    let directions = ["M", x0,y0, // Move to start point
+    "A", r, r, 0, t1 - t0 >= 180 ? 1: 0, 1, x1,y1, // Draw the arc
+    ];
+    return svg('path',{d:directions.join(' ')})
+  }
+  
+  const canvasSize = 10;
+  const center = canvasSize/2;
+  const canvasUnits = 'cm';
+  
+  const canvas = svg('svg', {
+    width: `${canvasSize}${canvasUnits}`,
+    height: `${canvasSize}${canvasUnits}`,
+    viewBox: `0 0 ${canvasSize} ${canvasSize}`
+  });
+
+  document.getElementById('svg-container').appendChild(canvas);
+  initForm();
+
+  function downloadSVG() {
+    var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/))source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "square_grid.svg";document.body.appendChild(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+  }
+</script></body></html>

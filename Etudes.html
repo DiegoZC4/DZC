@@ -1,0 +1,201 @@
+<html>
+<head><title>Superstring Etude</title><meta charset="UTF-8"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧶</text></svg>">
+</head>
+<body>
+<p>Practice every sequence of a given length on 5 fingers (omitting immediately repeated fingers).</p>
+<p>Controls for each Hand (from thumb to pinky):</p>
+<p>Left Hand: Space f d s a</p>
+<p>Right Hand: Space j k l ;</p>
+<p>G/H to change handedness</p>
+<div id="inputs"></div><p></p>
+<select id="hand">
+  <option value="g">Left (G)</option>
+  <option value="h" selected>Right (H)</option>
+</select>
+<label for="hand">Hand</label>
+<p></p>
+<label for="substringLength">Substring Length</label>
+<select id="substringLength">
+  <option selected value="10414130421341431423413210434013243040120324131412404203434121303423143030143424324210340234202321312101231040432301042410142420412010230240312412304302043130124343212124240212324014034103203134214212020134041020243123403031404020304134310241401013023120423032141420121432021320403234301313232313103101030210214024232014104">
+    4</option>
+  <option value="20121014032014214234032430123402041414034102143014103234240141431023103202031201412143243241432141410120123031302324314340420202120313234104230134304104130102430343130431042132424210104024141312024312042014320103131310103240323213412321231203013230104302343402102034341412404314040214240212302410404132312323432131242414023130310312104313123141321212343030403213020130340302124212430402024134203023043204212040303142042323131432302032303032120104240301013024204101014231421343231040310432124010414203404034024243403134234314232420240314031240343010341314142302104203214202340430131021214043232401304143021320210343203101313214313413434204324024342432103024323401021313013014021340121202130120232104014342130302043401404140120412342304042140304304342313204303203041341404231241421210241231340342321402402342103141203420214123041242341424313241241313431030301430420401341031024040401012324103012412020424302020124020303414341013421410434121321012130424121241020231213103401312121342420314312142102302314303123014201320320413104120431234124310124343242320134023232304210410342123202301214130401242012032421434343024012310141340412103210210132434132404242303231402010102341303241302140132132320341201314010304234201020404343124320242310201401424101431410242131424240410232040230342413">
+    5</option>
+</select>
+<h1 id="best">Best: 0</h1>
+<h1 id="streak">Score: 0</h1>
+<p></p>
+<button onclick="togglePlaying()">Pause (P)</button>
+<p></p>
+<svg id="etude" height="100%"></svg>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='inputs') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+  }
+
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const bpm = new NumSlider(10,100,30,'tempo (bpm, 4 notes/beat)')
+bpm.on('input',changeSpeed)
+const pitch = 30
+const zone = 5
+const fingers = 5
+const etude = document.getElementById('etude')
+etude.setAttribute('width',pitch*(fingers))
+
+const substringLength = document.getElementById('substringLength')
+substringLength.addEventListener('input',setSuperstring)
+let notes;
+
+let playing = true
+let duration_ms = 0
+
+setSuperstring()
+
+const streakCounter = document.getElementById('streak')
+let streak = 0
+const bestCounter = document.getElementById('best')
+best = 0
+
+etude.append(svg('path',{stroke:'black',d:Array.from({length:fingers}).map((_,i)=>`M${pitch + 3*pitch*i},0 v${window.innerHeight}`).join(' ')}))
+
+const hands = {'h':' jkl;', 'g':'asdf '}
+const handSelect = document.getElementById('hand')
+handSelect.addEventListener('change',()=>{
+  console.log('hi')
+  keyMap = hands[handSelect.value];
+  handSelect.selectedIndex = handSelect.value=='g'?0:1
+})
+let keyMap = hands['h']
+let hitCount = 0
+togglePlaying()
+
+document.onkeydown = function (e) {
+  e = e || window.event
+  let key = e.key
+  e.preventDefault()
+  if (key=='p') togglePlaying()
+  notes.sort((a, b) => 
+    b.animation.currentTime%duration_ms - 
+    a.animation.currentTime%duration_ms
+  );
+  if (key in hands){
+    keyMap = hands[key]
+    handSelect.selectedIndex = key=='g'?0:1
+    return
+  }
+  if ('45'.indexOf(key) > -1){
+    substringLength.selectedIndex = key=='4'?0:1
+    setSuperstring()
+    return
+  }
+  
+  let firstVisibleFound = false;
+  notes.forEach(({ note, animation, finger }) => {
+    if (firstVisibleFound){
+      note.setAttribute('visibility','visible')
+    } else if (note.getAttribute('visibility') == 'visible'){
+      firstVisibleFound=true
+      if (key!=keyMap[finger]) {
+        best = Math.max(streak, best)
+        bestCounter.textContent = 'Best: ' + best
+        streak = 0
+        streakCounter.textContent = 'Score: ' + streak
+        return;
+      }
+      if (!playing) togglePlaying()
+      note.setAttribute('visibility','hidden')
+      streak+=1
+      streakCounter.textContent = 'Score: ' + streak
+    }
+  })
+}
+
+function togglePlaying(){
+  notes.forEach(n => playing ? n.animation.pause(): n.animation.play())
+  playing = !playing
+}
+
+function changeSpeed(){
+  if (playing && notes[0].animation) togglePlaying()
+  duration_ms = notes.length/4/bpm.value()*60000
+  notes.forEach((n,i) => {
+    const animation = n.note.animate(
+      [{y:notes.length*pitch-pitch},{y:-pitch}],
+      { duration: duration_ms, 
+        easing: "linear",
+        iterations: Infinity
+      }
+    )
+    animation.currentTime = (notes.length-i-1) / notes.length * animation.effect.getTiming().duration;
+    animation.pause()
+    n.note.setAttribute('visibility','visible')
+    n.animation = animation
+  })
+}
+
+function setSuperstring(){
+  if (notes) notes.forEach(n=>n.note.remove())
+  notes = [...substringLength.value].map((n,i)=>{
+    const note = svg('rect',{
+      x:Number(n)*pitch, 
+      width:pitch, 
+      height:pitch,
+      visibility:'visible'
+    })
+    const animation = ''
+    etude.append(note)
+    return {note, animation, finger:Number(n)}
+  })
+  changeSpeed()
+}
+
+</script>
+</body>
+</html>

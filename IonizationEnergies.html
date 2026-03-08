@@ -1,0 +1,425 @@
+<html>
+<head><title>Ionization Energies</title><meta charset="UTF-8"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛</text></svg>">
+</head>
+<body>
+<p>Hover a key to see which ion's ionization energy is closest to that pitch (using E=hf and transposed down 50 octaves)</p>
+  <div id="sliders"></div>
+  <div id="keyboard"></div>
+<script>
+
+const sliderLength = '200px'
+const numberWidth  = '50px'
+
+class LabelledSlider {
+  constructor(min, max, start, units, step=1, parent='sliders') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    slider.style.width = sliderLength
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    num.style.width = numberWidth
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.appendChild(this.slider)
+    label.appendChild(this.num)
+    label.appendChild(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+    document.getElementById(parent).append(this.label)
+  }
+  value() {return Number(this.slider.value)}
+  on(event, func) {this.slider.addEventListener(event,func)}
+}
+
+const sliders = document.getElementById('sliders')
+const octave  = new LabelledSlider(  0, 20,  7, 'octave')
+const halfsteps=new LabelledSlider(  0, 11,  0, 'halfsteps')
+const tuning  = new LabelledSlider(-20, 20,  5, 'notes between rows')
+const volume  = new LabelledSlider(  0,100, 15, 'volume')
+const decay   = new LabelledSlider(  0, 10,  1, 'decay (seconds)', step=0.1);
+
+const wave = document.createElement('select');
+["sine", "square", "sawtooth", "triangle"].forEach(w=>{
+  let option = document.createElement("option")
+  option.value = w
+  option.innerHTML = w
+  wave.appendChild(option)
+})
+wave.value = 'triangle'
+let label = document.createElement('label')
+label.innerHTML = 'Waveform '
+label.appendChild(wave)
+sliders.appendChild(label)
+sliders.appendChild(document.createElement('p'))
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+const masterGain = audioContext.createGain()
+masterGain.gain.value = volume.value()/100
+masterGain.connect(audioContext.destination)
+volume.on('input', () => {
+  const now = audioContext.currentTime
+  masterGain.gain.cancelScheduledValues(now)
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.value = volume.value()/100
+})
+
+class Key{
+  constructor(key, freq, hue, sym){
+    this.key = key
+    this.freq = freq
+    
+    let b = document.createElement('button')
+    b.style.width = buttonSize
+    b.style.height = buttonSize
+    b.textContent = key
+    this.button = b
+    this.hue = hue
+    this.setColor()
+    b.addEventListener('mousedown',(e)=>{
+      e.preventDefault()
+      this.press()
+    })
+    b.addEventListener('mouseup',(e)=>{
+      e.preventDefault()
+      this.release()
+    })
+    
+    let osc = audioContext.createOscillator()
+    osc.type = wave.value
+    osc.start()
+    this.osc = osc
+    let vol = audioContext.createGain();
+    vol.gain.value = 0
+    osc.connect(vol)
+    vol.connect(masterGain)
+    this.vol = vol
+    this.sym = sym
+    this.setFrequency(freq)
+  }
+  html(){return this.button}
+  setFrequency(freq){
+    this.osc.frequency.value = freq
+    this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)} ${this.sym}`
+  }
+  setWaveform(wave){this.osc.type = wave}
+  setHue(hue){
+    this.hue=hue
+    this.setColor()
+  }
+  setColor(down=false){
+    this.button.style.background = 
+    `hsl(${this.hue},
+    ${down?downSaturation:upSaturation},
+    ${down? downLightness: upLightness})`
+  }
+  press(){
+    this.setColor(true)
+    this.setGain(1)
+  }
+  release(){
+    this.setColor(false)
+    this.setGain(0,pedal?decay.value():0.01)
+  }
+  setGain(g,ramp=0.01){
+    const now = audioContext.currentTime
+    this.vol.gain.cancelScheduledValues(now)
+    this.vol.gain.setValueAtTime(this.vol.gain.value, now);
+    this.vol.gain.linearRampToValueAtTime(g, now+ramp)
+  }
+}
+
+const sym2Freq = {'Cs I': 0.8362574775519497,
+ 'Fr I': 0.8746642670407021,
+ 'K I': 0.9322034881791554,
+ 'Lr I': 1.065212508725851,
+ 'Na I': 1.103671181672746,
+ 'Pr I': 1.174783359925837,
+ 'In I': 1.2426811649391893,
+ 'Ca I': 1.3128647358121355,
+ 'Fm I': 1.395943811838313,
+ 'Ti I': 1.466411055459911,
+ 'Bi I': 1.5646416886536954,
+ 'Bh I': 1.6536565155623093,
+ 'Si I': 1.7506595772440217,
+ 'Sb I': 1.8487426699149239,
+ 'Au I': 1.9812853872431073,
+ 'Se I': 2.094424270826152,
+ 'S I': 2.2249232619856274,
+ 'Pm II': 2.349051294444226,
+ 'Tb II': 2.4725386316453073,
+ 'Y II': 2.6251475043672,
+ 'Cl I': 2.7849364677754305,
+ 'O I': 2.9246214779267383,
+ 'Lr II': 3.122618926789088,
+ 'Tc II': 3.2772465490234857,
+ 'Si II': 3.5104443318057363,
+ 'F I': 3.741735040580431,
+ 'Th III': 3.9344139435196763,
+ 'Pd II': 4.172798194464373,
+ 'Gd III': 4.411182445409069,
+ 'Lr III': 4.681780784319265,
+ 'Ta III': 4.960969546686928,
+ 'C II': 5.236538089849027,
+ 'W III': 5.583775247353252,
+ 'Ti III': 5.904135761746688,
+ 'Pt III': 6.228057006663243,
+ 'Pa IV': 6.636102120892903,
+ 'Pd III': 7.07206611135933,
+ 'Hg III': 7.407092626200526,
+ 'U IV': 7.881713522225553,
+ 'Es IV': 8.332710753742544,
+ 'Pm IV': 8.841693343597438,
+ 'Yb IV': 9.365709174502896,
+ 'Pd IV': 9.878986976086523,
+ 'Ag IV': 10.523268735396513,
+ 'Re V': 11.146074436062838,
+ 'O III': 11.797988786614788,
+ 'Ba V': 12.456114013326486,
+ 'Pm V': 13.250728183142142,
+ 'V V': 14.019925437553017,
+ 'In V': 14.882908640060784,
+ 'Sc IV': 15.782626640878542,
+ 'Ce VI': 16.66542150748509,
+ 'Zn V': 17.73922443966841,
+ 'F IV': 18.721754122616144,
+ 'Np VII': 19.757973952173046,
+ 'N V': 21.02293528234364,
+ 'Sr VII': 22.335100989413007,
+ 'Ru VIII': 23.623664508032988,
+ 'Pm VIII': 24.912228026652972,
+ 'Gd VIII': 26.415552131709617,
+ 'Ba IX': 28.026256529984593,
+ 'Na V': 29.72372420517998,
+ 'Ba X': 31.466721124699944,
+ 'Se VII': 33.35811760944764,
+ 'Gd X': 35.43549676204948,
+ 'Pm XI': 37.36834203997945,
+ 'Cr VIII': 39.679165950037955,
+ 'Pr XII': 42.09307494158605,
+ 'Rh X': 44.564969291472046,
+ 'Ru XI': 47.22585295742231,
+ 'Kr IX': 50.039216639742605,
+ 'Si VII': 52.95351779768813,
+ 'Br X': 56.052513059969186,
+ 'Hg XIII': 59.46720638431213,
+ 'Pt XIV': 62.92485182594242,
+ 'Zn XII': 66.74759026451503,
+ 'Cd XIV': 70.65623293766231,
+ 'Fr XVII': 74.95144466639557,
+ 'Pd XVI': 79.26813245377252,
+ 'Pt XVII': 84.1861498831721,
+ 'Er XVIII': 89.12564337121538,
+ 'Hf XVIII': 94.49465803213195,
+ 'Sn XVIII': 100.07843327948521,
+ 'Kr XV': 105.66220852683847,
+ 'Te XIX': 112.10502611993837,
+ 'Pr XX': 118.9773648859116,
+ 'As XVI': 126.1933205901835,
+ 'Zr XVII': 133.58108476360474,
+ 'Ca XII': 141.35541799261196,
+ 'Zn XIX': 149.7955090395728,
+ 'O VII': 158.77829364564155,
+ 'Ru XIX': 168.3722997663442,
+ 'Th XXVII': 178.25128674243075,
+ 'Eu XXVII': 188.77455547782725,
+ 'Sr XXI': 200.15686655897042,
+ 'Pr XXVIII': 211.5391776401136,
+ 'No XXXIV': 224.4248128263134,
+ 'In XXIII': 238.16949035825988,
+ 'Yb XXXI': 252.34368906307967,
+ 'Rb XXVI': 266.84002864755445,
+ 'Mo XXVI': 283.39806986182117,
+ 'Ho XXXIV': 299.5910180791456,
+ 'Tc XXVIII': 317.7382876330437,
+ 'Pt XXXVI': 336.52983894625174,
+ 'Ru XXX': 356.2878128984248,
+ 'Ni XXI': 377.5491109556545,
+ 'Tl XL': 399.88421194506753,
+ 'La XXXII': 423.93739762597386,
+ 'Cd XXXIV': 449.0643862390635,
+ 'Zn XXIV': 475.4799383707731,
+ 'Po XLVI': 503.61357519397603,
+ 'As XXV': 533.8948178815456,
+ 'Tl XLIX': 565.8941452606084,
+ 'Te XL': 598.752514985418,
+ 'Te XLI': 634.4027723339041,
+ 'La XLII': 672.8449173060669,
+ 'Pr XLIII': 712.7903863832863,
+ 'La XLV': 754.8834613248723,
+ 'Dy XLVI': 799.9831844765716,
+ 'Np LXI': 847.660034665511,
+ 'W XLVIII': 897.6992513052536,
+ 'Mo XXXIV': 951.3893979144195,
+ 'Gd LII': 1007.871432147262,
+ 'Md LXIX': 1067.3601145902178,
+ 'Pt LV': 1131.7882905212168,
+ 'Md LXX': 1198.3640723165825,
+ 'Ir LIX': 1269.2350658406815,
+ 'Cd XLI': 1343.7569893342038,
+ 'Sn XLII': 1424.077448661516,
+ 'Mt LXXVIII': 1509.7669226497446,
+ 'Rn LXVI': 1599.9663689531433,
+ 'Cr XXIV': 1695.492498458266,
+ 'Au LXIX': 1795.3985026105072,
+ 'I XLIX': 1904.2821199338957,
+ 'Am LXXIV': 2014.4543007759041,
+ 'Pa LXXVII': 2136.867835044802,
+ 'Ce LIII': 2264.0061022153072,
+ 'Eu LV': 2395.2248205281085,
+ 'Hs LXXXIV': 2540.6177375457296,
+ 'Mt LXXXVII': 2690.950148051394,
+ 'Sm LX': 2848.3374438215033,
+ 'Cf LXXXVII': 3023.8290570282225,
+ 'Mt XCIV': 3199.9327379062865,
+ 'No XCII': 3393.217265699284,
+ 'Lu LXVI': 3592.944611085381,
+ 'Bh XCVI': 3801.2623799289445,
+ 'Ta LXX': 4028.9086015518083,
+ 'Tl LXXIV': 4260.850034903405,
+ 'Po LXXVI': 4520.7103444917675,
+ 'Fr LXXVIII': 4795.603895130697,
+ 'Fr LXXXI': 5061.90702231216,
+ 'Pa LXXXIII': 5386.195507831521,
+ 'U LXXXVI': 5710.483993350884,
+ 'Cm LXXXVIII': 6051.953325785179,
+ 'Bk XCI': 6399.865475812573,
+ 'Pa LXXXVIII': 6769.253684483635,
+ 'Pu XC': 7173.003586984562,
+ 'Bk XCII': 7624.000818501556,
+ 'Hs CII': 8053.521991374882,
+ 'I LIII': 8530.623157412667,
+ 'No XCIX': 9041.420688983535,
+ 'Ba LVI': 9570.082435655379,
+ 'Hs CIII': 10158.175738454185,
+ 'Mt CVI': 10802.457497764177,
+ 'Pm LXI': 11456.684819832048,
+ 'Eu LXII': 11997.799888629595,
+ 'Tb LXIV': 12830.03796558309,
+ 'Dy LXVI': 13545.643863254561,
+ 'Er LXVIII': 14440.819677669182,
+ 'Yb LXX': 15371.409512787213,
+ 'Hf LXXI': 16013.818559783474,
+ 'W LXXIII': 17005.159869592706,
+ 'Os LXXV': 18034.773663510816,
+ 'Pt LXXVII': 19104.04944253205,
+ 'Hg LXXIX': 20214.275770175023,
+ 'Pb LXXXI': 21366.917313639242,
+ 'Po LXXXIV': 22975.817722988148,
+ 'Rn LXXXVI': 24234.057046803275,
+ 'Ra LXXXVIII': 25541.369164619176,
+ 'Pa XC': 27125.292917765502,
+ 'Np XCII': 28544.044303883387,
+ 'Am XCV': 30528.96902402425,
+ 'Cf XCVII': 32341.440993256474,
+ 'Fm XCIX': 33968.89671727351,
+ 'No CII': 36252.446032854554,
+ 'Db CIV': 38335.83848187663,
+ 'Bh CVII': 40875.16765590374,
+ 'Ds CIX': 43190.931059450275
+}
+
+const buttonSize = '50px'
+const upSaturation = '50%'
+const downSaturation = '100%'
+const upLightness = '50%'
+const downLightness = '75%'
+const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
+const C0 = 2**(4.06056056); // Frequency of C0
+function freq2Pitch(freq) {
+  let halfsteps = Math.log2(freq/C0) * 12;
+  let noteIndex = Math.round(halfsteps) % 12;
+  if (noteIndex < 0) noteIndex += 12; // Handle negative modulus for frequencies below C0
+  let octave = Math.floor((Math.round(halfsteps)) / 12);
+  let cents = Math.round((halfsteps - Math.round(halfsteps)) * 100);
+  return `${pitches[noteIndex]}${octave}${(cents < 0 ? "" : "+") + cents}`;
+}
+
+const keyboardDiv = document.getElementById('keyboard')
+const keyboardChars = [
+"zxcvbnm,./",
+"asdfghjkl;",
+"qwertyuiop",
+"1234567890"]
+const coords2Note = (i,j) => tuning.value()*j+i + halfsteps.value() + 12*octave.value()
+const coords2Freq = (i,j) => Object.values(sym2Freq)[coords2Note(i,j)]
+const coords2Sym = (i,j) => Object.keys(sym2Freq)[coords2Note(i,j)]
+const coords2Hue = (i,j) => coords2Note(i,j)%12 / 12 * 360
+
+const char2Keys = {}
+const keys = keyboardChars.map((row,j)=>[...row].map((key,i)=>{
+  let k = new Key(key, 10, coords2Hue(i,j), coords2Sym(i,j))
+  k.setFrequency(coords2Freq(i,j),)
+  char2Keys[key] = k
+  return k
+}))
+
+keys.toReversed().forEach(row=>{
+  row.forEach(b=>keyboardDiv.appendChild(b.html()))
+  keyboardDiv.appendChild(document.createElement('br'))
+})
+
+function updateKeys(i,j){
+  keys.forEach((row,j)=>row.forEach((k,i)=>{
+    k.setHue(coords2Hue(i,j))
+    k.setFrequency(coords2Freq(i,j))
+    k.setWaveform(wave.value)
+  }))
+}
+
+octave.on('input',updateKeys)
+halfsteps.on('input',updateKeys)
+tuning.on('input',updateKeys)
+wave.addEventListener('input',updateKeys)
+
+let pedal = false
+
+document.onkeydown = function (e) {
+  e = e || window.event
+  let key = e.key
+  if (key == ' ') pedal = !pedal
+  if (key in char2Keys) char2Keys[e.key].press()
+}
+document.onkeyup = function (e) {
+  e = e || window.event
+  let key = e.key
+  if (key in char2Keys) char2Keys[e.key].release()
+}
+
+function resumeAudioContext() {
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log('AudioContext resumed');
+    }).catch((error) => {
+      console.error('Failed to resume the AudioContext:', error);
+    });
+  }
+}
+
+document.addEventListener('click', resumeAudioContext);
+document.addEventListener('keydown', resumeAudioContext);
+
+</script>
+</body>
+</html>

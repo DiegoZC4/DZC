@@ -1,0 +1,348 @@
+<html>
+<head><title>Harmonica</title><meta charset="UTF-8"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+</head>
+<body>
+  <p>Up and Down Arrow Keys to inhale and exhale.</p>
+  <p>Keyboard to choose Holes</p>
+  <div id="sliders"></div>
+  <div id="keyboard"></div>
+<script>
+
+const sliderLength = '200px'
+const numberWidth  = '50px'
+
+class LabelledSlider {
+  constructor(min, max, start, units, step=1) {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    slider.style.width = sliderLength
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    num.style.width = numberWidth
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.appendChild(this.slider)
+    label.appendChild(this.num)
+    label.appendChild(document.createTextNode(' ' + units))
+    this.label = label
+  }
+  value() {return Number(this.slider.value)}
+  listen(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+class Dropdown{
+  constructor(options, name){
+    let select = document.createElement('select');
+    options.forEach(w=>{
+      let option = document.createElement("option")
+      option.value = w
+      option.innerHTML = w
+      select.appendChild(option)
+    })
+    this.dropdown = select
+
+    let label = document.createElement('label')
+    label.innerHTML = `${name} `
+    label.appendChild(select)
+    this.label = label
+  }
+  value() {return this.dropdown.value}
+  listen(event, func) {this.dropdown.addEventListener(event,func)}
+}
+
+const sliders = document.getElementById('sliders')
+const rowOffset = new LabelledSlider(-20, 20, 5, 'notes between rows')
+const startPitch = new LabelledSlider(0, 60, 36, 'start pitch (C3)')
+startPitch.listen('input',()=>{
+  startPitch.label.lastChild.textContent = 
+  ` start pitch (${pitches[startPitch.value()%12]}${Math.floor(startPitch.value()/12)})`
+})
+const maxPitch = new LabelledSlider(0, 120, 96, 'max pitch (C8)')
+maxPitch.listen('input',()=>{
+  maxPitch.label.lastChild.textContent = 
+  ` max pitch (${pitches[maxPitch.value()%12]}${Math.floor(maxPitch.value()/12)})`
+})
+const volume = new LabelledSlider(0, 100, 15, 'volume');
+[rowOffset, startPitch, maxPitch, volume].forEach(s=>{
+  sliders.appendChild(s.label)
+  sliders.appendChild(document.createElement('br'))
+})
+
+const tunings = {
+  '6 diminished':[
+    [2, 5, 8, 11],
+    [0, 4, 7, 9]
+  ],
+  'Country':[
+    [2, 7, 11, 14, 18, 21, 23, 26, 29, 33],
+    [0, 4,  7, 12, 16, 19, 24, 28, 31, 36]
+  ],
+  'Richter':[
+    [4, 7, 12, 16, 19, 22, 26, 28, 31, 34, 38, 40, 43, 46, 50],
+    [0, 5,  9, 12, 17, 21, 24, 29, 33, 36, 41, 45, 48, 53, 57]
+  ],
+  'Major Seventh':[
+    [4, 7, 12, 16, 19, 23, 26, 28, 31, 35, 38, 40, 43, 47, 50],
+    [0, 5,  9, 12, 17, 21, 24, 29, 33, 36, 41, 45, 48, 53, 57]
+  ],
+  'Harmonic Minor':[
+    [4, 7, 12, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49],
+    [0, 5,  8, 12, 17, 20, 24, 29, 32, 36, 41, 44, 48, 53, 56]
+  ],
+  'Melody Maker':[
+    [2, 7, 11, 14, 18, 21, 23, 26, 30, 33],
+    [0, 4,  9, 12, 16, 19, 24, 28, 31, 36]
+  ],
+  'Natural Minor':[
+    [3, 7, 12, 15, 19, 22, 26, 27, 31, 34, 38, 39, 43, 46, 50],
+    [0, 5,  8, 12, 17, 20, 24, 29, 32, 36, 41, 44, 48, 53, 56]
+  ],
+  'Paddy Richter':[
+    [ 2,  7, 11, 14, 17, 21, 23, 26, 29, 33],
+    [ 0,  4,  9, 12, 16, 19, 24, 28, 31, 36]
+  ],
+  'Richter Extended':[
+    [ 2,  7, 11],
+    [ 0,  4,  7]
+  ],
+  'Powerbender':[
+    [ 2,  7, 11, 14, 16, 19, 23, 26, 31, 36],
+    [ 0,  4,  7, 12, 14, 17, 21, 24, 28, 33]
+  ],
+}
+
+const wave = new Dropdown(["sine", "triangle", "sawtooth", "square"],'Waveform')
+const tune = new Dropdown(Object.keys(tunings),'Tuning');
+[wave, tune].forEach(d=>{
+  sliders.appendChild(d.label)
+  sliders.appendChild(document.createElement('p'))
+})
+wave.dropdown.selectedIndex = 1
+tune.dropdown.selectedIndex = 0
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+const masterGain = audioContext.createGain()
+masterGain.gain.value = volume.value()/100
+masterGain.connect(audioContext.destination)
+volume.listen('input', () => {
+  const now = audioContext.currentTime
+  masterGain.gain.cancelScheduledValues(now)
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.value = volume.value()/100
+})
+
+const buttonSize = '50px'
+const upSaturation = '50%'
+const downSaturation = '100%'
+const upLightness = '50%'
+const downLightness = '75%'
+const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
+const C0 = 16.35; // Frequency of C0
+
+function freq2Pitch(freq) {
+  const log2C0 = Math.log2(C0); // Correct value for log2 of C0
+  let halfsteps = (Math.log2(freq) - log2C0) * 12;
+  
+  let noteIndex = Math.round(halfsteps) % 12;
+  if (noteIndex < 0) noteIndex += 12; // Handle negative modulus for frequencies below C0
+  
+  let octave = Math.floor((Math.round(halfsteps)) / 12);
+  let cents = Math.round((halfsteps - Math.round(halfsteps)) * 100);
+
+  return `${pitches[noteIndex]}${octave}${(cents < 0 ? "" : "+") + cents}`;
+}
+
+class Key{
+  constructor(key, freq, hue){
+    this.key = key
+    this.freq = freq
+    
+    let b = document.createElement('button')
+    b.style.width = buttonSize
+    b.style.height = buttonSize/2
+    b.textContent = key
+    this.button = b
+    this.hue = hue
+    this.setColor()
+    b.addEventListener('mousedown',(e)=>{
+      e.preventDefault()
+      this.press()
+    })
+    b.addEventListener('mouseup',(e)=>{
+      e.preventDefault()
+      this.release()
+    })
+    
+    let osc = audioContext.createOscillator()
+    osc.type = wave.value()
+    osc.start()
+    this.osc = osc
+    let vol = audioContext.createGain();
+    vol.gain.value = 0
+    osc.connect(vol)
+    vol.connect(masterGain)
+    this.vol = vol
+    this.setFrequency(freq)
+  }
+  html(){return this.button}
+  setFrequency(freq){
+    this.osc.frequency.value = freq
+    this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)}`
+  }
+  setWaveform(wave){this.osc.type = wave}
+  setHue(hue){
+    this.hue=hue
+    this.setColor()
+  }
+  setColor(down=false){
+    this.button.style.background = 
+    `hsl(${this.hue},
+    ${down?downSaturation:upSaturation},
+    ${down? downLightness: upLightness})`
+  }
+  press(){
+    this.setColor(true)
+    this.setGain(1)
+  }
+  release(){
+    this.setColor(false)
+    this.setGain(0)
+  }
+  setGain(g){
+    const now = audioContext.currentTime
+    this.vol.gain.cancelScheduledValues(now)
+    this.vol.gain.setValueAtTime(this.vol.gain.value, now);
+    this.vol.gain.linearRampToValueAtTime(g, now+0.01)
+  }
+}
+
+const keyboardDiv = document.getElementById('keyboard')
+const keyboardChars = [
+"zxcvbnm,./",
+"asdfghjkl;",
+"qwertyuiop",
+"1234567890"]
+const coords2Note = (i,j) => rowOffset.value()*j+i
+function coords2Pitch(i,j,k){
+  let classes = tunings[tune.value()][k]
+  let noteIndex = coords2Note(i,j)
+  let pitch = startPitch.value()+classes[noteIndex%classes.length]+
+  Math.ceil(Math.max(...classes)/12)*12*Math.floor(noteIndex/classes.length)
+  return pitch
+}
+const coords2Freq = (i,j,k) => C0*2**(Math.min(maxPitch.value(),coords2Pitch(i,j,k))/12)
+const coords2Hue = (i,j,k) => (coords2Pitch(i,j,k)%12)/12*360
+const char2Keys = {}
+const keys = keyboardChars.map((row,j)=>[...row].map((key,i)=>{
+  char2Keys[key] = [0,1].map((k)=>
+  new Key(key, coords2Freq(i,j,k), coords2Hue(i,j,k)))
+  return char2Keys[key]
+}))
+
+keys.toReversed().forEach(row=>{
+  row.forEach(b=>keyboardDiv.appendChild(b[0].html()))
+  keyboardDiv.appendChild(document.createElement('br'))
+  row.forEach(b=>keyboardDiv.appendChild(b[1].html()))
+  keyboardDiv.appendChild(document.createElement('p'))
+})
+
+function updateKeys(i,j){
+  keys.forEach((row,j)=>row.forEach((pair,i)=>pair.forEach((key,k)=>{
+    key.setHue(coords2Hue(i,j,k))
+    key.setFrequency(coords2Freq(i,j,k))
+    key.setWaveform(wave.value())
+  })))
+}
+
+rowOffset.listen('input',updateKeys)
+startPitch.listen('input',updateKeys)
+maxPitch.listen('input',updateKeys)
+wave.listen('input',updateKeys)
+tune.listen('input',updateKeys)
+
+const pressed = []
+let air = ''
+
+document.onkeydown = function (e) {
+  e = e || window.event
+  let key = e.key
+  if (key in char2Keys && !pressed.includes(key)){
+    pressed.push(key)
+    if (air) char2Keys[key][air=='suck'?0:1].press()
+  }
+  switch (key){
+    case "ArrowUp":
+    case "ArrowRight":
+      pressed.forEach(k=>char2Keys[k][0].press())
+      air = 'suck'
+      break;
+    case "ArrowDown":
+    case "ArrowLeft":
+      pressed.forEach(k=>char2Keys[k][1].press())
+      air = 'blow'
+      break;
+  }
+}
+document.onkeyup = function (e) {
+  e = e || window.event
+  let key = e.key
+  var index = pressed.indexOf(key)
+  if (index !== -1) {
+    char2Keys[pressed[index]].forEach(key=>key.release())
+    pressed.splice(index, 1)
+  }
+  switch (key){
+    case "ArrowUp":
+    case "ArrowRight":
+      pressed.forEach(k=>char2Keys[k][0].release())
+      air = ''
+      break;
+    case "ArrowDown":
+    case "ArrowLeft":
+      air = ''
+      pressed.forEach(k=>char2Keys[k][1].release())
+      break;
+  }
+}
+
+function resumeAudioContext() {
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log('AudioContext resumed');
+    }).catch((error) => {
+      console.error('Failed to resume the AudioContext:', error);
+    });
+  }
+}
+
+document.addEventListener('click', resumeAudioContext);
+document.addEventListener('keydown', resumeAudioContext);
+
+</script>
+</body>
+</html>

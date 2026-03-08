@@ -1,0 +1,131 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Borromean Rings</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💍</text></svg>">
+  </head>
+<body> 
+  <div id="svg-container"></div>
+  <button onclick="downloadSVG()">Download</button>
+<script>
+function svg(tagName, attrs, textContent) {
+  var defaults = {
+    fill: 'none',
+    stroke: 'black',
+    'stroke-width': 0.1,
+    'stroke-linecap':'butt'
+  };
+  var combinedAttrs = Object.assign({}, defaults, attrs);
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in combinedAttrs) el.setAttribute(key, combinedAttrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+const canvasSize = 15
+const mid = canvasSize/2
+const canvasUnits = 'cm'
+const canvas = svg('svg', {
+  width: `${canvasSize}${canvasUnits}`,
+  height: `${canvasSize}${canvasUnits}`,
+  viewBox: `0 0 ${canvasSize} ${canvasSize}`
+});
+document.getElementById('svg-container').appendChild(canvas)
+const add = (svg) => canvas.appendChild(svg)
+
+deg2Rad = (deg) => deg * Math.PI/180;
+rad2Deg = (rad) => rad * 180/Math.PI;
+
+polar = (cx,cy,r,deg) => [cx+r*Math.cos(deg2Rad(deg)), cy+r*Math.sin(deg2Rad(deg))];
+
+// start_deg < end_deg
+function arc(cx,cy,r,start_deg,end_deg, clockwise=true){
+  let [sx,sy] = polar(cx,cy,r,start_deg)
+  let [ex,ey] = polar(cx,cy,r,end_deg)
+  let path = ["M", sx, sy, //start
+  "A", r, r, 0, end_deg - start_deg >= 180 ? 1: 0, clockwise? 1: 0, ex, ey]
+  return path.join(' ') //svg('path',{d:path})
+}
+
+const n = 3
+const R = mid*0.6
+const spacing = R/2
+const stroke = 1;
+const c2c = Math.sin(deg2Rad(360/n/2))*spacing*2
+
+const internalAngle = (n-2)*180/n
+const externalAngle = 180-internalAngle
+const patchLength = rad2Deg(stroke/R)/2
+let circles = []
+for (let theta=0; theta<360; theta += 360/n){
+  let [x,y] = polar(mid, mid, spacing, theta-90)
+  circles.push(svg('circle',{cx:x, cy:y, r:R, 'stroke-width':stroke}))
+}
+circles.forEach(c=>add(c))
+
+const circleCenter = c => [Number(c.getAttribute('cx')), Number(c.getAttribute('cy'))]
+const distance = (a,b) => Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+const circleDistance = (a,b) => distance(circleCenter(a), circleCenter(b))
+const circleAngle = (a,b) => {
+  [a,b] = [circleCenter(a), circleCenter(b)]
+  return rad2Deg(Math.atan2(b[1]-a[1],b[0]-a[0]))
+}
+const sss2angle = (nearA, nearB, farC) => rad2Deg(Math.acos((nearA**2 + nearB**2 - farC**2) / (2*nearA*nearB)))
+const isoscelesAngle = (adjacent, hypotenuse) => rad2Deg(Math.acos(adjacent/hypotenuse))
+const gap   = 0.1
+const long  = R+stroke/2+gap/2
+const short = R-stroke/2-gap/2
+const swapVis = {'hidden':'visible', 'visible':'hidden'}
+
+class Cross{
+  constructor(a, b, sign=1){
+    let axis = circleAngle(a,b)
+    let dist = circleDistance(a,b)
+    let [ax, ay] = circleCenter(a)
+    let [bx, by] = circleCenter(b)
+    
+    this.xy = polar(ax,ay,R,axis+isoscelesAngle(dist/2,R)*sign)
+    // add(svg('circle',{cx:this.xy[0], cy:this.xy[1], r:gap, 'stroke':'green'}))
+
+    let arcs = [arc(ax,ay,short,axis+isoscelesAngle(dist/2,short)*sign,    axis+sss2angle(short,dist,long)*sign, sign>0) +
+                arc(ax,ay,long, axis+sss2angle(long, dist, short)*sign,    axis+isoscelesAngle(dist/2,long)*sign,sign>0),
+                arc(bx,by,short,180+axis-sss2angle(short,dist,long)*sign,  180+axis-isoscelesAngle(dist/2,short)*sign, sign>0) +
+                arc(bx,by,long, 180+axis-isoscelesAngle(dist/2,long)*sign, 180+axis-sss2angle(long, dist, short)*sign, sign>0)]
+    this.gaps = arcs.map((a,i)=>svg('path',{d:a,'stroke':'white', 'stroke-width':gap, 'visibility':i<1?'visible':'hidden'}))
+    this.gaps.forEach(g=>add(g))
+    // let subArcs = arcs.map(a=>a.replace(/M([^MA]{1,})A/, 'A'))
+    // console.log(subArcs)
+  }
+  tryClick(xy){
+    if (distance(xy,this.xy)<stroke)
+    this.gaps.forEach(g=>g.setAttribute('visibility',swapVis[g.getAttribute('visibility')]))
+  }
+}
+
+let crosses = []
+
+circles.slice(0).forEach((a,i)=>{
+  let [x,y] = circleCenter(a)
+  circles.slice(i+1,circles.length).forEach((b)=>{
+    crosses.push(new Cross(a,b,1))
+    crosses.push(new Cross(a,b,-1))
+  })
+})
+
+canvas.addEventListener('mousedown',swapDepth)
+
+function swapDepth(e){
+  e.preventDefault()
+  const rect = canvas.getBoundingClientRect();
+  const viewBox = canvas.viewBox.baseVal;
+  let x = (e.clientX - rect.left)*viewBox.width/rect.width;
+  let y = (e.clientY - rect.top)*viewBox.height/rect.height;
+  crosses.forEach(c=> c.tryClick([x,y]))
+}
+
+function downloadSVG() {
+  var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "square_grid.svg";document.body.appendChild(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+}
+</script></body></html>
+

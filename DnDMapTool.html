@@ -1,0 +1,621 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>DnD Map Tool</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗺️</text></svg>"> 
+  </head>
+<body>
+  <svg id="svg" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:0; z-index:0;">
+    <image id="map" x="0" y="0" style="z-index:0;">
+  </svg>
+
+  <div id="ui" style="position: relative; z-index: 1;">
+
+    <label for="load">Load Map</label>
+    <input type="file" id="load" accept="image/*">
+    <p></p>
+    <div id="inputs"></div>
+    <p></p>
+    <text>Colors</text>
+    <button onclick="addEnemy()">+</button>
+    <button onclick="removeEnemy()">-</button>
+    <select id="shape"> Enemy Shape
+      <option selected>circle</option>
+      <option>rect</option>
+    </select>
+    <ol id="enemies" style="width:50px" start="0">
+      <li onmousedown="selectEnemy(0)">Eraser</li>
+    </ol>
+  </div>
+  
+<style>
+  body{
+    position:relative;
+  }
+  svg {
+    fill: none;
+    stroke: black;
+    stroke-width: 1;
+    fill: black;
+    stroke-linecap: butt;
+    alignment-baseline: middle;
+    text-anchor: middle;
+  }
+  #ui{
+    color: black; /* normal text color */
+    font-weight: bold;
+    font-size: 18px;
+    text-shadow: white 0px 0px 10px;
+    pointer-events: none; /* block the whole UI from intercepting clicks */
+  }
+
+#ui button,
+#ui input,
+#ui select,
+#ui textarea,
+#ui label,
+#ui ol {
+  pointer-events: auto; /* re-enable interaction on actual UI controls */
+}
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, sliderLength=200, numberWidth=50) {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    slider.style.width = sliderLength
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    num.style.width = numberWidth
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById('inputs').append(this.label)
+  }
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const svgCont = document.getElementById('svg')
+
+const load = document.getElementById('load');
+const map = document.getElementById('map');
+const shape = document.getElementById('shape')
+
+// Function to load and display the selected image
+load.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => loadMap(e.target.result);
+    reader.readAsDataURL(file);
+  } else {
+    alert('Please select a valid image file.');
+  }
+});
+
+// testing
+loadMap('church.webp')
+
+function loadMap(m){
+  map.setAttribute('href',m);
+  const img = new Image();
+  img.onload = () => {
+    const imageWidth = img.width;
+    const imageHeight = img.height;
+    svgCont.setAttribute('width', imageWidth);
+    svgCont.setAttribute('height', imageHeight);
+    updateViewBox([0, 0, imageWidth, imageHeight]);
+  };
+  img.src = m;
+}
+
+let mousePos = []
+svgCont.addEventListener('mousemove', (event) => {
+  mousePos = svgCoords(event)
+});
+
+let drawingRegion = false
+document.onkeypress = function (e) {
+  e = e || window.event;
+  const key = e.key
+  const pen = getColor()
+  switch (key){
+    case 'e':
+      selectEnemy(0)
+      break
+    case 'c':
+      shape.value = 'circle'
+      break
+    case 'r':
+      shape.value = 'rect'
+      break
+    case 'a': break
+    default:
+      selectEnemy(parseInt(key))
+  }
+  
+  if (key!='a' || pen.length<=1) return
+  if (drawingRegion){
+    svgCont.removeEventListener('mousemove',drawingRegion)
+    drawingRegion = false
+    return
+  }
+
+  // if () return
+  const [x0, y0] = mousePos
+  const region = svg(shape.value, {
+    cx:x0,
+    cy:y0,
+    r:0,
+    x: x0,
+    y: y0,
+    width: 0,
+    height: 0,
+    fill:pen,
+    'fill-opacity':0.3
+  })
+  svgCont.insertBefore(region,map.nextSibling)
+
+  region.addEventListener('mousedown',(click)=>{
+    click.stopPropagation()
+    const color = getColor()
+    if (color=='e') return svgCont.removeChild(click.target)
+    if (!color) startDrag(click)
+  })
+  drawingRegion = (e)=>{
+  e.stopPropagation()
+  const [x,y] = svgCoords(e)
+  region.setAttribute('r',Math.sqrt((x-x0)**2+(y-y0)**2))
+  region.setAttribute('width',Math.abs(x-x0))
+  region.setAttribute('height',Math.abs(y-y0))
+  }
+  svgCont.addEventListener('mousemove',drawingRegion)
+};
+
+const playerSize = new NumSlider(1,200,50,'Player Size')
+const enemySize = new NumSlider(1,200,50,'Enemy Size')
+
+el = t=>document.createElement(t)
+
+const enemies = document.getElementById('enemies')
+const palette = [300,0,30,60,120,180,240]
+function addEnemy(){
+  const colorPicker = el('input')
+  colorPicker.type = 'color'
+  colorPicker.value = hslToHex(palette[enemies.children.length%palette.length],100,50)
+  const listItem = el('li')
+  listItem.addEventListener('mousedown',e=>{
+    selectEnemy(NaN)
+    listItem.style.outline = 'medium solid'
+    // console.log(e.target)
+  })
+  listItem.append(colorPicker)
+  enemies.append(listItem)
+  selectEnemy(enemies.children.length-1)
+}
+// source: https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+addEnemy()
+selectEnemy(0)
+
+function selectEnemy(i){
+  const enemyList = [...enemies.children]
+  enemyList.forEach(e=>e.style='')
+  if (isNaN(i) || i>=enemyList.length) return
+  enemyList[i].style.outline = 'medium solid'
+}
+
+function removeEnemy(){
+  const enemyList = [...enemies.children]
+  let selected = enemyList.length-1
+  enemies.removeChild(enemyList.reduce((acc, c, i)=>{
+    if (i && c.style.outline){
+      selected = i
+      return c
+    }
+    return acc
+  }, enemyList[selected]))
+  selectEnemy(Math.min(selected, enemies.children.length-1))
+}
+
+function getColor(){
+  const enemyList = [...enemies.children]
+  let color = ''
+  enemyList.forEach((e,i)=>{
+    if (e.style.outline) color = i ? e.children[0].value: 'e'
+  })
+  return color
+}
+
+const svgCoords = e => [
+  viewBox[0] + (e.offsetX / svgCont.clientWidth) * viewBox[2],
+  viewBox[1] + (e.offsetY / svgCont.clientHeight) * viewBox[3]
+]
+
+svgCont.addEventListener('mousedown', e=>{
+  if (!viewBox.length) return
+  const pen = getColor()
+  if (pen.length>1) {
+    const [x0, y0] = svgCoords(e) 
+    const size = enemySize.value()
+    const r = size/2
+    const region = svg(shape.value, {
+      cx:x0,
+      cy:y0,
+      r:r,
+      x: x0-r,
+      y: y0-r,
+      width: size,
+      height: size,
+      fill:pen
+    })
+    svgCont.insertBefore(region, players[0])
+    region.addEventListener('mousedown',(click)=>{
+      click.stopPropagation()
+      const color = getColor()
+      if (color=='e') return svgCont.removeChild(click.target)
+      if (!color) startDrag(click)
+    })
+  } else {
+    const [startX,startY] = [e.clientX, e.clientY]
+    const [l, t] = [viewBox[0], viewBox[1]]
+    function onMouseMove(e) {
+      const deltaX = (e.clientX - startX) * (viewBox[2] / svgCont.clientWidth);
+      const deltaY = (e.clientY - startY) * (viewBox[3] / svgCont.clientHeight);
+      updateViewBox([l-deltaX, t-deltaY, viewBox[2], viewBox[3]])
+    }
+
+    function onMouseUp() {
+      svgCont.removeEventListener('mousemove', onMouseMove);
+      svgCont.removeEventListener('mouseup', onMouseUp);
+    }
+
+    svgCont.addEventListener('mousemove', onMouseMove);
+    svgCont.addEventListener('mouseup', onMouseUp);
+  }
+})
+
+let selectedGroup = []
+function startDrag(event, player=false) {
+  if (!viewBox.length) return
+  event.preventDefault();
+  const point = player || event.target;
+  if (!event.shiftKey) selectedGroup = []
+  const [x0,y0] = svgCoords(event)
+  if (event.shiftKey && !selectedGroup.map(a=>a[0]).includes(point)) selectedGroup.push([point,x0,y0])
+
+  function onMouseMove(e) {
+    const [x,y] = svgCoords(e)
+    if (e.shiftKey){
+      selectedGroup.forEach(([icon,sx,sy], i)=>{
+        setPosition(icon, x-x0+sx, y-y0+sy)
+      })
+      return
+    }
+    setPosition(point, x,y)
+  }
+
+  function onMouseUp() {
+    svgCont.removeEventListener('mousemove', onMouseMove);
+    svgCont.removeEventListener('mouseup', onMouseUp);
+    // point.setAttribute('stroke','black')
+    selectedGroup.forEach(arr=>{
+      const [x,y] = getPosition(arr[0])
+      arr[1] = x
+      arr[2] = y
+    })
+  }
+
+  svgCont.addEventListener('mousemove', onMouseMove);
+  svgCont.addEventListener('mouseup', onMouseUp);
+}
+
+function setPosition(icon, x, y){
+  switch (icon.nodeName){
+    case 'g':
+      movePlayer(x,y,icon)
+      break;
+    case 'circle':
+      icon.setAttribute('cx', x)
+      icon.setAttribute('cy', y)
+      break;
+    case 'rect':
+      icon.setAttribute('x', x-Number(icon.getAttribute('width'))/2);
+      icon.setAttribute('y', y-Number(icon.getAttribute('height'))/2);
+      break;
+  }
+}
+
+function getPosition(icon, x, y){
+  switch (icon.nodeName){
+    case 'g':
+      return getPlayerPos(icon)
+    case 'circle':
+      return ['cx','cy'].map(a=>Number(icon.getAttribute(a)))
+    case 'rect':
+      return [Number(icon.getAttribute('x'))+Number(icon.getAttribute('width')/2),
+      Number(icon.getAttribute('y'))+Number(icon.getAttribute('height')/2)];
+  }
+}
+
+const zoomFactor = 1.1
+let viewBox = []
+svgCont.addEventListener('wheel',e=>{
+  if (!viewBox.length) return
+  event.preventDefault();
+
+  // Calculate zoom direction
+  const zoomIn = event.deltaY < 0;
+  const mouseX = event.offsetX / svgCont.clientWidth;
+  const mouseY = event.offsetY / svgCont.clientHeight;
+
+  // Adjust the viewBox width and height for zoom
+  const zoomAmount = zoomIn ? 1 / zoomFactor : zoomFactor;
+  const newWidth = viewBox[2] * zoomAmount;
+  const newHeight = viewBox[3] * zoomAmount;
+
+  // Calculate new viewBox X and Y to zoom towards mouse position
+  viewBox[0] += (mouseX * viewBox[2]) * (1 - zoomAmount);
+  viewBox[1] += (mouseY * viewBox[3]) * (1 - zoomAmount);
+  viewBox[2] = newWidth;
+  viewBox[3] = newHeight;
+
+  updateViewBox(viewBox);
+})
+
+updateViewBox = (xywh)=>{
+  viewBox = xywh
+  svgCont.setAttribute('viewBox', xywh.join(' '))
+}
+
+function movePlayer(x,y,player){
+  let scale = playerSize.value()
+  if (player.getAttribute('transform')){
+    const [prevX, prevY] = getPlayerPos(player)
+    const prevSign = Math.sign(player.transform.baseVal[1].matrix.a)
+    const newSign = Math.sign(Math.round(prevX-x))
+    scale *= newSign || prevSign
+  }
+  player.setAttribute('transform',`translate(${x},${y})
+  scale(${scale},${Math.abs(scale)})`)
+}
+
+function getPlayerPos(p){
+  const translate = p.transform.baseVal[0].matrix
+  return [translate.e, translate.f]
+}
+
+const players = []
+
+// seashell
+const kaleira = svg('g',{fill:'#009c9d'})
+const [startDeg, loops] = [-30,2.3]
+const loopSpace = .24393
+const endAngle = -Math.PI/6
+kaleira.append(svg('path',{d:archimedes({x:0,y:-0.1}, 0, loopSpace, startDeg, startDeg+loops*360+50, 30) 
++`l${Math.cos(endAngle)*loopSpace},${Math.sin(endAngle)*loopSpace}`
+}))
+players.push(kaleira)
+
+// boat, crossbow, leaf, dagger, cat eye
+const vailur = svg('g',{fill:'#9966ff'})
+const eyeR = 0.23
+const shrinkShuriken = `rotate(45) scale(${Math.SQRT1_2})`
+vailur.append(svg('path',{d:`
+  M-0.5,-0.5
+  A0.5,${0.5-eyeR} 0,0,0 0,${-eyeR}
+  A0.5,${0.5+eyeR} 0,0,1 0.5,0.5
+  A0.5,${0.5-eyeR} 0,0,0 0,${eyeR}
+  A0.5,${0.5+eyeR} 0,0,1 -0.5,-0.5
+  M0.5,-0.5
+  A${0.5-eyeR},0.5 0,0,0 ${eyeR},0
+  A${0.5+eyeR},0.5 0,0,1 -0.5,0.5
+  A${0.5-eyeR},0.5 0,0,0 ${-eyeR},0
+  A${0.5+eyeR},0.5 0,0,1 0.5,-0.5
+`, transform:shrinkShuriken}))
+//vailur.append(svg('path',{d:`
+//  M-0.5,-0.5
+//  a0.5,0.5 0,0,0 0.5,0.5
+//  a0.5,0.5 0,0,1 0.5,0.5
+//  M0.5,-0.5
+//  a0.5,0.5 0,0,0 -0.5,0.5
+//  a0.5,0.5 0,0,1 -0.5,0.5
+//`, transform:shrinkShuriken, 
+//fill:'none'}))
+vailur.append(svg('circle',{r: eyeR/2, transform: shrinkShuriken}))
+players.push(vailur)
+
+// flower, shield, moth, bat, cape
+const dzrakh = svg('g',{fill:'#FFFAF1'})
+const petalXr = 0.8
+dzrakh.append(svg('path',{d:`
+  M0.5,-0.5
+  A0.5,1 0,0,1 -0.5,-0.5
+  A${petalXr},1 0,0,1 -0.25,-0.449918
+  A${petalXr},1 0,0,1 0.25,-0.449918
+  A${petalXr},1 0,0,1 0.5,-0.5
+  z
+  M-0.5,-0.5
+  A${petalXr},1 0,0,1 0.2868,0.319128
+  M0,-0.280625
+  A${petalXr},1 0,0,1 0.5,-0.5
+`}))
+players.push(dzrakh)
+
+// torx, gear, halo, star of life
+const gabriel = svg('g',{fill:'#A5A9B4', 'fill-rule':'evenodd'})
+const [clearance, toothDepth, teeth] = [0.23, 0.1, 6]
+const [innerR, outerR] = [0.5-clearance-toothDepth, 0.5-clearance]
+const toothArc = Math.PI*2/teeth
+const [tooth, slope, base] = [0.45, 0.15, 0.4].map(x=>x*toothArc)
+const toothContour = [
+  ['A', outerR, base], 
+  ['L', innerR, base+slope/2], 
+  ['L', innerR, base+slope/2+tooth],
+  ['L', outerR, base+slope/2+tooth+slope/2]
+]
+const toothTop = false
+const startTheta = -Math.PI/2 - (toothTop ? (slope+tooth)/2 + base: base/2)
+function polar(r, theta){
+  return `${r*Math.cos(theta)},${r*Math.sin(theta)}`
+}
+
+gabriel.append(svg('path',{d:`
+  M0,-0.5
+  A0.5,0.5 0,0,0 0,0.5
+  A0.5,0.5 0,0,0 0,-0.5
+  M${polar(outerR,startTheta)}
+  ${Array.from({length:teeth}).map((_,i)=>
+    toothContour.map(([seg, r, theta])=>{
+      const arc = `${r},${r} 0,0,1`
+      return `${seg}${seg=='A'?arc:''} ${polar(r,theta+toothArc*i+startTheta)}`
+    }).join(' ')
+  ).join(' ')}
+  z
+  `}))
+players.push(gabriel)
+  
+const playerPitch = playerSize.value()*1.5
+players.forEach((p,i)=>{
+  movePlayer(playerPitch*(i+0.5),playerPitch*4,p)
+  p.addEventListener('mousedown',(click)=>{
+    click.stopPropagation()
+    startDrag(click, p)
+  })
+  p.setAttribute('stroke-width',1/playerSize.value())
+  svgCont.append(p) 
+})
+
+playerSize.on('input',()=>players.forEach(p=>{
+  const transforms = p.getAttribute('transform').split('\n')
+  p.setAttribute('transform', transforms[0]+`\nscale(${playerSize.value()})`)
+  // p.setAttribute('stroke-width',1/playerSize.value())
+}))
+
+function archimedes(center, startRadius, spacePerLoop, startTheta, endTheta, thetaStep) {
+  function lineIntersection (m1, b1, m2, b2) {
+      if (m1 === m2) {
+          throw new Error("parallel slopes");
+      }
+      const x = (b2 - b1) / (m1 - m2);
+      return {x: x, y: m1 * x + b1};
+  }
+  
+  function pStr (point) {
+    return `${point.x},${point.y} `;
+  }
+
+  // Rename spiral parameters for the formula r = a + bθ
+    const a = startRadius;  // start distance from center
+    const b = spacePerLoop / Math.PI / 2; // space between each loop
+
+    // convert angles to radians
+    let oldTheta = newTheta = startTheta * Math.PI / 180;
+    endTheta = endTheta * Math.PI / 180;
+    thetaStep = thetaStep * Math.PI / 180;
+
+    // radii
+    let oldR,
+        newR = a + b * newTheta;
+
+    // start and end points
+    const oldPoint = {x: 0, y: 0};
+    const newPoint = {
+        x: center.x + newR * Math.cos(newTheta), 
+        y: center.y + newR * Math.sin(newTheta)
+    };
+
+    // slopes of tangents
+    let oldslope,
+        newSlope = (b * Math.sin(oldTheta) + (a + b * newTheta) * Math.cos(oldTheta)) /
+                   (b * Math.cos(oldTheta) - (a + b * newTheta) * Math.sin(oldTheta));
+
+    let path = "M " + pStr(newPoint);
+    
+    while (oldTheta < endTheta - thetaStep) {
+        oldTheta = newTheta;
+        newTheta += thetaStep;
+
+        oldR = newR;
+        newR = a + b * newTheta;
+
+        oldPoint.x = newPoint.x;
+        oldPoint.y = newPoint.y;
+        newPoint.x = center.x + newR * Math.cos(newTheta);
+        newPoint.y = center.y + newR * Math.sin(newTheta);
+
+        // Slope calculation with the formula:
+        // (b * sinΘ + (a + bΘ) * cosΘ) / (b * cosΘ - (a + bΘ) * sinΘ)
+        const aPlusBTheta = a + b * newTheta;
+
+        oldSlope = newSlope;
+        newSlope = (b * Math.sin(newTheta) + aPlusBTheta * Math.cos(newTheta)) /
+                   (b * Math.cos(newTheta) - aPlusBTheta * Math.sin(newTheta));
+
+        const oldIntercept = -(oldSlope * oldR * Math.cos(oldTheta) - oldR * Math.sin(oldTheta));
+        const newIntercept = -(newSlope * newR* Math.cos(newTheta) - newR * Math.sin(newTheta));
+
+        const controlPoint = lineIntersection(oldSlope, oldIntercept, newSlope, newIntercept);
+
+        // Offset the control point by the center offset.
+        controlPoint.x += center.x;
+        controlPoint.y += center.y;
+
+        path += "Q " + pStr(controlPoint) + pStr(newPoint);
+    }
+    
+    return path;
+}
+
+function downloadSVG() {
+  var svgEl = document.querySelector('svg'); var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "score.svg";document.body.append(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+}
+</script></body></html>

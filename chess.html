@@ -1,0 +1,347 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Chess</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>">
+  </head>
+<body>
+  <input type="file" accept="application/JSON" id="rules" oninput="loadRules()"/>
+  <br>
+  <div id="colors"></div>
+  <h4 id="turn">To Move</h4>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+const { sin, cos, PI, sign, sqrt, SQRT2, min, max, hypot} = Math;
+
+const range = n=>[...Array(n).keys()]
+
+const canvas = svg('svg',{style:"border:solid"})
+document.body.append(canvas)
+
+loadRules('chess.json')
+// loadRules('hex.json')
+
+function loadRules(file) {
+  if (!file) {
+    const inputFile = document.getElementById('rules').files[0];
+    if (!inputFile) return console.warn('No file selected');
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        newGame(data);
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+      }
+    };
+    reader.readAsText(inputFile);
+  } else if (typeof file === 'string') {
+    // Load default file by path
+    console.log(file)
+    fetch(file)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+        return res.json();
+      })
+      .then(data => newGame(data))
+      .catch(err => console.error('Error loading default JSON:', err));
+  } else {
+    console.error('Invalid file input');
+  }
+}
+
+const s3o2 = sqrt(3)/2
+let board, pieces, players, cMap, dead
+
+function boardCoords(j,i){
+  const key = i===undefined ? j: [j,i] 
+  return ['cx', 'cy'].map(a=>parseInt(board[key].getAttribute(a)))
+}
+
+class Piece{
+  constructor(player, pos, pieceData){
+    this.player = player
+    players.push(player)
+    this.pos = pos
+    this.moves = pieceData.moves
+    this.sprite = svg('path',{
+      d:pieceData.sprite,
+      opacity:0.8
+    })
+    this.sprite.addEventListener('mousedown', startDrag.bind(this));
+    this.return()
+    this.vital = pieceData['vital']
+    this.lineOfSight = Boolean(pieceData['lineOfSight'])
+  }
+  
+  return(){this.move(boardCoords(this.pos))}
+  
+  move([x,y]){
+    this.sprite.setAttribute('transform',`translate(${x},${y}) scale(0.5)`)
+  }
+
+  validMoves(){
+    const [j,i] = this.pos
+    return this.moves.reduce((valid,[dj,di])=>{
+      const m = [j+dj, i+di]
+      if (board[m] && 
+      (!this.lineOfSight || this.hasLineOfSight(m)) &&
+      pieces.reduce((all,p)=>all && (
+        p.pos[0]!=m[0] || 
+        p.pos[1]!=m[1] ||
+        p.player != this.player
+      ),true)) valid.push(m)
+      return valid
+    },[])
+    return blocked()
+  }
+
+  hasLineOfSight(move, d=1e-2) {
+    const [x1, y1] = boardCoords(this.pos);
+    const [x2, y2] = boardCoords(move);
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+
+    for (let p of pieces) {
+      const [px,py] = boardCoords(p.pos)
+      // Check distance from endpoints
+      const distA = Math.hypot(px - x1, py - y1);
+      const distB = Math.hypot(px - x2, py - y2);
+      if (distA < d || distB < d) continue;
+
+      // Vector from A to P
+      const apx = px - x1;
+      const apy = py - y1;
+
+      // Scalar projection of AP onto AB
+      const t = (apx * dx + apy * dy) / lenSq;
+      if (t < 0 || t > 1) continue
+
+      // Perpendicular distance via cross product trick
+      const cross = dx * apy - dy * apx;
+      const perpDist = Math.abs(cross) / Math.sqrt(lenSq);
+      if (perpDist <= d) return false;
+    }
+    return true;
+  }
+}
+
+function newGame(rules){
+  const sq = rules.grid == 'square'
+  board = {}
+  pieces = []
+  
+  const neighbors = [[1,0,1,0],[0,1,0.5,s3o2],[-1,1,-0.5,s3o2]].slice(0,sq?2:3)
+  const getNeighbors = (j,i)=>
+  neighbors.reduce((acc, [dj,di,tx,ty], idx)=>{
+    try{
+      if (board[[j+dj,i+di]]) acc.push(sq?[dj,di]:[tx,ty]);
+    } catch{}
+    return acc;
+  }, []);
+
+  let maxW = maxH = 0
+  rules.board.map((row,i)=>
+  [...row].map((c,j)=>{
+  if (c!='1') return
+  const [x,y] = [j + (sq?0:0.5*i),i * (sq?1:s3o2)]
+  maxW = max(x,maxW)
+  maxH = max(y,maxH)
+  const point = svg('circle',{r:.1,cx:x,cy:y,'stroke-width':.1})
+  board[[j,i]] = point
+  point.dataset.k = [j,i]
+  point.addEventListener('mousedown',clickGrid)
+  }))
+
+  Object.keys(board).forEach((k)=>{
+    const [j,i] = k.split(',').map(s=>parseInt(s))
+    const [x,y] = boardCoords(j,i)
+    getNeighbors(j,i).forEach(([dx,dy])=>{
+    canvas.append(svg('line',{
+      stroke:'black',
+      'stroke-width':0.01,
+      x1:x,
+      y1:y,
+      x2:x+dx,
+      y2:y+dy
+    }))})
+  })
+
+  Object.keys(board).forEach((k)=>canvas.append(board[k]))
+
+  players = []
+  pieces = rules.start.map(([p,j,i])=>{
+    const piece = new Piece(
+      p.slice(0,1), 
+      [j,i], 
+      rules.pieces[p.slice(1)])
+    canvas.append(piece.sprite)
+    return piece
+  })
+
+  players = [...new Set(players)].sort()
+  cMap = players.reduce((colorMap, player, i, arr) => {
+    const hue = (i * 360 / arr.length) % 360;
+    const hsl = `hsl(${hue}, 50%, 80%)`;
+    const hex = hslToHexUsingBrowser(hsl);
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = hex;
+    input.addEventListener('input', colorPieces)
+    document.getElementById('colors').append(input);
+    colorMap[player] = input
+    return colorMap
+  }, {});
+  colorPieces()
+  document.getElementById('turn').style.color = cMap[0].value
+
+  dead = []
+
+  const units = 'cm' 
+  canvas.setAttribute('width', maxW+units)
+  canvas.setAttribute('height', maxH+units)
+  canvas.setAttribute('viewBox',`-1 -1 ${maxW+2} ${maxH+2}`)
+}
+
+function colorPieces(){
+  pieces.forEach(p=>p.sprite.setAttribute('fill',cMap[p.player].value))
+  document.getElementById('turn').style.color = cMap[players[currentPlayer]].value
+}
+
+// knight
+// [[1,1],[1,-1],[-1,1],[-1,-1]].map(([i,j])=>
+// [[1,1],[1,0]].map(([x,y])=>
+// [x*i,y*j])).flat()
+// 
+// bishop
+// [1,2,3].map(k=>
+// [[1,1],[1,-1],[-1,1],[-1,-1]].map(([i,j])=>
+// [[1,1]].map(([x,y])=>
+// [x*i*k,y*j*k]))).flat().flat()
+
+let dragging = false
+let selected = null
+let moves = []
+let currentPlayer = 0
+
+function startDrag(event) {
+  event.preventDefault();
+  const piece = this;
+  if (selected != piece) {
+    clearHighlights()
+    if (selected &&
+    selected.player == players[currentPlayer] &&
+    moves.reduce((found,[j,i])=>found || (j==piece.pos[0] && i==piece.pos[1]),false)){
+      finishMove(selected, piece.pos)
+      return
+    }
+  }
+
+  if (piece.player != players[currentPlayer]) return
+
+  let closest = null
+  moves = this.validMoves()
+  moves.forEach(m=>board[m].setAttribute('fill','red'))
+  dragging = false
+
+  function onMouseMove(e) {
+    dragging = true
+    const rect = canvas.getBoundingClientRect();
+    const viewBox = canvas.viewBox.baseVal;
+    let x = viewBox.x+(e.clientX - rect.left)*viewBox.width/rect.width;
+    let y = viewBox.y+(e.clientY - rect.top)*viewBox.height/rect.height;
+    piece.move([x,y])
+    closest = Object.keys(board).reduce((best,k)=>{
+      const [vx,vy] = boardCoords(k)
+      const dist = hypot(x-vx,y-vy)
+      board[k].setAttribute('stroke','none')
+      if (dist<best.d) {
+        best.d = dist
+        best.v = board[k]
+        best.k = k
+      }
+      return best
+    },{v:null,d:100,k:null})
+    closest.v.setAttribute('stroke','grey')
+    closest = closest.k.split(',').map(s=>parseInt(s))
+  }
+
+  function onMouseUp() {
+    piece.return()
+    if (selected==piece && !dragging) {
+      selected = null
+      clearHighlights()
+    } else {
+      selected = piece
+      if (closest && moves.some(pt=>pt[0]==closest[0] && pt[1]==closest[1])){
+        finishMove(piece, closest)
+      }
+    }
+    Object.keys(board).map(k=>board[k].setAttribute('stroke','none'))
+    canvas.removeEventListener('mousemove', onMouseMove);
+    canvas.removeEventListener('mouseup', onMouseUp);
+  }
+
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+}
+
+function clickGrid(e){
+  const pos = e.target.dataset.k.split(',').map(s=>parseInt(s))
+  if (selected &&
+  moves.reduce((found,[j,i])=>found || (j==pos[0] && i==pos[1]),false)){
+    finishMove(selected, pos)
+  }
+}
+
+function clearHighlights(){
+  Object.keys(board).map(k=>board[k].setAttribute('fill','black'))
+}
+
+function finishMove(piece,pos){
+  takePieceAt(pos)
+  piece.pos = pos
+  piece.return()
+  currentPlayer = (currentPlayer+1)%players.length
+  while (dead.includes(players[currentPlayer])) currentPlayer = (currentPlayer+1)%players.length
+  
+  clearHighlights()
+  document.getElementById('turn').style.color = cMap[players[currentPlayer]].value
+  if (dead.length+1 == players.length) document.getElementById('turn').innerHTML = 'Winner'
+}
+
+function takePieceAt(coords){
+  pieces = pieces.filter(p => {
+    const elsewhere = p.pos[0]!=coords[0] || p.pos[1]!=coords[1]
+    if (!elsewhere) {
+      p.sprite.remove()
+      if (p.vital) {
+        dead.push(p.player)
+        console.log(dead)
+      }
+    }
+    return elsewhere
+  });
+}
+
+
+function hslToHexUsingBrowser(hslString) {
+  const temp = document.createElement("div");
+  temp.style.color = hslString;
+  document.body.appendChild(temp); // required to compute style
+
+  const rgb = getComputedStyle(temp).color; // "rgb(r, g, b)"
+  document.body.removeChild(temp);
+
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  const toHex = x => x.toString(16).padStart(2, '0');
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+</script></body></html>

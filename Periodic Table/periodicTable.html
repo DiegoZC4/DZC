@@ -1,0 +1,107 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Periodic Table Etymologies</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛︎</text></svg>">
+  </head>
+<body>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+const gap = .3
+const [w,h] = [18+gap, 9+gap]
+const textShadow = '0 0 2px white,'.repeat(2).slice(0, -1);
+const canvas = svg('svg', {
+  width: 'calc(100vw - 16px)',
+  viewBox: `0 0 ${w} ${h}`,
+  fill:'none',
+  'stroke-width':.05,
+  stroke:'black',
+  'text-anchor':'middle',
+  'alignment-baseline':'middle',
+  'style': `text-shadow: ${textShadow};`
+});
+document.body.append(canvas)
+
+const symbols = ['','H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
+
+async function buildTable(){
+  for (let i=0; i<119; i++){
+    const [x,y] = tableCoords(i);
+    const g = svg('g',{transform:`translate(${x},${y})`})
+    canvas.append(g)
+
+    g.append(svg('rect',{
+      x:0,
+      y:0,
+      width:1,
+      height:1,
+    }))
+    const img = svg('image', {
+      width:1, height:1,
+      preserveAspectRatio:"xMidYMin slice"
+    })
+    g.append(img)
+    pickImage(i).then(url => {
+      if (url)img.setAttribute('href',url)
+    });
+    g.append(svg('text',{
+      x:.2,y:.25,
+      'font-size':.25,
+      stroke:'none',
+      fill:'black',
+    },i))
+    g.append(svg('text',{
+      x:.5,y:.68,
+      'font-size':.5,
+      stroke:'none',
+      fill:'black',
+    },symbols[i]))
+  }
+  canvas.append(svg('path',{d:
+    `M${2},${7}
+    v-2 l${gap},${gap+2} v2 z`,
+    fill:'black'
+  }))
+}
+buildTable();
+
+function tableCoords(i){
+  const rightAlign = [[2,1],[10,6],[18,6],[36,16],[54,16],[86,16],[118,16],[70,14],[102,14]]
+  for (const [idx, [right,range]] of rightAlign.entries()) {
+    if (i<=right && i>right-range){
+      const isLanthanide = right==70||right==102
+      return [
+        w-1 -right+i +(isLanthanide?-2:0),
+        isLanthanide?h-2+Math.floor(i/89):idx
+      ]
+    }
+  }
+  
+  const leftAlign = [1,3,11,19,37,55,87]
+  for (const [idx, left] of leftAlign.entries()) {
+    if (i>=left && i<left+2) return [i-left,idx]
+  }
+  return [-1,-1]
+}
+
+function pickImage(base){
+  const formats = ['webp','jpg','jpeg','png','avif','svg'];
+  return new Promise(res=>{
+    let i = 0;
+    function tryNext(){
+      if(i >= formats.length) return res(null);
+      const url = `${base}.${formats[i++]}`;
+      const probe = new Image();
+      probe.onload  = () => res(url);
+      probe.onerror = tryNext;
+      probe.src     = url + '?v=' + Date.now();
+    }
+    tryNext();
+  });
+}
+</script></body></html>

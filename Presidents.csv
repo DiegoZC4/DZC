@@ -1,0 +1,48 @@
+Name,Number,Party,Start,End,Before,After,Entry,Exit,Duration
+George Washington,1,Unaffiliated,1789,1797,,John Adams,Election,Retirement,2865
+John Adams,2,Federalist,1797,1801,George Washington,Thomas Jefferson,Election,Loss,1460
+Thomas Jefferson,3,Democratic-Republican,1801,1809,John Adams,James Madison,Election,Retirement,2922
+James Madison,4,Democratic-Republican,1809,1817,Thomas Jefferson,James Monroe,Election,Retirement,2922
+James Monroe,5,Democratic-Republican,1817,1825,James Madison,John Quincy Adams,Election,Retirement,2922
+John Quincy Adams,6,Democratic-Republican,1825,1829,James Monroe,Andrew Jackson,Election,Loss,1461
+Andrew Jackson,7,Democratic,1829,1837,John Quincy Adams,Martin Van Buren,Election,Retirement,2922
+Martin Van Buren,8,Democratic,1837,1841,Andrew Jackson,William Henry Harrison,Election,Loss,1461
+William Henry Harrison,9,Whig,1841,1841,Martin Van Buren,John Tyler,Election,Disease,31
+John Tyler,10,Unaffiliated,1841,1845,William Henry Harrison,James K. Polk,Vice,Retirement,1430
+James K. Polk,11,Democratic,1845,1849,John Tyler,Zachary Taylor,Election,Retirement,1461
+Zachary Taylor,12,Whig,1849,1850,James K. Polk,Millard Fillmore,Election,Disease,492
+Millard Fillmore,13,Whig,1850,1853,Zachary Taylor,Franklin Pierce,Vice,Loss,969
+Franklin Pierce,14,Democratic,1853,1857,Millard Fillmore,James Buchanan,Election,Loss,1461
+James Buchanan,15,Democratic,1857,1861,Franklin Pierce,Abraham Lincoln,Election,Retirement,1461
+Abraham Lincoln,16,Republican,1861,1865,James Buchanan,Andrew Johnson,Election,Assassin,1503
+Andrew Johnson,17,Democratic,1865,1869,Abraham Lincoln,Ulysses S. Grant,Vice,Loss,1419
+Ulysses S. Grant,18,Republican,1869,1877,Andrew Johnson,Rutherford B. Hayes,Election,Retirement,2922
+Rutherford B. Hayes,19,Republican,1877,1881,Ulysses S. Grant,James A. Garfield,Election,Retirement,1461
+James A. Garfield,20,Republican,1881,1881,Rutherford B. Hayes,Chester A. Arthur,Election,Assassin,199
+Chester A. Arthur,21,Republican,1881,1885,James A. Garfield,Grover Cleveland (1),Vice,Loss,1262
+Grover Cleveland (1),22,Democratic,1885,1889,Chester A. Arthur,Benjamin Harrison,Election,Loss,1461
+Benjamin Harrison,23,Republican,1889,1893,Grover Cleveland (1),Grover Cleveland (2),Election,Loss,1461
+Grover Cleveland (2),24,Democratic,1893,1897,Benjamin Harrison,William McKinley,Election,Retirement,1461
+William McKinley,25,Republican,1897,1901,Grover Cleveland (2),Theodore Roosevelt,Election,Assassin,1654
+Theodore Roosevelt,26,Republican,1901,1909,William McKinley,William Howard Taft,Vice,Retirement,2728
+William Howard Taft,27,Republican,1909,1913,Theodore Roosevelt,Woodrow Wilson,Election,Loss,1461
+Woodrow Wilson,28,Democratic,1913,1921,William Howard Taft,Warren G. Harding,Election,Retirement,2922
+Warren G. Harding,29,Republican,1921,1923,Woodrow Wilson,Calvin Coolidge,Election,Disease,881
+Calvin Coolidge,30,Republican,1923,1929,Warren G. Harding,Herbert Hoover,Vice,Retirement,2041
+Herbert Hoover,31,Republican,1929,1933,Calvin Coolidge,Franklin D. Roosevelt,Election,Loss,1461
+Franklin D. Roosevelt,32,Democratic,1933,1945,Herbert Hoover,Harry S. Truman,Election,Disease,4422
+Harry S. Truman,33,Democratic,1945,1953,Franklin D. Roosevelt,Dwight D. Eisenhower,Vice,Loss,2840
+Dwight D. Eisenhower,34,Republican,1953,1961,Harry S. Truman,John F. Kennedy,Election,Retirement,2922
+John F. Kennedy,35,Democratic,1961,1963,Dwight D. Eisenhower,Lyndon B. Johnson,Election,Assassin,1036
+Lyndon B. Johnson,36,Democratic,1963,1969,John F. Kennedy,Richard Nixon,Vice,Loss,1886
+Richard Nixon,37,Republican,1969,1974,Lyndon B. Johnson,Gerald Ford,Election,Resignation,2027
+Gerald Ford,38,Republican,1974,1977,Richard Nixon,Jimmy Carter,Vice,Loss,895
+Jimmy Carter,39,Democratic,1977,1981,Gerald Ford,Ronald Reagan,Election,Loss,1461
+Ronald Reagan,40,Republican,1981,1989,Jimmy Carter,George H. W. Bush,Election,Retirement,2922
+George H. W. Bush,41,Republican,1989,1993,Ronald Reagan,Bill Clinton,Election,Loss,1461
+Bill Clinton,42,Democratic,1993,2001,George H. W. Bush,George W. Bush,Election,Retirement,2922
+George W. Bush,43,Republican,2001,2009,Bill Clinton,Barack Obama,Election,Retirement,2922
+Barack Obama,44,Democratic,2009,2017,George W. Bush,Donald Trump (1),Election,Retirement,2922
+Donald Trump (1),45,Republican,2017,2021,Barack Obama,Joe Biden,Election,Loss,1461
+Joe Biden,46,Democratic,2021,2025,Donald Trump (1),Donald Trump (2),Election,Retirement,1461
+Donald Trump (2),47,Republican,2025,2029,Joe Biden,,Election,Retirement,1461

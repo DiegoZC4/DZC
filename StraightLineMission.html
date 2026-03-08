@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Turf.js -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+<head>
+  <title>Straight Line Mission Planner</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📏</text></svg>">
+</head>
+
+<body>
+  <div id="map" style="height: 50vh"></div>
+  <p>Land/Water Ratio along pseudo-Great-Circle defined by (x,-30) and (y,30)</p>
+  <p>Click and drag on image below to change x and y.</p>
+  <img id="LatLat" src="circumnav30LongLand.png">
+  <!-- <p> Errors = distToNearest(p) + distToLine(p) for p in points </p>
+  <p> RMSE = sqrt( sum(e^2 for e in Errors) / Errors.length) </p>
+  <p id="score"></p>
+  <svg id="scoring"></svg> -->
+</body>
+<style>
+  /* Each section takes 50% of screen height */
+  #map, #LatLat, #scoring {
+    height: 40vh; /* 50% of viewport height */
+    width: 100%;  /* Full width */
+    display: block; /* Ensures no extra space */
+    object-fit: fill; /* Scales image to fit */
+    border:solid
+  }
+</style>
+<script>
+const pointSpacing = 5 // km
+
+function updateGreatCircle(){
+  const [A, B] = [Amarker, Bmarker].map(x=>{
+    const LL = x.getLatLng()
+    x.setTooltipContent(`${LL.lat}, ${LL.lng}`);
+    return LL
+  })
+
+  const [Apoint, Bpoint] = [A, B].map(x=>turf.point([x.lng,x.lat]))
+  const mid = turf.midpoint(Apoint, Bpoint).geometry.coordinates
+  const antiMid = turf.point([(mid[0]+360)%360-180, -mid[1]])
+  const greatCirclePoints = []
+  ;[[antiMid, Apoint], [Apoint,Bpoint], [Bpoint, antiMid]].forEach(([x,y])=>{
+    const points = turf.greatCircle(x,y,
+    {npoints:Math.round(turf.distance(x,y)/pointSpacing)}).geometry.coordinates
+    greatCirclePoints.push(...(Array.isArray(points[0][0]) ? points.flat(): points))
+  })
+  greatCirclePoints.sort((a,b)=>a[0]-b[0])
+  greatCircle.setLatLngs(greatCirclePoints.map(c=>L.latLng(c.reverse())))
+}
+
+const map = L.map('map').setView([0,0], 2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+L.control.scale().addTo(map);
+const [Amarker, Bmarker] = [
+  [-8.15625  , -30],
+  [-30.8984375, 30]
+].map((coords)=>{
+  const marker = L.marker(coords,{draggable:true}).addTo(map)
+  marker.on('drag',updateGreatCircle)
+  marker.bindTooltip("Loading...", { permanent: true, direction: "center"})
+  return marker
+})
+const greatCircle = L.polyline([[]]).addTo(map);
+updateGreatCircle()
+
+const img = document.getElementById('LatLat')
+img.addEventListener('mousedown',startDrag)
+
+function startDrag(event) {
+  event.preventDefault();
+  setMarkers(event)
+
+  function onMouseMove(e) {
+    setMarkers(e)
+  }
+
+  function onMouseUp() {
+    img.removeEventListener('mousemove', onMouseMove);
+    img.removeEventListener('mouseup', onMouseUp);
+  }
+
+  img.addEventListener('mousemove', onMouseMove);
+  img.addEventListener('mouseup', onMouseUp);
+}
+
+function setMarkers(e){
+  const rect = img.getBoundingClientRect();
+  let x = -50+Math.round((e.clientX - rect.left)/img.width*201)/2;
+  let y = 50-Math.round((e.clientY - rect.top)/img.height*201)/2;
+  Amarker.setLatLng(L.latLng([x,-30]))
+  Bmarker.setLatLng(L.latLng([y,30]))
+  updateGreatCircle()
+}
+
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+// class Point{
+//   constructor(x,y, perim, parent){
+//     this.center = svg('circle',{cx:x, cy:y, r:10, fill:'black'})
+//     this.center.addEventListener('mousedown',this.startDrag.bind(this))
+
+//     this.perimeter = svg('circle',{cx:x, cy:y, r:perim, fill:'none', stroke:'black'})
+//     this.distance = svg('path',{d:``, stroke:'red'})
+
+//     parent.append(this.center, this.perimeter, this.distance)
+//     this.parent = parent
+//   }
+//   startDrag(event) {
+//     event.preventDefault();
+//     const parent = this.parent
+//     const rect = parent.getBoundingClientRect();
+//     const viewBox = parent.viewBox.baseVal;
+//     const move = this.move.bind(this)
+
+//     function onMouseMove(e) {
+//       let x = (e.clientX - rect.left)*viewBox.width/rect.width;
+//       let y = (e.clientY - rect.top)*viewBox.height/rect.height;
+//       move(x,y)
+//     }
+
+//     function onMouseUp() {
+//       parent.removeEventListener('mousemove', onMouseMove);
+//       parent.removeEventListener('mouseup', onMouseUp);
+//     }
+
+//     parent.addEventListener('mousemove', onMouseMove);
+//     parent.addEventListener('mouseup', onMouseUp);
+//   }
+
+//   move(x,y){
+//     [this.center, this.perimeter].forEach(c=>{
+//       c.setAttribute('cx',x)
+//       c.setAttribute('cy',y)
+//     })
+//     points.forEach(p=>p.update())
+    
+//     const squaredError = points.reduce((partialSum, p) => partialSum + p.error*p.error, 0)
+//     score.innerHTML = Math.round(Math.sqrt(squaredError/points.length));
+//   }
+
+//   distTo(p){
+//     const [x0,y0] = this.coords()
+//     const [x1,y1] = p.coords()
+//     const a = x1-x0
+//     const b = y1-y0
+//     return Math.sqrt(a*a + b*b)
+//   }
+
+//   coords(){
+//     return [this.center.getAttribute('cx'), this.center.getAttribute('cy')]
+//   }
+
+//   update(){
+//     const dists = points.filter(p => p !== this)
+//     .map(p=>this.distTo(p))
+//     const r = Math.min(...dists)
+//     this.perimeter.setAttribute('r',r)
+
+//     const [x,y] = this.coords()
+//     this.error = y-midLine + (y<midLine?-r:r)
+//     this.distance.setAttribute('d',`M${x},${scoring.clientHeight/2} v${this.error}`)
+//   }
+// }
+
+// const scoring = document.getElementById('scoring')
+// const midLine = scoring.clientHeight/2
+// scoring.append(svg('path',{d:`M0,${midLine} h${scoring.clientWidth}`, stroke:'red'}))
+
+// const score = document.getElementById('score')
+
+// function updateViewBox() {
+//   let width = scoring.clientWidth;  // Actual pixel width
+//   let height = scoring.clientHeight; // Actual pixel height
+//   scoring.setAttribute("viewBox", `0 0 ${width} ${height}`);
+// }
+// updateViewBox();
+// window.addEventListener("resize", updateViewBox);
+
+// const step = 100
+// const start = Math.round(scoring.clientWidth/step)-1
+// const points = Array.from({length:start}).map((_,i)=>
+//   new Point((i+1)*step,midLine + Math.random()*100-50, step,scoring)
+// )
+// points.forEach(p=>p.update())
+
+</script>
+
+</html>

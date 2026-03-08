@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Aurebesh Typing Trainer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔠</text></svg>">
+<style>
+/* --- load the local .otf file --- */
+@font-face {
+  font-family: "Aurebesh";
+  src: url("AurebeshAF/AurebeshAF-Canon.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* --- basic layout --- */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: #000;
+  color: #0f0;
+  font-family: system-ui, sans-serif;
+}
+h1 {
+  font-family: "Aurebesh", sans-serif;
+  font-size: 6rem;
+  margin: 0;
+  letter-spacing: 0.25em;
+  user-select: none;
+}
+
+#legend{
+  display: flex;
+  flex-wrap: wrap;
+  padding: 5px;
+}
+
+.pair {
+  min-width: 40px; /* gives each pair a minimum width */
+  text-align: center;
+  padding: 10px;
+  margin: 10px;
+  border: 1px solid lightgray; /* for visualization */
+}
+
+.aur{
+  font-family: "Aurebesh", sans-serif;
+  font-size: 2rem;
+}
+
+.lat{
+  font-family: "Times New Roman", serif;
+  font-size: 1rem;
+}
+</style>
+</head>
+<body>
+  <h1 id="glyph">?</h1>
+  <br>
+  <div id="legend"></div>
+
+<script>
+const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const legend = document.getElementById("legend");
+
+for (const ch of pool){
+  legend.insertAdjacentHTML(
+    "beforeend",
+    `<div class="pair" onmousedown="toggle('${ch}',this)">
+      <div class="aur">${ch}</div>
+      <div class="lat">${ch}</div>
+    </div>`
+  );
+}
+
+const glyph = document.getElementById("glyph");
+let current = "";
+const excluded = []
+
+function next() {
+  if (excluded.length >= pool.length-1) {
+    console.log('no options')
+    return
+  }
+  prev = current
+  current = pool[Math.floor(Math.random() * pool.length)];
+  while (excluded.includes(current) || current == prev){
+    current = pool[Math.floor(Math.random() * pool.length)];
+  }
+  glyph.textContent = current;
+}
+
+next();
+
+function toggle(c, el){
+  const index = excluded.indexOf(c);
+  if (index > -1) {
+    excluded.splice(index, 1)
+    el.style.opacity = 1
+  }
+  else {
+    excluded.push(c)
+    el.style.opacity = .5
+  }
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key.toUpperCase() === current) next();
+  console.log(e.key)
+});
+</script>
+</body>
+</html>

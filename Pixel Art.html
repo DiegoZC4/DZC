@@ -1,0 +1,283 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Pixel Art</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖌️</text></svg>">
+  </head>
+<style>
+input{width:50px}
+button{width:200px; height: 30px}
+canvas{left: 0; top: 0; display: block; margin: 10px 0;}
+</style>
+<body> 
+<h4>Initialize</h4>
+<label><input type="number" id="w" min="1" step="1" value=16> Width</label><br>
+<label><input type="number" id="h" min="1" step="1" value=32> Height</label><br>
+<button onclick="newCanvas()">New</button><br><br>
+
+<input type="file" id="fileInput" accept="application/JSON" style="width:200px"><br>
+<button onclick="load()">Load</button><br>
+<button onclick="save()">Save</button><br>
+
+<input type="checkbox" id="bgcolor" onchange="fillBackground()">White Background</input>
+
+<h4>Palette</h4>
+<button onclick="addColor()">Add Color</button>
+<ol start="0">
+  <li id="eraser" style="width:50px">Eraser</li>
+  <div id="palette"></div>
+</ol>
+
+<h4>Canvas</h4>
+<div style="position: relative; display: inline-block">
+  <canvas id="background" style="z-index: 0;"></canvas>
+  <canvas id="canvas" style="position:absolute; z-index: 1;"></canvas>
+</div>
+<br>
+<button onclick="download()">Download</button>
+<canvas id="exportCanvas" style="display: none;"></canvas>
+
+<script>
+
+let history = []
+let undoIndex = 1
+const startDrawing = (e)=>{isDrawing = true; draw(event);}
+const stopDrawing = (e)=>{
+  isDrawing = false
+  if (undoIndex>1) history.splice(1-undoIndex)
+  undoIndex = 1
+  history.push(pixels.map(row => row.slice()))
+};
+
+function draw(event) {
+  if (!isDrawing) return
+  const rect = canvas.getBoundingClientRect()
+  const [canvasX,canvasY] = [event.clientX - rect.left, event.clientY - rect.top]
+  const [x,y] = [Math.floor(canvasX/pixelSize), Math.floor(canvasY/pixelSize)]
+  if (x<0 || y<0 || y>=pixels.length || x>=pixels[0].length) return
+  pixels[y][x] = pen
+  updateCanvas()
+}
+  
+const background = document.getElementById('background')
+const canvas = document.getElementById('canvas')
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseout', ()=>isDrawing=false);
+
+const paletteList = document.getElementById('palette')
+const eraser = document.getElementById('eraser')
+
+let brush, pixelSize
+let isDrawing = false
+let pixels = []
+let palette = []
+let pen = 0
+
+function newCanvas(){
+  let [w,h] = ['w','h'].map(dim=>Number(document.getElementById(dim).value))
+  pixels = Array.from({length: h}, () => new Array(w).fill(0))
+  brush = canvas.getContext("2d")
+  pixelSize = Math.min(800/w, 400/h)
+  canvas.width  = w*pixelSize
+  canvas.height = h*pixelSize
+  background.width  = w*pixelSize
+  background.height = h*pixelSize
+  stopDrawing()
+  fillBackground()
+  updatePalette()
+}
+
+function fillBackground(){
+  let white = document.getElementById('bgcolor').checked
+  let bgBrush = background.getContext("2d")
+  bgBrush.fillStyle = white?"white":"DarkGrey";
+  bgBrush.fillRect(0,0,canvas.width, canvas.height)
+  if (white) return
+  bgBrush.fillStyle = "DimGrey";
+  let bgRes = 5;
+  for (let j=0; j<canvas.height; j+=bgRes) {
+    for (let i=(j/bgRes)%2 * bgRes; i<canvas.width;  i+=bgRes*2){
+      bgBrush.fillRect(i,j,bgRes, bgRes)
+    }
+  }
+}
+addColor()
+function addColor(c='#000000'){
+  let color = document.createElement("input")
+  color.setAttribute("type", "color")
+  color.value = c
+  color.addEventListener('change',updateCanvas)
+  let listItem = document.createElement('li')
+  listItem.appendChild(color)
+  paletteList.appendChild(listItem)
+  palette.push(color)
+  pen = palette.length
+  updatePalette()
+  return color
+}
+
+function updateCanvas(){
+  brush.clearRect(0,0,canvas.width,canvas.height)
+  pixels.forEach((_,j)=>_.forEach((px,i)=>{
+    if (px==0) return
+    brush.fillStyle = palette[Math.min(px-1,palette.length-1)].value
+    brush.fillRect(i*pixelSize, j*pixelSize, pixelSize+1, pixelSize+1)
+  }))
+}
+
+document.onkeypress = function (e) {
+  e = e || window.event;
+  let key = e.key
+  let num = parseInt(key)
+  if (key=='e'|| num==0) pen = 0
+  if (num>=1  && num<=9) pen = Math.min(num,palette.length)
+  updatePalette()
+
+  if (key=='w') shiftPixels(0,-1)
+  if (key=='s') shiftPixels(0,1)
+  if (key=='a') shiftPixels(-1,0)
+  if (key=='d') shiftPixels(1,0)
+  if (key=='r') reflectPixels(1,0)
+  if (key=='f') reflectPixels(0,1)
+}
+
+document.addEventListener('keydown', function(event) {
+  // Check if the Command key (or Control key on Windows) is pressed
+  const isCmd = event.metaKey;  // 'metaKey' is true for Command (⌘) key on macOS
+  const isShift = event.shiftKey; // 'shiftKey' is true for Shift key
+  const key = event.key.toLowerCase();  // Normalize the key value
+
+  // Check for Cmd + Z (Undo)
+  if (isCmd && key === 'z' && !isShift) {
+    if (undoIndex<history.length) undoIndex++
+    pixels = history[history.length-undoIndex].map(row=>row.slice())
+    updateCanvas()
+    event.preventDefault();  // Prevent default browser behavior if necessary
+  }
+
+  // Check for Cmd + Shift + Z (Redo)
+  if (isCmd && isShift && key === 'z') {
+    if (undoIndex>1) undoIndex--
+    pixels = history[history.length-undoIndex].map(row=>row.slice())
+    updateCanvas()
+    event.preventDefault();  // Prevent default browser behavior if necessary
+  }
+});
+
+function updatePalette(){
+  eraser.style.outline = 'none'
+  palette.forEach(p => p.style.outline = 'none')
+  if (pen) {
+    palette[pen-1].style.outline = 'solid'
+  }
+  else {eraser.style.outline = 'solid'}
+}
+
+newCanvas()
+
+function shiftPixels(x,y){
+  const [R,C] = [pixels.length,pixels[0].length]
+  const shifted = new Array(R).fill().map(() => new Array(C));
+  for (let row = 0; row < R; row++) {
+    for (let col = 0; col < C; col++) {
+      shifted[(row+y+R)%R][(col+x+C)%C] = pixels[row][col];
+    }
+  }
+  pixels = shifted;
+  updateCanvas()
+}
+
+function reflectPixels(x,y){
+  const [R,C] = [pixels.length,pixels[0].length]
+  const shifted = new Array(R).fill().map(() => new Array(C));
+  for (let row = 0; row < R; row++) {
+    for (let col = 0; col < C; col++) {
+      shifted[x?(R-1-row):row][y?(C-1-col):col] = pixels[row][col];
+    }
+  }
+  pixels = shifted;
+  updateCanvas()
+}
+
+
+function save() {
+  // Convert the object to a JSON string
+  const jsonString = JSON.stringify({palette:palette.map(p=>p.value),pixels:pixels})
+  .replaceAll('["', '[\n"')
+  .replaceAll(',"', ',\n"')
+  .replaceAll('[[', '[\n[')
+  .replaceAll(',[', ',\n[')
+
+  const blob = new Blob([jsonString], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vailur.json";
+
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+}
+
+load()
+function load(){
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    fetch('vailurRogue.json')
+      .then(res => res.json())
+      .then(data => processData(JSON.stringify(data)))
+      .catch(err => console.error('Error loading default file:', err));
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+      processData(e.target.result);
+    };
+  reader.onerror = function() {console.error('Could not read the file')};
+  reader.readAsText(file)
+}
+
+function processData(jsonString){
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.palette && data.pixels) {
+        ['w','h'].forEach((dim,i)=>document.getElementById(dim).value = i?data.pixels.length:data.pixels[0].length)
+        paletteList.innerHTML = ''
+        palette = []
+        palette = data.palette.map(c=>addColor(c))
+        newCanvas()
+        pixels = data.pixels
+        stopDrawing()
+        updateCanvas()
+      } else {console.error('Invalid JSON format.')}
+    } catch (error) {console.error('Error parsing JSON:', error)}
+}
+
+function download(){
+  const [w,h] = [pixels[0].length, pixels.length]
+  const exportCanvas = document.getElementById('exportCanvas');
+  const ctx = exportCanvas.getContext('2d');
+  exportCanvas.width = w;
+  exportCanvas.height = h;
+
+  // Draw the pixel art onto the canvas
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (pixels[y][x]==0) continue
+      ctx.fillStyle = palette[pixels[y][x]-1].value
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  // Create a link to download the canvas as a PNG
+  exportCanvas.toBlob((blob) => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'vailur.png';
+    link.click();
+  }, 'image/png');
+}
+</script></body></html>

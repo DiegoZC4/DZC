@@ -1,0 +1,153 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Hue Spacing</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+  </head>
+<body>
+  <div id="count"></div>
+  <p>Left/Right Arrow Keys to move middle color towards either neighbor. (Skip with Down)</p>
+  <div id="compare">
+    <span id="a"></span>
+    <span id="b"></span>
+    <span id="c"></span>
+  </div>
+  <p></p>
+  <div id="hues"></div>
+<style>
+  #compare {
+    display: flex; /* Ensures elements are side by side */
+  }
+
+  span {
+    flex: 1; /* Distributes width equally */
+    height: 20vh; /* 20% of viewport height */
+  }
+  input[type="range"] {width: 200px;}
+  input[type="number"] {width: 50px;}
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='inputs') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right' 
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+  }
+
+  value(v) {
+    if (!v) return Number(this.slider.value)
+    this.slider.value = v
+    this.num.value = v
+  }
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const count = new NumSlider(3,20,12,'colors', 1, 'count')
+count.on('input',e=>setHues(e.target.value))
+const compare = document.getElementById('compare')
+const hueDiv = document.getElementById('hues')
+
+const updateSize = new NumSlider(1,30,3,'update size (hue degrees)', 1, 'count')
+
+let hues = []
+let updating = 0
+
+const ctx = document.createElement("canvas").getContext("2d");
+
+setHues(12, [0, 36, 48, 66, 105, 180, 195, 210, 225, 273, 288, 306])
+// setHues(7, [0, 39, 75, 177, 195, 264, 288])
+
+function setHues(hueCount, start){
+  count.value(hueCount)
+  hueDiv.innerHTML = ''
+  hues = Array.from({length:hueCount}).map((_,i)=>{
+    const label = document.createElement('label')
+    const hue = start ? start[i]: Math.round(i/hueCount * 360)
+    label.innerHTML = hue
+    
+    const picker = document.createElement('input')
+    picker.type = 'color'
+    ctx.fillStyle = `hsl(${hue},100%,50%)`
+    picker.value = ctx.fillStyle
+
+    const div = document.createElement('div')
+    div.append(picker,label)
+    hueDiv.append(div)
+
+    return div
+  })
+  updateHues()
+}
+
+function updateHues(update=0){
+  const [picker, label] = hueDiv.children[updating].children
+  const hue = (Number(label.innerHTML) + update * updateSize.value()) % 360
+  label.innerHTML = hue
+  ctx.fillStyle = `hsl(${hue},100%,50%)`
+  picker.value = ctx.fillStyle
+
+  updating = 1 + Math.floor(Math.random() * (count.value()-1))
+  ;[...compare.children].forEach((c,i)=>{
+    c.style.backgroundColor = hueDiv.children[(updating-1+i+count.value())%count.value()].children[0].value
+  })
+
+  console.log([...hueDiv.children].map(c=>Number(c.children[1].innerHTML)))
+}
+
+document.onkeydown = function (e) {
+  e.preventDefault()
+  e = e || window.event;
+  const key = e.key
+  switch (key){
+    case 'ArrowRight':
+      updateHues(1)
+      break;
+    case 'ArrowLeft':
+      updateHues(-1)
+      break;
+    case 'ArrowDown':
+      updateHues(0)
+      break;
+  }
+}
+</script></body></html>

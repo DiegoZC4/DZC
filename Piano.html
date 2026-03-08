@@ -1,0 +1,303 @@
+<html>
+<head><title>Piano</title><meta charset="UTF-8"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎹</text></svg>">
+</head>
+<body>
+  <div id="inputs"></div>
+  <label id="wavelabel"> Waveform </label>
+  <select id="wave"></select><p></p>
+  <div id="keyboard"></div><p></p>
+  <div id="hues">Hues<br></div>
+
+<style>
+  button {
+  flex: 0 0 6.8%;
+  text-align: center;
+  height:50px;
+  overflow-wrap: anywhere;
+  max-width:50px;
+  }
+  input[type="range"] {width: 400px;}
+  input[type="number"] {width: 50px;}
+</style>
+<script>
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='inputs') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+  }
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const wave = document.getElementById('wave')
+const options = ["sine", "square", "sawtooth", "triangle"]
+options.forEach(optionText => {
+  const option = document.createElement('option');
+  option.value = optionText; // Set value
+  option.textContent = optionText; // Set display text
+  wave.append(option); // Add to the dropdown
+});
+wave.value = 'triangle'
+
+const cents  = new NumSlider(-50,  50,  0, 'Tune (cents)')
+const transpose  = new NumSlider(0,  11,  0, 'Transpose (halfsteps)')
+const octave  = new NumSlider(0,  7,  2, 'Register (octave)')
+const volume  = new NumSlider(0,100, 15, 'Volume')
+const decay   = new NumSlider(0, 10,  1, 'Decay (seconds)', step=0.1);
+
+const hueSliders = Array.from({length:12},(_,i)=>new NumSlider(0,350,i*30,i,10,'hues'))
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+const masterGain = audioContext.createGain()
+masterGain.gain.value = volume.value()/100
+masterGain.connect(audioContext.destination)
+volume.on('input', () => {
+  const now = audioContext.currentTime
+  masterGain.gain.cancelScheduledValues(now)
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.value = volume.value()/100
+})
+
+const upSaturation = '50%'
+const downSaturation = '100%'
+const upLightness = '50%'
+const downLightness = '75%'
+const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
+function freq2Pitch(freq) {
+  const C0 = 16.35; // Frequency of C0
+  const log2C0 = Math.log2(C0); // Correct value for log2 of C0
+  let halfsteps = (Math.log2(freq) - log2C0) * 12;
+  let noteIndex = Math.round(halfsteps) % 12;
+  if (noteIndex < 0) noteIndex += 12; // Handle negative modulus for frequencies below C0
+  let octave = Math.floor((Math.round(halfsteps)) / 12);
+  let cents = Math.round((halfsteps - Math.round(halfsteps)) * 100);
+  return `${pitches[noteIndex]}${octave}${cents ? (cents < 0 ? "" : "+") + cents: ''}`;
+}
+
+class Key{
+  constructor(key, freq, hue){
+    this.freq = freq
+    
+    let b = document.createElement('button')
+    b.textContent = key
+    this.button = b
+    this.hue = hue
+    this.setColor()
+    b.addEventListener('mousedown',(e)=>{
+      e.preventDefault()
+      this.press()
+    })
+    b.addEventListener('mouseup',(e)=>{
+      e.preventDefault()
+      this.release()
+    })
+    
+    let osc = audioContext.createOscillator()
+    osc.type = wave.value
+    osc.start()
+    this.osc = osc
+    let vol = audioContext.createGain();
+    vol.gain.value = 0
+    osc.connect(vol)
+    vol.connect(masterGain)
+    this.vol = vol
+    this.setFrequency(freq)
+  }
+  html(){return this.button}
+  setFrequency(freq){
+    this.osc.frequency.value = freq
+    this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)}`
+  }
+  setWaveform(wave){this.osc.type = wave}
+  setHue(hue){
+    this.hue=hue
+    this.setColor()
+  }
+  setColor(down=false){
+    this.button.style.background = 
+    `hsl(${this.hue},
+    ${down?downSaturation:upSaturation},
+    ${down? downLightness: upLightness})`
+  }
+  press(){
+    this.setColor(true)
+    this.setGain(1)
+  }
+  release(){
+    this.setColor(false)
+    this.setGain(0,pedal?decay.value():0.01)
+  }
+  setGain(g,ramp=0.01){
+    const now = audioContext.currentTime
+    this.vol.gain.cancelScheduledValues(now)
+    this.vol.gain.setValueAtTime(this.vol.gain.value, now);
+    this.vol.gain.linearRampToValueAtTime(g, now+ramp)
+  }
+}
+
+const keyboardDiv = document.getElementById('keyboard')
+const tabbing = true;
+const keyboardChars = ['Shift',...'azsxdcvgbhnmk,l.;/','Tab',...'1q2we4r5t6yu8i9op-[=]','Backspace','\\']
+
+const shiftMap = {
+  '`': '~',
+  '1': '!',
+  '2': '@',
+  '3': '#',
+  '4': '$',
+  '5': '%',
+  '6': '^',
+  '7': '&',
+  '8': '*',
+  '9': '(',
+  '0': ')',
+  '-': '_',
+  '=': '+',
+  '[': '{',
+  ']': '}',
+  '\\': '|',
+  ';': ':',
+  "'": '"',
+  ',': '<',
+  '.': '>',
+  '/': '?',
+};
+
+const hues = [0,20,40,60,120,180,200,220,240,270,300,330]
+
+const char2Keys = {}
+const keys = keyboardChars.map((k,i)=>{
+  let newKey = new Key(k,0,hues[i%12])
+  char2Keys[k] = newKey
+  char2Keys[k.toUpperCase()] = newKey
+  char2Keys[shiftMap[k]] = newKey
+  return newKey
+})
+
+const buttonWidthPercent = 6.8
+const chars = [[...'`1234567890-=','Backspace'],
+['Tab',...'qwertyuiop[]]\\'],
+['CapsLock',...'asdfghjkl;','Enter'],
+['Shift',...'zxcvbnm,./','RShift']]
+const charLengths = {'0,13':1.5, '1,0':1.5, '2,0':2, '2,11':2.5, '3,0':2.5, '3,11':2}
+
+chars.forEach((row,i)=>{
+  const rowDiv = document.createElement('div')
+  rowDiv.style.display = 'flex'
+  row.forEach((key,j)=>{
+    let button;
+    if (key in char2Keys) button = char2Keys[key].html()
+    else{
+      button = document.createElement('button')
+      button.textContent = key
+    }
+    const widthKey = `${i},${j}`
+    if (widthKey in charLengths){
+      const percentSize = buttonWidthPercent*charLengths[widthKey]
+      button.style.flex = `0 0 ${percentSize}%`
+      button.style.maxWidth = `${percentSize*7.35}px`
+    }
+    rowDiv.append(button)
+  })
+  keyboardDiv.append(rowDiv)
+})
+
+function updateKeys(){
+  keys.forEach((k,i)=>{
+    k.setWaveform(wave.value)
+    k.setFrequency(21.827*Math.pow(2,octave.value()+(i+transpose.value()+cents.value()/100)/12))
+    k.setHue(hueSliders[(i+5)%12].value())
+  })
+}
+
+wave.addEventListener('input',updateKeys)
+octave.on('input',updateKeys)
+transpose.on('input',updateKeys)
+cents.on('input',updateKeys)
+hueSliders.forEach(hs=>hs.on('input',updateKeys))
+window.addEventListener('resize',updateKeys)
+window.addEventListener("blur", () => {
+  keys.forEach(k=>k.release()); // your function to stop any held notes
+});
+
+updateKeys()
+
+let pedal = false
+
+document.onkeydown = function (e) {
+  e = e || window.event
+  let key = e.key
+  // console.log(key)
+  if (key+e.location == 'Shift2') return char2Keys['Tab'].press()
+  if (key == ' ') pedal = !pedal
+  if (key in char2Keys) char2Keys[key].press()
+  if (key === 'Tab' || key === ' ') e.preventDefault()
+  if (key === 'CapsLock') {
+    octave.slider.value = Number(octave.slider.value)+1
+    octave.slider.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+document.onkeyup = function (e) {
+  e = e || window.event
+  let key = e.key
+  if (key+e.location == 'Shift2') return char2Keys['Tab'].release()
+  if (key in char2Keys) char2Keys[key].release()
+  if (key === 'CapsLock') {
+    octave.slider.value = Number(octave.slider.value)-1
+    octave.slider.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
+function resumeAudioContext() {
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log('AudioContext resumed');
+    }).catch((error) => {
+      console.error('Failed to resume the AudioContext:', error);
+    });
+  }
+}
+
+document.addEventListener('click', resumeAudioContext);
+document.addEventListener('keydown', resumeAudioContext);
+
+</script>
+</body>
+</html>

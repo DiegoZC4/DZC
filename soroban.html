@@ -1,0 +1,463 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Soroban</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
+  </head>
+<body style="margin:0">
+  <main id="container">
+  <div id="inputs" style="margin-bottom: 10px; width:270px;">
+    <button onclick="reset()">Reset  <span id="zodiac"></span></button>
+    <input type="color" id="on"> On</input>
+    <br>
+    <button onclick="streak.textContent = 0">Streak: <span id="streak">0</span></span></button>
+    <input type="color" id="off"> Off</input>
+    <br>
+    <button id="numbers" onclick="this.textContent=0; rng()">0</button>
+    <button id="stopwatch" style="margin-left:-5px"></button>
+    <div id="buttons"></div>
+  </div>
+  <svg id="svg"></svg>
+  </main>
+<style>
+  :root {
+    --on: red;
+    --off: blue;
+    --blank: white;
+  }
+  svg {
+    touch-action: none;
+    overflow: visible;
+    /* width: 100%;
+    height: 100%; */
+    /* max-width: 100dvw;
+    max-height: calc(100dvh - 210px); */
+    fill: var(--off);
+    stroke:black;
+    stroke-width: .05;
+    
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+  text{
+    text-anchor: middle;
+    dominant-baseline: middle;
+    stroke:none;
+    font-size: .5px;
+    fill:white;
+  }
+  button,input[type="color"]{
+    width:100px;
+    min-height: 40px;
+    vertical-align: middle;
+    margin:0px;
+    background-color: #ddd;
+  }
+  #buttons button{
+    width: 66.4px;
+  }
+  input[type="color"]{margin-left: -5px;}
+  input[type="range"] {width: 157px;}
+  input[type="number"] {width: 30px;}
+  
+  #container {
+    display: flex;
+    height: 100dvh;
+    width: 100dvw;
+    box-sizing: border-box;
+  }
+
+  /* 1. Stacked (controls on top, SVG below) */
+  #container.layout-stacked {
+    flex-direction: column;
+  }
+
+  /* 2. Side-by-side (controls on left, SVG on right) */
+  #container.layout-side-by-side {
+    flex-direction: row;
+  }
+
+  #inputs {
+    /* Prevent the controls from shrinking */
+    flex-shrink: 0;
+    margin-bottom: 0; /* No longer needed */
+  }
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='inputs') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = localStorage.getItem(units) || start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = slider.value
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right' 
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+    this.on('input',()=>localStorage.setItem(units,this.value()))
+  }
+
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+class Column{
+  constructor(x, cols){
+    this.g = svg('g',{transform:`translate(${x},0)`})
+    canvas.append(this.g)
+
+    const place = Math.abs(Math.round((cols-1)/2)-x)
+    this.g.append(svg('rect',{x:0,y:2,height:horizon,width:1,fill:place%3==0?'#888':'#444'}))
+    // column place labels
+    // this.g.append(svg('text',{x:0,y:2,transform:'translate(.5,.6)'},`${place}`))
+        
+    this.topBead = svg('rect',{x:0,y:0, height:1, width:1})
+    this.g.append(this.topBead)
+
+    this.heaven = 0
+    this.earth = 0
+    
+    this.top = svg('rect',{x:0,y:0,width:1,height:2,fill:'transparent'})
+    this.g.append(this.top)
+    this.toggleHeaven = ()=>{
+      const y = (+this.topBead.getAttribute('y')+1)%2
+      this.topBead.setAttribute('y',y)
+      this.topBead.style.fill = `var(--${y?'on':'off'})`
+      this.heaven = y*5
+    }
+    this.top.addEventListener('mousedown',this.toggleHeaven)
+    
+    this.earthControls = []
+    this.bottom = [0,1,2,3,4].map(i=>{
+      const idx = i
+      const bead = svg('rect',{x:0,y:i+2+horizon,width:1,height:1})
+      if (i==0) bead.style.fill = 'transparent'
+      const callback = ()=>{
+        this.earth = idx
+        bead.style.fill = 'transparent'
+        this.bottom.forEach((b,bi)=>{
+          if (bi<idx) b.style.fill='var(--on)'
+          if (bi>idx) b.style.fill='var(--off)'
+        })
+      }
+      bead.addEventListener('mousedown',callback)
+      this.earthControls.push(callback)
+      this.g.append(bead)
+      return bead
+    })
+  }
+  move(i){
+    if (i==0) this.toggleHeaven()
+    if (i>0 && i<6) this.earthControls[i-1]()
+  }
+  value(){return this.heaven+this.earth}
+}
+
+const canvas = document.getElementById('svg')
+const colSlider = new NumSlider(5,15,5,'columns',1)
+colSlider.on('input',reset)
+const digits = new NumSlider(1,6,2,'digits')
+digits.on('input',rng)
+const [plus, minus, times] = ['plus','minus','times'].map(id=>document.getElementById(id))
+const horizon = 0.3
+
+const streak = document.getElementById('streak')
+let columns;
+const controls = ['0ol.;/','8ujmk,','6tgbhn','4edcfv','2qazsx']
+.reduce((acc,curr,col)=>{
+  [...curr].forEach((char,row)=>{
+    acc[char]=[col,row]
+  })
+  return acc
+},{})
+
+const buttonConfigs = [
+  { id: 'plus',  label: '+' },
+  { id: 'minus', label: '-' },
+  { id: 'times', label: 'x' }
+];
+
+function findAnimal(i){
+  animals = [...' 🐀🐂🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖']
+  return animals[Math.min(Math.floor(Math.log2(i)),animals.length-1)]
+}
+
+const btnCont = document.getElementById('buttons');
+const zodiac = document.getElementById('zodiac')
+
+buttonConfigs.forEach(cfg => {
+  const btn = document.createElement('button');
+  btn.id = cfg.id;
+  btn.dataset.label = cfg.label;
+  btn.textContent = cfg.label;
+  btn.style.marginBottom = '5px';
+
+  // Toggle between label and answer
+  btn.addEventListener('click', () => {
+    const hidden = btn.textContent === btn.dataset.label
+    const re = new RegExp(`^0*${Math.abs(btn.dataset.answer)}0*$`);    // only zeros outside the answer block
+    const correct = re.test(cols2String())
+    btn.textContent = hidden && !correct ? btn.dataset.answer : btn.dataset.label;
+    btn.style.backgroundColor = hidden && !correct ? '#fcc': '#ddd'
+    if (correct){
+      total.textContent = btn.dataset.answer
+      const incremented = +streak.textContent + 1
+      streak.textContent = streak.dataset.restart=='true'? 1:incremented
+      zodiac.textContent = findAnimal(incremented)
+      streak.dataset.restart = false
+      rng(false)
+    } else {
+      streak.dataset.restart = true
+    }
+  });
+
+  btnCont.appendChild(btn);
+});
+
+const [onPicker,offPicker] = [document.getElementById('on'),document.getElementById('off')]
+onPicker.value = localStorage.getItem('on') || '#b266ff'
+offPicker.value = localStorage.getItem('off') || '#3100a2'
+saveTheme('on',onPicker.value)
+saveTheme('off',offPicker.value)
+
+onPicker.addEventListener('input', reset);
+offPicker.addEventListener('input', reset);
+
+let prevB;
+
+const total = document.getElementById('numbers')
+const container = document.getElementById('container');
+const inputsDiv = document.getElementById('inputs');
+rng()
+
+function reset(a,b){
+  const colCount = colSlider.value()
+  canvas.innerHTML = ''
+  canvas.setAttribute('viewBox',`0 0 ${colCount} ${7+horizon}`)
+  updateLayout();
+
+  columns = [...Array(colCount).keys()].map(i=>new Column(i,colCount))
+  saveTheme('on',onPicker.value)
+  saveTheme('off',offPicker.value)
+
+  
+  Array.from(btnCont.children).forEach((btn,i)=>{
+    btn.style.backgroundColor = '#ddd'
+    btn.textContent = btn.dataset.label
+  })
+}
+
+function saveTheme(key, value){
+  document.documentElement.style.setProperty(`--${key}`, value);
+  localStorage.setItem(key, value);
+  const el = key === 'on' ? onPicker : offPicker;
+  el.value = value;
+};
+
+function random(){
+  const n = digits.value()
+  const min = Math.pow(10, n - 1);
+  const max = Math.pow(10, n) - 1;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
+function rng(resetFlag=true){
+  if (total.textContent == '0') {
+    total.textContent = random()
+    // streak.textContent = 0
+  }
+  const a = +total.textContent
+  let b;
+  // let i = 0
+  do {
+    b = random();
+    // console.log(i)
+    // i++;
+  } while (b === prevB);
+  prevB = b;
+  Array.from(btnCont.children).forEach((btn,i)=>{
+    btn.dataset.label = `${['+','-','x'][i]} ${b}`
+    btn.dataset.answer = [a+b,a-b,a*b][i]
+    btn.textContent = btn.dataset.label
+    btn.style.backgroundColor = '#ddd'
+  })
+  if (resetFlag) reset()
+}
+
+document.onkeydown = (e)=>{
+  const key = e.key
+  if (key==' ') rng()
+  if (key=='Enter') reveal()
+  if (key=='r') reset()
+  const ansIdx = 'p-='.indexOf(key)
+  if (ansIdx>=0) btnCont.children[ansIdx].click()
+  const [col, row] = controls[key] || [NaN,NaN]
+  if (isNaN(col)) return
+  columns[(colSlider.value()-1)/2-col].move(row)
+}
+
+canvas.addEventListener('touchstart', function(e) {
+  // Loop through all current touches
+  for (const touch of e.changedTouches) {
+    const simulatedEvent = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      screenX: touch.screenX,
+      screenY: touch.screenY,
+      button: 0 // left button
+    });
+
+    touch.target.dispatchEvent(simulatedEvent);
+  }
+
+  // Prevent browser gestures like scrolling or zooming
+  e.preventDefault();
+}, { passive: false });
+
+function cols2String(){
+  return columns.map(c=>c.value()).join('')
+}
+function fitArea(availW, availH, aspect) {
+  if (availW <= 0 || availH <= 0) return 0;
+  const w = Math.min(availW, availH * aspect);
+  const h = w / aspect;
+  return w * h;
+}
+
+function updateLayout() {
+  const aspect = colSlider.value() / (7 + horizon) || 1;
+
+  // Container box minus padding
+  const cs = getComputedStyle(container);
+  const gap  = parseFloat(cs.gap) || 0;
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop)  + parseFloat(cs.paddingBottom);
+  const W = container.clientWidth  - padX;
+  const H = container.clientHeight - padY;
+
+  // 1) Measure STACKED (controls on top)
+  container.classList.add('layout-stacked');
+  container.classList.remove('layout-side-by-side');
+  // Available to SVG when stacked: full width, height minus controls and the vertical gap
+  const stackedArea = fitArea(W, H - inputsDiv.offsetHeight - gap, aspect);
+
+  // 2) Measure SIDE-BY-SIDE (controls on left)
+  container.classList.add('layout-side-by-side');
+  container.classList.remove('layout-stacked');
+  // Available to SVG when side-by-side: width minus controls and the horizontal gap, full height
+  const sideArea = fitArea(W - inputsDiv.offsetWidth - gap, H, aspect);
+
+  // 3) Pick the winner
+  const stackedBetter = stackedArea >= sideArea;
+  container.classList.toggle('layout-stacked', stackedBetter);
+  container.classList.toggle('layout-side-by-side', !stackedBetter);
+}
+
+// Keep your existing calls, but this version gives correct measurements
+window.addEventListener('resize', updateLayout);
+window.addEventListener('load', updateLayout);
+
+// Optional: re-evaluate if the controls change size (e.g., label grows)
+new ResizeObserver(updateLayout).observe(inputsDiv);
+
+
+
+const btn = document.getElementById('stopwatch');
+
+let state = 'idle';   // 'idle' -> 'running' -> 'stopped'
+let startTime = 0;    // ms when started
+let elapsed = 0;      // whole seconds accumulated
+let tick = null;      // interval id
+
+const fmt = (s) => {
+  const m = String(Math.floor(s / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  return `${m}:${sec}`;
+};
+
+// always compute "live" seconds based on startTime + elapsed
+const liveSeconds = () => Math.floor((Date.now() - startTime) / 1000) + elapsed;
+
+const render = () => {
+  btn.style.backgroundColor =
+    state === 'idle'    ? '#ddd' :     // grey
+    state === 'running' ? '#dfd' :     // green
+                          '#fcc';      // red
+  btn.textContent = state === 'running' ? fmt(liveSeconds())
+                                        : fmt(elapsed);
+};
+
+const start = () => {
+  if (state === 'running') return;
+  state = 'running';
+  startTime = Date.now();
+  clearInterval(tick);
+  tick = setInterval(render, 250);  // update a few times/sec; display is floored
+  render();
+};
+
+const stop = () => {
+  if (state !== 'running') return;
+  elapsed = liveSeconds();   // <-- capture BEFORE switching state
+  state = 'stopped';
+  clearInterval(tick);
+  tick = null;
+  render();
+};
+
+const resetClock = () => {
+  state = 'idle';
+  elapsed = 0;
+  clearInterval(tick);
+  tick = null;
+  render();
+};
+
+btn.addEventListener('click', () => {
+  if (state === 'idle') start();
+  else if (state === 'running') stop();
+  else resetClock();
+});
+
+render(); // initial paint
+</script></body></html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Presidents Timeline</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇺🇸</text></svg>">
+  </head>
+<body style="margin:0">
+  <div class="timeline" id="timeline"></div>
+<style>
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+    font-size: min(2.3vw, 20px);
+  }
+  .column{
+    display: flex;
+    flex-direction: column;
+    height:100vh;
+  }
+  .row{
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 8fr;
+    flex-basis: 1em;
+  }
+  .number{
+    text-align: center;
+    border: 2px solid black;
+    border-bottom: none;
+    color:white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-shadow: 0 0 5px black;
+    text-shadow: 0 0 5px black;
+    text-shadow: 0 0 5px black;
+  }
+  .year{
+    text-align: center;
+    border-top:2px solid black;
+  }
+  .name{
+    display: flex;
+    /* justify-content: center; */
+    align-items: center;
+    padding-left: .2em;
+  }
+  .quiz{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid black;
+    font-weight: bold;
+    background: repeating-linear-gradient(
+      45deg,         /* diagonal lines */
+      rgba(0, 255, 0, 0.5),  /* dark stripe */
+      rgba(0, 255, 0, 0.5) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+</style>
+<script>
+
+const log = console.log;
+const {floor, ceil, max, min, sin, cos, PI} = Math;
+
+const timeline = document.getElementById('timeline')
+const party2Color = {
+'Unaffiliated':'gray',
+'Federalist':'black',
+'Democratic-Republican':'purple',
+'Democratic':'#0000ff',
+'Whig':'#f0c862',
+'Republican':'#ff0000'
+}
+const eraDividers = [16,32,50] // 44 removed
+
+loadCSV()
+
+async function loadCSV() {
+  try {
+    const response = await fetch('./Presidents.csv');
+    const csvText = await response.text();
+    
+    // Simple CSV parsing - splits by lines, then by commas
+    const lines = csvText.trim().split('\n');
+    const arrayOfArrays = lines.map(line => {
+        // Handle basic CSV parsing (doesn't handle quotes with commas inside)
+        return line.split(',').map(cell => cell.trim());
+    });
+    const fields = arrayOfArrays[0]
+    const objs = arrayOfArrays.slice(1).map((a,ai)=>
+    a.reduce((o,v,i)=>{
+      const f = fields[i]
+      o[f] = parseInt(v) || v || 0
+      // if (f=='Duration') o[f] = max(o[f],fontSize*1.3)
+      return o
+    },{'Number':ai+1}))
+    // log(objs)
+    displayPresidents(objs)
+  } catch (error) {
+    console.error('Error loading CSV:', error);
+    return null;
+  }
+}
+
+function newDiv(className, text, bg, title){
+  const div = document.createElement('div');
+  if (className) div.classList.add(className)
+  if (text) {
+    div.textContent = text
+    div.dataset.text = text
+  }
+  if (bg) {
+    div.style.backgroundColor = bg
+    div.dataset.bg = bg
+  }
+  if (title){ div.title = title}
+  div.dataset.color = div.style.color
+  return div
+}
+
+function displayPresidents(pres){
+  const eras = pres.reduce((acc,p,i)=>{
+    acc[eraDividers.findIndex(d=>i+1<d)].push(p)
+    return acc
+  },Array.from({ length: eraDividers.length}, () => []))
+  const eraLength = eras.map(e=>e.reduce((sum,p)=>sum+(p['Duration']||0),0))
+  // log(eras)
+
+  eras.forEach((e,i)=>{
+    const maxDuration = Math.max(...e.map(p=>p['Duration']))
+    const minDuration = Math.min(...e.map(p=>p['Duration']))
+    const col = newDiv('column')
+    timeline.append(col)
+    e.forEach((p,pi)=>{
+      const row = newDiv('row')
+      col.append(row)
+      row.append(newDiv('year',p['Start']))
+      row.append(newDiv('number',p['Number'],party2Color[p['Party']],p['Party']))
+      row.append(newDiv('name',p['Name']))
+      row.style.flexGrow = (p['Duration']-minDuration)/maxDuration
+    })
+  })
+}
+
+document.onkeydown = (e)=>{
+  const key = e.key
+  if (key=='m') quizName()
+  if (key=='n') quizNumber()
+  if (key=='y') quizYear()
+  if (key=='p') quizParty()
+  if ('a '.includes(key)) reveal()
+}
+
+function allWithClass(className){
+  return document.querySelectorAll(`.${className}`)
+}
+function choose(arr){
+  const chosen = arr[Math.floor(Math.random() * arr.length)]
+  chosen.classList.add('quiz')
+  chosen.textContent = '?'
+  return chosen
+}
+
+function quizName(){
+  reveal()
+  choose(allWithClass('name'))
+}
+function quizNumber(){
+  reveal()
+  const numbers = allWithClass('number')
+  numbers.forEach(n=>n.textContent = '')
+  choose(numbers)
+}
+function quizYear(){
+  reveal()
+  const years = allWithClass('year')
+  years.forEach(n=>n.textContent = '')
+  choose(years)
+}
+function quizParty(){
+  reveal()
+  const parties = allWithClass('number')
+  const chosen = choose(parties)
+  parties.forEach(n=>{
+    n.style.backgroundColor = 'transparent'
+    n.style.color = 'black'
+  })
+}
+
+function reveal(){
+  const divs = document.querySelectorAll('#timeline div:not(.timeline):not(.column):not(.row)');
+  // log(divs.length, divs)
+  divs.forEach(div => {
+    div.classList.remove('quiz');
+    div.textContent = div.dataset.text
+    div.style.backgroundColor = div.dataset.bg
+    div.style.color = div.dataset.color
+  });
+}
+</script></body></html>

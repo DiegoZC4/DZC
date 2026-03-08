@@ -1,0 +1,478 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Heart Balloon</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
+    <script src="poly2tri.min.js"></script>
+    <script src="threeOrbitSTL.min.js"></script>
+    <!-- <script src="OrbitControls.js"></script>
+    <script src="STLExporter.js"></script> -->
+  </head>
+<body>
+  <div id="inputs"></div>
+  <div id="svg"></div>
+  <input type="checkbox" id="wireframe" checked onchange="wireframe()">
+    Wireframe
+  </input>
+  <div id="3d"></div>
+  <button onclick="exportSTL()">Download</button>
+<style>
+  svg {
+    fill: none;
+    stroke: black;
+    stroke-width: 0.1;
+    stroke-linecap: butt;
+    alignment-baseline: middle;
+    text-anchor: middle;
+  }
+</style>
+<script>
+class NumSlider {
+  constructor(min, max, start, units, step=1, sliderLength=200, numberWidth=50) {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    slider.style.width = sliderLength
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    num.style.width = numberWidth
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById('inputs').append(this.label)
+  }
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+
+class CubicBezier{
+  constructor(ctrlPts){this.ctrl = ctrlPts}
+
+  set(ctrlPts){this.ctrl = ctrlPts}
+
+  length(distance=false, deltaTime=0.001){
+    let prev = this.time(0)
+    let length = 0
+    for (let t=deltaTime; t<=1; t+=deltaTime){
+      let next = this.time(t)
+      length+=dist(prev, next)
+      if (distance && length>=distance) return next
+      prev = next
+    }
+    if (distance) return 1
+    return length
+  }
+
+  time(t){
+    const t2coord = (p0,p1,p2,p3)=>
+    (1-t)**3 * p0
+    + 3*(1-t)**2 * t * p1
+    + 3*(1-t) * t**2 * p2
+    + t**3 * p3;
+  
+    const points = [[0,0], ...this.ctrl]
+    return [0,1].map(i=>t2coord(...points.map(p=>p[i])))
+  }
+
+  toString(sign=1){
+    return `c${this.ctrl[0].join(',')}
+    ${sign*this.ctrl[1][0]},${this.ctrl[1][1]}
+    ${sign*this.ctrl[2][0]},${this.ctrl[2][1]}`
+  }
+}
+
+class Point{
+  constructor(x,y,r=0.1){
+    this.svg = svg('circle',{
+      cx:x, 
+      cy:y, 
+      r:0.1, 
+      'stroke-width':0,
+      fill:'black'
+    })
+    verts.append(this.svg)
+  }
+  
+  set(xy){['cx','cy'].map((a,i)=>this.svg.setAttribute(a,xy[i]))}
+
+  coords(){return ['cx','cy'].map(a=>Number(this.svg.getAttribute(a)))}
+
+  dist(p){return dist(this.coords(), p.coords())}
+
+  sub(p){return subtract(this.coords(),p.coords())}
+
+  repel(p,r){return this.sub(p).map(c=>c*r/this.dist(p))}
+
+  toString() {return String(this.coords().map(c=>c.toFixed(2)))}
+}
+
+function createCanvas(w,h,units){
+  return svg('svg', {
+  width: `${w}${units}`,
+  height: `${h}${units}`,
+  viewBox: `0 0 ${w} ${h}`
+});
+}
+
+const canvasSize = 15
+const third = canvasSize/3
+const units = 'cm'
+const canvas = createCanvas(canvasSize,canvasSize*1.2,units)
+document.getElementById('svg').append(canvas)
+const verts = svg('g',{})
+canvas.append(verts)
+
+const radius = new NumSlider(1,4,2,'radius',0.1)
+const tip = new NumSlider(1,4,2.6,'length ratio',0.1)
+const controlOffsetY = new NumSlider(0.1,2,1.2,'control point offset ratio Y',0.1)
+const controlOffsetX = new NumSlider(0,2,0.9,'control point offset ratio X',0.1)
+const midSubdiv = new NumSlider(1,20,6,'midline subdivisions')
+
+radius.on('input',draw)
+tip.on('input',draw)
+controlOffsetY.on('input',draw)
+controlOffsetX.on('input',draw)
+midSubdiv.on('input',draw)
+
+const subtract = (a,b)=>[a[0]-b[0],a[1]-b[1]]
+const dist = (a,b)=>Math.hypot(...subtract(a,b))
+const bezier = new CubicBezier([])
+
+// Setup scene, camera, and renderer
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setClearColor(0x888888);
+renderer.setSize(500, 500);
+document.getElementById('3d').appendChild(renderer.domElement);
+
+// Create geometry (use your BufferGeometry here)
+const geometry = new THREE.BufferGeometry(); // Replace with your heart geometry
+
+// Use MeshBasicMaterial for lightweight wireframe rendering
+const material = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    wireframe: true,
+});
+
+// Create the heart mesh and add to the scene
+const heartMesh = new THREE.Mesh(geometry, material);
+heartMesh.rotation.x = Math.PI;
+scene.add(heartMesh);
+
+// Display vertices using Points
+const vertices = new THREE.Points(
+  geometry,
+  new THREE.PointsMaterial({ color: 0x00ff00, size: 0.1 })
+  );
+vertices.rotation.x = Math.PI;
+scene.add(vertices);
+
+// Set up basic lighting
+const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
+
+// Setup OrbitControls
+const controls = new OrbitControls(camera, renderer.domElement);
+camera.position.set(6, 0, 6);
+controls.update();
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+draw()
+function draw(){
+  // clear
+  for (let i of document.querySelectorAll('circle, path')){
+    i.parentNode.removeChild(i)
+  }
+
+  // svg
+  const [r, l, b, x] = [radius, tip, controlOffsetY, controlOffsetX].map(n=>n.value())
+  const totalHeight = (l+1)*r
+
+  bezier.set([[0,b*r],[(x-2)*r,(l-b)*r],[-2*r,l*r]])
+  const col = [third-r*2, third*2]
+  const rowPitch = totalHeight*1.1
+  const row = [third-totalHeight/2+r]
+  row.push(row[0]+rowPitch)
+  
+  function halfHeart(xStart,sign=1){
+    return `M${xStart},${row[0]}
+    a ${r} ${r} 0 0 ${(sign+1)/2} ${sign*2*r} 0
+    ${bezier.toString(sign)}
+    `
+  }
+  canvas.append(svg('path',{d:[-1,1].map(sign=>
+    halfHeart(col[1],sign)).join(' ')
+    + halfHeart(col[0])}))  
+
+  const halfCirclePerimeter = Math.PI*r
+  const cubicLength = bezier.length()
+
+  // perimeter vertices
+  verts.setAttribute('transform',`translate(${col[0]} ${row[1]})`)
+
+  let perimeterVertices = []
+
+  const midline = midSubdiv.value()
+  for (let i=0; i<=midline; i++){
+    perimeterVertices.push([0, totalHeight-r-i*l*r/midline])
+  }
+  
+  const halfHeartPathLength = halfCirclePerimeter + cubicLength
+  const vertexPitch = halfHeartPathLength / Math.round(halfHeartPathLength/(l*r/midline))
+
+  const halfCircleCenter = [r, 0]
+  const bezierStart = [r*2, 0]
+
+  for (let i=vertexPitch; i<halfHeartPathLength-0.01; i+=vertexPitch){
+    if (i<halfCirclePerimeter){
+      const theta = i/r
+      perimeterVertices.push([halfCircleCenter[0]-Math.cos(theta)*r, halfCircleCenter[1]-Math.sin(theta)*r])
+    } else {
+      const [x,y] = bezier.length(i-halfCirclePerimeter)
+      perimeterVertices.push([bezierStart[0]+x, bezierStart[1]+y])
+    }
+  }
+
+  const segHeart = [1,-1].map(sign=>{
+    const pts = perimeterVertices.slice(midline)
+    if (sign<0) {
+      pts.push(perimeterVertices[0])
+      pts.reverse()
+      pts.pop()
+    }
+    return pts.map(([x,y],i)=>`
+    ${i || sign<0?'L':'M'} 
+    ${sign*x+third*2},
+    ${y+row[1]}`).join(' ')
+  }).join(' ')+'z'
+  
+  canvas.append(svg('path',{d:segHeart}))
+
+  // console.log(perimeterVertices.map(([x,y])=> String([x.toFixed(2),y.toFixed(2)])))
+  
+  verts.append(svg('path',{d:perimeterVertices.map(([x,y],i)=>`${i?'L':'M'} ${x},${y}`).join(' ')+'z'}))
+  perimeterVertices = perimeterVertices.map(([x,y])=> new Point(x,y))
+  
+  // inner vertices
+  // const area = Math.PI * r**2 / 2 + l*r
+  // const innerVertexCount = parseInt(area/(vertexPitch**4.5))
+  const innerVertexCount = perimeterVertices.length-2
+  const innerVertices = []
+  const dotsPerRow = 4
+  for (let i=0; i<innerVertexCount; i++){
+    innerVertices.push(new Point(
+      r+(i%dotsPerRow)/3,
+      (Math.floor(i/dotsPerRow)/3)
+    ))
+  }
+
+  const allVertices = innerVertices.concat(perimeterVertices)
+  
+  const relax = 1000
+  // const relax = 0
+  for (let r=0; r<relax; r++){
+    innerVertices.forEach((p,i)=>{
+      const near = allVertices.filter((v,j)=> 
+      j!=i && p.dist(v)<vertexPitch)
+      const repulsion = near.map(v=>p.repel(v,vertexPitch))
+      const newPos = repulsion.reduce((acc, v)=>{
+        acc[0]+=v[0]/repulsion.length/10
+        acc[1]+=v[1]/repulsion.length/10
+        return acc
+      }, p.coords())
+      p.set(newPos)
+    })
+  }
+
+  const toPoint = p=> new poly2tri.Point(...p.coords())
+  var swctx = new poly2tri.SweepContext(perimeterVertices.map(toPoint));
+  innerVertices.forEach(p=>swctx.addPoint(toPoint(p)))
+
+  swctx.triangulate()
+
+  const triangles = swctx.getTriangles();
+  const edgePath = triangles.map(function(t) {
+    const vertices = t.getPoints()
+    return vertices.map(function(p,i) {
+      const neighbor = vertices[(i+1)%3]
+      return `M${p.x},${p.y} L${neighbor.x},${neighbor.y}`
+    }).join(' ');
+  }).join(' ');
+  verts.append(svg('path',{d:edgePath, 'stroke-width':0.03}))
+
+  // console.log(perimeterVertices.map(p=>p.coords()))
+  const edgeVerts = perimeterVertices.slice(midline)
+  edgeVerts.push(perimeterVertices[0])
+  // console.log(edgeVerts.map(p=>p.coords()))
+  
+  const midlineVerts = perimeterVertices.slice(1,midline)
+  // console.log(midlineVerts.map(p=>p.coords()))
+
+  const perimeterDist = (xy)=>edgeVerts.reduce((acc,p)=>
+  Math.min(acc,Math.round(dist(p.coords(),xy)*100)/100),100)
+  const midlineDist = (xy)=>midlineVerts.reduce((acc,p)=>
+  Math.min(acc,Math.round(dist(p.coords(),xy)*100)/100),100)
+  
+
+  // inflation
+  const epsilon = 0.01
+  const vertices = []
+  const edges = []
+  const faces = []
+  const perim = []
+  const mid = []
+  const inflationFactor = 1.1
+  // const inflationMax = 1.2
+  // const inflationRange = 0.2
+
+  triangles.forEach(t=>{
+    const pts = t.getPoints()
+    const face = pts.map(p=>{
+      p = new THREE.Vector3(p.x,p.y,0)
+      let found = -1
+      vertices.forEach((v,i)=>{
+        if (v.distanceTo(p) < epsilon) found = i
+      })
+      if (found>-1) return found
+      vertices.push(p)
+      found = vertices.length-1
+      if (!perimeterDist([p.x,p.y])) perim.push(found)
+      if (!midlineDist([p.x,p.y])) mid.push(found)
+      return found
+    })
+    
+    faces.push(face)
+    face.forEach((vIdx,i)=>{
+      const edge = [vIdx,face[(i+1)%3]]
+      edge.sort((a,b)=>a-b)
+      // const edgeMidpoint = vertices[edge[0]].clone()
+      // .lerp(vertices[edge[1]], 0.5)
+      // edge.push(perimeterDist([edgeMidpoint.x, edgeMidpoint.y])/r * -inflationRange + inflationMax)
+      edge.push(inflationFactor * vertices[edge[0]].distanceTo(vertices[edge[1]]))
+      let found = -1
+      edges.forEach(([x,y],j)=>{
+        if (x==edge[0] && y==edge[1]) found = j
+      })
+      if (found > -1) return
+      edges.push(edge)
+    })
+  })
+
+  vertices.forEach(v => {
+    // console.log(perimeterDist([v.x, v.y]))
+    v.z = -Math.sqrt(perimeterDist([v.x, v.y]))
+  })
+  
+  const steps  = 40
+  let maxShift = 0
+  for (let i=0; i<steps; i++){
+    maxShift = 0
+    vertices.forEach((v,i)=>{
+      if (perim.includes(i)) return
+      const neighbors = edges
+      .filter(e => e[0]==i || e[1]==i)
+      .map(e => [vertices[e[0]!=i ? e[0]: e[1]], e[2]])
+
+      const meanProj = neighbors
+      .map(([n,r]) => v.clone().sub(n).setLength(r).add(n))
+      .reduce((acc, proj) => 
+        acc.add(proj.divideScalar(neighbors.length)), 
+        new THREE.Vector3())
+      
+      maxShift = Math.max(v.distanceTo(meanProj), maxShift)
+      v.lerp(meanProj,0.5)
+      if (mid.includes(i)) v.x=0
+    })
+    // console.log(maxShift)
+  }
+  // console.log([faces, edges, vertices, perim, mid].map(a=>a.length))
+  
+  const balloonTris = 
+  [[1,1],[-1,1],
+  [1,-1],[-1,-1]]
+  .map(([signX,signZ])=>faces.map(f=>{
+    const pts = f.map(i=>vertices[i])
+    if (signZ*signX>0) pts.reverse()
+    return pts.map(p=>
+    [p.x*signX,p.y,p.z*signZ]
+  )}
+  )).flat(2)
+  // // 3 dims/pt, 3 pts/tri, 4 copies/tri
+  // console.log(faces.map(verts=>verts.map(v=>vertices[v].toArray())).flat())
+  // console.log(balloonTris)
+  geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(balloonTris.flat()), 3 ) );
+}
+
+function wireframe(){material.wireframe = !material.wireframe}
+
+const exporter = new STLExporter();
+
+// Configure export options
+const options = { binary: true }
+
+// Parse the input and generate the STL encoded output
+const result = exporter.parse( heartMesh, options );
+
+function exportSTL() {
+  const options = { binary: true };
+  const result = exporter.parse(heartMesh, options);
+
+  // Create a Blob for the result and trigger download
+  const blob = new Blob([result], { type: options.binary ? 'application/octet-stream' : 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'heartMesh.stl';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+</script></body></html>

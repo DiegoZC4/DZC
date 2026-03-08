@@ -1,0 +1,137 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Shave</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪒</text></svg>">
+  </head>
+<body>
+  <svg id="svg">
+    <defs>
+      <filter id="scar" x="0" y="0" width="100%" height="100%">
+        <!-- Generate fractal noise -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" seed="1"/>
+        <!-- Displace the source graphic using the masked noise -->
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+  <br>
+  <button onclick="downloadSVG()">Download</button>
+<style>
+  svg {
+    fill: none;
+    stroke: black;
+    stroke-width: 0.1;
+    stroke-linecap: butt;
+    alignment-baseline: middle;
+    text-anchor: middle;
+  }
+  input[type="range"] {width: 200px;}
+  input[type="number"] {width: 50px;}
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+const h = 10
+const w = h*3
+// const w = h*Math.sqrt(3)
+const u = 'cm'
+const canvas = document.getElementById('svg')
+
+canvas.setAttribute('width',  w+u)
+canvas.setAttribute('height', h+u)
+canvas.setAttribute('viewBox',`0 0 ${w} ${h}`)
+canvas.style.fill = 'none'
+canvas.style.stroke = 'black'
+canvas.style.strokeWidth = h/100
+
+const frameW =  w/3
+
+const border = 0.2
+canvas.append(svg('rect',{x:border/2, y:border/2, width:w-border, height:h-border, 'stroke-width':border}))
+canvas.append(svg('rect',{x:frameW, y:0, width:frameW, height:h, 'stroke-width':0.2}))
+
+const mirrorAngle  = Math.PI/25
+const mirrorWidth  = frameW * 0.45
+const mirrorHeight = h*0.8
+const mirrorOffset = [frameW/2, (h-mirrorHeight)/4]
+
+const beardWidth = h*0.3
+const hairHeight = h*0.15
+const beardHeight = h*0.3
+const beardTop = h*0.08
+
+const scars = [
+  // right
+  [3.2,5.5,-0.6,1],
+  [3.7,5.4,-0.6,1],
+  [4.2,5.2,-0.6,0.9],
+  // left
+  [1.3,5.4,0.5,1.1],
+  [1,5.2,0.4,1],
+  [0.7,5,0.4,1]
+]
+
+for (let x=0; x<3; x++){
+  canvas.append(svg('path',{d:`M${x*frameW+mirrorOffset[0]},${mirrorOffset[1]}
+  v${mirrorHeight}
+  l${mirrorWidth},${mirrorWidth * Math.sin(mirrorAngle)}
+  v${-mirrorHeight}
+  z
+  `}))
+
+  const [cx, cy] = [x*frameW+frameW/2, mirrorOffset[1] + frameW/2.5]
+  for (let reflection of [-1,1]){
+    canvas.append(svg('ellipse',{cx:cx+reflection*frameW/4, cy:cy, rx:frameW/5, ry:frameW/4}))
+    if (x<2) canvas.append(svg('path',{d:`
+      M${cx+reflection*frameW/4-frameW/5},${cy}
+      q0,${beardHeight} ${h/5},${beardHeight}
+      q${h/5},0 ${h/5},${-beardHeight}
+    ${reflection > 0 ? 
+      `q0,${beardTop} ${-h/5},${beardTop}
+      q${-h/5},0 ${-h/5},${-beardTop}`:
+      `a${frameW/5},${frameW/4} 0,1,1 ${-frameW/5*2},0`
+    }
+    `, 
+    fill:'black', 
+    // stroke:'red'
+    }))
+
+  }
+  canvas.append(...[-1,1].map(i=>svg('circle',{
+    cx:cx+frameW/4+i*h/15-h/40, cy:cy-h/30, r:h/100, fill:'black'})))
+  canvas.append(svg('path',{d:`M${cx+frameW/4-h/15},${cy+h/8} h1
+  `, stroke: x<2 ? 'white': 'black'}))
+  
+  if (x==2){
+  // if (true){
+    scars.forEach(([x,y,dx,dy])=>
+    canvas.append(svg('path',{d:`M${cx+x},${y} l${dx},${dy}`,  
+    stroke:'red', 
+    // fill:"url(#scarGradient)",
+    filter:"url(#scar)",
+    'stroke-width':0.05
+    })))
+  }
+}
+
+const razorX = h*1.84
+const razorW = h/40
+const shaveLength = h/20
+const razorY = h/2 + shaveLength + 0.05
+const razorThick = 0.2
+canvas.append(svg('rect',{x:razorX, y:h/2, width:razorW, height:shaveLength, fill:'white', stroke:'white'}))
+canvas.append(svg('rect',{x:razorX-razorW/2, y:razorY, width:razorW*2, height:razorThick, stroke:'white', 'stroke-width':h/200}))
+canvas.append(svg('rect',{x:razorX+razorW/2-razorThick/2, y:razorY+razorThick/2, width:razorThick, height:0.8, stroke:'white', 'stroke-width':h/200, fill:'black'}))
+
+function downloadSVG() {
+  var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "shave.svg";document.body.append(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+}
+</script></body></html>

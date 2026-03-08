@@ -1,0 +1,135 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>ZC</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👪</text></svg>">
+  </head>
+<body>
+  <svg id="svg" width="20cm" height="20cm" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="jagged" x="-25%" y="-25%" width="150%" height="150%">
+        <feTurbulence
+          type="turbulence"
+          baseFrequency="1"
+          numOctaves="2"
+          seed="1"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          scale="0.5"
+        />
+      </filter>
+      <filter id="jagged" x="0%" y="0%" width="100%" height="100%">
+        <!-- Very subtle displacement for edges -->
+        <feTurbulence 
+          type="turbulence" 
+          baseFrequency="2"
+          numOctaves="2" 
+          seed="1" 
+        />
+        <feDisplacementMap 
+          in="SourceGraphic"
+          scale="0.8"
+        />
+      </filter>
+      <filter id="rock">
+        <feTurbulence type="fractalNoise" baseFrequency="2" numOctaves="4" seed="0"/>
+
+        <feComponentTransfer>
+          <feFuncA type="gamma" amplitude="1" exponent="0.5" offset="0.2"/>
+        </feComponentTransfer>
+
+        <feComposite in="SourceGraphic" operator="in" x="0%" y="0%" width="100%" height="100%" result="composite"/>
+      </filter>
+    </defs>
+  </svg>
+  <button onclick="downloadSVG()">Download</button>
+<style>
+  svg {
+    fill: none;
+    stroke: black;
+    stroke-width: 0.1;
+    stroke-linecap: butt;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    font-size: 3px;
+  }
+</style>
+<script>
+function svg(tagName, attrs, textContent) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  for (var key in attrs) el.setAttribute(key, attrs[key]);
+  if (textContent) el.textContent = textContent;
+  return el;
+}
+
+const canvasSize = 20
+const mid = canvasSize/2
+const canvasUnits = 'cm'
+const canvas = document.getElementById('svg')
+
+const eggHeight = mid/2
+const eggPosition = mid*1.7
+const [eggWide, eggThin] = [eggHeight/1.5,eggHeight/3]
+
+let ground = mid+eggHeight/2
+
+const yesPos = mid/10
+const r = mid/6
+const Vlength = 3*r
+const curveProp = 0.5*Vlength
+canvas.append(svg('path',{d:`
+  M${yesPos},${ground}
+  c${curveProp},${0}
+  ${Vlength-curveProp},${-2*r}
+  ${Vlength},${-2*r}
+  a ${r} ${r} 0 0 1 ${0} ${2*r}
+  z
+`,
+fill:'darkgrey',
+filter: 'url(#rock)'
+}))
+canvas.append(svg('text',{x:yesPos+r*2.8,y:ground-r,stroke:'none',fill:'black','font-size':1},'Yes'))
+
+const noPos = yesPos+Vlength+2.5*r
+canvas.append(svg('path',{d:`
+  M${noPos},${ground}
+  a ${r} ${r} 0 0 1 ${0} ${-2*r}
+  c${curveProp},${0}
+  ${Vlength-curveProp},${2*r}
+  ${Vlength},${2*r}
+  z
+  `,
+  fill:'DimGray',
+  filter: 'url(#rock)'
+}))
+canvas.append(svg('text',{x:noPos+r*0.2,y:ground-r,stroke:'none',fill:'black','font-size':1},'No'))
+
+ground+=0.2
+
+canvas.append(svg('path',{d:`
+  M${eggPosition},${ground} 
+  c${-eggWide},0 
+  ${-eggThin},${-eggHeight}
+  0,${-eggHeight}
+  c${eggThin},0 
+  ${eggWide},${eggHeight}
+  0,${eggHeight}
+  M0,${ground} h${canvasSize}`
+}))
+canvas.append(svg('path',{d:
+  `M${eggPosition-eggThin/4},${ground-eggHeight*0.7}
+  l${eggWide/2},${-eggThin/3}`,
+  filter:'url(#jagged)'
+}))
+
+canvas.append(svg('text',{x:eggPosition,y:mid+eggThin/2,fill:'black'},'?'))
+
+// canvas.append(svg('circle',{cx:3,cy:3,r:2,fill:'grey',filter: 'url(#rock)'}))
+
+function downloadSVG() {
+  var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
+  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "score.svg";document.body.appendChild(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
+}
+</script></body></html>

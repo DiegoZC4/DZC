@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text/Image Converter</title>
+</head>
+<body>
+    <h1>Text to Image / Image to Text Converter</h1>
+    <input type="file" id="fileInput" accept=".png, .md, .txt" />
+    <br><br>
+    <div id="displayArea"></div>
+    <br><br>
+    <button id="downloadButton" style="display:none">Download Converted File</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        // Function to handle the file upload and conversion
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const displayArea = document.getElementById('displayArea');
+            const downloadButton = document.getElementById('downloadButton');
+            displayArea.innerHTML = ''; // Clear the display area
+            downloadButton.style.display = 'none'; // Hide download button initially
+
+            if (file.type === 'text/plain' || !file.type) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const text = e.target.result;
+                    displayText(text); // Show text in textarea
+                    convertTextToImage(text); // Convert text to image and allow download
+                };
+                reader.readAsText(file);
+            } else if (file.type === 'image/png') {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function () {
+                        convertImageToText(img); // Convert image to text once it is loaded
+                    };
+                    displayArea.appendChild(img); // Display the image
+                };
+                reader.readAsDataURL(file);
+            } else {
+                console.log(file)
+                alert('Please upload either a PNG image or a text file.');
+            }
+        }
+
+        // Display text in a textarea
+        function displayText(text) {
+            const displayArea = document.getElementById('displayArea');
+            const textarea = document.createElement('textarea');
+            textarea.rows = 20;
+            textarea.cols = 60;
+            textarea.value = text;
+            displayArea.appendChild(textarea);
+        }
+
+        // Convert text to an image and allow download
+        function convertTextToImage(text) {
+            const asciiValues = [...text].map(c => c.charCodeAt(0));
+            const imgSize = Math.ceil(Math.sqrt(asciiValues.length / 3));
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = imgSize;
+            canvas.height = imgSize;
+            const imageData = ctx.createImageData(imgSize, imgSize);
+            let i = 0;
+
+            for (let y = 0; y < imgSize; y++) {
+                for (let x = 0; x < imgSize; x++) {
+                    const r = asciiValues[i++] || 0;
+                    const g = asciiValues[i++] || 0;
+                    const b = asciiValues[i++] || 0;
+                    const index = (y * imgSize + x) * 4;
+                    imageData.data[index] = r;
+                    imageData.data[index + 1] = g;
+                    imageData.data[index + 2] = b;
+                    imageData.data[index + 3] = 255; // Alpha channel
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // Display the image and add a download button
+            const img = new Image();
+            img.src = dataUrl;
+            const displayArea = document.getElementById('displayArea');
+            displayArea.appendChild(img);
+
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.style.display = 'inline';
+            downloadButton.onclick = function () {
+                downloadFile(dataUrl, 'converted_image.png');
+            };
+        }
+
+        // Convert image to text and allow download
+        function convertImageToText(image) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            // console.log(image)
+            ctx.drawImage(image, 0, 0);  // Draw the image onto the canvas
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const asciiValues = [];
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                if (r !== 0) asciiValues.push(r);
+                if (g !== 0) asciiValues.push(g);
+                if (b !== 0) asciiValues.push(b);
+            }
+
+            const text = asciiValues.map(val => String.fromCharCode(val)).join('');
+            displayText(text);
+
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.style.display = 'inline';
+            downloadButton.onclick = function () {
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                downloadFile(url, 'converted_text.txt');
+            };
+        }
+
+        // Download file
+        function downloadFile(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Seam Carving</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪡</text></svg>">
+  </head>
+<style>
+  canvas{left: 0; top: 0; display: block;}
+</style>
+<body>
+  <label for="load">Load Image</label>
+  <input type="file" id="load" accept="image/*">
+  <p>
+    Remove
+    <button id="minVS">Lowest Energy</button>
+    <button id="maxVS">Highest Energy</button>
+    Vertical Seam
+  </p>
+  <p>
+    Remove
+    <button id="minHS">Lowest Energy</button>
+    <button id="maxHS">Highest Energy</button>
+    Horizontal Seam
+  </p>
+  <p>
+    <input id="seamToggle" type="checkbox" checked onchange="toggleSeams()"></input>
+    Show Seams
+  </p>
+  <div id="canvases"></div>
+<script>
+const file = document.getElementById('load')
+const canvasDiv = document.getElementById('canvases')
+
+const canvases = Array.from({length:7}).map(i=>createCanvas())
+const content = canvases.map(c=>c[0])
+const seams = canvases.map(c=>c[1])
+
+file.addEventListener('change', (event) => {
+  const file = event.target.files[0]; // Get the selected file
+  if (!file) return
+  const reader = new FileReader();
+
+  // When the file is loaded, set the image source
+  reader.onload = e=>loadImage(e.target.result)
+
+  reader.readAsDataURL(file); // Read the file as a Data URL
+});
+
+let original, gray, sobel;
+let minVS, minHS, maxVS, maxHS;
+
+function loadImage(file){
+  const img = new Image();
+  img.src = file;
+
+  img.onload = () => {
+    original = img
+    W = img.width
+    H = img.height
+    seamCarve()
+  };
+}
+
+loadImage('balloons_small.jpg')
+// loadImage('EY.jpg')
+// loadImage('pixel_art.png')
+
+let [W,H] = [0,0]
+
+function Grayscale(canvas){
+  const { width, height, data } = canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0, canvas.width, canvas.height);
+  const grayscale = new Float32Array(width * height);
+  
+  // Convert to grayscale (brightness)
+  for (let i = 0; i < data.length; i += 4) {
+    const brightness = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    // const brightness = (data[i]+data[i + 1]+data[i + 2])/3;
+    grayscale[i / 4] = brightness;
+  }
+  return grayscale
+}
+
+function Sobel(gray) {
+  const [width, height] = [W,H]
+  const sobel = new Float32Array(width * height);
+
+  // Sobel kernels
+  const Gx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+  const Gy = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+  let maxEnergy = 0
+  let minEnergy = 255
+
+  // Compute gradients
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let gx = 0, gy = 0;
+
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const pixel = gray[(y + ky) * width + (x + kx)];
+          const kernelIdx = (ky + 1) * 3 + (kx + 1);
+          gx += pixel * Gx[kernelIdx];
+          gy += pixel * Gy[kernelIdx];
+        }
+      }
+      // normalize to 255
+      const energy = Math.sqrt(gx ** 2 + gy ** 2)//*0.2236;
+      // maxEnergy = Math.max(energy, maxEnergy)
+      // minEnergy = Math.min(energy, minEnergy)
+      const idx = (y * width + x);
+      sobel[idx] = energy;
+    }
+  }
+  // console.log(maxEnergy, minEnergy)  
+  return sobel
+}
+
+function energyFlow(sobel, vertical=true, min=true){
+  let [width, height] = vertical ? [W,H]: [H,W]
+
+  const minEnergy = new Float32Array(width * height);
+  // let maxEnergy = 0
+
+  for (let y = height-1; y >= 0; y--) {
+    for (let x = 0; x < width; x++) {
+      const idx = (vertical ? y*width+x: x*height+y);
+      if (y==height-1) {
+        minEnergy[idx] = sobel[idx]
+        continue
+      }
+      const LN = lowerNeighborIndices(idx,vertical).map(i=>minEnergy[i])
+      minEnergy[idx] = sobel[idx] + (min ? 
+      Math.min(...LN): 
+      Math.max(...LN))
+
+      // maxEnergy = Math.max(minEnergy[idx], maxEnergy)
+    }
+  }
+  // console.log(maxEnergy)
+  return minEnergy
+}
+
+function drawGray(gray, canvas) {
+  // Create an ImageData object
+  const ctx = canvas.getContext('2d',{willReadFrequently:true})
+  const imageData = ctx.createImageData(W,H);
+
+  const max = gray.reduce((acc,e)=>Math.max(acc,e),0)
+
+  // Fill the ImageData object with grayscale values
+  for (let i = 0; i < gray.length; i++) {
+    const grayValue = gray[i]/max*255;
+    const pixelIndex = i * 4; // Each pixel has 4 values (R, G, B, A)
+    imageData.data[pixelIndex] = grayValue;       // Red
+    imageData.data[pixelIndex + 1] = grayValue;   // Green
+    imageData.data[pixelIndex + 2] = grayValue;   // Blue
+    imageData.data[pixelIndex + 3] = 255;         // Alpha
+  }
+
+  // Draw the ImageData onto the canvas
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function findSeam(data, vertical=true, min=true){
+  let [width, height] = vertical ? [W,H]: [H,W]
+  const firstRow = vertical ? data.slice(0,width): data.filter((e, i) => i % height == 0);
+  const path = [firstRow.reduce((maxIdx, val, idx, arr) => (min ? val < arr[maxIdx]: val > arr[maxIdx]) ? idx : maxIdx, 0)*(vertical ? 1: W)]
+  // if (!vertical && min){
+  //   console.log(path)
+  // }
+  for (x=1; x<height; x++){
+    const LN = lowerNeighborIndices(path[path.length-1], vertical)
+    LN.sort((a,b)=>min ? data[a]-data[b]: data[b]-data[a])
+    path.push(LN[0])
+  }
+  return path
+}
+
+function lowerNeighborIndices(idx, vertical=true){
+  const next = (vertical ? Math.floor(idx/W): idx%W) + 1
+  return [1,0,-1]
+  .map(i=>idx + (vertical ? W+i: 1+W*i))
+  .filter(x=>(vertical ? Math.floor(x/W): x%W)==next && x<W*H && x>=0)
+}
+
+function drawSeam(path, canvas, min=true){
+  // Create an ImageData object
+  const ctx = canvas.getContext('2d', {willReadFrequently:true})
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  // Fill the ImageData object with grayscale values
+  path.forEach(idx=>{
+    const pixelIndex = idx * 4; // Each pixel has 4 values (R, G, B, A)
+    imageData.data[pixelIndex] = min ? 255: 0;     // Red
+    imageData.data[pixelIndex + 1] = min ? 0: 255;   // Green
+    imageData.data[pixelIndex + 2] = 0;   // Blue
+    imageData.data[pixelIndex + 3] = 255; // Alpha
+  })
+
+  // Draw the ImageData onto the canvas
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function createCanvas(){
+  const div = document.createElement('div')
+  div.style.position = "relative"
+  div.style.display = "inline-block"
+  const back = document.createElement('canvas')
+  back.style.zIndex = 0
+  const front = document.createElement('canvas')
+  front.style.position = "absolute"
+  front.style.zIndex = 1
+  div.append(back)
+  div.append(front)
+  canvasDiv.append(div)
+  return [back,front]
+}
+
+const seamToggle = document.getElementById('seamToggle')
+
+document.onkeydown = e => {
+  if ('vsc'.indexOf(e.key) > -1) {
+    seamToggle.checked = !seamToggle.checked
+    toggleSeams()
+  }
+}
+
+function toggleSeams(){
+  const show = seamToggle.checked
+  seams.forEach(s=>{
+    s.style.visibility = show ? 'visible':'hidden'
+  })
+}
+
+function findAllSeams(sobel){
+  const minEV = energyFlow(sobel)
+  drawGray(minEV, content[3])
+  const minEH = energyFlow(sobel, false)
+  drawGray(minEH, content[4])
+  
+  const maxEV = energyFlow(sobel, true, false)
+  drawGray(maxEV, content[5])
+  const maxEH = energyFlow(sobel, false, false)
+  drawGray(maxEH, content[6])
+
+  minVS = findSeam(minEV)
+  minHS = findSeam(minEH,false)
+  maxVS = findSeam(maxEV, true, false)
+  maxHS = findSeam(maxEH,false,false)
+  id2Seam = {
+  'minVS':minVS,
+  'maxVS':maxVS,
+  'minHS':minHS,
+  'maxHS':maxHS
+  }
+  // console.log(minHS)//.map(x=>x%W))
+  seams.forEach((s,i)=>{
+    s.getContext('2d',{willReadFrequently:true}).clearRect(0,0,s.width, s.height)
+    if (i!=3 && i!=5) {
+      drawSeam(minHS,s)
+      drawSeam(maxHS,s,false)
+    }
+    if (i!=4 && i!=6) {
+      drawSeam(minVS,s)
+      drawSeam(maxVS,s,false)
+    }
+  })
+}
+
+function seamCarve(seam, vertical=true){
+  if (!seam){
+    canvases.forEach(([back,front])=>{
+      back.width = W
+      back.height = H
+      front.width = W
+      front.height = H
+    })
+    content[0].getContext('2d',{willReadFrequently:true}).drawImage(original, 0, 0);
+  
+    gray = Grayscale(content[0])
+    drawGray(gray, content[1])
+  
+    sobel = Sobel(gray)
+    drawGray(sobel, content[2])
+  
+    findAllSeams(sobel)
+    return
+  }
+  [gray,sobel] = [gray,sobel].map(array=>{
+    const carved = new Float32Array(array.length - seam.length);
+    let seamIdx = 0
+    if (vertical){
+      for (let i=0; i<array.length; i++){
+        if (seam[seamIdx] == i){
+          seamIdx++
+          continue
+        }
+        carved[i-seamIdx] = array[i]
+      }
+    } else {
+      for (let col=0; col<W; col++){
+        let found = 0
+        for (let row=0; row<H; row++){
+          let idx = row*W+col
+          if (seam[seamIdx]==idx){
+            found = 1
+            seamIdx++
+            continue
+          }
+          carved[idx-found*W] = array[idx]
+        }
+      }
+    }
+    return carved
+  })
+  
+  const ctx = content[0].getContext('2d', {willReadFrequently: true})
+  const old = ctx.getImageData(0,0,W,H);
+  const imageData = ctx.createImageData(W-(vertical?1:0), H-(vertical?0:1));
+  let seamIdx = 0
+  if (vertical){
+    for (let i=0; i<W*H; i++){
+      if (seam[seamIdx] == i){
+        seamIdx++
+        continue
+      }
+      const rgbaIdx = (i-seamIdx)*4
+      for (let channel=0; channel<4; channel++)
+      imageData.data[rgbaIdx+channel] = old.data[i*4+channel]
+    }
+  } else {
+    for (let col=0; col<W; col++){
+      let found = 0
+      for (let row=0; row<H; row++){
+        let idx = row*W+col
+        if (seam[seamIdx]==idx){
+          found = 1
+          seamIdx++
+          continue
+        }
+        const rgbaIdxO = idx*4
+        const rgbaIdxN = (idx-found*W)*4
+        for (let channel=0; channel<4; channel++)
+        imageData.data[rgbaIdxN+channel] = old.data[rgbaIdxO+channel]
+      }
+    }
+  }
+
+  if (seam==minVS || seam==maxVS) {W--} else {H--}
+  if (seam==maxHS || seam==maxVS) {sobel = Sobel(gray)}
+
+  // console.log(W,H, gray.length, sobel.length)
+  canvases.forEach(([back,front])=>{
+    back.width = W
+    back.height = H
+    front.width = W
+    front.height = H
+  })
+  drawGray(gray, content[1])  
+  drawGray(sobel, content[2])
+  findAllSeams(sobel)
+  
+  ctx.putImageData(imageData, 0, 0);
+}
+
+[...document.getElementsByTagName('button')].forEach(b=>{
+  b.addEventListener('mouseup', stopRepeat)
+  b.addEventListener('mouseleave', stopRepeat)
+  b.addEventListener('mousedown',e=>removeSeam(e))
+})
+
+let repeatInterval; // To store the interval ID
+let id2Seam = {}
+
+// Start the repeat action
+function removeSeam(e){
+  const id = e.target.id
+  const vertical = id.indexOf('V') > -1
+  // console.log(id, id2Seam[id])
+  seamCarve(id2Seam[id], vertical)
+
+  // Set up a repeating interval
+  repeatInterval = setInterval(() => {
+    seamCarve(id2Seam[id], vertical);
+  }, 0);
+}
+
+// Stop the repeat action
+function stopRepeat() {
+  clearInterval(repeatInterval);
+}
+</script></body></html>

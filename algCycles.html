@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Alg Cycles</title>
   <style>
-    :root {
-      --bg: #0f1115;
+pllControls { margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+:root {
+controls { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  --bg: #0f1115;
       --panel: rgba(15,23,42,.95);
       --border: #334155;
       --text: #e2e8f0;
@@ -18,11 +20,10 @@
     #title { font-weight: 700; }
     #hint { margin-top: 4px; color: var(--muted); font-size: 12px; }
     #controls { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .toggleHint { margin-left: 4px; align-self: center; font-size: 12px; color: var(--muted); white-space: nowrap; }
     button { background: #111827; color: var(--text); border: 1px solid #475569; border-radius: 6px; padding: 4px 8px; cursor: pointer; font: inherit; }
     #spreadRow { margin-top: 8px; font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
     #spreadRange { width: 100%; }
-    #focusFollowRow { margin-top: 8px; font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
-    #focusFollowRange { width: 100%; }
     #filterGrid { margin-top: 8px; display: grid; grid-template-columns: repeat(4, minmax(80px, 1fr)); gap: 6px; font-size: 12px; }
     .it { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
     .it input { margin: 0; }
@@ -51,16 +52,12 @@
     <div id="controls">
       <button id="allBtn" type="button">All</button>
       <button id="noneBtn" type="button">None</button>
+      <span class="toggleHint">Enter key to toggle</span>
     </div>
     <div id="spreadRow">
       <span>Spread</span>
       <input id="spreadRange" type="range" min="0.6" max="8" step="0.05" value="4" />
       <span id="spreadValue">4.00x</span>
-    </div>
-    <div id="focusFollowRow">
-      <span>Focus Follow</span>
-      <input id="focusFollowRange" type="range" min="300" max="2600" step="50" value="1100" />
-      <span id="focusFollowValue">1100ms</span>
     </div>
     <div id="filterGrid"></div>
   </aside>
@@ -73,6 +70,7 @@
       <div id="pllControls">
         <button id="pllAllBtn" type="button">All</button>
         <button id="pllNoneBtn" type="button">None</button>
+        <span class="toggleHint">Enter key to toggle</span>
       </div>
       <div id="pllFilterGrid"></div>
     </aside>
@@ -825,7 +823,28 @@
       if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
       return a.localeCompare(b);
     });
-    const selected = new Set(allWeights);
+    const OLL_SELECTED_KEY = 'algCycles.ollSelected.v1';
+    const PLL_SELECTED_KEY = 'algCycles.pllSelected.v1';
+
+    function loadSelectionSet(key, allowedValues) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return new Set(allowedValues);
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set(allowedValues);
+        const allowed = new Set(allowedValues);
+        const out = parsed.filter(v => allowed.has(v));
+        return new Set(out);
+      } catch {
+        return new Set(allowedValues);
+      }
+    }
+
+    function saveSelectionSet(key, setObj) {
+      localStorage.setItem(key, JSON.stringify([...setObj]));
+    }
+
+    const selected = loadSelectionSet(OLL_SELECTED_KEY, allWeights);
 
     const UI_TAB_KEY = 'algCycles.activeTab.v1';
     let activeTab = 'OLL';
@@ -835,7 +854,7 @@
     const pllCyclesText = document.getElementById('pllCyclesText');
     const pllFilterGrid = document.getElementById('pllFilterGrid');
     const pllCaseKeys = Object.keys(PLL_CYCLES?.cycles || {}).sort((a, b) => String(a).localeCompare(String(b)));
-    const pllSelected = new Set(pllCaseKeys);
+    const pllSelected = loadSelectionSet(PLL_SELECTED_KEY, pllCaseKeys);
     const pllCaseByLower = new Map(pllCaseKeys.map(k => [k.toLowerCase(), k]));
 
     function setActiveTab(tabName) {
@@ -993,7 +1012,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
     }
 
     function schedulePllSmoothFocus() {
-      const followMs = Number(focusFollowRange.value || 1100);
+      const followMs = 1100;
       pllFocusUntilTs = performance.now() + followMs;
       if (pllFocusRaf) return;
       const step = (ts) => {
@@ -1041,6 +1060,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
         chk.checked = pllSelected.has(k);
         chk.addEventListener('change', () => {
           if (chk.checked) pllSelected.add(k); else pllSelected.delete(k);
+          saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
           renderPllGraph2d();
           schedulePllSmoothFocus();
         });
@@ -1056,6 +1076,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
       const key = pllCaseByLower.get(String(name || '').toLowerCase());
       if (!key) return false;
       if (pllSelected.has(key)) pllSelected.delete(key); else pllSelected.add(key);
+      saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
       renderPllChecks();
       renderPllGraph2d();
       schedulePllSmoothFocus();
@@ -1295,8 +1316,6 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
 
     const spreadRange = document.getElementById('spreadRange');
     const spreadValue = document.getElementById('spreadValue');
-    const focusFollowRange = document.getElementById('focusFollowRange');
-    const focusFollowValue = document.getElementById('focusFollowValue');
 
 
 
@@ -1343,8 +1362,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
     let focusLastTs = 0;
     let focusUntilTs = 0;
     function scheduleSmoothFocus() {
-      const followMs = Number(focusFollowRange.value || 1100);
-      focusFollowValue.textContent = `${Math.round(followMs)}ms`;
+      const followMs = 1100;
       focusUntilTs = performance.now() + followMs;
       if (focusRaf) return;
       const step = (ts) => {
@@ -1389,6 +1407,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
       const key = weightByIndex.get(index);
       if (!key) return false;
       if (selected.has(key)) selected.delete(key); else selected.add(key);
+      saveSelectionSet(OLL_SELECTED_KEY, selected);
       renderChecks();
       rebuild();
       scheduleSmoothFocus();
@@ -1404,7 +1423,6 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
       Graph.d3VelocityDecay(0.22);
       Graph.numDimensions(3);
       spreadValue.textContent = `${spread.toFixed(2)}x`;
-      focusFollowValue.textContent = `${Math.round(Number(focusFollowRange.value || 1100))}ms`;
     };
 
     const grid = document.getElementById('filterGrid');
@@ -1418,6 +1436,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
         chk.checked = selected.has(w);
         chk.addEventListener('change', () => {
           if (chk.checked) selected.add(w); else selected.delete(w);
+          saveSelectionSet(OLL_SELECTED_KEY, selected);
           rebuild();
           scheduleSmoothFocus();
         });
@@ -1432,6 +1451,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
     document.getElementById('allBtn').addEventListener('click', () => {
       selected.clear();
       allWeights.forEach(w => selected.add(w));
+      saveSelectionSet(OLL_SELECTED_KEY, selected);
       renderChecks();
       rebuild();
       scheduleSmoothFocus();
@@ -1439,22 +1459,24 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
 
     document.getElementById('noneBtn').addEventListener('click', () => {
       selected.clear();
+      saveSelectionSet(OLL_SELECTED_KEY, selected);
       renderChecks();
       rebuild();
     });
     document.getElementById('pllAllBtn').addEventListener('click', () => {
       pllSelected.clear();
       pllCaseKeys.forEach(k => pllSelected.add(k));
+      saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
       renderPllChecks();
       renderPllGraph2d();
     });
     document.getElementById('pllNoneBtn').addEventListener('click', () => {
       pllSelected.clear();
+      saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
       renderPllChecks();
       renderPllGraph2d();
     });
     spreadRange.addEventListener('input', rebuild);
-    focusFollowRange.addEventListener('input', rebuild);
     let digitBuffer = '';
     let digitTimer = null;
     let pllNameBuffer = '';
@@ -1487,6 +1509,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
           const noneOn = pllSelected.size === 0;
           pllSelected.clear();
           if (noneOn) pllCaseKeys.forEach(k => pllSelected.add(k));
+          saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
           renderPllChecks();
           renderPllGraph2d();
           return;
@@ -1536,6 +1559,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
         const noneOn = selected.size === 0;
         selected.clear();
         if (noneOn) allWeights.forEach(w => selected.add(w));
+        saveSelectionSet(OLL_SELECTED_KEY, selected);
         renderChecks();
         rebuild();
         if (noneOn) scheduleSmoothFocus();
@@ -1559,6 +1583,8 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
       }
     });
 
+    saveSelectionSet(OLL_SELECTED_KEY, selected);
+    saveSelectionSet(PLL_SELECTED_KEY, pllSelected);
     renderChecks();
     rebuild();
     setActiveTab(initialTab);

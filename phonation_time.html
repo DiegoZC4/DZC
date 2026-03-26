@@ -366,7 +366,7 @@ function initWheel(){
     e.preventDefault();
     if(!yView)yView={min:currentYMIN,max:currentYMAX};
     const range=yView.max-yView.min;
-    if(e.shiftKey){
+    if(e.ctrlKey){
       const center=(yView.min+yView.max)/2;
       const factor=e.deltaY>0?1.12:1/1.12;
       const newHalf=Math.max(15,range/2*factor);

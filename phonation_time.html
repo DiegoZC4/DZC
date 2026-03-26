@@ -9,13 +9,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 h1{font-size:17px;font-weight:600;margin-bottom:3px;color:#f0f6fc}
 .sub{font-size:11px;color:#7d8590;margin-bottom:14px;line-height:1.6}
 .sub b{color:#9ca3af}
-#ctrl{display:flex;align-items:center;gap:20px;margin-bottom:12px;padding:10px 16px;background:#161b22;border:1px solid #21262d;border-radius:8px;flex-wrap:wrap}
-.sg{display:flex;align-items:center;gap:8px}
-.sg label{font-size:11px;color:#7d8590;white-space:nowrap}
-input[type=range]{width:220px;accent-color:#7c3aed;cursor:pointer}
-#tv{font-size:13px;font-weight:700;color:#a78bfa;min-width:58px}
-#tn{font-size:11px}
-.exact{color:#3fb950}.approx{color:#d29922}
 /* ── two-column layout ── */
 #main-cols{display:flex;gap:22px;align-items:flex-start}
 #left-col{flex:none}
@@ -59,18 +52,9 @@ svg text{user-select:none}
 <h1>Cross-Linguistic Phonation Time — Coupé et al. 2019</h1>
 <p class="sub">
 170 speakers · 17 languages · Each dot = one speaker ranked fastest→slowest within language.<br>
-Y-axis: <b>total phonation time across all recorded texts (s)</b>, pauses ≥ threshold removed. E-brackets: mean ± 1 SD.<br>
+Y-axis: <b>total phonation time across all recorded texts (s)</b>, pauses ≥ 150 ms removed (paper's method). E-brackets: mean ± 1 SD.<br>
 <b style="color:#d29922">⚠ Incomplete (DEU/ENG/ITA)</b> used a split design — each speaker recorded only a subset of the 15 texts, so per-speaker totals are not cross-linguistically comparable.
 </p>
-
-<div id="ctrl">
-  <div class="sg">
-    <label>Pause removal threshold</label>
-    <input type="range" id="thr" min="150" max="1000" step="10" value="150">
-    <span id="tv">150 ms</span>
-    <span id="tn"></span>
-  </div>
-</div>
 
 <div id="main-cols">
   <div id="left-col">
@@ -96,7 +80,7 @@ Y-axis: <b>total phonation time across all recorded texts (s)</b>, pauses ≥ th
   <div id="right-col">
     <div class="sp-box">
       <div class="sp-title">Cross-language comparison</div>
-      <div class="sp-sub">Complete languages only · updates with threshold</div>
+      <div class="sp-sub">Complete languages only · pauses ≥ 150 ms removed</div>
       <div id="sp-global" class="sp-global"></div>
       <table id="sp-table">
         <thead><tr>
@@ -140,20 +124,11 @@ const COLORS=(()=>{
   return c;
 })();
 
-let tMs=150;
-
 // ── Data helpers ─────────────────────────────────────────────────────────────
-function adjTotal(texts,t){
-  let s=0;
-  for(const x of texts){
-    if(t<=150){s+=x.p;}
-    else{const f=1-Math.exp(-(t-150)/500);s+=x.p+(x.d-x.p)*f;}
-  }
-  return s;
-}
+function spkTotal(texts){return texts.reduce((s,x)=>s+x.p,0);}
 function byLang(){
   const m={};for(const l of Object.keys(LANG_FULL))m[l]=[];
-  for(const s of RAW)if(m[s.lang])m[s.lang].push({v:adjTotal(s.texts,tMs),id:s.id});
+  for(const s of RAW)if(m[s.lang])m[s.lang].push({v:spkTotal(s.texts),id:s.id});
   for(const l of Object.keys(LANG_FULL))m[l].sort((a,b)=>a.v-b.v);
   return m;
 }
@@ -343,22 +318,10 @@ function buildLegend(){
   refreshGrpBtns();
 }
 
-// ── Slider ───────────────────────────────────────────────────────────────────
-const sl=document.getElementById('thr');
-function updSlider(){
-  tMs=+sl.value;
-  document.getElementById('tv').textContent=`${tMs} ms`;
-  const tn=document.getElementById('tn');
-  if(tMs===150){tn.textContent='✓ exact recorded value';tn.className='exact';}
-  else{tn.textContent='~ approx: exponentially restoring pauses toward unfiltered duration';tn.className='approx';}
-  render();
-  computeStats();
-  renderStats();
-}
-sl.addEventListener('input',updSlider);
-
 buildLegend();
-updSlider();
+render();
+computeStats();
+renderStats();
 </script>
 </body>
 </html>

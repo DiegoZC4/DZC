@@ -1,345 +1,1404 @@
-<html>
-<head><title>Perfect Pitch</title><meta charset="UTF-8"/>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦻</text></svg>">
-</head>
-<body>
-<p>Press (Space) to hear a random tone in the chosen range.</p>
-<p>Press the corresponding piano key to get points.</p>
-  <div id="inputs"></div>
-  <label id="wavelabel"> Waveform </label>
-  <select id="wave"></select><p></p>
-  <h3>Value: <span id="value">100</span></h3>
-  <h3>Score: <span id="score">0</span></h3>
-  <div id="keyboard"></div><p></p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Perfect Pitch</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%91%82%3C/text%3E%3C/svg%3E" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #10151f;
+        --panel: #192334;
+        --text: #ecf4ff;
+        --muted: #9ab0cf;
+        --line: #2d3f59;
+      }
+      * { box-sizing: border-box; }
+      html {
+        color-scheme: dark;
+        forced-color-adjust: none;
+      }
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+        background: radial-gradient(circle at 20% 5%, #243553, var(--bg));
+        color: var(--text);
+        forced-color-adjust: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      main.app {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        gap: 14px;
+      }
+      .panel {
+        background: linear-gradient(165deg, #182437, var(--panel));
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .sidebar {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+        display: grid;
+        gap: 18px;
+      }
+      .settings-panel summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      h1, p { margin-top: 0; }
+      p { color: var(--muted); }
+      .sidebar-controls {
+        display: grid;
+        gap: 12px;
+      }
+      button, input, select {
+        border-radius: 8px;
+        border: 1px solid #365276;
+        background: #101d2d;
+        color: var(--text);
+        padding: 8px 10px;
+      }
+      button { cursor: pointer; }
+      label {
+        display: grid;
+        gap: 5px;
+        color: var(--muted);
+        min-width: 0;
+      }
+      label input[type="range"] {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+      .label-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+      }
+      .label-row span {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .inline-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .inline-toggle input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+      }
+      .pill-toggle {
+        display: grid;
+        gap: 6px;
+      }
+      .pill-toggle-group {
+        position: relative;
+        display: inline-grid;
+        grid-auto-flow: column;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 999px;
+        background: #101d2d;
+        border: 1px solid #365276;
+      }
+      .pill-thumb {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        left: 4px;
+        width: calc(50% - 6px);
+        border-radius: 999px;
+        background: #f2f5fa;
+        transition: transform 180ms ease;
+        pointer-events: none;
+      }
+      .pill-toggle-group[data-active="right"] .pill-thumb {
+        transform: translateX(100%);
+      }
+      .pill-option {
+        position: relative;
+        z-index: 1;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted);
+        padding: 8px 12px;
+        font: inherit;
+        transition: color 180ms ease;
+      }
+      .pill-option.is-active {
+        color: #11161d;
+      }
+      #pitchWheel {
+        width: 100%;
+        max-width: 620px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        overflow: visible;
+      }
+      .range-panel {
+        margin-top: 14px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(10, 18, 28, 0.5);
+      }
+      .range-panel summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      #rangePiano {
+        width: 100%;
+        height: 140px;
+        border-radius: 6px;
+        background: #10141d;
+        border: 1px solid #2b3f5c;
+      }
+      .piano-key {
+        cursor: pointer;
+      }
+      .piano-key:hover {
+        fill: #ffd84d !important;
+      }
+      .piano-label {
+        fill: #000;
+        font-size: 12px;
+        font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      }
+      .main-column {
+        display: grid;
+        gap: 14px;
+      }
+      .mobile-inline-row {
+        display: grid;
+        gap: 12px;
+      }
+      .mobile-range-picker {
+        display: none;
+      }
+      .range-wheel-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .range-wheel {
+        display: grid;
+        gap: 6px;
+      }
+      .range-wheel-scroller {
+        position: relative;
+        height: 180px;
+        border-radius: 10px;
+        border: 1px solid #365276;
+        background: linear-gradient(180deg, rgba(16,29,45,0.96), rgba(12,20,31,0.96));
+        overflow: hidden;
+      }
+      .range-wheel-list {
+        height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 72px 0;
+        scroll-behavior: smooth;
+        mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 18%, rgba(0,0,0,1) 36%, rgba(0,0,0,1) 64%, rgba(0,0,0,0.88) 82%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 18%, rgba(0,0,0,1) 36%, rgba(0,0,0,1) 64%, rgba(0,0,0,0.88) 82%, transparent 100%);
+      }
+      .range-wheel-list::-webkit-scrollbar {
+        display: none;
+      }
+      .range-wheel-item {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        scroll-snap-align: center;
+        color: rgba(17,25,39,0.68);
+        font-size: 0.98rem;
+        letter-spacing: 0.01em;
+        transition: color 120ms linear, transform 120ms linear, opacity 120ms linear, background-color 120ms linear, border-color 120ms linear;
+        background: #f4f6f9;
+        border-bottom: 2px solid rgba(148, 163, 184, 0.42);
+      }
+      .range-wheel-item.is-black {
+        background: #141a22;
+        color: rgba(236,244,255,0.64);
+        border-bottom: 2px solid rgba(115, 130, 150, 0.38);
+      }
+      .range-wheel-item.is-selected {
+        color: #ffffff;
+      }
+      .range-wheel-item.is-selected:not(.is-black) {
+        color: #10151f;
+      }
+      .range-wheel-selection {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 70px;
+        height: 40px;
+        border: 3px solid #6d4aff;
+        border-radius: 0;
+        background: rgba(255,255,255,0.05);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+        pointer-events: none;
+      }
+      @media (max-width: 1000px) {
+        main.app { grid-template-columns: 1fr; }
+        .sidebar { position: static; }
+      }
+      @media (max-width: 700px) {
+        main.app {
+          padding: 12px;
+          gap: 10px;
+        }
+        .sidebar {
+          width: 100%;
+          gap: 10px;
+        }
+        .sidebar > header {
+          display: none;
+        }
+        .main-column .panel {
+          background: transparent;
+          border: 0;
+          padding: 0;
+        }
+        .mobile-inline-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: start;
+        }
+        .desktop-range {
+          display: none;
+        }
+        .mobile-range-picker {
+          display: block;
+        }
+        .mobile-hide {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <aside class="panel sidebar">
+        <header>
+          <h1>Perfect Pitch</h1>
+          <p>Standalone perfect pitch trainer with local practice logs.</p>
+        </header>
+        <details id="settingsPanel" class="settings-panel" open>
+          <summary>Settings</summary>
+          <section class="sidebar-controls">
+            <div class="mobile-inline-row">
+              <label>
+                <span class="label-row"><span>Waveform</span></span>
+                <select id="waveformSelect">
+                  <option value="sine">Sine</option>
+                  <option value="square">Square</option>
+                  <option value="sawtooth">Sawtooth</option>
+                  <option value="triangle">Triangle</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-row"><span>Leniency</span><span id="leniencyValue">(1)</span></span>
+                <input id="leniencyInput" type="range" min="1" max="5" step="1" value="1" />
+              </label>
+            </div>
+            <label>
+              <span class="label-row"><span>Gain</span><span id="gainValue">(20)</span></span>
+              <input id="gainInput" type="range" min="0.02" max="0.7" step="0.01" value="0.2" />
+            </label>
+            <label class="inline-toggle mobile-hide">
+              <span>Show shortcuts</span>
+              <input id="showShortcutsInput" type="checkbox" checked />
+            </label>
+            <label class="inline-toggle">
+              <span>Play</span>
+            </label>
+            <div class="pill-toggle">
+              <div class="pill-toggle-group" role="tablist" aria-label="Play mode">
+                <span class="pill-thumb" aria-hidden="true"></span>
+                <button id="playModePressBtn" class="pill-option" type="button">On Press</button>
+                <button id="playModeContinuousBtn" class="pill-option" type="button">Continuous</button>
+              </div>
+            </div>
+            <label class="inline-toggle">
+              <span>Score</span>
+              <button id="downloadCsvBtn" type="button">Download CSV</button>
+            </label>
+            <div class="pill-toggle">
+              <div class="pill-toggle-group" role="tablist" aria-label="Score mode">
+                <span class="pill-thumb" aria-hidden="true"></span>
+                <button id="scoreModeTodayBtn" class="pill-option" type="button">Today</button>
+                <button id="scoreModeAllBtn" class="pill-option" type="button">All Time</button>
+              </div>
+            </div>
+            <label class="inline-toggle mobile-hide">
+              <span>Play Continuously</span>
+              <input id="playContinuouslyInput" type="checkbox" />
+            </label>
+            <label class="inline-toggle mobile-hide">
+              <span>Today Only Score</span>
+              <input id="todayOnlyScoreInput" type="checkbox" checked />
+            </label>
+            <label class="inline-toggle mobile-hide">
+              <span>Equal Loudness</span>
+              <input id="equalLoudnessInput" type="checkbox" checked />
+            </label>
+            <section class="mobile-range-picker">
+              <div class="range-wheel-grid">
+                <label class="range-wheel">
+                  <span>Range Start</span>
+                  <div class="range-wheel-scroller">
+                    <div id="rangeStartWheel" class="range-wheel-list"></div>
+                    <div class="range-wheel-selection"></div>
+                  </div>
+                </label>
+                <label class="range-wheel">
+                  <span>Range End</span>
+                  <div class="range-wheel-scroller">
+                    <div id="rangeEndWheel" class="range-wheel-list"></div>
+                    <div class="range-wheel-selection"></div>
+                  </div>
+                </label>
+              </div>
+            </section>
+          </section>
+        </details>
+      </aside>
 
-<style>
-  button {
-  flex: 0 0 6.8%;
-  text-align: center;
-  height:50px;
-  overflow-wrap: anywhere;
-  max-width:50px;
-  }
-  input[type="range"] {width: 50%;}
-  input[type="number"] {width: 50px;}
-</style>
-<script>
+      <div class="main-column">
+        <section class="panel">
+          <svg id="pitchWheel" viewBox="32 32 556 556" aria-label="Pitch wheel"></svg>
+          <details id="rangePanel" class="range-panel desktop-range">
+            <summary>Range <span id="rangeText">F3-C6</span></summary>
+            <svg id="rangePiano" viewBox="0 0 1040 140" preserveAspectRatio="none"></svg>
+          </details>
+        </section>
+      </div>
+    </main>
 
-class NumSlider {
-  constructor(min, max, start, units, step=1, parent='inputs') {
-    this.min = min
-    this.max = max
+    <script>
+      const NOTE_NAMES = ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"];
+      const MIDI_NOTE_NAMES = ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"];
+      const START_HUES = [0, 20, 40, 60, 120, 180, 200, 220, 240, 270, 300, 330];
+      const PIANO_MIN_MIDI = 21;
+      const PIANO_MAX_MIDI = 108;
+      const SETTINGS_KEY = "perfect-pitch-settings-v1";
+      const DAILY_LOG_KEY = "perfect-pitch-daily-v1";
 
-    let slider = document.createElement('input')
-    slider.type = 'range'
-    slider.min = min
-    slider.max = max
-    slider.step = step
-    slider.value = start
-    this.slider = slider
-    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
-    
-    let num = document.createElement('input')
-    num.type = 'number'
-    num.value = start
-    num.min = min
-    num.max = max
-    num.step = step
-    num.style.textAlign = 'right'
-    this.num = num
-    this.num.addEventListener('input', () => {
-      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
-      this.num.value = value
-      this.slider.value = value
-    })
+      const PC_SHORTCUTS = {0:"Y",1:"U",2:"I",3:"O",4:"P",5:"[",6:"Tab",7:"Q",8:"W",9:"E",10:"R",11:"T"};
+      const KEY_TO_PC = {KeyY:0, KeyU:1, KeyI:2, KeyO:3, KeyP:4, BracketLeft:5, Tab:6, KeyQ:7, KeyW:8, KeyE:9, KeyR:10, KeyT:11};
 
-    let label = document.createElement('label')
-    label.append(this.slider)
-    label.append(this.num)
-    label.append(document.createTextNode(' ' + units))
-    label.append(document.createElement('br'))
-    this.label = label
+      const wheelSvg = document.getElementById("pitchWheel");
+      const rangePanel = document.getElementById("rangePanel");
+      const rangeText = document.getElementById("rangeText");
+      const rangePiano = document.getElementById("rangePiano");
+      const rangeStartWheel = document.getElementById("rangeStartWheel");
+      const rangeEndWheel = document.getElementById("rangeEndWheel");
+      const RANGE_WHEEL_ITEM_HEIGHT = 36;
+      const waveformSelect = document.getElementById("waveformSelect");
+      const gainInput = document.getElementById("gainInput");
+      const gainValue = document.getElementById("gainValue");
+      const leniencyInput = document.getElementById("leniencyInput");
+      const leniencyValue = document.getElementById("leniencyValue");
+      const showShortcutsInput = document.getElementById("showShortcutsInput");
+      const playContinuouslyInput = document.getElementById("playContinuouslyInput");
+      const todayOnlyScoreInput = document.getElementById("todayOnlyScoreInput");
+      const equalLoudnessInput = document.getElementById("equalLoudnessInput");
+      const playModePressBtn = document.getElementById("playModePressBtn");
+      const playModeContinuousBtn = document.getElementById("playModeContinuousBtn");
+      const scoreModeTodayBtn = document.getElementById("scoreModeTodayBtn");
+      const scoreModeAllBtn = document.getElementById("scoreModeAllBtn");
+      const downloadCsvBtn = document.getElementById("downloadCsvBtn");
 
-    document.getElementById(parent).append(this.label)
-  }
-  value(v) {
-    if (v===undefined) return Number(this.slider.value)
-    this.slider.value = v
-    this.num.value = v
-  }
-  on(event, func) {
-    this.slider.addEventListener(event,func)
-    this.num.addEventListener(event,func)
-  }
-}
+      function defaultWaveformGains() {
+        return { sine: 0.2, square: 0.08, sawtooth: 0.09, triangle: 0.16 };
+      }
 
-const wave = document.getElementById('wave')
-const options = ["sine", "square", "sawtooth", "triangle"]
-options.forEach(optionText => {
-  const option = document.createElement('option');
-  option.value = optionText; // Set value
-  option.textContent = optionText; // Set display text
-  wave.append(option); // Add to the dropdown
-});
-wave.value = 'triangle'
+      function isMobileLayout() {
+        return window.matchMedia("(max-width: 700px)").matches;
+      }
 
-const octave  = new NumSlider(0,  7,  2, 'Register (octave)')
-const volume  = new NumSlider(0,100, 15, 'Volume')
-const low  = new NumSlider(0,42, 7, 'Lowest')
-const high  = new NumSlider(0,42, 24, 'Highest')
+      const state = {
+        pitchClasses: NOTE_NAMES.map((name, pc) => ({ name, pc, active: true, color: `hsl(${START_HUES[pc]}, 92%, 56%)` })),
+        targetPc: null,
+        targetMidi: null,
+        revealed: false,
+        hoveredPc: null,
+        hoveredZone: null,
+        holdActive: false,
+        rangeHoldMidi: null,
+        rangeStartMidi: 53,
+        rangeEndMidi: 84,
+        showShortcuts: true,
+        playContinuously: false,
+        todayOnlyScore: true,
+        equalLoudness: true,
+        waveform: "sine",
+        waveformGains: defaultWaveformGains(),
+        pianoKeyEls: new Map(),
+        perfectPitch: {
+          scoreByDate: {},
+          allowedAttempts: 1,
+          guessCount: 0,
+          feedbackPc: null,
+          feedbackKind: null,
+          awaitingAdvance: false,
+          awaitingRelease: false,
+          releaseTriggerType: null,
+          releaseTriggerCode: null,
+        },
+        rangeWheelSnapTimers: { start: null, end: null },
+      };
 
-const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-const masterGain = audioContext.createGain()
-masterGain.gain.value = volume.value()/100
-masterGain.connect(audioContext.destination)
-volume.on('input', () => {
-  const now = audioContext.currentTime
-  masterGain.gain.cancelScheduledValues(now)
-  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-  masterGain.gain.value = volume.value()/100
-})
+      const audioEngine = {
+        context: null,
+        unlocked: false,
+        promptOsc: null,
+        promptGain: null,
+        promptReadyAt: 0,
+        async ensureContext() {
+          if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
+          let justUnlocked = false;
+          if (this.context.state === "suspended") {
+            await this.context.resume();
+            justUnlocked = true;
+          }
+          if (this.context.state === "running") this.unlocked = true;
+          return justUnlocked;
+        },
+        async ensurePromptVoice() {
+          const justUnlocked = await this.ensureContext();
+          if (this.promptOsc && this.promptGain) return justUnlocked;
+          const now = this.context.currentTime;
+          const startTime = now + (justUnlocked ? 0.03 : 0.01);
+          const osc = this.context.createOscillator();
+          const g = this.context.createGain();
+          osc.type = state.waveform;
+          g.gain.setValueAtTime(0, now);
+          g.gain.setValueAtTime(0, startTime);
+          osc.connect(g);
+          g.connect(this.context.destination);
+          osc.start(startTime);
+          this.promptOsc = osc;
+          this.promptGain = g;
+          this.promptReadyAt = startTime;
+          return justUnlocked;
+        },
+        midiToFreq(midi) {
+          return 440 * 2 ** ((midi - 69) / 12);
+        },
+        async startPrompt(midi, gain) {
+          const justUnlocked = await this.ensurePromptVoice();
+          const now = this.context.currentTime;
+          const startTime = Math.max(now + 0.004, this.promptReadyAt || 0);
+          const attack = justUnlocked ? 0.05 : 0.02;
+          const finalGain = compensatedGain(midi, gain);
+          this.promptOsc.type = state.waveform;
+          this.promptOsc.frequency.cancelScheduledValues(now);
+          this.promptOsc.frequency.setValueAtTime(this.midiToFreq(midi), startTime);
+          this.promptGain.gain.cancelScheduledValues(now);
+          this.promptGain.gain.setValueAtTime(this.promptGain.gain.value, now);
+          this.promptGain.gain.setValueAtTime(0, startTime);
+          this.promptGain.gain.linearRampToValueAtTime(finalGain, startTime + attack);
+        },
+        stopPrompt() {
+          if (!this.context || !this.promptGain) return;
+          const now = this.context.currentTime;
+          this.promptGain.gain.cancelScheduledValues(now);
+          this.promptGain.gain.setValueAtTime(this.promptGain.gain.value, now);
+          this.promptGain.gain.linearRampToValueAtTime(0, now + 0.03);
+        },
+        async startNote(midi, gain) {
+          const justUnlocked = await this.ensureContext();
+          const now = this.context.currentTime;
+          const startDelay = justUnlocked ? 0.02 : 0.003;
+          const attack = justUnlocked ? 0.045 : 0.012;
+          const startTime = now + startDelay;
+          const finalGain = compensatedGain(midi, gain);
+          const osc = this.context.createOscillator();
+          const g = this.context.createGain();
+          osc.type = state.waveform;
+          osc.frequency.setValueAtTime(this.midiToFreq(midi), startTime);
+          g.gain.cancelScheduledValues(now);
+          g.gain.setValueAtTime(0, now);
+          g.gain.setValueAtTime(0, startTime);
+          g.gain.linearRampToValueAtTime(finalGain, startTime + attack);
+          osc.connect(g);
+          g.connect(this.context.destination);
+          osc.start(startTime);
+          return {
+            stop: () => {
+              const t = this.context.currentTime;
+              const releaseStart = Math.max(t, startTime);
+              const currentGain = g.gain.value;
+              g.gain.cancelScheduledValues(t);
+              g.gain.setValueAtTime(currentGain, releaseStart);
+              g.gain.linearRampToValueAtTime(0, releaseStart + 0.03);
+              osc.stop(releaseStart + 0.04);
+            },
+          };
+        },
+        async playForDuration(midi, gain, durationMs) {
+          const handle = await this.startNote(midi, gain);
+          window.setTimeout(() => handle.stop(), durationMs);
+        },
+      };
 
-const upSaturation = '50%'
-const downSaturation = '100%'
-const upLightness = '50%'
-const downLightness = '75%'
-const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
-function freq2Pitch(freq) {
-  const C0 = 16.35; // Frequency of C0
-  const log2C0 = Math.log2(C0); // Correct value for log2 of C0
-  let halfsteps = (Math.log2(freq) - log2C0) * 12;
-  let noteIndex = Math.round(halfsteps) % 12;
-  if (noteIndex < 0) noteIndex += 12; // Handle negative modulus for frequencies below C0
-  let octave = Math.floor((Math.round(halfsteps)) / 12);
-  let cents = Math.round((halfsteps - Math.round(halfsteps)) * 100);
-  return `${pitches[noteIndex]}${octave}${cents ? (cents < 0 ? "" : "+") + cents: ''}`;
-}
+      function yyMmDd(date = new Date()) {
+        return `${String(date.getFullYear()).slice(-2)}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
 
-class Key{
-  constructor(key, freq, hue){
-    this.freq = freq
-    
-    let b = document.createElement('button')
-    b.textContent = key
-    this.button = b
-    this.hue = hue
-    this.setColor()
-    b.addEventListener('mousedown',(e)=>{
-      e.preventDefault()
-      this.press()
-    })
-    b.addEventListener('mouseup',(e)=>{
-      e.preventDefault()
-      this.press(false)
-    })
-    
-    let osc = audioContext.createOscillator()
-    osc.type = wave.value
-    osc.start()
-    this.osc = osc
-    let vol = audioContext.createGain();
-    vol.gain.value = 0
-    osc.connect(vol)
-    vol.connect(masterGain)
-    this.vol = vol
-    this.setFrequency(freq)
-  }
-  html(){return this.button}
-  setFrequency(freq){
-    this.freq = freq
-    this.osc.frequency.value = freq
-    this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)}`
-  }
-  setWaveform(wave){this.osc.type = wave}
-  setHue(hue){
-    this.hue=hue
-    this.setColor()
-  }
-  setColor(down=false, white=false){
-    if (white) {
-      this.button.style.background = 'white'
-      return
-    }
-    this.button.style.background = 
-    `hsl(${this.hue},
-    ${down?downSaturation:upSaturation},
-    ${down? downLightness: upLightness})`
-  }
-  press(down=true){
-    if (this.button.style.background == 'white') return
-    this.setColor(down)
-    this.setGain(down)
-    if (this.callback && down) this.callback()
-  }
-  setGain(g,ramp=0.01){
-    const now = audioContext.currentTime
-    this.vol.gain.cancelScheduledValues(now)
-    this.vol.gain.setValueAtTime(this.vol.gain.value, now);
-    this.vol.gain.linearRampToValueAtTime(g, now+ramp)
-  }
-}
+      function loadDailyLog() {
+        try {
+          const raw = localStorage.getItem(DAILY_LOG_KEY);
+          if (!raw) return {};
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return {};
+          const out = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            if (Array.isArray(v) && v.length >= 2) out[k] = [Number(v[0]) || 0, Number(v[1]) || 0];
+          }
+          return out;
+        } catch (_err) {
+          return {};
+        }
+      }
 
-const keyboardDiv = document.getElementById('keyboard')
-const tabbing = true;
-const keyboardChars = ['Shift',...'azsxdcvgbhnmk,l.;/','Tab',...'1q2we4r5t6yu8i9op-[=]','Backspace','\\']
+      function saveDailyLog() {
+        const serializable = {};
+        for (const [k, v] of Object.entries(state.perfectPitch.scoreByDate)) serializable[k] = [v[0], v[1]];
+        localStorage.setItem(DAILY_LOG_KEY, JSON.stringify(serializable));
+      }
 
-const shiftMap = {
-  '`': '~',
-  '1': '!',
-  '2': '@',
-  '3': '#',
-  '4': '$',
-  '5': '%',
-  '6': '^',
-  '7': '&',
-  '8': '*',
-  '9': '(',
-  '0': ')',
-  '-': '_',
-  '=': '+',
-  '[': '{',
-  ']': '}',
-  '\\': '|',
-  ';': ':',
-  "'": '"',
-  ',': '<',
-  '.': '>',
-  '/': '?',
-};
+      function saveSettings() {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+          rangeStartMidi: state.rangeStartMidi,
+          rangeEndMidi: state.rangeEndMidi,
+          rangePanelOpen: rangePanel ? rangePanel.open : false,
+          showShortcuts: state.showShortcuts,
+          playContinuously: state.playContinuously,
+          todayOnlyScore: state.todayOnlyScore,
+          equalLoudness: state.equalLoudness,
+          waveform: state.waveform,
+          waveformGains: state.waveformGains,
+          leniency: state.perfectPitch.allowedAttempts,
+        }));
+      }
 
-const hues = [0,20,40,60,120,180,200,220,240,270,300,330]
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if (!raw) return;
+          const persisted = JSON.parse(raw);
+          if (Number.isInteger(persisted.rangeStartMidi)) state.rangeStartMidi = clamp(persisted.rangeStartMidi, PIANO_MIN_MIDI, PIANO_MAX_MIDI);
+          if (Number.isInteger(persisted.rangeEndMidi)) state.rangeEndMidi = clamp(persisted.rangeEndMidi, PIANO_MIN_MIDI, PIANO_MAX_MIDI);
+          if (rangePanel && typeof persisted.rangePanelOpen === "boolean") rangePanel.open = persisted.rangePanelOpen;
+          if (typeof persisted.showShortcuts === "boolean") state.showShortcuts = persisted.showShortcuts;
+          if (typeof persisted.playContinuously === "boolean") state.playContinuously = persisted.playContinuously;
+          if (typeof persisted.todayOnlyScore === "boolean") state.todayOnlyScore = persisted.todayOnlyScore;
+          if (typeof persisted.equalLoudness === "boolean") state.equalLoudness = persisted.equalLoudness;
+          if (typeof persisted.waveform === "string" && defaultWaveformGains()[persisted.waveform] !== undefined) state.waveform = persisted.waveform;
+          if (persisted.waveformGains && typeof persisted.waveformGains === "object") {
+            for (const waveform of Object.keys(state.waveformGains)) {
+              const nextGain = Number(persisted.waveformGains[waveform]);
+              if (Number.isFinite(nextGain)) state.waveformGains[waveform] = clamp(nextGain, 0.02, 0.7);
+            }
+          }
+          if (persisted.leniency) state.perfectPitch.allowedAttempts = clamp(Number(persisted.leniency) || 1, 1, 5);
+        } catch (_err) {
+        }
+      }
 
-const char2Keys = {}
-const keys = keyboardChars.map((k,i)=>{
-  let newKey = new Key(k,0,hues[(i+5)%12])
-  char2Keys[k] = newKey
-  char2Keys[k.toUpperCase()] = newKey
-  char2Keys[shiftMap[k]] = newKey
-  return newKey
-})
-char2Keys[' '] = new Key('Space',0)
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
 
-const buttonWidthPercent = 6.8
-const chars = [[...'`1234567890-=','Backspace'],
-['Tab',...'qwertyuiop[]]\\'],
-['Octave',...'asdfghjkl;\'','Enter'],
-['Shift',...'zxcvbnm,./','RShift'],
-[' ']]
-const charLengths = {'0,13':1.5, '1,0':1.5, '2,0':2, '2,12':1.5, '3,0':2.5, '3,11':2, '4,0':14.5}
+      function getPromptGain() {
+        return state.waveformGains[state.waveform] || 0.2;
+      }
 
-chars.forEach((row,i)=>{
-  const rowDiv = document.createElement('div')
-  rowDiv.style.display = 'flex'
-  row.forEach((key,j)=>{
-    let button;
-    if (key in char2Keys) button = char2Keys[key].html()
-    else{
-      button = document.createElement('button')
-      button.textContent = key
-    }
-    const widthKey = `${i},${j}`
-    if (widthKey in charLengths){
-      const percentSize = buttonWidthPercent*charLengths[widthKey]
-      button.style.flex = `0 0 ${percentSize}%`
-      button.style.maxWidth = `${percentSize*7.35}px`
-    }
-    rowDiv.append(button)
-  })
-  keyboardDiv.append(rowDiv)
-})
+      function compensatedGain(midi, baseGain) {
+        if (!state.equalLoudness) return baseGain;
+        const freq = audioEngine.midiToFreq(midi);
+        const octaveOffset = Math.log2(freq / 440);
+        let multiplier = 1;
+        if (octaveOffset < 0) {
+          const depth = -octaveOffset;
+          multiplier *= 1 + Math.min(1.15, depth * 0.28 + depth * depth * 0.06);
+        } else if (octaveOffset > 1.5) {
+          multiplier *= 1 + Math.min(0.18, (octaveOffset - 1.5) * 0.08);
+        }
+        return Math.min(0.95, baseGain * multiplier);
+      }
 
-function updateKeys(){
-  keys.forEach((k,i)=>{
-    if (i<low.value() || i > high.value()){
-      k.setColor(false,true)
-      return
-    }
-    k.setColor()
-    k.setWaveform(wave.value)
-    // F2 = A4 - 52 halfsteps = 440 * 2**(-52/12)
-    k.setFrequency(21.82676*Math.pow(2,octave.value()+i/12))
-    k.callback = ()=>{
-      value = Math.ceil(value/2)
-      document.getElementById('value').innerHTML = value
-      document.getElementById('score').innerHTML = `${score}`///${problems}`
-    }
-  })
+      function syncWaveformGainControl() {
+        gainInput.value = String(getPromptGain());
+        gainValue.textContent = `(${Math.round(getPromptGain() * 100)})`;
+      }
 
-  char2Keys[' '].setWaveform(wave.value)
-  const randKey = keys[Math.floor(Math.random() * (high.value() - low.value() + 1)) + low.value()]
-  randKey.callback = ()=>{
-    score += value
-    updateKeys()
-    value = 100
-    problems++
-    document.getElementById('value').innerHTML = value
-    document.getElementById('score').innerHTML = `${score}`///${problems}`
-  }
-  char2Keys[' '].setFrequency(randKey.freq)
-}
+      function syncControls() {
+        waveformSelect.value = state.waveform;
+        leniencyInput.value = String(state.perfectPitch.allowedAttempts);
+        leniencyValue.textContent = `(${state.perfectPitch.allowedAttempts})`;
+        showShortcutsInput.checked = state.showShortcuts;
+        playContinuouslyInput.checked = state.playContinuously;
+        todayOnlyScoreInput.checked = state.todayOnlyScore;
+        equalLoudnessInput.checked = state.equalLoudness;
+        playModePressBtn.classList.toggle("is-active", !state.playContinuously);
+        playModeContinuousBtn.classList.toggle("is-active", state.playContinuously);
+        scoreModeTodayBtn.classList.toggle("is-active", state.todayOnlyScore);
+        scoreModeAllBtn.classList.toggle("is-active", !state.todayOnlyScore);
+        playModePressBtn.parentElement.dataset.active = state.playContinuously ? "right" : "left";
+        scoreModeTodayBtn.parentElement.dataset.active = state.todayOnlyScore ? "left" : "right";
+        syncWaveformGainControl();
+      }
 
-octave.on('input',updateKeys)
+      function currentScore() {
+        if (state.todayOnlyScore) {
+          return state.perfectPitch.scoreByDate[yyMmDd()] || [0, 0];
+        }
+        let correct = 0;
+        let total = 0;
+        for (const entry of Object.values(state.perfectPitch.scoreByDate)) {
+          correct += entry[0] || 0;
+          total += entry[1] || 0;
+        }
+        return [correct, total];
+      }
 
+      function updateScoreLabel() {
+        const [correct, total] = currentScore();
+        wheelSvg.setAttribute("aria-label", `Pitch wheel. Score ${correct} / ${total}`);
+      }
 
-low.on('input',()=>{
-  if(low.value()>high.value()) high.value(low.value())
-  updateKeys()
-})
-high.on('input',()=>{
-  if(low.value()>high.value()) low.value(high.value())
-  updateKeys()
-})
-wave.addEventListener('input',updateKeys)
+      function midiToName(midi) {
+        return `${MIDI_NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+      }
 
-window.addEventListener('resize',updateKeys)
-window.addEventListener("blur", () => {
-  keys.forEach(k=>k.press(false)); // your function to stop any held notes
-});
+      function updateRangeText() {
+        rangeText.textContent = `${midiToName(state.rangeStartMidi)}-${midiToName(state.rangeEndMidi)}`;
+        syncRangeWheel(rangeStartWheel, state.rangeStartMidi);
+        syncRangeWheel(rangeEndWheel, state.rangeEndMidi);
+      }
 
-updateKeys()
+      function normalizeRangeOrder(changedEnd) {
+        if (state.rangeStartMidi > state.rangeEndMidi) {
+          if (changedEnd === "start") state.rangeEndMidi = state.rangeStartMidi;
+          else state.rangeStartMidi = state.rangeEndMidi;
+        }
+      }
 
-document.onkeydown = e=>keyPress(e)
-document.onkeyup = e=>keyPress(e,false)
+      function applyPianoRangeStyles() {
+        for (const [midi, el] of state.pianoKeyEls.entries()) {
+          const isBlack = [1, 3, 6, 8, 10].includes(midi % 12);
+          let fill = isBlack ? "#121926" : "#f6f8fc";
+          if (midi === state.rangeStartMidi) fill = "#44d18f";
+          else if (midi === state.rangeEndMidi) fill = "#ff7a7a";
+          el.setAttribute("fill", fill);
+        }
+      }
 
-const heldKeys = new Set();
+      function setRangeStart(midi) {
+        state.rangeStartMidi = midi;
+        normalizeRangeOrder("start");
+        updateRangeText();
+        applyPianoRangeStyles();
+        startNewRound();
+        saveSettings();
+      }
 
-function keyPress(e, down=true){
-  e = e || window.event
-  if (down){
-    if (heldKeys.has(e.code)) return
-    else {heldKeys.add(e.code)}
-  }
-  if (!down && heldKeys.has(e.code)) heldKeys.delete(e.code)
-  let key = e.key
+      function setRangeEnd(midi) {
+        state.rangeEndMidi = midi;
+        normalizeRangeOrder("end");
+        updateRangeText();
+        applyPianoRangeStyles();
+        startNewRound();
+        saveSettings();
+      }
 
-  if (key=='Tab' || key==' ') e.preventDefault()
-  if (key === 'CapsLock') {
-    octave.slider.value = Number(octave.slider.value)+(down?1:-1)
-    octave.slider.dispatchEvent(new Event('input', { bubbles: true }));
-  }
+      function buildPianoSvg() {
+        const NS = "http://www.w3.org/2000/svg";
+        rangePiano.innerHTML = "";
+        state.pianoKeyEls.clear();
+        const width = 1040;
+        const whiteW = width / 52;
+        const whiteH = 140;
+        const blackW = whiteW * 0.62;
+        const blackH = 88;
+        const whiteMidis = [];
+        for (let midi = PIANO_MIN_MIDI; midi <= PIANO_MAX_MIDI; midi += 1) if (![1, 3, 6, 8, 10].includes(midi % 12)) whiteMidis.push(midi);
+        const whiteIndexByMidi = new Map();
+        whiteMidis.forEach((midi, idx) => {
+          whiteIndexByMidi.set(midi, idx);
+          const rect = document.createElementNS(NS, "rect");
+          rect.setAttribute("x", String(idx * whiteW));
+          rect.setAttribute("y", "0");
+          rect.setAttribute("width", String(whiteW + 0.2));
+          rect.setAttribute("height", String(whiteH));
+          rect.setAttribute("stroke", "#2b3f5c");
+          rect.setAttribute("stroke-width", "1");
+          rect.setAttribute("class", "piano-key");
+          rect.dataset.midi = String(midi);
+          rangePiano.appendChild(rect);
+          state.pianoKeyEls.set(midi, rect);
+        });
+        for (let midi = PIANO_MIN_MIDI; midi <= PIANO_MAX_MIDI; midi += 1) {
+          if (![1, 3, 6, 8, 10].includes(midi % 12)) continue;
+          const prevIndex = whiteIndexByMidi.get(midi - 1);
+          if (prevIndex === undefined) continue;
+          const rect = document.createElementNS(NS, "rect");
+          rect.setAttribute("x", String((prevIndex + 1) * whiteW - blackW / 2));
+          rect.setAttribute("y", "0");
+          rect.setAttribute("width", String(blackW));
+          rect.setAttribute("height", String(blackH));
+          rect.setAttribute("stroke", "#111927");
+          rect.setAttribute("stroke-width", "1");
+          rect.setAttribute("class", "piano-key");
+          rect.dataset.midi = String(midi);
+          rangePiano.appendChild(rect);
+          state.pianoKeyEls.set(midi, rect);
+        }
+        for (let midi = 24; midi <= 108; midi += 12) {
+          const whiteIndex = whiteIndexByMidi.get(midi);
+          if (whiteIndex === undefined) continue;
+          const text = document.createElementNS(NS, "text");
+          text.setAttribute("x", String(whiteIndex * whiteW + whiteW / 2));
+          text.setAttribute("y", "133");
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("class", "piano-label");
+          text.textContent = `C${Math.floor(midi / 12) - 1}`;
+          rangePiano.appendChild(text);
+        }
+        rangePiano.addEventListener("contextmenu", (event) => event.preventDefault());
+        rangePiano.addEventListener("mousedown", (event) => {
+          const key = event.target.closest(".piano-key");
+          if (!key) return;
+          event.preventDefault();
+          const midi = Number(key.dataset.midi);
+          if (event.button === 2) setRangeEnd(midi);
+          else if (event.button === 0) setRangeStart(midi);
+          else return;
+          startRangeHoldNote(midi).catch(() => {});
+        });
+        updateRangeText();
+        applyPianoRangeStyles();
+      }
 
-  if (key+e.location == 'Shift2') return char2Keys['Tab'].press(down)
+      function buildRangeWheels() {
+        if (!rangeStartWheel || !rangeEndWheel) return;
+        rangeStartWheel.innerHTML = "";
+        rangeEndWheel.innerHTML = "";
+        for (let midi = PIANO_MIN_MIDI; midi <= PIANO_MAX_MIDI; midi += 1) {
+          const startItem = document.createElement("div");
+          startItem.className = "range-wheel-item";
+          if ([1, 3, 6, 8, 10].includes(midi % 12)) startItem.classList.add("is-black");
+          startItem.dataset.midi = String(midi);
+          startItem.textContent = midiToName(midi);
+          rangeStartWheel.appendChild(startItem);
+          const endItem = document.createElement("div");
+          endItem.className = "range-wheel-item";
+          if ([1, 3, 6, 8, 10].includes(midi % 12)) endItem.classList.add("is-black");
+          endItem.dataset.midi = String(midi);
+          endItem.textContent = midiToName(midi);
+          rangeEndWheel.appendChild(endItem);
+        }
+        updateRangeText();
+      }
 
-  if (key in char2Keys) char2Keys[key].press(down)
-}
+      function midiToWheelIndex(midi) {
+        return clamp(midi - PIANO_MIN_MIDI, 0, PIANO_MAX_MIDI - PIANO_MIN_MIDI);
+      }
 
-let score = 0
-let value = 100
-let problems = 0
+      function wheelIndexToMidi(index) {
+        return clamp(PIANO_MIN_MIDI + index, PIANO_MIN_MIDI, PIANO_MAX_MIDI);
+      }
 
-function resumeAudioContext() {
-  if (audioContext.state === 'suspended') {
-    audioContext.resume().then(() => {
-      console.log('AudioContext resumed');
-    }).catch((error) => {
-      console.error('Failed to resume the AudioContext:', error);
-    });
-  }
-}
+      function selectedWheelMidi(wheelEl) {
+        const index = Math.round(wheelEl.scrollTop / RANGE_WHEEL_ITEM_HEIGHT);
+        return wheelIndexToMidi(index);
+      }
 
-document.addEventListener('click', resumeAudioContext);
-document.addEventListener('keydown', resumeAudioContext);
+      function updateWheelSelectionClass(wheelEl, midi) {
+        if (!wheelEl) return;
+        for (const item of wheelEl.children) {
+          item.classList.toggle("is-selected", Number(item.dataset.midi) === midi);
+        }
+      }
 
-</script>
-</body>
+      function syncRangeWheel(wheelEl, midi, immediate = true) {
+        if (!wheelEl) return;
+        const top = midiToWheelIndex(midi) * RANGE_WHEEL_ITEM_HEIGHT;
+        if (immediate) wheelEl.scrollTop = top;
+        else wheelEl.scrollTo({ top, behavior: "smooth" });
+        updateWheelSelectionClass(wheelEl, midi);
+      }
+
+      function snapRangeWheel(which) {
+        const wheelEl = which === "start" ? rangeStartWheel : rangeEndWheel;
+        if (!wheelEl) return;
+        const midi = selectedWheelMidi(wheelEl);
+        if (which === "start") setRangeStart(midi);
+        else setRangeEnd(midi);
+        syncRangeWheel(wheelEl, midi, false);
+      }
+
+      function scheduleRangeWheelSnap(which) {
+        const timerKey = which === "start" ? "start" : "end";
+        if (state.rangeWheelSnapTimers[timerKey]) window.clearTimeout(state.rangeWheelSnapTimers[timerKey]);
+        state.rangeWheelSnapTimers[timerKey] = window.setTimeout(() => {
+          state.rangeWheelSnapTimers[timerKey] = null;
+          snapRangeWheel(which);
+        }, 90);
+      }
+
+      function chooseMidiForPc(pc) {
+        const candidates = [];
+        for (let midi = state.rangeStartMidi; midi <= state.rangeEndMidi; midi += 1) if (midi % 12 === pc) candidates.push(midi);
+        return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+      }
+
+      function activePitchClasses() {
+        return state.pitchClasses.filter((pitch) => pitch.active);
+      }
+
+      function pcsAvailableInRange() {
+        const out = new Set();
+        for (let midi = state.rangeStartMidi; midi <= state.rangeEndMidi; midi += 1) out.add(midi % 12);
+        return out;
+      }
+
+      function hexToRgb(hex) {
+        const value = hex.replace("#", "");
+        return { r: parseInt(value.slice(0, 2), 16), g: parseInt(value.slice(2, 4), 16), b: parseInt(value.slice(4, 6), 16) };
+      }
+
+      function mixColors(colorA, colorB, mixB) {
+        const rgbA = hexToRgb(colorA.startsWith("#") ? colorA : hslToHex(colorA));
+        const rgbB = hexToRgb(colorB.startsWith("#") ? colorB : hslToHex(colorB));
+        const mixA = 1 - mixB;
+        const r = Math.round(rgbA.r * mixA + rgbB.r * mixB).toString(16).padStart(2, "0");
+        const g = Math.round(rgbA.g * mixA + rgbB.g * mixB).toString(16).padStart(2, "0");
+        const b = Math.round(rgbA.b * mixA + rgbB.b * mixB).toString(16).padStart(2, "0");
+        return `#${r}${g}${b}`;
+      }
+
+      function hslToHex(hsl) {
+        const match = /hsl\(([-\d.]+),\s*([-\d.]+)%?,\s*([-\d.]+)%?\)/i.exec(hsl);
+        if (!match) return "#ffffff";
+        let h = Number(match[1]) / 360;
+        const s = Number(match[2]) / 100;
+        const l = Number(match[3]) / 100;
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+          return p;
+        };
+        let r, g, b;
+        if (s === 0) r = g = b = l;
+        else {
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          r = hue2rgb(p, q, h + 1 / 3);
+          g = hue2rgb(p, q, h);
+          b = hue2rgb(p, q, h - 1 / 3);
+        }
+        return `#${Math.round(r * 255).toString(16).padStart(2, "0")}${Math.round(g * 255).toString(16).padStart(2, "0")}${Math.round(b * 255).toString(16).padStart(2, "0")}`;
+      }
+
+      function polarPoint(cx, cy, radius, angle) {
+        return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+      }
+
+      function sectorPath(cx, cy, rInner, rOuter, start, end) {
+        const p1 = polarPoint(cx, cy, rOuter, start);
+        const p2 = polarPoint(cx, cy, rOuter, end);
+        const p3 = polarPoint(cx, cy, rInner, end);
+        const p4 = polarPoint(cx, cy, rInner, start);
+        const large = end - start > Math.PI ? 1 : 0;
+        return `M ${p1.x} ${p1.y} A ${rOuter} ${rOuter} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rInner} ${rInner} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
+      }
+
+      function drawWheel() {
+        const NS = "http://www.w3.org/2000/svg";
+        const cx = 310;
+        const cy = 310;
+        const pitchOuter = 250;
+        const pitchInner = 112;
+        const toggleInner = pitchOuter;
+        const toggleOuter = 270;
+        wheelSvg.innerHTML = "";
+
+        const bg = document.createElementNS(NS, "circle");
+        bg.setAttribute("cx", String(cx));
+        bg.setAttribute("cy", String(cy));
+        bg.setAttribute("r", String(toggleOuter + 2));
+        bg.setAttribute("fill", "#0f1b2a");
+        bg.setAttribute("stroke", "#2d3f59");
+        bg.setAttribute("stroke-width", "1");
+        wheelSvg.appendChild(bg);
+
+        for (let i = 0; i < 12; i += 1) {
+          const start = -Math.PI / 2 + (i * Math.PI * 2) / 12;
+          const end = -Math.PI / 2 + ((i + 1) * Math.PI * 2) / 12;
+          const pitch = state.pitchClasses[i];
+          const mutedColor = mixColors(hslToHex(pitch.color), "#263241", 0.62);
+          const hoverColor = mixColors(hslToHex(pitch.color), "#263241", 0.10);
+          const pitchHovered = state.hoveredPc === i && state.hoveredZone === "pitch";
+          const toggleHovered = state.hoveredPc === i && state.hoveredZone === "toggle";
+          let stroke = "rgba(255,255,255,0.30)";
+          let strokeWidth = "1.5";
+          if (state.perfectPitch.awaitingAdvance && state.targetPc === i) {
+            stroke = "#d4af37";
+            strokeWidth = "5";
+          } else if (state.perfectPitch.feedbackPc === i) {
+            stroke = state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73";
+            strokeWidth = "5";
+          } else if (state.revealed && state.targetPc === i) {
+            stroke = "#ffffff";
+            strokeWidth = "5";
+          }
+
+          const togglePath = document.createElementNS(NS, "path");
+          togglePath.setAttribute("d", sectorPath(cx, cy, toggleInner, toggleOuter, start, end));
+          togglePath.setAttribute("fill", toggleHovered ? "#7c848f" : (pitch.active ? "#f3f6fb" : "#111318"));
+          togglePath.setAttribute("stroke", "rgba(255,255,255,0.38)");
+          togglePath.setAttribute("stroke-width", "1");
+          togglePath.dataset.pc = String(i);
+          togglePath.dataset.zone = "toggle";
+          wheelSvg.appendChild(togglePath);
+
+          const pitchPath = document.createElementNS(NS, "path");
+          pitchPath.setAttribute("d", sectorPath(cx, cy, pitchInner, pitchOuter, start, end));
+          pitchPath.setAttribute("fill", pitch.active ? (pitchHovered ? hoverColor : mutedColor) : "rgba(95,105,120,0.28)");
+          pitchPath.setAttribute("stroke", stroke);
+          pitchPath.setAttribute("stroke-width", strokeWidth);
+          pitchPath.dataset.pc = String(i);
+          pitchPath.dataset.zone = "pitch";
+          wheelSvg.appendChild(pitchPath);
+
+          const angle = (start + end) / 2;
+          const radiusMid = (pitchInner + pitchOuter) / 2;
+          const tx = cx + Math.cos(angle) * radiusMid;
+          const ty = cy + Math.sin(angle) * radiusMid;
+          const mobileLayout = isMobileLayout();
+
+          const nameText = document.createElementNS(NS, "text");
+          nameText.setAttribute("x", String(tx));
+          nameText.setAttribute("y", String(mobileLayout ? ty + 7 : ty - 11));
+          nameText.setAttribute("text-anchor", "middle");
+          nameText.setAttribute("fill", "#ffffff");
+          nameText.setAttribute("font-size", "23");
+          nameText.setAttribute("font-weight", "700");
+          nameText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+          nameText.setAttribute("pointer-events", "none");
+          nameText.textContent = pitch.name;
+          wheelSvg.appendChild(nameText);
+
+          if (state.showShortcuts && !mobileLayout) {
+            const shortcutText = document.createElementNS(NS, "text");
+            shortcutText.setAttribute("x", String(tx));
+            shortcutText.setAttribute("y", String(ty + 13));
+            shortcutText.setAttribute("text-anchor", "middle");
+            shortcutText.setAttribute("fill", "rgba(255,255,255,0.86)");
+            shortcutText.setAttribute("font-size", "13");
+            shortcutText.setAttribute("font-weight", "700");
+            shortcutText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+            shortcutText.setAttribute("pointer-events", "none");
+            shortcutText.textContent = `[${PC_SHORTCUTS[i]}]`;
+            wheelSvg.appendChild(shortcutText);
+          }
+        }
+
+        const centerCircle = document.createElementNS(NS, "circle");
+        centerCircle.setAttribute("cx", String(cx));
+        centerCircle.setAttribute("cy", String(cy));
+        centerCircle.setAttribute("r", String(pitchInner - 2));
+        centerCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+        centerCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+        centerCircle.setAttribute("stroke-width", "2");
+        centerCircle.dataset.centerControl = "true";
+        wheelSvg.appendChild(centerCircle);
+
+        const [correct, total] = currentScore();
+        const scoreText = document.createElementNS(NS, "text");
+        scoreText.setAttribute("x", String(cx));
+        scoreText.setAttribute("y", String(cy + 8));
+        scoreText.setAttribute("text-anchor", "middle");
+        scoreText.setAttribute("fill", "#ffffff");
+        scoreText.setAttribute("font-size", "28");
+        scoreText.setAttribute("font-weight", "700");
+        scoreText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+        scoreText.dataset.centerControl = "true";
+        scoreText.textContent = `${correct} / ${total}`;
+        wheelSvg.appendChild(scoreText);
+
+        updateScoreLabel();
+      }
+
+      function wheelPointToPc(event) {
+        const target = event.target.closest("[data-pc]");
+        if (!target) return null;
+        return { pc: Number(target.dataset.pc), zone: target.dataset.zone };
+      }
+
+      function togglePitchClassActive(pc) {
+        const pitch = state.pitchClasses[pc];
+        pitch.active = !pitch.active;
+        if (!activePitchClasses().length) pitch.active = true;
+        startNewRound();
+        saveSettings();
+      }
+
+      function startNewRound() {
+        stopHoldCurrentNote();
+        const active = activePitchClasses().filter((pitch) => pcsAvailableInRange().has(pitch.pc));
+        if (!active.length) return;
+        const previousPc = state.targetPc;
+        const distinct = previousPc === null ? active : active.filter((pitch) => pitch.pc !== previousPc);
+        const chosenPc = (distinct.length ? distinct : active)[Math.floor(Math.random() * (distinct.length ? distinct : active).length)].pc;
+        const midi = chooseMidiForPc(chosenPc);
+        if (midi === null) return;
+        state.targetPc = chosenPc;
+        state.targetMidi = midi;
+        state.revealed = false;
+        state.perfectPitch.guessCount = 0;
+        state.perfectPitch.feedbackPc = null;
+        state.perfectPitch.feedbackKind = null;
+        state.perfectPitch.awaitingAdvance = false;
+        state.perfectPitch.awaitingRelease = false;
+        state.perfectPitch.releaseTriggerType = null;
+        state.perfectPitch.releaseTriggerCode = null;
+        if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+        drawWheel();
+        saveSettings();
+      }
+
+      function beginAdvanceOnRelease(triggerType, triggerCode) {
+        state.perfectPitch.awaitingRelease = true;
+        state.perfectPitch.releaseTriggerType = triggerType;
+        state.perfectPitch.releaseTriggerCode = triggerCode;
+      }
+
+      function maybeAdvanceOnRelease(triggerType, triggerCode) {
+        if (!state.perfectPitch.awaitingRelease) return;
+        if (state.perfectPitch.releaseTriggerType !== triggerType) return;
+        if (state.perfectPitch.releaseTriggerCode !== triggerCode) return;
+        startNewRound();
+      }
+
+      function updateDailyScore(correct) {
+        const key = yyMmDd();
+        const entry = state.perfectPitch.scoreByDate[key] || [0, 0];
+        entry[1] += 1;
+        if (correct) entry[0] += 1;
+        state.perfectPitch.scoreByDate[key] = entry;
+        saveDailyLog();
+      }
+
+      function handleGuess(pc, triggerType, triggerCode) {
+        if (state.targetPc === null || !state.pitchClasses[pc].active || state.perfectPitch.awaitingRelease) return;
+        if (state.perfectPitch.awaitingAdvance) {
+          if (pc === state.targetPc) {
+            state.perfectPitch.feedbackPc = pc;
+            state.perfectPitch.feedbackKind = "correct";
+            beginAdvanceOnRelease(triggerType, triggerCode);
+            drawWheel();
+          } else {
+            state.perfectPitch.feedbackPc = pc;
+            state.perfectPitch.feedbackKind = "wrong";
+            drawWheel();
+          }
+          return;
+        }
+        if (pc === state.targetPc) {
+          updateDailyScore(true);
+          state.perfectPitch.feedbackPc = pc;
+          state.perfectPitch.feedbackKind = "correct";
+          beginAdvanceOnRelease(triggerType, triggerCode);
+          drawWheel();
+          saveSettings();
+          return;
+        }
+        state.perfectPitch.guessCount += 1;
+        state.perfectPitch.feedbackPc = pc;
+        state.perfectPitch.feedbackKind = "wrong";
+        if (state.perfectPitch.guessCount >= state.perfectPitch.allowedAttempts) {
+          updateDailyScore(false);
+          state.revealed = true;
+          state.perfectPitch.awaitingAdvance = true;
+        }
+        drawWheel();
+        saveSettings();
+      }
+
+      async function startHoldCurrentNote() {
+        if (state.targetMidi === null) return;
+        state.holdActive = true;
+        await audioEngine.startPrompt(state.targetMidi, getPromptGain());
+      }
+
+      function stopHoldCurrentNote() {
+        state.holdActive = false;
+        audioEngine.stopPrompt();
+      }
+
+      async function startRangeHoldNote(midi) {
+        state.rangeHoldMidi = midi;
+        if (state.playContinuously && state.holdActive) stopHoldCurrentNote();
+        state.rangeHoldHandle = await audioEngine.startNote(midi, getPromptGain());
+      }
+
+      function stopRangeHoldNote() {
+        if (state.rangeHoldHandle) state.rangeHoldHandle.stop();
+        state.rangeHoldHandle = null;
+        state.rangeHoldMidi = null;
+      }
+
+      function syncContinuousPlaybackAfterGesture(skipStart = false) {
+        if (!audioEngine.unlocked || skipStart || !state.playContinuously || state.targetMidi === null || state.holdActive) return;
+        startHoldCurrentNote().catch(() => {});
+      }
+
+      function primeAudioOnGesture(skipContinuousStart = false) {
+        audioEngine.ensureContext().then(() => syncContinuousPlaybackAfterGesture(skipContinuousStart)).catch(() => {});
+      }
+
+      function setPlayContinuously(nextValue) {
+        state.playContinuously = nextValue;
+        stopHoldCurrentNote();
+        if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+        syncControls();
+        saveSettings();
+      }
+
+      function setTodayOnlyScore(nextValue) {
+        state.todayOnlyScore = nextValue;
+        syncControls();
+        drawWheel();
+        saveSettings();
+      }
+
+      function downloadDailyCsv() {
+        const rows = [["date", "correct", "total"]];
+        for (const key of Object.keys(state.perfectPitch.scoreByDate).sort()) {
+          const entry = state.perfectPitch.scoreByDate[key];
+          rows.push([key, String(entry[0] || 0), String(entry[1] || 0)]);
+        }
+        const csv = rows.map((row) => row.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `perfect-pitch-daily-${yyMmDd()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      waveformSelect.addEventListener("input", () => {
+        state.waveform = waveformSelect.value;
+        syncWaveformGainControl();
+        if (state.holdActive) startHoldCurrentNote().catch(() => {});
+        if (state.rangeHoldMidi !== null) startRangeHoldNote(state.rangeHoldMidi).catch(() => {});
+        saveSettings();
+      });
+
+      gainInput.addEventListener("input", () => {
+        state.waveformGains[state.waveform] = clamp(Number(gainInput.value) || 0.2, 0.02, 0.7);
+        gainValue.textContent = `(${Math.round(getPromptGain() * 100)})`;
+        if (state.holdActive) startHoldCurrentNote().catch(() => {});
+        if (state.rangeHoldMidi !== null) startRangeHoldNote(state.rangeHoldMidi).catch(() => {});
+        saveSettings();
+      });
+
+      leniencyInput.addEventListener("input", () => {
+        state.perfectPitch.allowedAttempts = clamp(Number(leniencyInput.value) || 1, 1, 5);
+        leniencyValue.textContent = `(${state.perfectPitch.allowedAttempts})`;
+        saveSettings();
+      });
+
+      showShortcutsInput.addEventListener("input", () => {
+        state.showShortcuts = showShortcutsInput.checked;
+        drawWheel();
+        saveSettings();
+      });
+
+      playContinuouslyInput.addEventListener("input", () => {
+        setPlayContinuously(playContinuouslyInput.checked);
+      });
+
+      todayOnlyScoreInput.addEventListener("input", () => {
+        setTodayOnlyScore(todayOnlyScoreInput.checked);
+      });
+
+      equalLoudnessInput.addEventListener("input", () => {
+        state.equalLoudness = equalLoudnessInput.checked;
+        if (state.holdActive) startHoldCurrentNote().catch(() => {});
+        if (state.rangeHoldMidi !== null) startRangeHoldNote(state.rangeHoldMidi).catch(() => {});
+        saveSettings();
+      });
+
+      playModePressBtn.parentElement.addEventListener("click", () => {
+        setPlayContinuously(!state.playContinuously);
+      });
+
+      scoreModeTodayBtn.parentElement.addEventListener("click", () => {
+        setTodayOnlyScore(!state.todayOnlyScore);
+      });
+
+      if (rangePanel) rangePanel.addEventListener("toggle", saveSettings);
+      if (rangeStartWheel) {
+        rangeStartWheel.addEventListener("scroll", () => {
+          updateWheelSelectionClass(rangeStartWheel, selectedWheelMidi(rangeStartWheel));
+          scheduleRangeWheelSnap("start");
+        });
+        rangeStartWheel.addEventListener("pointerup", () => scheduleRangeWheelSnap("start"));
+        rangeStartWheel.addEventListener("touchend", () => scheduleRangeWheelSnap("start"), { passive: true });
+        rangeStartWheel.addEventListener("click", (event) => {
+          const item = event.target.closest(".range-wheel-item");
+          if (!item) return;
+          const midi = Number(item.dataset.midi);
+          setRangeStart(midi);
+          audioEngine.playForDuration(midi, getPromptGain(), 500).catch(() => {});
+          syncRangeWheel(rangeStartWheel, state.rangeStartMidi, false);
+        });
+      }
+      if (rangeEndWheel) {
+        rangeEndWheel.addEventListener("scroll", () => {
+          updateWheelSelectionClass(rangeEndWheel, selectedWheelMidi(rangeEndWheel));
+          scheduleRangeWheelSnap("end");
+        });
+        rangeEndWheel.addEventListener("pointerup", () => scheduleRangeWheelSnap("end"));
+        rangeEndWheel.addEventListener("touchend", () => scheduleRangeWheelSnap("end"), { passive: true });
+        rangeEndWheel.addEventListener("click", (event) => {
+          const item = event.target.closest(".range-wheel-item");
+          if (!item) return;
+          const midi = Number(item.dataset.midi);
+          setRangeEnd(midi);
+          audioEngine.playForDuration(midi, getPromptGain(), 500).catch(() => {});
+          syncRangeWheel(rangeEndWheel, state.rangeEndMidi, false);
+        });
+      }
+      downloadCsvBtn.addEventListener("click", downloadDailyCsv);
+
+      wheelSvg.addEventListener("mousemove", (event) => {
+        const hit = wheelPointToPc(event);
+        const hoveredPc = hit ? hit.pc : null;
+        const hoveredZone = hit ? hit.zone : null;
+        if (hoveredPc !== state.hoveredPc || hoveredZone !== state.hoveredZone) {
+          state.hoveredPc = hoveredPc;
+          state.hoveredZone = hoveredZone;
+          drawWheel();
+        }
+      });
+
+      wheelSvg.addEventListener("mouseleave", () => {
+        state.hoveredPc = null;
+        state.hoveredZone = null;
+        drawWheel();
+      });
+
+      wheelSvg.addEventListener("click", (event) => {
+        const hit = wheelPointToPc(event);
+        if (hit && hit.zone === "toggle") togglePitchClassActive(hit.pc);
+      });
+
+      wheelSvg.addEventListener("pointerdown", (event) => {
+        const centerControl = event.target.closest("[data-center-control]");
+        if (centerControl && isMobileLayout() && !state.playContinuously) {
+          event.preventDefault();
+          startHoldCurrentNote().catch(() => {});
+          return;
+        }
+        const hit = wheelPointToPc(event);
+        if (!hit || hit.zone !== "pitch") return;
+        event.preventDefault();
+        handleGuess(hit.pc, "pointer", String(hit.pc));
+      });
+
+      wheelSvg.addEventListener("pointerup", (event) => {
+        const centerControl = event.target.closest("[data-center-control]");
+        if (centerControl && isMobileLayout() && !state.playContinuously) {
+          event.preventDefault();
+          stopHoldCurrentNote();
+        }
+      });
+
+      wheelSvg.addEventListener("pointercancel", () => {
+        if (isMobileLayout() && !state.playContinuously) stopHoldCurrentNote();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.code === "Space") event.preventDefault();
+        if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+        primeAudioOnGesture(event.code === "Space");
+        if (event.code === "Space") {
+          if (state.playContinuously) stopHoldCurrentNote();
+          else startHoldCurrentNote().catch(() => {});
+          return;
+        }
+        const pc = KEY_TO_PC[event.code];
+        if (pc === undefined) return;
+        event.preventDefault();
+        handleGuess(pc, "key", event.code);
+      });
+
+      window.addEventListener("pointerdown", () => {
+        primeAudioOnGesture();
+      });
+
+      window.addEventListener("pointerup", () => {
+        maybeAdvanceOnRelease("pointer", String(state.targetPc));
+      });
+
+      window.addEventListener("mouseup", stopRangeHoldNote);
+
+      window.addEventListener("keyup", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        if (event.code === "Space") {
+          event.preventDefault();
+          if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+          else stopHoldCurrentNote();
+          return;
+        }
+        maybeAdvanceOnRelease("key", event.code);
+      });
+
+      window.addEventListener("blur", () => {
+        stopHoldCurrentNote();
+        stopRangeHoldNote();
+      });
+      window.addEventListener("resize", drawWheel);
+
+      loadSettings();
+      state.perfectPitch.scoreByDate = loadDailyLog();
+      syncControls();
+      buildPianoSvg();
+      buildRangeWheels();
+      drawWheel();
+      startNewRound();
+      if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+    </script>
+  </body>
 </html>

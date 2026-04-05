@@ -1,0 +1,2367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>WeightUp</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 335.45 503.27'%3E%3Cstyle%3Ecircle%2Cpath%7Bfill%3Anone%3Bstroke%3A%23000%3Bstroke-miterlimit%3A10%3Bstroke-width%3A20px%7D%40media(prefers-color-scheme%3Adark)%7Bcircle%2Cpath%7Bstroke%3A%23fff%7D%7D%3C/style%3E%3Ccircle cx='288.79' cy='46.66' r='45.24'/%3E%3Cpath d='M35.44%2C243.68c128.31%2C7.62%2C226.52-130.76%2C196.38-158.28-23.98-21.9-180.9%2C109.59-144.24%2C197.25'/%3E%3Cpath d='M11.89%2C334.09c27.31-60.88%2C234.08-92.71%2C238.35-56.2%2C5.55%2C47.48-263.18%2C50.72-248.22-8.4%2C9.75-38.55%2C69.02-33.7%2C85.56%2C13.16'/%3E%3Cpath d='M219.16%2C501.77c-60.65-2.51-82.17-34.48-115.29-31.08-19.55%2C2.01-30.15%2C27.83-2.51%2C31.08%2C42.61%2C5.01%2C95.97-219.12%2C124.94-237.92'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+:root {
+  --bg: #f4ede1;
+  --panel: #fff7f1;
+  --ink: #201814;
+  --muted: #7a6554;
+  --purple: #8a5be8;
+  --purple-ink: #fff;
+  --danger: #c53a32;
+  --pink: #eba4e8;
+  --blue: #8eb5ed;
+  --bench: #de385b;
+  --bench2: #e2818f;
+  --squat: #34ba55;
+  --squat2: #94e29d;
+  --dead: #29bcb3;
+  --dead2: #98e7e3;
+  --border: #000;
+  --shadow: 0 6px 18px rgba(32,24,20,.08);
+  --entry-pad-x: 20px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: light; -webkit-text-size-adjust: 100%; }
+body { overscroll-behavior: none; forced-color-adjust: none; }
+button, input, select, option, textarea { font: inherit; color-scheme: light; color: var(--ink); -webkit-text-fill-color: var(--ink); }
+button { cursor: pointer; }
+.app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+.app.progress-lvh { height: 100vh; height: 100lvh; }
+.page-shell { flex: 1; min-height: 0; position: relative; }
+.page { position: absolute; inset: 0; display: none; }
+.page.active { display: block; }
+.page[data-page="history"].active,
+.page[data-page="progress"].active { display: flex; flex-direction: column; }
+.scroll { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; padding: 20px var(--entry-pad-x) 104px; }
+.page[data-page="history"] .scroll { flex: 1; min-height: 0; }
+.entry-scroll { padding-top: 20px; overflow: hidden; }
+.panel { background: var(--panel) !important; border: 2px solid var(--border); }
+.card-grid-top { display: grid; grid-template-columns: 2fr 1fr; gap: 0; }
+.card-grid-bottom { display: grid; grid-template-columns: 2fr 1fr; gap: 0; margin-top: -2px; }
+.card-grid-bottom .panel + .panel,
+.card-grid-top .panel + .panel,
+.row-panels .panel + .panel { margin-left: -2px; }
+.pager-card, .value-card { height: 72px; overflow: hidden; position: relative; touch-action: none; user-select: none; }
+.value-card { height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.value-label { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.value-main, .pager-layer { font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; }
+.value-main { flex: 1; margin-top: 2px; }
+.pager-layer { position: absolute; inset: 0; padding: 0 12px; color: var(--ink) !important; }
+.row-panels { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; }
+.partner-grid { margin-top: var(--entry-pad-x); }
+.partner-grid .row-panels { margin-top: 0; }
+.partner-stack { height: 144px; margin-top: -2px; padding: 6px; background: #fffdf9 !important; display: flex; align-items: center; justify-content: center; overflow-x: auto; }
+.plate { width: 40px; border: 1px solid rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: var(--ink); flex: 0 0 auto; }
+.actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+.primary { background: var(--purple) !important; color: var(--purple-ink) !important; -webkit-text-fill-color: var(--purple-ink) !important; border: 2px solid var(--border); border-radius: 12px; min-height: 55px; font-size: 16.8px; font-weight: 700; }
+.recent-history { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.entry-preview-history {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), rgba(0,0,0,.58) calc(100% - 20px), rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), rgba(0,0,0,.58) calc(100% - 20px), rgba(0,0,0,0) 100%);
+}
+.history-header { position: sticky; top: 0; z-index: 4; padding: 20px 20px 12px; background: linear-gradient(to bottom, var(--bg) 78%, rgba(244,237,225,0)); }
+.history-header-inner { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
+.history-filters { display: grid; gap: 10px; min-width: 0; }
+.history-filter-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.history-filter-grid.exercises { max-width: 100%; }
+.history-filter-grid.exercises col.wide-left { width: 33.3333333%; }
+.history-filter-grid.exercises col.wide-right { width: 40%; }
+.history-filter-grid.exercises col.narrow { width: 6.6666667%; }
+.history-filter-grid td { padding: 0; border: 1px solid rgba(0,0,0,.18); position: relative; }
+.history-filter-btn {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: #d8d3cd !important;
+  color: var(--ink) !important;
+  border-radius: 0;
+  padding: 0;
+  font-weight: 700;
+}
+.history-filter-btn.off {
+  background: rgba(255,255,255,.45) !important;
+  color: var(--muted) !important;
+  opacity: .65;
+}
+.history-filter-label {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,.28);
+  padding: 6px 8px;
+  font-weight: 700;
+  text-align: left;
+  height: 100%;
+}
+.history-content { padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.day-card { padding: 0; cursor: pointer; }
+.day-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.day-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 19.5px; }
+.day-table th, .day-table td {
+  border: 1px solid rgba(0,0,0,.18);
+  padding: 6px 8px;
+  background: rgba(255,255,255,.28);
+  white-space: pre-line;
+  text-align: left;
+  vertical-align: top;
+}
+.day-table th {
+  color: var(--muted) !important;
+  font-weight: 700;
+}
+.tabbar { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; padding: 0 0 8px; background: var(--panel); align-items: end; }
+.tabbar.hidden { display: none; }
+.tab { height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0; border: 0; border-top: 2px solid var(--border); background: transparent !important; color: var(--muted) !important; position: relative; margin-top: 6px; }
+.tab.active { background: transparent !important; color: var(--ink) !important; border-top: 0; border-left: 2px solid var(--border); border-right: 2px solid var(--border); border-bottom: 2px solid var(--border); border-radius: 0 0 8px 8px; margin-top: 0; }
+.tab svg, .float-btn svg, .history-calendar svg { width: 24px; height: 24px; fill: currentColor; }
+.float-btn { position: absolute; right: 20px; bottom: 86px; width: 52px; height: 52px; border-radius: 12px; border: 0; background: var(--purple); color: var(--purple-ink); -webkit-text-fill-color: var(--purple-ink); display: none; align-items: center; justify-content: center; z-index: 6; }
+.float-btn.visible { display: flex; }
+.progress-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 16px; }
+.progress-controls { min-width: 0; }
+.progress-collapse { border: 2px solid var(--border); background: var(--panel) !important; }
+.progress-collapse > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 12px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.progress-collapse > summary::-webkit-details-marker { display: none; }
+.progress-collapse > summary::after {
+  content: '▾';
+  font-size: 16px;
+  line-height: 1;
+}
+.progress-collapse:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}
+.progress-controls-body { padding: 10px 12px 12px; }
+.threshold-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; align-items: stretch; }
+.threshold-label, .month-label { min-height: 38px; display: flex; align-items: center; padding: 6px 8px; font-size: 13px; color: var(--muted); font-weight: 700; border: 2px solid var(--border); background: rgba(255,255,255,.28); }
+.threshold-input, .month-input { min-height: 38px; border: 2px solid var(--border); background: white !important; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; overflow: hidden; position: relative; }
+.month-input .pager-layer { font-size: 16px; padding: 0 6px; }
+.progress-filter-grid { width: 100%; margin-top: 12px; border-collapse: collapse; table-layout: fixed; }
+.progress-filter-grid col.wide-left { width: 33.3333333%; }
+.progress-filter-grid col.wide-right { width: 40%; }
+.progress-filter-grid col.narrow { width: 6.6666667%; }
+.progress-filter-grid td { padding: 0; border: 1px solid rgba(0,0,0,.18); position: relative; }
+.progress-filter-label {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 6px 8px;
+  background: rgba(255,255,255,.28);
+  font-weight: 700;
+}
+.progress-filter-btn {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: #d8d3cd !important;
+  color: var(--ink) !important;
+  padding: 0;
+  font-weight: 700;
+}
+.progress-filter-btn.off {
+  background: rgba(255,255,255,.45) !important;
+  color: var(--muted) !important;
+  opacity: .65;
+}
+.chart-wrap { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.chart-scroll { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; touch-action: pan-x pan-y pinch-zoom; }
+.chart-svg { display: block; height: 100%; min-height: 0; background: var(--panel) !important; border: 2px solid var(--border); overflow: hidden; }
+.chart-tooltip {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  display: none;
+  max-width: 220px;
+  padding: 6px 8px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: pre-line;
+}
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+.modal-backdrop.open { display: flex; }
+.modal { width: min(920px, 100%); max-height: min(92dvh, 920px); background: var(--bg) !important; border: 2px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.modal-header { padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal-title { font-size: 20px; font-weight: 700; }
+.modal-body { padding: 6px; overflow: auto; }
+.modal-actions { padding: 0 16px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.set-list { display: flex; flex-direction: column; gap: 8px; }
+.set-card { padding: 6px; }
+.set-row-top, .set-row-bottom { display: grid; gap: 8px; }
+.set-row-top { grid-template-columns: 2fr 1fr 1fr; margin-bottom: 8px; }
+.set-row-bottom { grid-template-columns: 2fr 1fr 1fr; }
+.set-row-top > *,
+.set-row-bottom > * { min-width: 0; }
+.editor-pager-card {
+  min-height: 38px;
+  border: 2px solid var(--border);
+  background: white !important;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
+.editor-pager-card .pager-layer {
+  font-size: 18px;
+  padding: 0 8px;
+}
+.editor-value-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 2px solid var(--border);
+  background: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+}
+.editor-value-card .value-main {
+  margin-top: 0;
+  font-size: 18px;
+}
+.field, .select, .date-input, .delete-btn { min-height: 38px; border: 2px solid var(--border); background: white !important; padding: 6px 8px; }
+.select { appearance: none; -webkit-appearance: none; }
+.date-input { background: var(--panel) !important; }
+.delete-btn { background: var(--danger) !important; color: white !important; -webkit-text-fill-color: white; font-size: 12px; padding: 6px 8px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 6px; justify-content: center; margin-top: 12px; }
+.calendar-cell { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 0; background: transparent !important; color: var(--muted) !important; }
+.calendar-cell.has-data { background: var(--purple) !important; color: white !important; }
+.calendar-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.calendar-label { text-align: center; font-weight: 700; }
+.hidden-file { display: none; }
+.utility-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-top: 12px; }
+.small-btn { min-height: 40px; border: 2px solid var(--border); background: var(--panel) !important; }
+.settings-scroll { padding-top: 20px; }
+.settings-grid { display: grid; gap: 12px; }
+.settings-section { padding: 12px; display: grid; gap: 10px; }
+.settings-title { font-size: 16px; font-weight: 700; }
+.color-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center; }
+.color-grid label { font-weight: 700; }
+.color-input { width: 56px; height: 40px; padding: 0; border: 2px solid var(--border); background: white !important; }
+@media (max-width: 900px) {
+  .progress-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+}
+@media (max-width: 640px) {
+  :root { --entry-pad-x: 12px; }
+  .scroll, .history-header { padding-left: var(--entry-pad-x); padding-right: var(--entry-pad-x); }
+  .entry-scroll { padding-top: 12px; }
+  .progress-layout { padding: 12px; }
+  .card-grid-top, .card-grid-bottom, .row-panels { gap: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="page-shell">
+    <section class="page active" data-page="entry">
+      <div class="scroll entry-scroll" id="entryScroll">
+        <div class="card-grid-top">
+          <div class="panel pager-card" id="exerciseCard"></div>
+          <div class="panel pager-card" id="nameCard"></div>
+        </div>
+        <div class="card-grid-bottom">
+          <div class="panel value-card" id="weightCard"><div class="value-label">Weight</div><div class="value-main" id="weightValue"></div></div>
+          <div class="panel value-card" id="repsCard"><div class="value-label">Reps</div><div class="value-main" id="repsValue"></div></div>
+        </div>
+
+        <div class="partner-grid">
+          <div class="row-panels">
+            <div class="panel value-card" id="calcIrisCard"><div class="value-main" id="calcIrisValue"></div></div>
+            <div class="panel value-card" id="calcDiegoCard"><div class="value-main" id="calcDiegoValue"></div></div>
+          </div>
+          <div class="panel partner-stack" id="partnerStack"></div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="saveSetBtn">Save Set</button>
+        </div>
+
+        <div class="recent-history" id="entryRecentHistory"></div>
+      </div>
+    </section>
+
+    <section class="page" data-page="history">
+      <div class="history-header">
+        <div class="history-header-inner">
+          <div class="history-filters">
+            <div class="history-filter-grid exercises" id="historyExerciseFilters"></div>
+          </div>
+          <button class="primary" id="historyCalendarBtn">Calendar View</button>
+        </div>
+      </div>
+      <div class="scroll" id="historyScroll"><div class="history-content" id="historyContent"></div></div>
+      <button class="float-btn" id="scrollTopBtn" aria-label="Scroll to top"><svg viewBox="0 0 24 24"><path d="M12 5l-7 7h4v7h6v-7h4z"/></svg></button>
+    </section>
+
+    <section class="page" data-page="progress">
+      <div class="progress-layout">
+        <div class="progress-controls">
+          <details class="progress-collapse" id="progressCollapse" open>
+            <summary>Controls</summary>
+            <div class="progress-controls-body">
+              <div class="threshold-row">
+                <div class="threshold-label">Threshold</div>
+                <div class="threshold-input" id="thresholdInput"><div class="value-main" id="thresholdValue"></div></div>
+                <div class="month-input" id="startMonthInput"></div>
+                <div class="month-input" id="endMonthInput"></div>
+              </div>
+              <div id="progressGrid"></div>
+            </div>
+          </details>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-scroll" id="chartScroll"><svg class="chart-svg" id="chartSvg" xmlns="http://www.w3.org/2000/svg" overflow="hidden"></svg></div>
+          <div class="chart-tooltip" id="chartTooltip"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-page="settings">
+      <div class="scroll settings-scroll">
+        <div class="settings-grid">
+          <div class="panel settings-section">
+            <div class="settings-title">Theme</div>
+            <div class="color-grid" id="themeColorGrid"></div>
+            <div class="utility-row">
+              <button class="small-btn" id="exportThemeBtn">Export Theme</button>
+              <button class="small-btn" id="resetThemeBtn">Reset Theme</button>
+            </div>
+          </div>
+          <div class="panel settings-section">
+            <div class="settings-title">People</div>
+            <div class="color-grid" id="personColorGrid"></div>
+          </div>
+          <div class="panel settings-section">
+            <div class="settings-title">Exercises</div>
+            <div class="color-grid" id="exerciseColorGrid"></div>
+          </div>
+          <div class="panel settings-section">
+            <div class="settings-title">Data</div>
+            <div class="utility-row">
+              <button class="small-btn" id="syncSheetBtn">Sync Sheet</button>
+              <button class="small-btn" id="exportCsvBtn">Export CSV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="entry" aria-label="Entry"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75L21 5.75z"/></svg></button>
+    <button class="tab" data-tab="history" aria-label="History"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 8.95 10H20a7 7 0 1 1-2.05-4.95L15 11h7V4l-2.62 2.62A8.97 8.97 0 0 0 13 3zm-1 5v5l4 2 .9-1.8-2.9-1.45V8H12z"/></svg></button>
+    <button class="tab" data-tab="progress" aria-label="Progress"><svg viewBox="0 0 24 24"><path d="M3 17h4V9H3v8zm7 0h4V3h-4v14zm7 0h4v-6h-4v6z"/></svg></button>
+    <button class="tab" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg></button>
+  </nav>
+</div>
+
+<div class="modal-backdrop" id="editorModal"><div class="modal"><div class="modal-header"><div class="modal-title" id="editorTitle"></div><button class="small-btn" id="editorCloseBtn">X</button></div><div class="modal-body"><div class="set-list" id="editorSetList"></div></div><div class="modal-actions"><button class="primary" id="editorAddBtn">Add Set</button><button class="primary" id="editorSaveBtn">Save</button></div></div></div>
+<div class="modal-backdrop" id="calendarModal"><div class="modal" style="width:min(420px,100%)"><div class="modal-header"><div class="modal-title">Calendar</div><button class="small-btn" id="calendarCloseBtn">X</button></div><div class="modal-body"><div class="calendar-nav"><button class="small-btn" id="calendarPrevBtn">&lt;</button><div class="calendar-label" id="calendarLabel"></div><button class="small-btn" id="calendarNextBtn">&gt;</button></div><div class="calendar-grid" id="calendarGrid"></div></div></div></div>
+
+<script>
+(() => {
+  const SETS_STORAGE_KEY = 'weightup_sets';
+  const THEME_STORAGE_KEY = 'weightup_theme';
+  const UI_STORAGE_KEY = 'weightup_ui';
+  const SHEET_ID = '1XU1KkXy5WFTiKTd8aqkkHfJe6sArfq1-Ucz_vVoH6MU';
+  const EXERCISE_MATRIX = [
+    ['Flat Bench', 'Incline Bench'],
+    ['Back Squat', 'Front Squat'],
+    ['Deadlift', 'Smith Deadlift']
+  ];
+  const BASE_EXERCISE_MAP = {
+    Squat: 'Back Squat',
+    Bench: 'Flat Bench',
+    Deadlift: 'Smith Deadlift'
+  };
+  const VARIANT_EXERCISE_MAP = {
+    Squat: 'Front Squat',
+    Bench: 'Incline Bench',
+    Deadlift: 'Deadlift'
+  };
+  const NAMES = ['Diego', 'Iris'];
+  const PLATES = [45,25,10,5,2.5];
+  const MAX_OUTER_PARTNER_PLATE = 25;
+  const DAY_MS = 86400000;
+  const SET_ID = 0;
+  const SET_DATE = 1;
+  const SET_TIME = 2;
+  const SET_NAME = 3;
+  const SET_EXERCISE = 4;
+  const SET_WEIGHT = 5;
+  const SET_REPS = 6;
+  const DEFAULT_COLORS = {
+    theme: { primary: '#8a5be8', onPrimary: '#ffffff' },
+    people: { Diego: '#8eb5ed', Iris: '#eba4e8' },
+    exercises: {
+      'Flat Bench': '#de385b',
+      'Incline Bench': '#e2818f',
+      'Back Squat': '#34ba55',
+      'Front Squat': '#94e29d',
+      'Deadlift': '#29bcb3',
+      'Smith Deadlift': '#98e7e3'
+    }
+  };
+
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const byId = id => document.getElementById(id);
+
+  const state = loadState();
+  let partnerWeights = { Iris: 135, Diego: 135 };
+  let currentPage = state.currentPage;
+  let calendarMonth = startOfMonth(new Date());
+  let editorContext = null;
+  let chartZoom = 1;
+  let chartInspection = null;
+  let topButtonTimer = null;
+  let topButtonVisible = false;
+  const IS_TOUCH_DEVICE = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
+  const ui = {
+    tabbar: byId('tabbar'),
+    entryScroll: byId('entryScroll'),
+    exerciseCard: byId('exerciseCard'),
+    nameCard: byId('nameCard'),
+    weightCard: byId('weightCard'),
+    repsCard: byId('repsCard'),
+    calcIrisCard: byId('calcIrisCard'),
+    calcDiegoCard: byId('calcDiegoCard'),
+    weightValue: byId('weightValue'),
+    repsValue: byId('repsValue'),
+    calcIrisValue: byId('calcIrisValue'),
+    calcDiegoValue: byId('calcDiegoValue'),
+    partnerStack: byId('partnerStack'),
+    saveSetBtn: byId('saveSetBtn'),
+    syncSheetBtn: byId('syncSheetBtn'),
+    exportCsvBtn: byId('exportCsvBtn'),
+    entryRecentHistory: byId('entryRecentHistory'),
+    historyContent: byId('historyContent'),
+    historyExerciseFilters: byId('historyExerciseFilters'),
+    historyScroll: byId('historyScroll'),
+    historyCalendarBtn: byId('historyCalendarBtn'),
+    scrollTopBtn: byId('scrollTopBtn'),
+    progressCollapse: byId('progressCollapse'),
+    thresholdInput: byId('thresholdInput'),
+    thresholdValue: byId('thresholdValue'),
+    startMonthInput: byId('startMonthInput'),
+    endMonthInput: byId('endMonthInput'),
+    progressGrid: byId('progressGrid'),
+    chartScroll: byId('chartScroll'),
+    chartSvg: byId('chartSvg'),
+    chartTooltip: byId('chartTooltip'),
+    themeColorGrid: byId('themeColorGrid'),
+    exportThemeBtn: byId('exportThemeBtn'),
+    personColorGrid: byId('personColorGrid'),
+    exerciseColorGrid: byId('exerciseColorGrid'),
+    resetThemeBtn: byId('resetThemeBtn'),
+    editorModal: byId('editorModal'),
+    editorTitle: byId('editorTitle'),
+    editorSetList: byId('editorSetList'),
+    editorCloseBtn: byId('editorCloseBtn'),
+    editorAddBtn: byId('editorAddBtn'),
+    editorSaveBtn: byId('editorSaveBtn'),
+    calendarModal: byId('calendarModal'),
+    calendarLabel: byId('calendarLabel'),
+    calendarGrid: byId('calendarGrid'),
+    calendarPrevBtn: byId('calendarPrevBtn'),
+    calendarNextBtn: byId('calendarNextBtn'),
+    calendarCloseBtn: byId('calendarCloseBtn')
+  };
+
+  init();
+
+  function init() {
+    bindTabs();
+    bindEntry();
+    bindHistory();
+    bindProgress();
+    bindSettings();
+    renderHistoryFilters();
+    setupPager(ui.nameCard, {
+      getCenter: () => state.selection.nameIndex,
+      setCenter: idx => {
+        state.selection.nameIndex = mod(idx, NAMES.length);
+        applyLatestEntryDefaults();
+        saveState();
+        renderAll();
+      },
+      getLabel: idx => NAMES[mod(idx, NAMES.length)],
+      colorFor: idx => personColor(NAMES[mod(idx, NAMES.length)])
+    }, true);
+    setupPager(ui.exerciseCard, {
+      getCenter: () => ({ row: state.selection.exerciseRow, col: state.selection.exerciseCol }),
+      setCenter: pos => {
+        state.selection.exerciseRow = mod(pos.row, EXERCISE_MATRIX.length);
+        state.selection.exerciseCol = mod(pos.col, EXERCISE_MATRIX[0].length);
+        applyLatestEntryDefaults();
+        saveState();
+        renderAll();
+      },
+      getLabel: pos => EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)],
+      colorFor: pos => exerciseColor(EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)])
+    }, false);
+
+    setupStepper(ui.weightCard, () => state.selection.weight, v => { state.selection.weight = Math.max(45, v); saveState(); renderEntry(); }, 5, true);
+    setupStepper(ui.repsCard, () => state.selection.reps, v => { state.selection.reps = Math.max(1, Math.round(v)); saveState(); renderEntry(); }, 1, true);
+    setupStepper(ui.calcIrisCard, () => partnerWeights.Iris, v => { partnerWeights.Iris = Math.max(45, v); renderEntry(); }, 5, true);
+    setupStepper(ui.calcDiegoCard, () => partnerWeights.Diego, v => { partnerWeights.Diego = Math.max(45, v); renderEntry(); }, 5, true);
+
+    renderAll();
+    applyCurrentPage();
+    window.addEventListener('resize', () => {
+      updateEntryPreviewLayout();
+      if (currentPage === 'progress') renderProgress();
+    });
+  }
+
+  function bindTabs() {
+    $$('.tab').forEach(btn => btn.addEventListener('click', () => {
+      currentPage = btn.dataset.tab;
+      state.currentPage = currentPage;
+      saveState();
+      applyCurrentPage();
+    }));
+  }
+
+  function applyCurrentPage() {
+    byId('app')?.classList.toggle('progress-lvh', currentPage === 'progress');
+    $$('.page').forEach(p => p.classList.toggle('active', p.dataset.page === currentPage));
+    $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === currentPage));
+    ui.tabbar.classList.toggle('hidden', currentPage === 'progress' && state.progressControlsOpen === false);
+    if (currentPage !== 'history') hideTopButton(true);
+    if (currentPage === 'entry') updateEntryPreviewLayout();
+    if (currentPage === 'progress') renderProgress();
+  }
+
+  function bindEntry() {
+    ui.saveSetBtn.addEventListener('click', saveCurrentSet);
+    ui.syncSheetBtn.addEventListener('click', syncGoogleSheet);
+    ui.exportCsvBtn.addEventListener('click', exportCsv);
+  }
+
+  function bindHistory() {
+    ui.historyScroll.addEventListener('scroll', () => {
+      clearTimeout(topButtonTimer);
+      hideTopButton();
+      if (currentPage !== 'history' || ui.historyScroll.scrollTop < 600) return;
+      topButtonTimer = setTimeout(() => {
+        if (currentPage === 'history' && ui.historyScroll.scrollTop >= 600) showTopButton();
+      }, 1000);
+    }, { passive: true });
+    ui.scrollTopBtn.addEventListener('click', () => {
+      hideTopButton(true);
+      ui.historyScroll.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    ui.historyCalendarBtn.addEventListener('click', openCalendarModal);
+    ui.calendarPrevBtn.addEventListener('click', () => { calendarMonth = addMonths(calendarMonth, -1); renderCalendar(); });
+    ui.calendarNextBtn.addEventListener('click', () => { calendarMonth = addMonths(calendarMonth, 1); renderCalendar(); });
+    ui.calendarCloseBtn.addEventListener('click', closeCalendarModal);
+  }
+
+  function bindProgress() {
+    setupStepper(ui.thresholdInput, () => state.progressThreshold, v => {
+      state.progressThreshold = Math.max(1, Math.round(v));
+      persist();
+      renderProgress();
+    }, 1);
+    setupListPager(ui.startMonthInput, {
+      getOptions: progressMonthOptions,
+      getIndex: options => clampMonthIndex(options, state.progressStartMonth ?? options[0]),
+      setIndex: (index, options) => {
+        const next = options[index];
+        state.progressStartMonth = next;
+        if (state.progressEndMonth && monthKeyCompare(state.progressEndMonth, next) < 0) {
+          state.progressEndMonth = next;
+        }
+        persist();
+        renderProgress();
+      },
+      format: formatMonthKey
+    });
+    setupListPager(ui.endMonthInput, {
+      getOptions: progressMonthOptions,
+      getIndex: options => clampMonthIndex(options, state.progressEndMonth ?? options[options.length - 1]),
+      setIndex: (index, options) => {
+        const next = options[index];
+        state.progressEndMonth = next;
+        if (state.progressStartMonth && monthKeyCompare(state.progressStartMonth, next) > 0) {
+          state.progressStartMonth = next;
+        }
+        persist();
+        renderProgress();
+      },
+      format: formatMonthKey
+    });
+    ui.progressCollapse.addEventListener('toggle', () => {
+      state.progressControlsOpen = ui.progressCollapse.open;
+      persist();
+      applyCurrentPage();
+    });
+    const pinch = createPinchZoom(ui.chartScroll, scale => {
+      chartZoom = clamp(chartZoom * scale, 1, 8);
+      renderProgress();
+    });
+    ui.chartScroll.addEventListener('touchstart', pinch, { passive: false });
+    ui.chartScroll.addEventListener('touchmove', pinch, { passive: false });
+    ui.chartScroll.addEventListener('touchend', pinch, { passive: false });
+    renderProgressGrid();
+  }
+
+  function bindSettings() {
+    ui.exportThemeBtn.addEventListener('click', exportThemeData);
+    ui.resetThemeBtn.addEventListener('click', () => {
+      state.colors = {
+        theme: { ...DEFAULT_COLORS.theme },
+        people: { ...DEFAULT_COLORS.people },
+        exercises: { ...DEFAULT_COLORS.exercises }
+      };
+      saveState();
+      renderAll();
+    });
+    renderSettings();
+  }
+
+  function exportThemeData() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      colors: state.colors
+    };
+    downloadFile('weightup-theme.json', JSON.stringify(payload, null, 2), 'application/json');
+  }
+
+  function renderAll() {
+    applyThemeColors();
+    applyLatestEntryDefaults(false);
+    renderPagers();
+    renderEntry();
+    renderHistory();
+    renderProgress();
+    renderSettings();
+  }
+
+  function renderEntry() {
+    ui.weightValue.textContent = `${formatWeight(state.selection.weight)} lb`;
+    ui.repsValue.textContent = `${state.selection.reps}`;
+    ui.calcIrisValue.textContent = `${formatWeight(partnerWeights.Iris)} lb`;
+    ui.calcDiegoValue.textContent = `${formatWeight(partnerWeights.Diego)} lb`;
+    renderPartnerLoad();
+    renderRecentHistory(ui.entryRecentHistory, groupedHistory());
+    updateEntryPreviewLayout();
+  }
+
+  function renderHistory() {
+    renderHistoryFilters();
+    renderRecentHistory(ui.historyContent, groupedHistoryFiltered());
+  }
+
+  function renderRecentHistory(container, days) {
+    container.innerHTML = '';
+    if (!days.length) {
+      container.appendChild(el('div', { className: 'panel day-card', textContent: 'No history yet.' }));
+      return;
+    }
+    days.forEach(({ dayKey, sets }) => container.appendChild(buildDayCard(dayKey, sets)));
+  }
+
+  function updateEntryPreviewLayout() {
+    if (!ui.entryScroll || !ui.entryRecentHistory) return;
+    const scrollRect = ui.entryScroll.getBoundingClientRect();
+    const historyRect = ui.entryRecentHistory.getBoundingClientRect();
+    const available = Math.max(120, Math.floor(scrollRect.bottom - historyRect.top - 18));
+    ui.entryRecentHistory.classList.add('entry-preview-history');
+    ui.entryRecentHistory.style.maxHeight = `${available}px`;
+  }
+
+  function buildDayCard(dayKey, sets) {
+    const card = el('div', { className: 'panel day-card' });
+    const table = el('table', { className: 'day-table' });
+    const tbody = el('tbody');
+    tbody.appendChild(tableRow([fmtDay(dayKey), 'Iris', 'Diego'], true));
+    orderedExercises(sets).forEach(exercise => {
+      tbody.appendChild(tableRow([
+        exercise,
+        summarizeSets(sets.filter(s => s.exercise === exercise && s.name === 'Iris')),
+        summarizeSets(sets.filter(s => s.exercise === exercise && s.name === 'Diego'))
+      ], false));
+    });
+    table.appendChild(tbody);
+    card.appendChild(table);
+    card.addEventListener('click', () => openEditor(dayKey));
+    return card;
+  }
+
+  function tableRow(values, header) {
+    const tr = el('tr');
+    values.forEach(value => {
+      const cell = document.createElement(header ? 'th' : 'td');
+      cell.textContent = value;
+      tr.appendChild(cell);
+    });
+    return tr;
+  }
+
+  function summarizeSets(sets) {
+    if (!sets.length) return '';
+    const same = sets.every(s => s.reps === sets[0].reps && s.weight === sets[0].weight);
+    if (same) return `${sets.length}x${sets[0].reps}x${formatWeight(sets[0].weight)}`;
+    return sets.map(s => `${s.reps}x${formatWeight(s.weight)}`).join('\n');
+  }
+
+  function openEditor(dayKey) {
+    editorContext = {
+      originalDayKey: dayKey,
+      drafts: groupedHistoryMap().get(dayKey).map(set => ({ ...set, deleted: false, dayKey: dayKey }))
+    };
+    ui.editorTitle.textContent = fmtDay(dayKey);
+    renderEditor();
+    ui.editorModal.classList.add('open');
+  }
+
+  function renderEditor() {
+    const drafts = editorContext.drafts.filter(d => !d.deleted);
+    ui.editorSetList.innerHTML = '';
+    drafts.forEach(draft => ui.editorSetList.appendChild(buildEditorSetCard(draft)));
+    ui.editorAddBtn.onclick = () => {
+      editorContext.drafts.push({
+        id: nextSetId(),
+        date: dayKey(new Date()),
+        time: formatTime(new Date()),
+        name: 'Diego',
+        exercise: currentExercise(),
+        weight: state.selection.weight,
+        reps: state.selection.reps,
+        deleted: false,
+        dayKey: editorContext.originalDayKey
+      });
+      renderEditor();
+    };
+    ui.editorSaveBtn.onclick = saveEditorDrafts;
+    ui.editorCloseBtn.onclick = () => ui.editorModal.classList.remove('open');
+  }
+
+  function buildEditorSetCard(draft) {
+    const card = el('div', { className: 'panel set-card' });
+    const rowTop = el('div', { className: 'set-row-top' });
+    const dateInput = el('input', { className: 'date-input' });
+    dateInput.type = 'date';
+    dateInput.value = draft.dayKey;
+    dateInput.oninput = () => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) draft.dayKey = dateInput.value;
+    };
+    const namePager = el('div', { className: 'editor-pager-card' });
+    const deleteBtn = el('button', { className: 'delete-btn', textContent: 'Delete' });
+    deleteBtn.onclick = () => { draft.deleted = true; renderEditor(); };
+    rowTop.append(dateInput, namePager, deleteBtn);
+
+    const rowBottom = el('div', { className: 'set-row-bottom' });
+    const exercisePager = el('div', { className: 'editor-pager-card' });
+    const weightCard = el('div', { className: 'editor-value-card' });
+    const weightValue = el('div', { className: 'value-main', textContent: formatWeight(draft.weight) });
+    weightCard.appendChild(weightValue);
+    const repsCard = el('div', { className: 'editor-value-card' });
+    const repsValue = el('div', { className: 'value-main', textContent: String(draft.reps) });
+    repsCard.appendChild(repsValue);
+    rowBottom.append(exercisePager, weightCard, repsCard);
+
+    card.append(rowTop, rowBottom);
+    setupPager(namePager, {
+      getCenter: () => NAMES.indexOf(draft.name) >= 0 ? NAMES.indexOf(draft.name) : 0,
+      setCenter: idx => {
+        draft.name = NAMES[mod(idx, NAMES.length)];
+        renderEditor();
+      },
+      getLabel: idx => NAMES[mod(idx, NAMES.length)],
+      colorFor: idx => personColor(NAMES[mod(idx, NAMES.length)])
+    }, true);
+    setupPager(exercisePager, {
+      getCenter: () => exercisePosition(draft.exercise),
+      setCenter: pos => {
+        draft.exercise = EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)];
+        renderEditor();
+      },
+      getLabel: pos => EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)],
+      colorFor: pos => exerciseColor(EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)])
+    }, false);
+    setupStepper(weightCard, () => draft.weight, v => {
+      draft.weight = Math.max(0, v);
+      weightValue.textContent = formatWeight(draft.weight);
+    }, 5);
+    setupStepper(repsCard, () => draft.reps, v => {
+      draft.reps = Math.max(1, Math.round(v));
+      repsValue.textContent = String(draft.reps);
+    }, 1);
+    return card;
+  }
+
+  function saveEditorDrafts() {
+    const drafts = editorContext.drafts.filter(d => !d.deleted);
+    if (drafts.some(d => !d.dayKey || !d.name || !d.exercise || d.weight <= 0 || d.reps <= 0)) {
+      alert('Each set needs date, name, exercise, weight, and reps.');
+      return;
+    }
+    const originalIds = new Set(groupedHistoryMap().get(editorContext.originalDayKey).map(s => s.id));
+    state.sets = state.sets.filter(set => !originalIds.has(set.id));
+    drafts.forEach(d => {
+      state.sets.push({
+        id: Number.isFinite(Number(d.id)) ? Number(d.id) : nextSetId(),
+        date: d.dayKey,
+        time: d.time ?? '',
+        name: d.name,
+        exercise: d.exercise,
+        weight: +d.weight,
+        reps: +d.reps
+      });
+    });
+    state.sets.sort(compareSets);
+    persist();
+    ui.editorModal.classList.remove('open');
+    applyLatestEntryDefaults(false);
+    renderAll();
+  }
+
+  function openCalendarModal() {
+    calendarMonth = startOfMonth(groupedHistory()[0] ? parseDayKey(groupedHistory()[0].dayKey) : new Date());
+    renderCalendar();
+    ui.calendarModal.classList.add('open');
+  }
+  function closeCalendarModal() { ui.calendarModal.classList.remove('open'); }
+
+  function renderCalendar() {
+    ui.calendarLabel.textContent = calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    ui.calendarGrid.innerHTML = '';
+    ['S','M','T','W','T','F','S'].forEach(l => ui.calendarGrid.appendChild(el('div', { className: 'calendar-cell', textContent: l })));
+    const first = new Date(calendarMonth);
+    const startPad = first.getDay();
+    for (let i=0;i<startPad;i++) ui.calendarGrid.appendChild(el('div', { className: 'calendar-cell' }));
+    const month = first.getMonth();
+    const map = groupedHistoryFilteredMap();
+    while (first.getMonth() === month) {
+      const key = dayKey(first);
+      const has = map.has(key);
+      const cell = el('button', { className: `calendar-cell${has ? ' has-data':''}`, textContent: String(first.getDate()) });
+      if (has) cell.onclick = () => { closeCalendarModal(); openEditor(key); };
+      ui.calendarGrid.appendChild(cell);
+      first.setDate(first.getDate()+1);
+    }
+  }
+
+  function renderProgressGrid() {
+    ui.progressGrid.innerHTML = '';
+    ui.progressCollapse.open = state.progressControlsOpen !== false;
+    const table = el('table', { className: 'progress-filter-grid' });
+    const colgroup = el('colgroup');
+    ['wide-left', 'narrow', 'narrow', 'wide-right', 'narrow', 'narrow'].forEach(cls => {
+      const col = document.createElement('col');
+      col.className = cls;
+      colgroup.appendChild(col);
+    });
+    table.appendChild(colgroup);
+    const tbody = el('tbody');
+    for (let row = 0; row < EXERCISE_MATRIX.length; row += 1) {
+      const tr = el('tr');
+      const leftExercise = EXERCISE_MATRIX[row][0];
+      const rightExercise = EXERCISE_MATRIX[row][1];
+      [
+        { type: 'label', text: leftExercise },
+        { type: 'toggle', exercise: leftExercise, name: 'Iris', text: 'I' },
+        { type: 'toggle', exercise: leftExercise, name: 'Diego', text: 'D' },
+        { type: 'label', text: rightExercise },
+        { type: 'toggle', exercise: rightExercise, name: 'Iris', text: 'I' },
+        { type: 'toggle', exercise: rightExercise, name: 'Diego', text: 'D' }
+      ].forEach(spec => {
+        const td = el('td');
+        if (spec.type === 'label') {
+          td.appendChild(el('div', { className: 'progress-filter-label', textContent: spec.text }));
+        } else {
+          const enabled = getVisibilityCell(state.progressVisibility, exerciseIndex(spec.exercise), spec.name);
+          const btn = el('button', {
+            className: `progress-filter-btn${enabled ? '' : ' off'}`,
+            textContent: spec.text
+          });
+          btn.onclick = () => {
+            setVisibilityCell(state.progressVisibility, exerciseIndex(spec.exercise), spec.name, !enabled);
+            persist();
+            renderProgressGrid();
+            renderProgress();
+          };
+          td.appendChild(btn);
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    ui.progressGrid.appendChild(table);
+  }
+
+  function renderProgress() {
+    const threshold = Math.max(1, Math.round(state.progressThreshold || 5));
+    const monthOptions = progressMonthOptions();
+    if (monthOptions.length) {
+      if (!state.progressStartMonth || !monthOptions.includes(state.progressStartMonth)) state.progressStartMonth = monthOptions[0];
+      if (!state.progressEndMonth || !monthOptions.includes(state.progressEndMonth)) state.progressEndMonth = monthOptions[monthOptions.length - 1];
+      if (monthKeyCompare(state.progressStartMonth, state.progressEndMonth) > 0) state.progressEndMonth = state.progressStartMonth;
+    }
+    ui.thresholdValue.textContent = String(threshold);
+    state.progressThreshold = threshold;
+    persist();
+    const series = buildProgressSeries(threshold);
+    ui.startMonthInput._rerenderListPager?.();
+    ui.endMonthInput._rerenderListPager?.();
+    drawChart(series);
+  }
+
+  function buildProgressSeries(threshold) {
+    const series = [];
+    const dayGroups = [...groupedHistory()]
+      .reverse()
+      .filter(({ dayKey }) => progressMonthInRange(monthStartKey(dayKey)));
+    ['Iris', 'Diego'].forEach(name => {
+      EXERCISE_MATRIX.flat().forEach(exercise => {
+        if (!getVisibilityCell(state.progressVisibility, exerciseIndex(exercise), name)) return;
+        const cleanedPoints = dayGroups.flatMap(({ dayKey, sets }) => {
+          const point = progressPointForDay(dayKey, sets, exercise, name, threshold);
+          return point ? [point] : [];
+        });
+        if (!cleanedPoints.length) return;
+        series.push({
+          label: `${exercise} ${name}`,
+          color: progressColor(exercise, name),
+          points: markProgressMilestones(cleanedPoints)
+        });
+      });
+    });
+    return series;
+  }
+
+  function progressPointForDay(dayKey, sets, exercise, name, threshold) {
+    const qualifying = sets.filter(set =>
+      set.name === name &&
+      set.exercise === exercise &&
+      set.reps >= threshold
+    );
+    if (!qualifying.length) return null;
+    const highestWeight = Math.max(...qualifying.map(set => set.weight));
+    const topSets = qualifying.filter(set => set.weight === highestWeight);
+    const chosen = topSets[0];
+    return {
+      x: dayKey,
+      y: chosen.weight,
+      date: dayKey,
+      exercise,
+      name,
+      weight: chosen.weight,
+      reps: chosen.reps
+    };
+  }
+
+  function markProgressMilestones(points) {
+    const globalMax = Math.max(...points.map(point => point.y));
+    const firstGlobalIndex = points.findIndex(point => point.y === globalMax);
+    let runningMax = -Infinity;
+    return points.map((point, index) => {
+      const runningPr = point.y > runningMax;
+      if (runningPr) runningMax = point.y;
+      return { ...point, runningPr, globalPr: index === firstGlobalIndex };
+    });
+  }
+
+  function sameInspectionPoint(a, b) {
+    return !!a && !!b && a.date === b.date && a.exercise === b.exercise && a.name === b.name && a.weight === b.weight && a.reps === b.reps;
+  }
+
+  function positionChartTooltip(event) {
+    const tooltip = ui.chartTooltip;
+    if (!tooltip) return;
+    tooltip.style.left = `${event.clientX + 12}px`;
+    tooltip.style.top = `${event.clientY + 12}px`;
+  }
+
+  function showChartTooltip(event, point) {
+    const tooltip = ui.chartTooltip;
+    if (!tooltip) return;
+    const changed = !sameInspectionPoint(chartInspection, point);
+    chartInspection = point;
+    tooltip.textContent = `${fmtDay(point.date)}\n${point.exercise}\n${point.name}\n${formatWeight(point.weight)} lb x ${point.reps}`;
+    tooltip.style.display = 'block';
+    positionChartTooltip(event);
+    if (changed && currentPage === 'progress') renderProgress();
+  }
+
+  function hideChartTooltip() {
+    if (!ui.chartTooltip) return;
+    const hadInspection = !!chartInspection;
+    chartInspection = null;
+    ui.chartTooltip.style.display = 'none';
+    if (hadInspection && currentPage === 'progress') renderProgress();
+  }
+
+  function drawChart(series) {
+    const svg = d3.select(ui.chartSvg);
+    const tickFontSize = 18;
+    const rect = ui.chartScroll.getBoundingClientRect();
+    const allPoints = series.flatMap(s => s.points);
+    const dataMinXDate = allPoints.length ? d3.min(allPoints, p => parseDayKey(p.x)) : new Date();
+    const dataMaxXDate = allPoints.length ? d3.max(allPoints, p => parseDayKey(p.x)) : new Date(dataMinXDate.getTime() + 30 * DAY_MS);
+    const minXDate = new Date(dataMinXDate.getTime() - 7 * DAY_MS);
+    const maxXDate = new Date(dataMaxXDate.getTime() + 7 * DAY_MS);
+    const minY = allPoints.length ? Math.min(...allPoints.map(p => p.y)) - 5 : 0;
+    const maxY = allPoints.length ? Math.max(...allPoints.map(p => p.y)) + 5 : 200;
+    const viewportWidth = Math.max(320, ui.chartScroll.clientWidth);
+    const width = Math.max(viewportWidth, viewportWidth * chartZoom);
+    const height = Math.max(180, rect.height || 240);
+    const margin = { top: 16, right: 8, bottom: 28, left: 34 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+
+    svg.attr('width', width).attr('height', height);
+    svg.selectAll('*').remove();
+
+    const x = d3.scaleTime()
+      .domain([minXDate, maxXDate])
+      .range([margin.left, margin.left + plotWidth]);
+    const y = d3.scaleLinear()
+      .domain([minY, maxY])
+      .range([height - margin.bottom, margin.top]);
+
+    const axisColor = '#5c4d42';
+    const gridColor = 'rgba(0,0,0,.12)';
+    const firstMonthTick = d3.timeMonth.ceil(minXDate);
+    const months = d3.timeMonth.range(firstMonthTick, d3.timeMonth.offset(d3.timeMonth.floor(maxXDate), 1));
+    const monthSpacing = months.length >= 2 ? x(months[1]) - x(months[0]) : Infinity;
+    const monthStep = monthSpacing < tickFontSize * 5 ? 3 : monthSpacing < tickFontSize * 8 ? 2 : 1;
+    const xTicks = months.filter((_, index) => index === 0 || index % monthStep === 0);
+    const yTicks = y.ticks(Math.max(3, Math.floor(plotHeight / 110)));
+
+    const root = svg.append('g');
+    const defs = svg.append('defs');
+    defs.append('clipPath')
+      .attr('id', 'chart-clip')
+      .append('rect')
+      .attr('x', margin.left)
+      .attr('y', margin.top)
+      .attr('width', plotWidth)
+      .attr('height', plotHeight);
+
+    const xGrid = d3.axisBottom(x)
+      .tickValues(xTicks)
+      .tickSize(-plotHeight)
+      .tickFormat('');
+    const yGrid = d3.axisLeft(y)
+      .tickValues(yTicks)
+      .tickSize(-plotWidth)
+      .tickFormat('');
+    const xAxis = d3.axisBottom(x)
+      .tickValues(xTicks)
+      .tickSize(6)
+      .tickPadding(6)
+      .tickFormat(d3.timeFormat("%b'%y"));
+    const yAxis = d3.axisLeft(y)
+      .tickValues(yTicks)
+      .tickSize(6)
+      .tickPadding(5);
+
+    root.append('g')
+      .attr('transform', `translate(0,${height - margin.bottom})`)
+      .call(xGrid)
+      .call(axis => axis.select('.domain').remove())
+      .call(axis => axis.selectAll('.tick line').attr('stroke', gridColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick text').remove());
+
+    root.append('g')
+      .attr('transform', `translate(${margin.left},0)`)
+      .call(yGrid)
+      .call(axis => axis.select('.domain').remove())
+      .call(axis => axis.selectAll('.tick line').attr('stroke', gridColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick text').remove());
+
+    root.append('g')
+      .attr('transform', `translate(0,${height - margin.bottom})`)
+      .call(xAxis)
+      .call(axis => axis.select('.domain').attr('stroke', axisColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick line').attr('stroke', axisColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick text')
+        .attr('fill', axisColor)
+        .attr('font-size', tickFontSize)
+        .attr('font-family', 'system-ui')
+        .attr('text-anchor', 'start')
+        .attr('dx', 3)
+        .attr('dy', 6));
+
+    root.append('g')
+      .attr('transform', `translate(${margin.left},0)`)
+      .call(yAxis)
+      .call(axis => axis.select('.domain').attr('stroke', axisColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick line').attr('stroke', axisColor).attr('stroke-width', 1))
+      .call(axis => axis.selectAll('.tick text')
+        .attr('fill', axisColor)
+        .attr('font-size', tickFontSize)
+        .attr('font-family', 'system-ui')
+        .attr('dy', 16)
+        .attr('dx', 8)
+      );
+
+    const line = d3.line()
+      .x(d => x(parseDayKey(d.x)))
+      .y(d => y(d.y));
+
+    const plot = root.append('g').attr('clip-path', 'url(#chart-clip)');
+
+    series.forEach(s => {
+      plot.append('path')
+        .datum(s.points)
+        .attr('fill', 'none')
+        .attr('stroke', s.color)
+        .attr('stroke-width', 2.5)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
+        .attr('d', line);
+
+      const runningPr = s.points.filter(p => p.runningPr);
+      plot.selectAll(null)
+        .data(runningPr)
+        .enter()
+        .append('circle')
+        .attr('cx', d => x(parseDayKey(d.x)))
+        .attr('cy', d => y(d.y))
+        .attr('r', 4)
+        .attr('fill', s.color);
+      const globalPr = s.points.filter(p => p.globalPr);
+      plot.selectAll(null)
+        .data(globalPr)
+        .enter()
+        .append('circle')
+        .attr('cx', d => x(parseDayKey(d.x)))
+        .attr('cy', d => y(d.y))
+        .attr('r', 6)
+        .attr('fill', 'none')
+        .attr('stroke', '#000')
+        .attr('stroke-width', 2);
+
+      const inspected = chartInspection
+        ? s.points.filter(p => sameInspectionPoint(p, chartInspection))
+        : [];
+      plot.selectAll(null)
+        .data(inspected)
+        .enter()
+        .append('circle')
+        .attr('cx', d => x(parseDayKey(d.x)))
+        .attr('cy', d => y(d.y))
+        .attr('r', 9)
+        .attr('fill', 'none')
+        .attr('stroke', s.color)
+        .attr('stroke-width', 3);
+
+      plot.selectAll(null)
+        .data(s.points)
+        .enter()
+        .append('circle')
+        .attr('cx', d => x(parseDayKey(d.x)))
+        .attr('cy', d => y(d.y))
+        .attr('r', 14)
+        .attr('fill', 'transparent')
+        .style('cursor', 'pointer')
+        .on('mouseenter', function(event, d) { showChartTooltip(event, d); })
+        .on('mousemove', function(event) { positionChartTooltip(event); })
+        .on('mouseleave', hideChartTooltip)
+        .on('click', function(event, d) { showChartTooltip(event, d); });
+    });
+  }
+
+  function renderPartnerLoad() {
+    const { shared, extra } = computePartnerLoading(partnerWeights.Iris, partnerWeights.Diego);
+    ui.partnerStack.innerHTML = '';
+    [...shared.map(p => ({ p, c: personColor('Iris') })), ...extra.map(p => ({ p, c: personColor('Diego') }))].forEach(({ p, c }) => {
+      const plate = el('div', { className: 'plate', textContent: formatWeight(p) });
+      plate.style.height = `${plateHeight(p)}px`;
+      plate.style.background = c;
+      ui.partnerStack.appendChild(plate);
+    });
+  }
+
+  function renderSettings() {
+    if (!ui.themeColorGrid || !ui.personColorGrid || !ui.exerciseColorGrid) return;
+    ui.themeColorGrid.innerHTML = '';
+    [
+      ['Primary Button', state.colors.theme.primary, value => { state.colors.theme.primary = value; }],
+      ['Button Text', state.colors.theme.onPrimary, value => { state.colors.theme.onPrimary = value; }]
+    ].forEach(([labelText, value, setter]) => {
+      ui.themeColorGrid.appendChild(el('label', { textContent: labelText }));
+      const input = el('input', { className: 'color-input' });
+      input.type = 'color';
+      input.value = value;
+      input.onchange = () => {
+        setter(input.value);
+        saveState();
+        renderAll();
+      };
+      ui.themeColorGrid.appendChild(input);
+    });
+    ui.personColorGrid.innerHTML = '';
+    NAMES.forEach(name => {
+      ui.personColorGrid.appendChild(el('label', { textContent: name }));
+      const input = el('input', { className: 'color-input' });
+      input.type = 'color';
+      input.value = personColor(name);
+      input.onchange = () => {
+        state.colors.people[name] = input.value;
+        saveState();
+        renderAll();
+      };
+      ui.personColorGrid.appendChild(input);
+    });
+    ui.exerciseColorGrid.innerHTML = '';
+    EXERCISE_MATRIX.flat().forEach(exercise => {
+      ui.exerciseColorGrid.appendChild(el('label', { textContent: exercise }));
+      const input = el('input', { className: 'color-input' });
+      input.type = 'color';
+      input.value = exerciseColorHex(exercise);
+      input.onchange = () => {
+        state.colors.exercises[exercise] = input.value;
+        saveState();
+        renderAll();
+      };
+      ui.exerciseColorGrid.appendChild(input);
+    });
+  }
+
+  function renderHistoryFilters() {
+    if (!ui.historyExerciseFilters) return;
+    ui.historyExerciseFilters.innerHTML = '';
+    const exerciseTable = el('table', { className: 'history-filter-grid exercises' });
+    const colgroup = el('colgroup');
+    ['wide-left', 'narrow', 'narrow', 'wide-right', 'narrow', 'narrow'].forEach(cls => {
+      const col = document.createElement('col');
+      col.className = cls;
+      colgroup.appendChild(col);
+    });
+    exerciseTable.appendChild(colgroup);
+    const exerciseBody = el('tbody');
+    for (let row = 0; row < EXERCISE_MATRIX.length; row += 1) {
+      const tr = el('tr');
+      const leftExercise = EXERCISE_MATRIX[row][0];
+      const rightExercise = EXERCISE_MATRIX[row][1];
+      [
+        { type: 'label', text: leftExercise },
+        { type: 'toggle', exercise: leftExercise, name: 'Iris', text: 'I' },
+        { type: 'toggle', exercise: leftExercise, name: 'Diego', text: 'D' },
+        { type: 'label', text: rightExercise },
+        { type: 'toggle', exercise: rightExercise, name: 'Iris', text: 'I' },
+        { type: 'toggle', exercise: rightExercise, name: 'Diego', text: 'D' }
+      ].forEach(spec => {
+        const td = el('td');
+        if (spec.type === 'label') {
+          td.appendChild(el('div', { className: 'history-filter-label', textContent: spec.text }));
+        } else {
+          const enabled = getVisibilityCell(state.historyVisibility, exerciseIndex(spec.exercise), spec.name);
+          const btn = el('button', {
+            className: `history-filter-btn${enabled ? '' : ' off'}`,
+            textContent: spec.text
+          });
+          btn.onclick = () => {
+            setVisibilityCell(state.historyVisibility, exerciseIndex(spec.exercise), spec.name, !enabled);
+            saveState();
+            renderHistory();
+          };
+          td.appendChild(btn);
+        }
+        tr.appendChild(td);
+      });
+      exerciseBody.appendChild(tr);
+    }
+    exerciseTable.appendChild(exerciseBody);
+    ui.historyExerciseFilters.appendChild(exerciseTable);
+  }
+
+  function applyThemeColors() {
+    const root = document.documentElement.style;
+    root.setProperty('--purple', state.colors.theme.primary);
+    root.setProperty('--purple-ink', state.colors.theme.onPrimary);
+    root.setProperty('--blue', state.colors.people.Diego);
+    root.setProperty('--pink', state.colors.people.Iris);
+    root.setProperty('--bench', state.colors.exercises['Flat Bench']);
+    root.setProperty('--bench2', state.colors.exercises['Incline Bench']);
+    root.setProperty('--squat', state.colors.exercises['Back Squat']);
+    root.setProperty('--squat2', state.colors.exercises['Front Squat']);
+    root.setProperty('--dead', state.colors.exercises['Deadlift']);
+    root.setProperty('--dead2', state.colors.exercises['Smith Deadlift']);
+  }
+
+  function computePartnerLoading(a, b) {
+    const lighter = Math.min(a,b), heavier = Math.max(a,b);
+    const shared = loadOneSide(lighter);
+    const extra = loadDifferenceOneSide(heavier - lighter, MAX_OUTER_PARTNER_PLATE);
+    return { shared, extra };
+  }
+
+  function loadOneSide(totalWeight, maxPlate = Infinity) {
+    const perSide = (totalWeight - 45) / 2;
+    if (perSide <= 0) return [];
+    return loadPerSideWeight(perSide, maxPlate);
+  }
+
+  function loadDifferenceOneSide(weightDifference, maxPlate = Infinity) {
+    const perSide = weightDifference / 2;
+    if (perSide <= 0) return [];
+    return loadPerSideWeight(perSide, maxPlate);
+  }
+
+  function loadPerSideWeight(perSide, maxPlate = Infinity) {
+    let remaining = perSide;
+    const out = [];
+    for (const p of PLATES.filter(p => p <= maxPlate)) {
+      while (remaining >= p - 0.001) { out.push(p); remaining -= p; }
+    }
+    return out;
+  }
+
+  function plateHeight(p) { return ({45:120,25:77,10:62,5:53,2.5:39})[p] || 39; }
+  function sum(arr) { return arr.reduce((a,b)=>a+b,0); }
+
+  function saveCurrentSet() {
+    const now = new Date();
+    state.sets.push({
+      id: nextSetId(),
+      date: dayKey(now),
+      time: formatTime(now),
+      name: currentName(),
+      exercise: currentExercise(),
+      weight: state.selection.weight,
+      reps: state.selection.reps
+    });
+    state.sets.sort(compareSets);
+    persist();
+    syncPartnerFromHistory();
+    renderAll();
+  }
+
+  function applyLatestEntryDefaults(shouldPersist = true) {
+    const match = [...state.sets].reverse().find(s => s.name === currentName() && s.exercise === currentExercise());
+    if (match) {
+      state.selection.weight = match.weight;
+      state.selection.reps = match.reps;
+    } else {
+      state.selection.weight = defaultWeight();
+      state.selection.reps = 5;
+    }
+    syncPartnerFromHistory();
+    if (shouldPersist) persist();
+  }
+
+  function syncPartnerFromHistory(fallbackToCurrent = true) {
+    const ex = currentExercise();
+    const iris = [...state.sets].reverse().find(s => s.name === 'Iris' && s.exercise === ex);
+    const diego = [...state.sets].reverse().find(s => s.name === 'Diego' && s.exercise === ex);
+    if (iris) partnerWeights.Iris = iris.weight;
+    else if (fallbackToCurrent) partnerWeights.Iris = state.selection.weight;
+    if (diego) partnerWeights.Diego = diego.weight;
+    else if (fallbackToCurrent) partnerWeights.Diego = state.selection.weight;
+  }
+
+  function currentName() { return NAMES[state.selection.nameIndex]; }
+  function currentExercise() { return EXERCISE_MATRIX[state.selection.exerciseRow][state.selection.exerciseCol]; }
+  function exercisePosition(exercise) {
+    for (let row = 0; row < EXERCISE_MATRIX.length; row += 1) {
+      const col = EXERCISE_MATRIX[row].indexOf(exercise);
+      if (col >= 0) return { row, col };
+    }
+    return { row: 0, col: 0 };
+  }
+  function defaultWeight() { return [135,95,185][state.selection.exerciseRow] || 135; }
+
+  function groupedHistory() {
+    const map = groupedHistoryMap();
+    return [...map.entries()].sort((a,b) => b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
+  }
+
+  function groupedHistoryFiltered() {
+    const filtered = state.sets.filter(set =>
+      getVisibilityCell(state.historyVisibility, exerciseIndex(set.exercise), set.name)
+    );
+    const map = new Map();
+    filtered.sort(compareSets).forEach(set => {
+      if (!map.has(set.date)) map.set(set.date, []);
+      map.get(set.date).push(set);
+    });
+    return [...map.entries()].sort((a,b) => b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
+  }
+  function groupedHistoryFilteredMap() {
+    const map = new Map();
+    state.sets
+      .filter(set => getVisibilityCell(state.historyVisibility, exerciseIndex(set.exercise), set.name))
+      .sort(compareSets)
+      .forEach(set => {
+        const key = setDateKey(set);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(set);
+      });
+    return map;
+  }
+  function groupedHistoryMap() {
+    const map = new Map();
+    [...state.sets].sort(compareSets).forEach(set => {
+      const key = setDateKey(set);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(set);
+    });
+    return map;
+  }
+  function orderedExercises(sets) {
+    const order = EXERCISE_MATRIX.flat();
+    return [...new Set(sets.map(s => s.exercise))].sort((a,b) => order.indexOf(a) - order.indexOf(b));
+  }
+
+  function exportCsv() {
+    downloadFile('weightup.csv', encodeSetsCsv(state.sets), 'text/csv');
+  }
+
+  async function importCsvFile(ev) {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    const rows = parseCsv(text);
+    const header = rows[0] || [];
+    const normalizedHeader = header.map(x => String(x || '').trim().toLowerCase());
+    if (normalizedHeader[0] === 'datetime') {
+      state.sets = rows.slice(1).filter(r => r.length >= 5).map((r, i) => normalizeStoredSet({
+        id: i + 1,
+        datetime: r[0],
+        name: r[1],
+        exercise: r[2],
+        weight: parseFloat(r[3]) || 0,
+        reps: parseInt(r[4],10) || 0
+      }));
+    } else {
+      state.sets = rows.slice(1).filter(r => r.length >= 5).map((r, i) => normalizeStoredSet({
+        id: i + 1,
+        date: r[0],
+        time: normalizedHeader[1] === 'time' ? (r[1] || '') : '',
+        name: normalizedHeader[1] === 'time' ? r[2] : r[1],
+        exercise: normalizedHeader[1] === 'time' ? r[3] : r[2],
+        weight: parseFloat(normalizedHeader[1] === 'time' ? r[4] : r[3]) || 0,
+        reps: parseInt(normalizedHeader[1] === 'time' ? r[5] : r[4],10) || 0
+      }));
+    }
+    state.sets.sort(compareSets);
+    persist();
+    applyLatestEntryDefaults(false);
+    renderAll();
+    ev.target.value = '';
+  }
+
+  async function syncGoogleSheet() {
+    if (!confirm("Sync from Google Sheet? Sheet data will replace everything on or before the sheet's latest date, and newer local data will be kept.")) return;
+    try {
+      const csvText = await fetchGoogleSheetCsv(SHEET_ID);
+      const sheetSets = convertGoogleSheetCsvToSets(csvText);
+      if (!sheetSets.length) throw new Error('Google Sheet had no importable sets.');
+      const latestSheetDate = sheetSets.reduce((max, set) => setDateKey(set) > max ? setDateKey(set) : max, sheetSets[0].date);
+      const preservedLocalSets = state.sets.filter(set => setDateKey(set) > latestSheetDate);
+      state.sets = [...sheetSets, ...preservedLocalSets];
+      state.sets.sort(compareSets);
+      persist();
+      applyLatestEntryDefaults(false);
+      renderAll();
+      alert(`Synced ${sheetSets.length} sheet sets through ${fmtDay(latestSheetDate)} and kept ${preservedLocalSets.length} newer local sets.`);
+    } catch (err) {
+      console.error(err);
+      alert(`Sheet sync failed: ${err && err.message ? err.message : err}`);
+    }
+  }
+
+  async function fetchGoogleSheetCsv(sheetId) {
+    const response = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`);
+    if (!response.ok) throw new Error('Could not load Google Sheet CSV.');
+    return response.text();
+  }
+
+  function convertGoogleSheetCsvToSets(text) {
+    const rows = parseCsv(text);
+    if (rows.length < 4) return [];
+    const columns = buildSheetColumns(rows);
+    const records = [];
+    let currentDate = '';
+    const dateState = { year: 2025, lastMonth: null };
+    rows.slice(3).forEach(row => {
+      const parsedDate = parseSheetCsvDate(row[0] || '', dateState);
+      if (parsedDate) currentDate = parsedDate;
+      if (!currentDate) return;
+
+      const grouped = new Map();
+      columns.forEach(column => {
+        const cell = String(row[column.index] || '').trim();
+        const key = `${column.block}__${column.name}`;
+        if (!grouped.has(key)) grouped.set(key, { block: column.block, name: column.name, R: '', W: '' });
+        grouped.get(key)[column.metric] = cell;
+      });
+
+      grouped.forEach(group => {
+        const reps = parseInt(group.R, 10);
+        const parsedWeight = parseSheetCsvWeight(group.W);
+        if (!Number.isFinite(reps) || parsedWeight.weight == null) return;
+        records.push({
+          id: records.length + 1,
+          date: currentDate,
+          time: '',
+          name: group.name,
+          exercise: parsedWeight.isVariant ? VARIANT_EXERCISE_MAP[group.block] : BASE_EXERCISE_MAP[group.block],
+          weight: parsedWeight.weight,
+          reps
+        });
+      });
+    });
+    return records;
+  }
+
+  function buildSheetColumns(rows) {
+    const top = rows[0] || [];
+    const names = rows[1] || [];
+    const metrics = rows[2] || [];
+    let currentBlock = '';
+    let currentName = '';
+    const columns = [];
+    for (let idx = 1; idx < top.length; idx += 1) {
+      const topCell = String(top[idx] || '').trim();
+      if (topCell) currentBlock = topCell;
+      if (!(currentBlock in BASE_EXERCISE_MAP)) continue;
+      const nameCell = String(names[idx] || '').trim();
+      if (nameCell) currentName = nameCell;
+      const metric = String(metrics[idx] || '').trim();
+      if (!NAMES.includes(currentName) || !['R', 'W'].includes(metric)) continue;
+      columns.push({ index: idx, block: currentBlock, name: currentName, metric });
+    }
+    return columns;
+  }
+
+  function parseSheetCsvDate(raw, state) {
+    const shown = String(raw || '').trim();
+    if (!shown) return '';
+    const parts = shown.replace(/\/+/g, '/').split('/').filter(Boolean);
+    if (parts.length === 3) {
+      let year = Number(parts[2]);
+      if (year < 100) year += 2000;
+      state.year = year;
+      state.lastMonth = Number(parts[0]);
+      return `${year}-${String(Number(parts[0])).padStart(2, '0')}-${String(Number(parts[1])).padStart(2, '0')}`;
+    }
+    if (parts.length === 2) {
+      const month = Number(parts[0]);
+      const day = Number(parts[1]);
+      if (state.lastMonth != null && state.lastMonth === 12 && month === 1) state.year += 1;
+      state.lastMonth = month;
+      return `${state.year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return '';
+  }
+
+  function parseSheetCsvWeight(raw) {
+    const source = String(raw || '').trim();
+    if (!source) return { weight: null, isVariant: false };
+    const isVariant = source.includes('*');
+    const cleaned = source.replace(/\*/g, '');
+    const weight = Number(cleaned);
+    return { weight: Number.isFinite(weight) ? weight : null, isVariant };
+  }
+
+  function fetchGoogleSheetTable(sheetId) {
+    return new Promise((resolve, reject) => {
+      const cbName = `__weightupSheetSync_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const cleanup = () => {
+        delete window[cbName];
+        script.remove();
+        clearTimeout(timeout);
+      };
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timed out loading Google Sheet.'));
+      }, 15000);
+      window[cbName] = payload => {
+        cleanup();
+        if (!payload || payload.status !== 'ok' || !payload.table) {
+          reject(new Error('Google Sheet returned an invalid response.'));
+          return;
+        }
+        resolve(payload.table);
+      };
+      const script = document.createElement('script');
+      script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cbName}`;
+      script.onerror = () => {
+        cleanup();
+        reject(new Error('Could not load Google Sheet.'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  function convertGoogleSheetTableToSets(table) {
+    const rows = table.rows || [];
+    const specs = [
+      { name: 'Iris', block: 'Squat', reps: 1, weight: 2 },
+      { name: 'Diego', block: 'Squat', reps: 3, weight: 4 },
+      { name: 'Iris', block: 'Bench', reps: 5, weight: 6 },
+      { name: 'Diego', block: 'Bench', reps: 7, weight: 8 },
+      { name: 'Iris', block: 'Deadlift', reps: 9, weight: 10 },
+      { name: 'Diego', block: 'Deadlift', reps: 11, weight: 12 }
+    ];
+    const out = [];
+    let currentDate = '';
+    const dateState = { year: 2025, lastMonth: null };
+    rows.forEach((row, rowIndex) => {
+      const cells = row.c || [];
+      const dateCell = cells[0];
+      if (dateCell && (dateCell.v || dateCell.f)) currentDate = parseGoogleDateCell(dateCell, dateState);
+      if (!currentDate) return;
+      specs.forEach(spec => {
+        const reps = numericCellValue(cells[spec.reps]);
+        const parsedWeight = parseWeightCell(cells[spec.weight]);
+        const weight = parsedWeight.weight;
+        if (reps == null || weight == null) return;
+        out.push({
+          id: out.length + 1,
+          date: currentDate,
+          time: '',
+          name: spec.name,
+          exercise: parsedWeight.isVariant ? VARIANT_EXERCISE_MAP[spec.block] : BASE_EXERCISE_MAP[spec.block],
+          weight,
+          reps: Math.round(reps)
+        });
+      });
+    });
+    return out;
+  }
+
+  function parseGoogleDateCell(cell, state = { year: 2025, lastMonth: null }) {
+    const raw = cell && cell.v != null ? String(cell.v) : '';
+    const full = /^Date\((\d+),(\d+),(\d+)\)$/.exec(raw);
+    if (full) {
+      const year = Number(full[1]);
+      const month = Number(full[2]) + 1;
+      const day = Number(full[3]);
+      state.year = year;
+      state.lastMonth = month;
+      return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+    const shown = String((cell && cell.f) || raw || '').trim();
+    const short = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/.exec(shown);
+    if (!short) return '';
+    const month = Number(short[1]);
+    const day = Number(short[2]);
+    if (short[3]) {
+      let year = Number(short[3]);
+      if (year < 100) year += 2000;
+      state.year = year;
+    } else if (state.lastMonth != null && state.lastMonth === 12 && month === 1) {
+      state.year += 1;
+    }
+    state.lastMonth = month;
+    return `${state.year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  }
+
+  function numericCellValue(cell) {
+    if (!cell || cell.v == null || cell.v === '') return null;
+    const n = Number(cell.v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function parseWeightCell(cell) {
+    if (!cell) return { weight: null, isVariant: false };
+    const shown = String(cell.f ?? cell.v ?? '').trim();
+    const raw = String(cell.v ?? '').trim();
+    const source = shown || raw;
+    if (!source) return { weight: null, isVariant: false };
+    const isVariant = source.includes('*');
+    const cleaned = source.replace(/\*/g, '');
+    const weight = Number(cleaned);
+    if (Number.isFinite(weight)) return { weight, isVariant };
+    const numeric = Number(cell.v);
+    return { weight: Number.isFinite(numeric) ? numeric : null, isVariant };
+  }
+
+  function parseCsv(text) {
+    const out = []; let cur = '', row = [], q = false;
+    for (let i=0;i<text.length;i++) {
+      const ch = text[i], next = text[i+1];
+      if (ch === '"' && q && next === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { q = !q; continue; }
+      if (ch === ',' && !q) { row.push(cur); cur=''; continue; }
+      if ((ch === '\n' || ch === '\r') && !q) {
+        if (ch === '\r' && next === '\n') i++;
+        row.push(cur); cur=''; if (row.length && row.some(v=>v!=='')) out.push(row); row=[]; continue;
+      }
+      cur += ch;
+    }
+    if (cur || row.length) { row.push(cur); out.push(row); }
+    return out;
+  }
+
+  function setupPager(card, adapter, simpleIndex) {
+    card.innerHTML = '';
+    const pages = ['top','left','center','right','bottom'].map(() => {
+      const div = el('div', { className: 'pager-layer' });
+      card.appendChild(div); return div;
+    });
+    const [pageTop, pageLeft, pageCenter, pageRight, pageBottom] = pages;
+    let startX = null, startY = null, axis = null, dragIndex = null;
+    const lockThreshold = 8;
+    const snapDurationMs = 100;
+    let snapTimer = null;
+
+    function normalizeIndex(value) {
+      if (simpleIndex) return mod(value, NAMES.length);
+      const row = mod(value.row, EXERCISE_MATRIX.length);
+      const col = mod(value.col, EXERCISE_MATRIX[row].length);
+      return { row, col };
+    }
+
+    function step(center, dir) {
+      if (simpleIndex) {
+        if (dir === 'left' || dir === 'up') return center - 1;
+        return center + 1;
+      }
+      if (dir === 'left') return { row: center.row, col: center.col - 1 };
+      if (dir === 'right') return { row: center.row, col: center.col + 1 };
+      if (dir === 'up') return { row: center.row - 1, col: center.col };
+      return { row: center.row + 1, col: center.col };
+    }
+
+    function setStack(activeAxis = null, direction = 0) {
+      pageTop.style.zIndex = '1';
+      pageLeft.style.zIndex = '1';
+      pageCenter.style.zIndex = '2';
+      pageRight.style.zIndex = '1';
+      pageBottom.style.zIndex = '1';
+      if (activeAxis === 'x') {
+        (direction < 0 ? pageRight : pageLeft).style.zIndex = '3';
+      } else if (activeAxis === 'y') {
+        (direction < 0 ? pageBottom : pageTop).style.zIndex = '3';
+      }
+    }
+
+    function layout(center, dx=0, dy=0) {
+      const w = card.clientWidth, h = card.clientHeight;
+      const centerPos = normalizeIndex(center);
+      const cells = simpleIndex ? [
+        centerPos - 1,
+        centerPos - 1,
+        centerPos,
+        centerPos + 1,
+        centerPos + 1
+      ] : [
+        step(centerPos, 'up'),
+        step(centerPos, 'left'),
+        centerPos,
+        step(centerPos, 'right'),
+        step(centerPos, 'down')
+      ];
+      pages.forEach((page, i) => {
+        const item = normalizeIndex(cells[i]);
+        page.textContent = adapter.getLabel(item);
+        page.style.background = adapter.colorFor(item);
+      });
+      pageTop.style.transform = `translate3d(${dx}px,${dy-h}px,0)`;
+      pageLeft.style.transform = `translate3d(${dx-w}px,${dy}px,0)`;
+      pageCenter.style.transform = `translate3d(${dx}px,${dy}px,0)`;
+      pageRight.style.transform = `translate3d(${dx+w}px,${dy}px,0)`;
+      pageBottom.style.transform = `translate3d(${dx}px,${dy+h}px,0)`;
+    }
+
+    function setTransition(value) {
+      pages.forEach(page => { page.style.transition = value; });
+    }
+
+    function animateSnap(center, targetDx, targetDy, committedCenter) {
+      clearTimeout(snapTimer);
+      setTransition(`transform ${snapDurationMs}ms ease-out`);
+      layout(center, targetDx, targetDy);
+      snapTimer = setTimeout(() => {
+        setTransition('none');
+        adapter.setCenter(normalizeIndex(committedCenter));
+        setStack();
+      }, snapDurationMs);
+    }
+
+    function currentCenter() { return normalizeIndex(adapter.getCenter()); }
+    setTransition('none');
+    layout(currentCenter());
+
+    function handleStart(x, y) {
+      clearTimeout(snapTimer);
+      setTransition('none');
+      startX = x;
+      startY = y;
+      axis = null;
+      dragIndex = currentCenter();
+      setStack();
+    }
+
+    function handleMove(x, y) {
+      if (startX == null) return;
+      let dx = x - startX;
+      let dy = y - startY;
+      if (!axis && (Math.abs(dx) > lockThreshold || Math.abs(dy) > lockThreshold)) {
+        axis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+      }
+      const w = card.clientWidth, h = card.clientHeight;
+      if (axis === 'x') {
+        while (dx <= -w) {
+          dragIndex = normalizeIndex(step(dragIndex, 'right'));
+          startX -= w;
+          dx += w;
+        }
+        while (dx >= w) {
+          dragIndex = normalizeIndex(step(dragIndex, 'left'));
+          startX += w;
+          dx -= w;
+        }
+        dy = 0;
+        setStack('x', dx);
+      }
+      if (axis === 'y') {
+        while (dy <= -h) {
+          dragIndex = normalizeIndex(step(dragIndex, 'down'));
+          startY -= h;
+          dy += h;
+        }
+        while (dy >= h) {
+          dragIndex = normalizeIndex(step(dragIndex, 'up'));
+          startY += h;
+          dy -= h;
+        }
+        dx = 0;
+        setStack('y', dy);
+      }
+      if (!axis) {
+        setStack();
+        layout(dragIndex, 0, 0);
+      } else {
+        layout(dragIndex, dx, dy);
+      }
+    }
+
+    function handleEnd(x, y) {
+      if (startX == null) return;
+      const dx = x - startX;
+      const dy = y - startY;
+      const horizontal = axis === 'x' || (!axis && Math.abs(dx)>=Math.abs(dy));
+      const threshold = horizontal ? card.clientWidth * .25 : card.clientHeight * .25;
+      let finalCenter = dragIndex;
+      let targetDx = 0;
+      let targetDy = 0;
+      if (horizontal && Math.abs(dx) > threshold) {
+        finalCenter = normalizeIndex(step(dragIndex, dx < 0 ? 'right' : 'left'));
+        targetDx = dx < 0 ? -card.clientWidth : card.clientWidth;
+      } else if (!horizontal && Math.abs(dy) > threshold) {
+        finalCenter = normalizeIndex(step(dragIndex, dy < 0 ? 'down' : 'up'));
+        targetDy = dy < 0 ? -card.clientHeight : card.clientHeight;
+      }
+      animateSnap(dragIndex, targetDx, targetDy, finalCenter);
+      startX = null;
+      startY = null;
+      axis = null;
+      dragIndex = null;
+    }
+
+    if (IS_TOUCH_DEVICE) {
+      card.addEventListener('touchstart', e => {
+        if (!e.touches || !e.touches.length) return;
+        const t = e.touches[0];
+        handleStart(t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchmove', e => {
+        if (!e.touches || !e.touches.length) return;
+        const t = e.touches[0];
+        handleMove(t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchend', e => {
+        const t = (e.changedTouches && e.changedTouches[0]) || { clientX: startX ?? 0, clientY: startY ?? 0 };
+        handleEnd(t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchcancel', e => {
+        const t = (e.changedTouches && e.changedTouches[0]) || { clientX: startX ?? 0, clientY: startY ?? 0 };
+        handleEnd(t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+    } else {
+      card.addEventListener('pointerdown', e => {
+        handleStart(pointX(e), pointY(e));
+        card.setPointerCapture?.(e.pointerId);
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointermove', e => {
+        handleMove(pointX(e), pointY(e));
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointerup', e => {
+        handleEnd(pointX(e), pointY(e));
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointercancel', e => {
+        handleEnd(pointX(e), pointY(e));
+        e.preventDefault?.();
+      });
+    }
+    const rerender = () => layout(currentCenter());
+    setStack();
+    rerender();
+    card._rerenderPager = rerender;
+  }
+
+  function setupStepper(card, getter, setter, step) {
+    let startY = null, acc = 0;
+    card.addEventListener('pointerdown', e => { startY = e.clientY; acc = 0; card.setPointerCapture?.(e.pointerId); });
+    card.addEventListener('pointermove', e => {
+      if (startY == null) return;
+      acc += e.clientY - startY; startY = e.clientY;
+      while (acc <= -18) { setter(getter()+step); acc += 18; }
+      while (acc >= 18) { setter(getter()-step); acc -= 18; }
+      e.preventDefault();
+    });
+    const finish = () => { startY = null; acc = 0; };
+    card.addEventListener('pointerup', finish); card.addEventListener('pointercancel', finish);
+  }
+
+  function setupListPager(card, adapter) {
+    card.innerHTML = '';
+    const pages = ['top','center','bottom'].map(() => {
+      const div = el('div', { className: 'pager-layer' });
+      card.appendChild(div);
+      return div;
+    });
+    const [pageTop, pageCenter, pageBottom] = pages;
+    let startY = null;
+    let dragIndex = 0;
+    let snapTimer = null;
+    const lockThreshold = 8;
+    const snapDurationMs = 100;
+
+    function layout(index, dy = 0) {
+      const options = adapter.getOptions();
+      const h = card.clientHeight;
+      const topIdx = clamp(index - 1, 0, Math.max(0, options.length - 1));
+      const centerIdx = clamp(index, 0, Math.max(0, options.length - 1));
+      const bottomIdx = clamp(index + 1, 0, Math.max(0, options.length - 1));
+      pageTop.textContent = options.length ? adapter.format(options[topIdx]) : '';
+      pageCenter.textContent = options.length ? adapter.format(options[centerIdx]) : '';
+      pageBottom.textContent = options.length ? adapter.format(options[bottomIdx]) : '';
+      pageTop.style.transform = `translate3d(0,${dy - h}px,0)`;
+      pageCenter.style.transform = `translate3d(0,${dy}px,0)`;
+      pageBottom.style.transform = `translate3d(0,${dy + h}px,0)`;
+    }
+
+    function setTransition(value) {
+      pages.forEach(page => { page.style.transition = value; });
+    }
+
+    function rerender() {
+      const options = adapter.getOptions();
+      if (!options.length) {
+        pages.forEach(page => { page.textContent = ''; page.style.transform = 'translate3d(0,0,0)'; });
+        return;
+      }
+      layout(adapter.getIndex(options), 0);
+    }
+
+    function animateTo(index, targetDy, commitIndex) {
+      clearTimeout(snapTimer);
+      setTransition(`transform ${snapDurationMs}ms ease-out`);
+      layout(index, targetDy);
+      snapTimer = setTimeout(() => {
+        setTransition('none');
+        adapter.setIndex(commitIndex, adapter.getOptions());
+      }, snapDurationMs);
+    }
+
+    function start(y) {
+      clearTimeout(snapTimer);
+      setTransition('none');
+      const options = adapter.getOptions();
+      if (!options.length) return;
+      startY = y;
+      dragIndex = adapter.getIndex(options);
+    }
+
+    function move(y) {
+      if (startY == null) return;
+      const options = adapter.getOptions();
+      if (!options.length) return;
+      const h = card.clientHeight;
+      let dy = y - startY;
+      while (dy <= -h) {
+        dragIndex = clamp(dragIndex + 1, 0, options.length - 1);
+        startY -= h;
+        dy += h;
+      }
+      while (dy >= h) {
+        dragIndex = clamp(dragIndex - 1, 0, options.length - 1);
+        startY += h;
+        dy -= h;
+      }
+      layout(dragIndex, Math.abs(dy) >= lockThreshold ? dy : 0);
+    }
+
+    function end(y) {
+      if (startY == null) return;
+      const options = adapter.getOptions();
+      if (!options.length) { startY = null; return; }
+      const dy = y - startY;
+      const threshold = card.clientHeight * 0.25;
+      let commitIndex = dragIndex;
+      let targetDy = 0;
+      if (Math.abs(dy) > threshold) {
+        if (dy < 0) {
+          commitIndex = clamp(dragIndex + 1, 0, options.length - 1);
+          targetDy = commitIndex === dragIndex ? 0 : -card.clientHeight;
+        } else {
+          commitIndex = clamp(dragIndex - 1, 0, options.length - 1);
+          targetDy = commitIndex === dragIndex ? 0 : card.clientHeight;
+        }
+      }
+      animateTo(dragIndex, targetDy, commitIndex);
+      startY = null;
+    }
+
+    if (IS_TOUCH_DEVICE) {
+      card.addEventListener('touchstart', e => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        start(t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchmove', e => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        move(t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchend', e => {
+        const t = (e.changedTouches && e.changedTouches[0]) || { clientY: startY ?? 0 };
+        end(t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      card.addEventListener('touchcancel', e => {
+        const t = (e.changedTouches && e.changedTouches[0]) || { clientY: startY ?? 0 };
+        end(t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+    } else {
+      card.addEventListener('pointerdown', e => {
+        start(pointY(e));
+        card.setPointerCapture?.(e.pointerId);
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointermove', e => {
+        move(pointY(e));
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointerup', e => {
+        end(pointY(e));
+        e.preventDefault?.();
+      });
+      card.addEventListener('pointercancel', e => {
+        end(pointY(e));
+        e.preventDefault?.();
+      });
+    }
+    card._rerenderListPager = rerender;
+    rerender();
+  }
+
+  function renderPagers() {
+    ui.nameCard._rerenderPager?.();
+    ui.exerciseCard._rerenderPager?.();
+  }
+
+  function createPinchZoom(elm, onScale) {
+    let lastDist = null;
+    return function(e) {
+      if (!e.touches || e.touches.length !== 2) { lastDist = null; return; }
+      const [a,b] = e.touches; const dist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+      if (lastDist != null && dist > 0) { onScale(dist / lastDist); }
+      lastDist = dist;
+      e.preventDefault();
+    };
+  }
+
+  function showTopButton() { if (!topButtonVisible) { topButtonVisible = true; ui.scrollTopBtn.classList.add('visible'); } }
+  function hideTopButton(immediate=false) { topButtonVisible = false; ui.scrollTopBtn.classList.remove('visible'); if (immediate) clearTimeout(topButtonTimer); }
+
+  function loadState() {
+    return withDefaults(loadUiStorage());
+  }
+  function withDefaults(s) {
+    return {
+      currentPage: ['entry', 'history', 'progress', 'settings'].includes(s.currentPage) ? s.currentPage : 'entry',
+      selection: Object.assign({ nameIndex: 0, exerciseRow: 0, exerciseCol: 0, weight: 135, reps: 5 }, s.selection || {}),
+      sets: loadSetsStorage(),
+      historyVisibility: normalizeVisibilityCsv(s.historyVisibility),
+      progressVisibility: normalizeVisibilityCsv(s.progressVisibility),
+      progressControlsOpen: s.progressControlsOpen !== false,
+      progressThreshold: s.progressThreshold || 5,
+      progressStartMonth: typeof s.progressStartMonth === 'string' ? s.progressStartMonth : '',
+      progressEndMonth: typeof s.progressEndMonth === 'string' ? s.progressEndMonth : '',
+      colors: loadThemeStorage()
+    };
+  }
+  function saveState() { persist(); }
+  function persist() {
+    localStorage.setItem(UI_STORAGE_KEY, JSON.stringify({
+      currentPage: state.currentPage,
+      selection: state.selection,
+      historyVisibility: encodeVisibilityCsv(state.historyVisibility),
+      progressVisibility: encodeVisibilityCsv(state.progressVisibility),
+      progressControlsOpen: state.progressControlsOpen,
+      progressThreshold: state.progressThreshold,
+      progressStartMonth: state.progressStartMonth,
+      progressEndMonth: state.progressEndMonth
+    }));
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(state.colors));
+    localStorage.setItem(SETS_STORAGE_KEY, encodeSetsCsv(state.sets));
+  }
+
+  function loadUiStorage() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(UI_STORAGE_KEY) || 'null');
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {}
+    return {};
+  }
+
+  function loadThemeStorage() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || 'null');
+      if (parsed && typeof parsed === 'object') {
+        return {
+          theme: {
+            primary: parsed.theme && parsed.theme.primary || DEFAULT_COLORS.theme.primary,
+            onPrimary: parsed.theme && parsed.theme.onPrimary || DEFAULT_COLORS.theme.onPrimary
+          },
+          people: {
+            Diego: parsed.people && parsed.people.Diego || DEFAULT_COLORS.people.Diego,
+            Iris: parsed.people && parsed.people.Iris || DEFAULT_COLORS.people.Iris
+          },
+          exercises: Object.fromEntries(EXERCISE_MATRIX.flat().map(exercise => [
+            exercise,
+            parsed.exercises && parsed.exercises[exercise] || DEFAULT_COLORS.exercises[exercise]
+          ]))
+        };
+      }
+    } catch {}
+    return {
+      theme: { ...DEFAULT_COLORS.theme },
+      people: { ...DEFAULT_COLORS.people },
+      exercises: { ...DEFAULT_COLORS.exercises }
+    };
+  }
+
+  function loadSetsStorage() {
+    const raw = localStorage.getItem(SETS_STORAGE_KEY) || '';
+    if (!raw.trim()) return [];
+    const rows = parseCsv(raw).filter(row => row.length >= 6);
+    if (!rows.length) return [];
+    const header = rows[0].map(cell => String(cell || '').trim().toLowerCase());
+    const hasHeader = header.join(',') === 'date,time,name,exercise,weight,reps';
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    return dataRows.map((row, index) => {
+      if (row.length >= 7) {
+        return normalizeStoredSet(row);
+      }
+      return normalizeStoredSet({
+        id: index + 1,
+        date: row[0],
+        time: row[1],
+        name: row[2],
+        exercise: row[3],
+        weight: row[4],
+        reps: row[5]
+      });
+    }).sort(compareSets);
+  }
+
+  function encodeSetsCsv(sets) {
+    const lines = [
+      'date,time,name,exercise,weight,reps',
+      ...sets.map(set => [
+        setDateKey(set),
+        setTimeKey(set),
+        set && set.name ? set.name : '',
+        set && set.exercise ? set.exercise : '',
+        formatWeight(Number(set && set.weight) || 0),
+        parseInt(set && set.reps, 10) || 0
+      ].join(','))
+    ];
+    return lines.join('\n');
+  }
+
+  function normalizeVisibilityCsv(raw) {
+    const rows = String(raw || '').trim() ? parseCsv(String(raw)) : [];
+    return EXERCISE_MATRIX.flat().map((_, index) => {
+      const row = rows[index] || [];
+      return [parseBoolCell(row[0], true), parseBoolCell(row[1], true)];
+    });
+  }
+
+  function encodeVisibilityCsv(matrix) {
+    return matrix.map(row => row.map(value => value ? 'true' : 'false').join(',')).join('\n');
+  }
+
+  function parseBoolCell(value, fallback) {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+    return fallback;
+  }
+
+  function exerciseIndex(exercise) {
+    return EXERCISE_MATRIX.flat().indexOf(exercise);
+  }
+
+  function getVisibilityCell(matrix, index, name) {
+    const row = matrix[index] || [true, true];
+    return !!row[name === 'Iris' ? 0 : 1];
+  }
+
+  function setVisibilityCell(matrix, index, name, value) {
+    if (!matrix[index]) matrix[index] = [true, true];
+    matrix[index][name === 'Iris' ? 0 : 1] = !!value;
+  }
+
+  function formatWeight(v) { return String(Math.round(v * 100) / 100).replace(/\.0+$/,'').replace(/(\.\d*[1-9])0+$/,'$1'); }
+  function pointX(e) { return e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0); }
+  function pointY(e) { return e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0); }
+  function formatTime(d) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`; }
+  function parseDate(v) { const d = new Date(v); return isNaN(+d) ? new Date() : d; }
+  function normalizeStoredSet(raw) {
+    if (Array.isArray(raw)) {
+      return {
+        id: normalizeSetId(raw[SET_ID]),
+        date: typeof raw[SET_DATE] === 'string' && raw[SET_DATE] ? raw[SET_DATE] : dayKey(new Date()),
+        time: typeof raw[SET_TIME] === 'string' ? raw[SET_TIME] : '',
+        name: typeof raw[SET_NAME] === 'string' ? raw[SET_NAME] : '',
+        exercise: typeof raw[SET_EXERCISE] === 'string' ? raw[SET_EXERCISE] : '',
+        weight: Number(raw[SET_WEIGHT]) || 0,
+        reps: parseInt(raw[SET_REPS], 10) || 0
+      };
+    }
+    if (raw && raw.date) {
+      return {
+        id: normalizeSetId(raw.id),
+        date: raw.date,
+        time: raw.time || '',
+        name: raw.name || '',
+        exercise: raw.exercise || '',
+        weight: Number(raw.weight) || 0,
+        reps: parseInt(raw.reps, 10) || 0
+      };
+    }
+    if (raw && raw.datetime) {
+      const dt = parseDate(raw.datetime);
+      return {
+        id: normalizeSetId(raw.id),
+        date: dayKey(dt),
+        time: formatTime(dt),
+        name: raw.name || '',
+        exercise: raw.exercise || '',
+        weight: Number(raw.weight) || 0,
+        reps: parseInt(raw.reps, 10) || 0
+      };
+    }
+    return {
+      id: normalizeSetId(raw && raw.id),
+      date: dayKey(new Date()),
+      time: '',
+      name: raw && raw.name ? raw.name : '',
+      exercise: raw && raw.exercise ? raw.exercise : '',
+      weight: raw && raw.weight ? Number(raw.weight) || 0 : 0,
+      reps: raw && raw.reps ? parseInt(raw.reps, 10) || 0 : 0
+    };
+  }
+  function setDateKey(set) { return set.date || dayKey(parseDate(set.datetime)); }
+  function setTimeKey(set) { return set.time || ''; }
+  function compareSets(a, b) {
+    const dayCmp = setDateKey(a).localeCompare(setDateKey(b));
+    if (dayCmp !== 0) return dayCmp;
+    const timeCmp = setTimeKey(a).localeCompare(setTimeKey(b));
+    if (timeCmp !== 0) return timeCmp;
+    return normalizeSetId(a && a.id) - normalizeSetId(b && b.id);
+  }
+  function dayKey(d) { const x = (d instanceof Date) ? d : parseDate(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; }
+  function parseDayKey(k) { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d, 0,0,0,0); }
+  function fmtDay(k) { const d = parseDayKey(k); return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`; }
+  function mod(n,m) { return ((n % m) + m) % m; }
+  function el(tag, props={}) { const node = document.createElement(tag); Object.assign(node, props); return node; }
+  function selectEl(options, value, onChange) { const s = document.createElement('select'); s.className = 'select'; options.forEach(opt => s.appendChild(el('option', { value: opt, textContent: opt }))); s.value = value; s.onchange = () => onChange(s.value); return s; }
+  function inputEl(value, type, onInput, cls='field') { const i = document.createElement('input'); i.className = cls; i.type = type; i.value = value; i.oninput = () => onInput(i.value); return i; }
+  function personColor(name) { return state.colors.people[name] || DEFAULT_COLORS.people[name] || '#cccccc'; }
+  function exerciseColorHex(exercise) { return state.colors.exercises[exercise] || DEFAULT_COLORS.exercises[exercise] || '#cccccc'; }
+  function exerciseColor(exercise) { return exerciseColorHex(exercise); }
+  function progressColor(exercise, name) {
+    const base = exerciseColorHex(exercise);
+    if (name === 'Iris') return base;
+    return darken(base, 0.78);
+  }
+  function darken(hex, factor) {
+    const n = hex.replace('#',''); const r = Math.round(parseInt(n.slice(0,2),16)*factor), g=Math.round(parseInt(n.slice(2,4),16)*factor), b=Math.round(parseInt(n.slice(4,6),16)*factor);
+    return `rgb(${r},${g},${b})`;
+  }
+  function normalizeSetId(id) {
+    const n = Number(id);
+    return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+  }
+  function nextSetId() {
+    return state.sets.reduce((max, set) => Math.max(max, normalizeSetId(set && set.id)), 0) + 1;
+  }
+  function csv(v) { return `"${String(v).replace(/"/g,'""')}"`; }
+  function downloadFile(name, content, type) { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const a = el('a', { href: url, download: name }); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function startOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
+  function addMonths(d,n){ const x=new Date(d); x.setMonth(x.getMonth()+n); x.setDate(1); return x; }
+  function monthStartKey(dayOrDate) {
+    const d = typeof dayOrDate === 'string' ? parseDayKey(dayOrDate) : startOfMonth(dayOrDate);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+  function formatMonthKey(key) {
+    const [y, m] = key.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' }) + "'" + String(y).slice(-2);
+  }
+  function monthKeyCompare(a, b) { return a.localeCompare(b); }
+  function progressMonthOptions() {
+    return [...new Set(state.sets.map(set => monthStartKey(setDateKey(set))))].sort();
+  }
+  function progressMonthInRange(monthKey) {
+    if (!state.progressStartMonth || !state.progressEndMonth) return true;
+    return monthKeyCompare(monthKey, state.progressStartMonth) >= 0 && monthKeyCompare(monthKey, state.progressEndMonth) <= 0;
+  }
+  function clampMonthIndex(options, value) {
+    const index = options.indexOf(value);
+    return index >= 0 ? index : 0;
+  }
+
+  renderPagers();
+})();
+</script>
+</body>
+</html>

@@ -47,25 +47,20 @@ button { cursor: pointer; }
 .card-grid-top { display: grid; grid-template-columns: 2fr 1fr; gap: 0; }
 .card-grid-bottom { display: grid; grid-template-columns: 2fr 1fr; gap: 0; margin-top: -2px; }
 .card-grid-bottom .panel + .panel,
-.card-grid-top .panel + .panel,
-.row-panels .panel + .panel { margin-left: -2px; }
-.card-grid-top .panel, .card-grid-bottom .panel, .row-panels .panel { border-radius: 0; }
+.card-grid-top .panel + .panel { margin-left: -2px; }
+.card-grid-top .panel, .card-grid-bottom .panel { border-radius: 0; }
 .card-grid-top > .panel:first-child { border-top-left-radius: 10px; }
 .card-grid-top > .panel:last-child { border-top-right-radius: 10px; }
 .card-grid-bottom > .panel:first-child { border-bottom-left-radius: 10px; }
 .card-grid-bottom > .panel:last-child { border-bottom-right-radius: 10px; }
-.partner-grid .row-panels > .panel:first-child { border-top-left-radius: 10px; }
-.partner-grid .row-panels > .panel:last-child { border-top-right-radius: 10px; }
 .pager-card, .value-card { height: 72px; overflow: hidden; position: relative; touch-action: none; user-select: none; }
 .value-card { height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .value-label { color: var(--muted); font-size: 14px; margin-top: 8px; }
 .value-main, .pager-layer { font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; }
 .value-main { flex: 1; margin-top: 2px; }
 .pager-layer { position: absolute; inset: 0; padding: 0 12px; color: var(--ink) !important; }
-.row-panels { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; }
 .partner-grid { margin-top: var(--entry-pad-x); }
-.partner-grid .row-panels { margin-top: 0; }
-.partner-stack { height: 144px; margin-top: -2px; padding: 6px; background: #fffdf9 !important; display: flex; align-items: center; justify-content: center; overflow-x: auto; border-radius: 0 0 10px 10px; }
+.partner-stack { height: 144px; padding: 6px; background: #fffdf9 !important; display: flex; align-items: center; justify-content: center; overflow-x: auto; border-radius: 10px; }
 .plate { width: 40px; border: 1px solid rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: var(--ink); flex: 0 0 auto; }
 .actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
 .primary { background: var(--purple) !important; color: var(--purple-ink) !important; -webkit-text-fill-color: var(--purple-ink) !important; border: 2px solid transparent; border-radius: 12px; min-height: 55px; font-size: 16.8px; font-weight: 700; }
@@ -128,8 +123,8 @@ button { cursor: pointer; }
 }
 .tabbar { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; padding: 0 0 8px; background: var(--panel); align-items: end; }
 .tabbar.hidden { display: none; }
-.tab { height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0; border: 0; border-top: 2px solid var(--border); background: transparent !important; color: var(--muted) !important; position: relative; margin-top: 6px; }
-.tab.active { background: transparent !important; color: var(--ink) !important; border-top: 0; border-left: 2px solid var(--border); border-right: 2px solid var(--border); border-bottom: 2px solid var(--border); border-radius: 0 0 8px 8px; margin-top: 0; }
+.tab { height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0; border: 0; border-top: 2px solid var(--border); background: transparent !important; color: var(--muted) !important; position: relative; }
+.tab.active { background: transparent !important; color: var(--purple) !important; }
 .tab svg, .float-btn svg, .history-calendar svg { width: 24px; height: 24px; fill: currentColor; }
 .float-btn { position: absolute; right: 20px; bottom: 86px; width: 52px; height: 52px; border-radius: 12px; border: 0; background: var(--purple); color: var(--purple-ink); -webkit-text-fill-color: var(--purple-ink); display: none; align-items: center; justify-content: center; z-index: 6; }
 .float-btn.visible { display: flex; }
@@ -274,7 +269,7 @@ button { cursor: pointer; }
   .scroll, .history-header { padding-left: var(--entry-pad-x); padding-right: var(--entry-pad-x); }
   .entry-scroll { padding-top: 12px; }
   .progress-layout { padding: 12px; }
-  .card-grid-top, .card-grid-bottom, .row-panels { gap: 0; }
+  .card-grid-top, .card-grid-bottom { gap: 0; }
   .threshold-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
@@ -294,10 +289,6 @@ button { cursor: pointer; }
         </div>
 
         <div class="partner-grid">
-          <div class="row-panels">
-            <div class="panel value-card" id="calcIrisCard"><div class="value-main" id="calcIrisValue"></div></div>
-            <div class="panel value-card" id="calcDiegoCard"><div class="value-main" id="calcDiegoValue"></div></div>
-          </div>
           <div class="panel partner-stack" id="partnerStack"></div>
         </div>
 
@@ -369,6 +360,7 @@ button { cursor: pointer; }
             <div class="utility-row">
               <button class="small-btn" id="syncSheetBtn">Sync Sheet</button>
               <button class="small-btn" id="exportCsvBtn">Export CSV</button>
+              <button class="small-btn" id="resetExerciseWeightsBtn">Reset Exercise Weights</button>
             </div>
           </div>
         </div>
@@ -431,6 +423,14 @@ button { cursor: pointer; }
       'Smith Deadlift': '#98e7e3'
     }
   };
+  const DEFAULT_EXERCISE_WEIGHTS = {
+    'Flat Bench': 135,
+    'Incline Bench': 135,
+    'Back Squat': 95,
+    'Front Squat': 95,
+    'Deadlift': 185,
+    'Smith Deadlift': 185
+  };
 
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -454,16 +454,13 @@ button { cursor: pointer; }
     nameCard: byId('nameCard'),
     weightCard: byId('weightCard'),
     repsCard: byId('repsCard'),
-    calcIrisCard: byId('calcIrisCard'),
-    calcDiegoCard: byId('calcDiegoCard'),
     weightValue: byId('weightValue'),
     repsValue: byId('repsValue'),
-    calcIrisValue: byId('calcIrisValue'),
-    calcDiegoValue: byId('calcDiegoValue'),
     partnerStack: byId('partnerStack'),
     saveSetBtn: byId('saveSetBtn'),
     syncSheetBtn: byId('syncSheetBtn'),
     exportCsvBtn: byId('exportCsvBtn'),
+    resetExerciseWeightsBtn: byId('resetExerciseWeightsBtn'),
     entryRecentHistory: byId('entryRecentHistory'),
     historyContent: byId('historyContent'),
     historyExerciseFilters: byId('historyExerciseFilters'),
@@ -531,10 +528,13 @@ button { cursor: pointer; }
       colorFor: pos => exerciseColor(EXERCISE_MATRIX[mod(pos.row, EXERCISE_MATRIX.length)][mod(pos.col, EXERCISE_MATRIX[0].length)])
     }, false);
 
-    setupStepper(ui.weightCard, () => state.selection.weight, v => { state.selection.weight = Math.max(45, v); saveState(); renderEntry(); }, 5, true);
+    setupStepper(ui.weightCard, () => state.selection.weight, v => {
+      state.selection.weight = Math.max(45, v);
+      setSavedWeight(currentName(), currentExercise(), state.selection.weight);
+      saveState();
+      renderEntry();
+    }, 5, true);
     setupStepper(ui.repsCard, () => state.selection.reps, v => { state.selection.reps = Math.max(1, Math.round(v)); saveState(); renderEntry(); }, 1, true);
-    setupStepper(ui.calcIrisCard, () => partnerWeights.Iris, v => { partnerWeights.Iris = Math.max(45, v); renderEntry(); }, 5, true);
-    setupStepper(ui.calcDiegoCard, () => partnerWeights.Diego, v => { partnerWeights.Diego = Math.max(45, v); renderEntry(); }, 5, true);
 
     renderAll();
     applyCurrentPage();
@@ -648,6 +648,7 @@ button { cursor: pointer; }
       saveState();
       renderAll();
     });
+    ui.resetExerciseWeightsBtn.addEventListener('click', resetSavedWeightsToLastPerformedSets);
     renderSettings();
   }
 
@@ -672,8 +673,7 @@ button { cursor: pointer; }
   function renderEntry() {
     ui.weightValue.textContent = `${formatWeight(state.selection.weight)} lb`;
     ui.repsValue.textContent = `${state.selection.reps}`;
-    ui.calcIrisValue.textContent = `${formatWeight(partnerWeights.Iris)} lb`;
-    ui.calcDiegoValue.textContent = `${formatWeight(partnerWeights.Diego)} lb`;
+    syncPartnerFromSavedWeights();
     renderPartnerLoad();
     renderRecentHistory(ui.entryRecentHistory, groupedHistory());
     updateEntryPreviewLayout();
@@ -1361,31 +1361,23 @@ button { cursor: pointer; }
     });
     state.sets.sort(compareSets);
     persist();
-    syncPartnerFromHistory();
     renderAll();
   }
 
   function applyLatestEntryDefaults(shouldPersist = true) {
-    const match = [...state.sets].reverse().find(s => s.name === currentName() && s.exercise === currentExercise());
-    if (match) {
-      state.selection.weight = match.weight;
-      state.selection.reps = match.reps;
-    } else {
-      state.selection.weight = defaultWeight();
-      state.selection.reps = 5;
-    }
-    syncPartnerFromHistory();
+    const name = currentName();
+    const exercise = currentExercise();
+    const match = [...state.sets].reverse().find(s => s.name === name && s.exercise === exercise);
+    state.selection.weight = getSavedWeight(name, exercise, defaultWeight(exercise));
+    state.selection.reps = match ? match.reps : 5;
+    syncPartnerFromSavedWeights();
     if (shouldPersist) persist();
   }
 
-  function syncPartnerFromHistory(fallbackToCurrent = true) {
+  function syncPartnerFromSavedWeights() {
     const ex = currentExercise();
-    const iris = [...state.sets].reverse().find(s => s.name === 'Iris' && s.exercise === ex);
-    const diego = [...state.sets].reverse().find(s => s.name === 'Diego' && s.exercise === ex);
-    if (iris) partnerWeights.Iris = iris.weight;
-    else if (fallbackToCurrent) partnerWeights.Iris = state.selection.weight;
-    if (diego) partnerWeights.Diego = diego.weight;
-    else if (fallbackToCurrent) partnerWeights.Diego = state.selection.weight;
+    partnerWeights.Iris = getSavedWeight('Iris', ex, defaultWeight(ex));
+    partnerWeights.Diego = getSavedWeight('Diego', ex, defaultWeight(ex));
   }
 
   function currentName() { return NAMES[state.selection.nameIndex]; }
@@ -1397,7 +1389,50 @@ button { cursor: pointer; }
     }
     return { row: 0, col: 0 };
   }
-  function defaultWeight() { return [135,95,185][state.selection.exerciseRow] || 135; }
+  function defaultWeight(exercise = currentExercise()) { return DEFAULT_EXERCISE_WEIGHTS[exercise] || 135; }
+
+  function savedWeightKey(name, exercise) {
+    return `${name}::${exercise}`;
+  }
+
+  function getSavedWeight(name, exercise, fallback = defaultWeight(exercise)) {
+    const weight = Number(state.savedWeights?.[savedWeightKey(name, exercise)]);
+    return Number.isFinite(weight) && weight > 0 ? weight : fallback;
+  }
+
+  function setSavedWeight(name, exercise, weight) {
+    const normalized = Number(weight);
+    if (!Number.isFinite(normalized) || normalized <= 0) return;
+    if (!state.savedWeights || typeof state.savedWeights !== 'object') state.savedWeights = {};
+    state.savedWeights[savedWeightKey(name, exercise)] = normalized;
+  }
+
+  function buildSavedWeightsFromHistory(sets) {
+    const savedWeights = {};
+    [...sets].sort(compareSets).forEach(set => {
+      if (!set?.name || !set?.exercise || !(Number(set.weight) > 0)) return;
+      savedWeights[savedWeightKey(set.name, set.exercise)] = Number(set.weight);
+    });
+    return savedWeights;
+  }
+
+  function normalizeSavedWeights(raw, sets) {
+    const base = buildSavedWeightsFromHistory(sets);
+    if (!raw || typeof raw !== 'object') return base;
+    Object.entries(raw).forEach(([key, value]) => {
+      const weight = Number(value);
+      if (Number.isFinite(weight) && weight > 0) base[key] = weight;
+    });
+    return base;
+  }
+
+  function resetSavedWeightsToLastPerformedSets() {
+    if (!confirm('Reset every saved exercise weight for Iris and Diego to the last performed set in history?')) return;
+    state.savedWeights = buildSavedWeightsFromHistory(state.sets);
+    applyLatestEntryDefaults(false);
+    persist();
+    renderAll();
+  }
 
   function groupedHistory() {
     const map = groupedHistoryMap();
@@ -2122,10 +2157,12 @@ button { cursor: pointer; }
     return withDefaults(loadUiStorage());
   }
   function withDefaults(s) {
+    const sets = loadSetsStorage();
     return {
       currentPage: ['entry', 'history', 'progress', 'settings'].includes(s.currentPage) ? s.currentPage : 'entry',
       selection: Object.assign({ nameIndex: 0, exerciseRow: 0, exerciseCol: 0, weight: 135, reps: 5 }, s.selection || {}),
-      sets: loadSetsStorage(),
+      sets,
+      savedWeights: normalizeSavedWeights(s.savedWeights, sets),
       historyVisibility: normalizeVisibilityCsv(s.historyVisibility),
       progressVisibility: normalizeVisibilityCsv(s.progressVisibility),
       progressControlsOpen: s.progressControlsOpen !== false,
@@ -2140,6 +2177,7 @@ button { cursor: pointer; }
     localStorage.setItem(UI_STORAGE_KEY, JSON.stringify({
       currentPage: state.currentPage,
       selection: state.selection,
+      savedWeights: state.savedWeights,
       historyVisibility: encodeVisibilityCsv(state.historyVisibility),
       progressVisibility: encodeVisibilityCsv(state.progressVisibility),
       progressControlsOpen: state.progressControlsOpen,

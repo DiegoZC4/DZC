@@ -14,11 +14,14 @@
         --text: #ecf4ff;
         --muted: #9ab0cf;
         --line: #2d3f59;
+        --app-pad: 12px;
+        --desktop-range-height: 172px;
       }
       * { box-sizing: border-box; }
       html {
         color-scheme: dark;
         forced-color-adjust: none;
+        min-height: 100vh;
       }
       body {
         margin: 0;
@@ -27,27 +30,39 @@
         color: var(--text);
         forced-color-adjust: none;
         -webkit-text-size-adjust: 100%;
+        min-height: 100vh;
       }
       main.app {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 18px;
+        padding: var(--app-pad);
         display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
-        gap: 14px;
+        grid-template-columns: minmax(400px, auto) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 0;
+        height: 100vh;
+        overflow: hidden;
       }
-      .panel {
+      .sidebar {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        display: grid;
+        gap: 0;
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 0;
+        max-height: 100%;
+        overflow: auto;
+      }
+      .settings-panel {
         background: linear-gradient(165deg, #182437, var(--panel));
         border: 1px solid var(--line);
         border-radius: 12px;
         padding: 12px;
-      }
-      .sidebar {
-        position: sticky;
-        top: 18px;
-        align-self: start;
-        display: grid;
-        gap: 18px;
+        margin-right: var(--app-pad);
+        margin-bottom: var(--app-pad);
+        min-width: 400px;
       }
       .settings-panel summary {
         cursor: pointer;
@@ -58,8 +73,8 @@
       p { color: var(--muted); }
       .sidebar-controls {
         display: grid;
-        gap: 12px;
-        margin-top: 10px;
+        gap: var(--app-pad);
+        margin-top: var(--app-pad);
       }
       button, input, select {
         border-radius: 8px;
@@ -115,15 +130,19 @@
         background: #101d2d;
         border: 1px solid #365276;
       }
+      .pill-toggle-group.is-fourmode {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: row;
+        width: 100%;
+      }
       .pill-thumb {
         position: absolute;
         top: 4px;
-        bottom: 4px;
         left: 4px;
         width: calc(50% - 6px);
+        height: calc(100% - 8px);
         border-radius: 999px;
         background: #f2f5fa;
-        transition: transform 180ms ease, width 180ms ease;
         pointer-events: none;
       }
       .pill-option {
@@ -135,17 +154,27 @@
         color: var(--muted);
         padding: 8px 12px;
         font: inherit;
+      }
+      .pill-toggle-group.is-animating .pill-thumb {
+        transition: transform 180ms ease, width 180ms ease;
+      }
+      .pill-toggle-group.is-animating .pill-option {
         transition: color 180ms ease;
       }
       .pill-option.is-active {
         color: #11161d;
       }
       #pitchWheel {
-        width: 100%;
-        max-width: 620px;
-        height: auto;
+        width: auto;
+        max-width: 100%;
+        height: calc(100vh - var(--desktop-range-height) - (var(--app-pad) * 2));
         display: block;
-        margin: 0 auto;
+        margin: 0;
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        justify-self: center;
+        min-height: 0;
         overflow: visible;
         user-select: none;
         -webkit-user-select: none;
@@ -153,14 +182,24 @@
         touch-action: manipulation;
       }
       .desktop-range {
-        margin-top: 14px;
+        margin-top: 0;
         width: 100%;
         grid-column: 1 / -1;
+        grid-row: 2;
       }
       .desktop-range-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         margin: 0 0 8px;
         color: var(--muted);
         font-weight: 700;
+      }
+      .range-label-mouse {
+        width: 22px;
+        height: 30px;
+        flex: 0 0 auto;
+        display: block;
       }
       #rangePiano {
         width: 100%;
@@ -184,10 +223,6 @@
         pointer-events: none;
         user-select: none;
         -webkit-user-select: none;
-      }
-      .main-column {
-        display: grid;
-        gap: 14px;
       }
       .mobile-inline-row {
         display: grid;
@@ -289,11 +324,14 @@
         scrollbar-width: none;
         -ms-overflow-style: none;
         padding: 72px 0;
-        scroll-behavior: smooth;
+        scroll-behavior: auto;
         user-select: none;
         -webkit-user-select: none;
         mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 18%, rgba(0,0,0,1) 36%, rgba(0,0,0,1) 64%, rgba(0,0,0,0.88) 82%, transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 18%, rgba(0,0,0,1) 36%, rgba(0,0,0,1) 64%, rgba(0,0,0,0.88) 82%, transparent 100%);
+      }
+      .range-wheel-list.is-ready {
+        scroll-behavior: smooth;
       }
       .range-wheel-list::-webkit-scrollbar {
         display: none;
@@ -328,20 +366,36 @@
         right: 0;
         top: 70px;
         height: 40px;
-        border: 3px solid #6d4aff;
+        border: 3px solid #e6a23c;
         border-radius: 0;
         background: rgba(255,255,255,0.05);
         box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
         pointer-events: none;
       }
       @media (max-width: 1000px) {
-        main.app { grid-template-columns: 1fr; }
+        main.app {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto;
+          height: auto;
+          overflow: visible;
+        }
         .sidebar { position: static; }
         .desktop-range {
           display: none;
         }
         .mobile-range-picker {
           display: block;
+        }
+        .settings-panel {
+          min-width: 0;
+        }
+        #pitchWheel {
+          grid-column: 1;
+          grid-row: auto;
+          width: auto;
+          max-width: 100%;
+          max-height: calc(100dvh - var(--mobile-settings-closed-height, 0px) - (var(--app-pad) * 3));
+          height: auto;
         }
       }
       @media (max-width: 700px) {
@@ -351,15 +405,10 @@
         }
         .sidebar {
           width: 100%;
-          gap: 10px;
+          gap: 0;
         }
         .sidebar > header {
           display: none;
-        }
-        .main-column .panel {
-          background: transparent;
-          border: 0;
-          padding: 0;
         }
         .mobile-inline-row {
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -373,8 +422,7 @@
   </head>
   <body>
     <main class="app">
-      <aside class="panel sidebar">
-        <details id="settingsPanel" class="settings-panel" open>
+      <details id="settingsPanel" class="sidebar settings-panel" open>
           <summary>⚙️</summary>
           <section class="sidebar-controls">
             <div class="mobile-inline-row">
@@ -385,13 +433,15 @@
               </div>
             </div>
             <label class="inline-toggle">
-              <span>Play</span>
+              <span>Mode</span>
             </label>
             <div class="pill-toggle">
-              <div class="pill-toggle-group" role="tablist" aria-label="Play mode">
+              <div class="pill-toggle-group is-fourmode" role="tablist" aria-label="Interaction mode">
                 <span class="pill-thumb" aria-hidden="true"></span>
-                <button id="playModePressBtn" class="pill-option" type="button">On Press</button>
+                <button id="playModePressBtn" class="pill-option" type="button">Press</button>
                 <button id="playModeContinuousBtn" class="pill-option" type="button">Continuous</button>
+                <button id="playModeDemoBtn" class="pill-option" type="button">Demo</button>
+                <button id="playModeToggleBtn" class="pill-option" type="button">Toggle</button>
               </div>
             </div>
             <label class="inline-toggle">
@@ -401,6 +451,7 @@
             <div class="pill-toggle">
               <div class="pill-toggle-group" role="tablist" aria-label="Score mode">
                 <span class="pill-thumb" aria-hidden="true"></span>
+                <button id="scoreModeRecentBtn" class="pill-option" type="button">Recent</button>
                 <button id="scoreModeTodayBtn" class="pill-option" type="button">Today</button>
                 <button id="scoreModeAllBtn" class="pill-option" type="button">All Time</button>
               </div>
@@ -435,27 +486,73 @@
                 <button id="chordSize4Btn" class="pill-option" type="button">4</button>
               </div>
             </div>
+            <div id="triadVoicingControl" class="conditional-control">
+              <div class="pill-toggle">
+                <div id="triadVoicingGroup" class="pill-toggle-group" role="tablist" aria-label="Triad voicing mode">
+                  <span class="pill-thumb" aria-hidden="true"></span>
+                  <button id="triadVoicingRootBtn" class="pill-option" type="button">Root</button>
+                  <button id="triadVoicingInversionsBtn" class="pill-option" type="button">Inversions</button>
+                </div>
+              </div>
+            </div>
+            <label id="chordNamesLabel" class="inline-toggle conditional-control">
+              <span>Chord Names</span>
+            </label>
+            <div id="chordNamesControl" class="pill-toggle conditional-control">
+              <div id="chordNamesGroup" class="pill-toggle-group" role="tablist" aria-label="Show chord names">
+                <span class="pill-thumb" aria-hidden="true"></span>
+                <button id="chordNamesHideBtn" class="pill-option" type="button">Hide</button>
+                <button id="chordNamesShowBtn" class="pill-option" type="button">Show</button>
+              </div>
+            </div>
             <div id="maxIntervalControl" class="conditional-control">
               <div class="gain-stack">
                 <div id="maxIntervalBox" class="gain-box">Max Interval: 12</div>
               </div>
             </div>
+            <label id="keyboardShortcutLabel" class="inline-toggle conditional-control">
+              <span>Show Keyboard Shortcuts</span>
+            </label>
+            <div id="keyboardShortcutControl" class="pill-toggle conditional-control">
+              <div id="keyboardShortcutGroup" class="pill-toggle-group" role="tablist" aria-label="Show keyboard shortcuts">
+                <span class="pill-thumb" aria-hidden="true"></span>
+                <button id="keyboardShortcutHideBtn" class="pill-option" type="button">Hide</button>
+                <button id="keyboardShortcutShowBtn" class="pill-option" type="button">Show</button>
+              </div>
+            </div>
           </section>
         </details>
-      </aside>
-
-      <div class="main-column">
-        <svg id="pitchWheel" viewBox="32 32 556 556" aria-label="Pitch wheel"></svg>
-      </div>
+      <svg id="pitchWheel" viewBox="32 32 556 556" aria-label="Pitch wheel"></svg>
       <section class="desktop-range">
-        <p class="desktop-range-label">Range <span id="rangeText">C3-C6</span></p>
-        <svg id="rangePiano" viewBox="0 0 1040 140" preserveAspectRatio="none"></svg>
+        <p class="desktop-range-label">
+          <svg class="range-label-mouse" viewBox="5.5 1.5 13 21" aria-hidden="true">
+            <path d="M6 8a6 6 0 0 1 12 0v8a6 6 0 0 1-12 0V8Z" fill="#f4f6f9" stroke="#0f1620" stroke-width="1.5"/>
+            <path d="M12 2a6 6 0 0 0-6 6v4h6V2Z" fill="#40d97b" stroke="#0f1620" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M12 2a6 6 0 0 1 6 6v4h-6V2Z" fill="#ff5d73" stroke="#0f1620" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Range <span id="rangeText">C3-C6</span></span>
+        </p>
+        <svg id="rangePiano" viewBox="0 0 1040 140"></svg>
       </section>
     </main>
 
     <script>
       const NOTE_NAMES = ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"];
       const MIDI_NOTE_NAMES = NOTE_NAMES;
+      const ISO226_MIN_MIDI = 21;
+      const ISO226_40PHON_GAIN = [
+        234.740612, 198.872401, 169.027540, 144.081811, 123.171409, 105.612064, 90.813602, 78.269801,
+        67.599728, 58.521044, 50.784946, 44.172639, 38.509247, 33.650840, 29.468621, 25.848740,
+        22.707097, 19.978887, 17.604750, 15.530699, 13.716830, 12.134992, 10.758955, 9.564038,
+        8.526172, 7.622323, 6.831075, 6.133135, 5.515820, 4.969510, 4.484937, 4.053251,
+        3.668020, 3.324997, 3.020059, 2.749159, 2.508545, 2.294672, 2.104023, 1.933217,
+        1.779894, 1.642144, 1.518001, 1.405574, 1.304052, 1.213130, 1.132499, 1.061804,
+        1.000000, 0.945487, 0.896490, 0.851190, 0.809080, 0.770322, 0.735088, 0.703564,
+        0.675982, 0.652628, 0.633855, 0.620143, 0.612405, 0.612096, 0.621272, 0.642527,
+        0.675900, 0.718810, 0.765888, 0.808502, 0.839963, 0.853921, 0.843466, 0.803038,
+        0.737532, 0.660277, 0.585419, 0.524579, 0.478659, 0.444439, 0.419117, 0.400326,
+        0.387180, 0.379317, 0.376409, 0.378234, 0.385250, 0.398355, 0.418805, 0.448339,
+      ];
       const INTERVAL_NAMES = [
         "unison",
         "minor 2nd",
@@ -483,28 +580,121 @@
         "major 14th",
         "double octave",
       ];
-      const TRIAD_CANONICAL_NAMES = {
-        "0,1,2": "",
-        "0,1,3": "",
-        "0,2,3": "",
-        "0,1,4": "",
-        "0,2,4": "",
-        "0,3,4": "",
-        "0,2,6": "",
-        "0,1,7": "",
-        "0,3,6": "",
-        "0,2,7": "",
-        "0,4,6": "",
-        "0,3,7": "",
-        "0,4,7": "",
-        "0,4,8": "",
-        "0,6,7": "",
-        "0,7,8": "",
-        "0,7,9": "",
-        "0,7,10": "",
-        "0,7,11": "",
+      const INTERVAL_SHORT_NAMES = [
+        "P1",
+        "m2",
+        "M2",
+        "m3",
+        "M3",
+        "P4",
+        "TT",
+        "P5",
+        "m6",
+        "M6",
+        "m7",
+        "M7",
+        "P8",
+        "m9",
+        "M9",
+        "m10",
+        "M10",
+        "P11",
+        "A11",
+        "P12",
+        "m13",
+        "M13",
+        "m14",
+        "M14",
+        "P15",
+      ];
+      const TRIADS = [
+        "1,2",
+        "1,3",
+        "1,4",
+        "1,5",
+        "1,6",
+        "1,7",
+        "2,3",
+        "2,4",
+        "2,5",
+        "2,6",
+        "2,7",
+        "3,4",
+        "3,5",
+        "3,6",
+        "3,7",
+        "4,5",
+        "4,6",
+        "4,7",
+        "4,8",
+      ]
+      const TRIAD_NAMES = {
+        // "1,2": "chrom",
+        "2,7": "sus",
+        // "2,4": "WT",
+        "3,6": "dim",
+        "3,7": "min",
+        "4,7": "maj",
+        "4,8": "aug",
       };
-      const PITCH_HUES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+
+      const TETRADS = [
+        "1,2,3",
+        "1,2,4",
+        "1,2,5",
+        "1,2,6",
+        "1,2,7",
+        "1,2,8",
+        "1,3,4",
+        "1,3,5",
+        "1,3,6",
+        "1,3,7",
+        "1,3,8",
+        "1,4,5",
+        "1,4,6",
+        "1,4,7",
+        "1,4,8",
+        "1,5,6",
+        "1,5,7",
+        "1,5,8",
+        "1,6,7",
+        "2,3,4",
+        "2,3,5",
+        "2,3,6",
+        "2,3,7",
+        "2,3,8",
+        "2,4,5",
+        "2,4,6",
+        "2,4,7",
+        "2,4,8",
+        "2,5,6",
+        "2,5,7",
+        "2,5,8",
+        "2,6,7",
+        "2,6,8",
+        "3,4,5",
+        "3,4,6",
+        "3,4,7",
+        "3,4,8",
+        "3,5,6",
+        "3,5,7",
+        "3,5,8",
+        "3,6,7",
+        "3,6,8",
+        "3,6,9",
+      ]
+      const TETRAD_NAMES = {
+        // "1,2,3": "chrom",
+        "1,4,8": "mM7",
+        "1,5,8": "maj7",
+        "2,4,8": "aug7",
+        "2,5,8": "min6",
+        "3,5,8": "min7",
+        "3,6,8": "dom",
+        "3,6,9": "dim",
+      };
+
+      const EDO = 12;
       const PITCH_BASE_LIGHTNESS = 0.72;
       const PITCH_BASE_CHROMA = 0.16;
       const PITCH_MUTED_LIGHTNESS = 0.5;
@@ -516,8 +706,51 @@
       const SETTINGS_KEY = "ear-training-settings";
       const DAILY_LOG_KEY = "ear-training-logs";
 
-      const PC_SHORTCUTS = {0:"Y",1:"U",2:"I",3:"O",4:"P",5:"[",6:"Tab",7:"Q",8:"W",9:"E",10:"R",11:"T"};
       const KEY_TO_PC = {KeyY:0, KeyU:1, KeyI:2, KeyO:3, KeyP:4, BracketLeft:5, Tab:6, KeyQ:7, KeyW:8, KeyE:9, KeyR:10, KeyT:11};
+      const PC_SHORTCUTS = {0:"Y",1:"U",2:"I",3:"O",4:"P",5:"[",6:"↹",7:"Q",8:"W",9:"E",10:"R",11:"T"};
+      const KEY_TO_INTERVAL = {
+        Digit1: 1,
+        Digit2: 2,
+        Digit3: 3,
+        Digit4: 4,
+        Digit5: 5,
+        Digit6: 6,
+        Digit7: 7,
+        Digit8: 8,
+        Digit9: 9,
+        Digit0: 10,
+        Numpad1: 1,
+        Numpad2: 2,
+        Numpad3: 3,
+        Numpad4: 4,
+        Numpad5: 5,
+        Numpad6: 6,
+        Numpad7: 7,
+        Numpad8: 8,
+        Numpad9: 9,
+        Numpad0: 10,
+        NumpadDivide: 10,
+        NumpadMultiply: 11,
+        NumpadSubtract: 12,
+        Minus: 11,
+        Equal: 12,
+        KeyQ: 13,
+        KeyW: 14,
+        KeyE: 15,
+        KeyR: 16,
+        KeyT: 17,
+        KeyY: 18,
+        KeyU: 19,
+        KeyI: 20,
+        KeyO: 21,
+        KeyP: 22,
+        BracketLeft: 23,
+        BracketRight: 24,
+      };
+      const INTERVAL_SHORTCUTS = {
+        1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "0", 11: "-", 12: "=",
+        13: "Q", 14: "W", 15: "E", 16: "R", 17: "T", 18: "Y", 19: "U", 20: "I", 21: "O", 22: "P", 23: "[", 24: "]",
+      };
 
       const wheelSvg = document.getElementById("pitchWheel");
       const rangeText = document.getElementById("rangeText");
@@ -529,13 +762,30 @@
       const gainBox = document.getElementById("gainBox");
       const playModePressBtn = document.getElementById("playModePressBtn");
       const playModeContinuousBtn = document.getElementById("playModeContinuousBtn");
+      const playModeDemoBtn = document.getElementById("playModeDemoBtn");
+      const playModeToggleBtn = document.getElementById("playModeToggleBtn");
+      const scoreModeRecentBtn = document.getElementById("scoreModeRecentBtn");
       const scoreModeTodayBtn = document.getElementById("scoreModeTodayBtn");
       const scoreModeAllBtn = document.getElementById("scoreModeAllBtn");
       const chordSizeGroup = document.getElementById("chordSizeGroup");
+      const keyboardShortcutLabel = document.getElementById("keyboardShortcutLabel");
+      const keyboardShortcutControl = document.getElementById("keyboardShortcutControl");
+      const keyboardShortcutGroup = document.getElementById("keyboardShortcutGroup");
+      const keyboardShortcutHideBtn = document.getElementById("keyboardShortcutHideBtn");
+      const keyboardShortcutShowBtn = document.getElementById("keyboardShortcutShowBtn");
+      const chordNamesLabel = document.getElementById("chordNamesLabel");
+      const chordNamesControl = document.getElementById("chordNamesControl");
+      const chordNamesGroup = document.getElementById("chordNamesGroup");
+      const chordNamesHideBtn = document.getElementById("chordNamesHideBtn");
+      const chordNamesShowBtn = document.getElementById("chordNamesShowBtn");
       const chordSize1Btn = document.getElementById("chordSize1Btn");
       const chordSize2Btn = document.getElementById("chordSize2Btn");
       const chordSize3Btn = document.getElementById("chordSize3Btn");
       const chordSize4Btn = document.getElementById("chordSize4Btn");
+      const triadVoicingControl = document.getElementById("triadVoicingControl");
+      const triadVoicingGroup = document.getElementById("triadVoicingGroup");
+      const triadVoicingRootBtn = document.getElementById("triadVoicingRootBtn");
+      const triadVoicingInversionsBtn = document.getElementById("triadVoicingInversionsBtn");
       const maxIntervalControl = document.getElementById("maxIntervalControl");
       const maxIntervalBox = document.getElementById("maxIntervalBox");
       const downloadCsvBtn = document.getElementById("downloadCsvBtn");
@@ -557,7 +807,7 @@
       }
 
       const state = {
-        pitchClasses: NOTE_NAMES.map((name, pc) => ({ name, pc, active: true, color: pitchColor(pc, PITCH_BASE_LIGHTNESS, PITCH_BASE_CHROMA) })),
+        pitchClasses: NOTE_NAMES.map((name, pc) => ({ name, pc, active: true, color: colorAtHue((pc * 360) / EDO, PITCH_BASE_LIGHTNESS, PITCH_BASE_CHROMA) })),
         targetPc: null,
         targetMidi: null,
         targetInterval: null,
@@ -569,14 +819,21 @@
         rangeHoldMidi: null,
         rangeStartMidi: 48,
         rangeEndMidi: 84,
-        playContinuously: false,
-        todayOnlyScore: true,
+        playMode: "press",
+        scoreMode: "today",
+        recentScore: [0, 0],
+        showKeyboardShortcuts: false,
+        showChordNames: false,
         chordSize: 1,
+        triadVoicingMode: "root",
         maxInterval: 12,
         equalLoudness: true,
         waveform: "triangle",
         baseGain: 0.2,
         pianoKeyEls: new Map(),
+        activeIntervals: Array.from({ length: 25 }, (_, index) => index === 0 ? false : true),
+        activeTriads: TRIADS.map(() => true),
+        activeTetrads: TETRADS.map(() => true),
         perfectPitch: {
           scoreByDateAndChordSize: {},
           feedbackPc: null,
@@ -587,7 +844,15 @@
           releaseTriggerCode: null,
         },
         rangeWheelSnapTimers: { start: null, end: null },
+        centerControlPointerId: null,
         gainDrag: null,
+        maxIntervalDrag: null,
+        maxIntervalWasHolding: false,
+        rangeHoldWasHolding: false,
+        suppressPromptPlayback: false,
+        demoPlaybackTimer: null,
+        demoHoldTriggerType: null,
+        demoHoldTriggerCode: null,
       };
 
       const audioEngine = {
@@ -597,6 +862,9 @@
         promptGain: null,
         promptOscs: [],
         promptGains: [],
+        rangeOsc: null,
+        rangeGain: null,
+        rangeReadyAt: 0,
         promptReadyAt: 0,
         async ensureContext() {
           if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
@@ -643,6 +911,24 @@
             this.promptGains.push(g);
             this.promptReadyAt = startTime;
           }
+          return justUnlocked;
+        },
+        async ensureRangeVoice() {
+          const justUnlocked = await this.ensureContext();
+          if (this.rangeOsc && this.rangeGain) return justUnlocked;
+          const now = this.context.currentTime;
+          const startTime = now + (justUnlocked ? 0.03 : 0.01);
+          const osc = this.context.createOscillator();
+          const g = this.context.createGain();
+          osc.type = state.waveform;
+          g.gain.setValueAtTime(0, now);
+          g.gain.setValueAtTime(0, startTime);
+          osc.connect(g);
+          g.connect(this.context.destination);
+          osc.start(startTime);
+          this.rangeOsc = osc;
+          this.rangeGain = g;
+          this.rangeReadyAt = startTime;
           return justUnlocked;
         },
         midiToFreq(midi) {
@@ -699,6 +985,27 @@
             g.gain.setValueAtTime(g.gain.value, now);
             g.gain.linearRampToValueAtTime(0, now + 0.03);
           }
+        },
+        async startRangePrompt(midi, gain) {
+          const justUnlocked = await this.ensureRangeVoice();
+          const now = this.context.currentTime;
+          const startTime = Math.max(now + 0.006, this.rangeReadyAt || 0);
+          const attack = justUnlocked ? 0.04 : 0.015;
+          const finalGain = compensatedGain(midi, gain);
+          this.rangeOsc.type = state.waveform;
+          this.rangeOsc.frequency.cancelScheduledValues(now);
+          this.rangeOsc.frequency.setValueAtTime(this.midiToFreq(midi), startTime);
+          this.rangeGain.gain.cancelScheduledValues(now);
+          this.rangeGain.gain.setValueAtTime(this.rangeGain.gain.value, now);
+          this.rangeGain.gain.setValueAtTime(0, startTime);
+          this.rangeGain.gain.linearRampToValueAtTime(finalGain, startTime + attack);
+        },
+        stopRangePrompt() {
+          if (!this.context || !this.rangeGain) return;
+          const now = this.context.currentTime;
+          this.rangeGain.gain.cancelScheduledValues(now);
+          this.rangeGain.gain.setValueAtTime(this.rangeGain.gain.value, now);
+          this.rangeGain.gain.linearRampToValueAtTime(0, now + 0.03);
         },
         updatePromptGain(midi, gain) {
           if (!this.context || midi === null) return;
@@ -809,10 +1116,18 @@
         localStorage.setItem(SETTINGS_KEY, JSON.stringify({
           rangeStartMidi: state.rangeStartMidi,
           rangeEndMidi: state.rangeEndMidi,
-          playContinuously: state.playContinuously,
-          todayOnlyScore: state.todayOnlyScore,
+          playMode: state.playMode,
+          scoreMode: state.scoreMode,
+          recentScore: state.recentScore,
+          showKeyboardShortcuts: state.showKeyboardShortcuts,
+          showChordNames: state.showChordNames,
           chordSize: state.chordSize,
+          triadVoicingMode: state.triadVoicingMode,
           maxInterval: state.maxInterval,
+          activePitchClasses: state.pitchClasses.map((pitch) => pitch.active),
+          activeIntervals: state.activeIntervals,
+          activeTriads: state.activeTriads,
+          activeTetrads: state.activeTetrads,
           equalLoudness: state.equalLoudness,
           waveform: state.waveform,
           baseGain: state.baseGain,
@@ -826,10 +1141,40 @@
           const persisted = JSON.parse(raw);
           if (Number.isInteger(persisted.rangeStartMidi)) state.rangeStartMidi = clamp(persisted.rangeStartMidi, PIANO_MIN_MIDI, PIANO_MAX_MIDI);
           if (Number.isInteger(persisted.rangeEndMidi)) state.rangeEndMidi = clamp(persisted.rangeEndMidi, PIANO_MIN_MIDI, PIANO_MAX_MIDI);
-          if (typeof persisted.playContinuously === "boolean") state.playContinuously = persisted.playContinuously;
-          if (typeof persisted.todayOnlyScore === "boolean") state.todayOnlyScore = persisted.todayOnlyScore;
+          if (["press", "continuous", "demo", "toggle"].includes(persisted.playMode)) state.playMode = persisted.playMode;
+          else if (typeof persisted.playContinuously === "boolean") state.playMode = persisted.playContinuously ? "continuous" : "press";
+          if (["recent", "today", "all"].includes(persisted.scoreMode)) state.scoreMode = persisted.scoreMode;
+          else if (typeof persisted.todayOnlyScore === "boolean") state.scoreMode = persisted.todayOnlyScore ? "today" : "all";
+          if (Array.isArray(persisted.recentScore) && persisted.recentScore.length >= 2) {
+            state.recentScore = [Math.max(0, Number(persisted.recentScore[0]) || 0), Math.max(0, Number(persisted.recentScore[1]) || 0)];
+          }
+          if (typeof persisted.showKeyboardShortcuts === "boolean") state.showKeyboardShortcuts = persisted.showKeyboardShortcuts;
+          if (typeof persisted.showChordNames === "boolean") state.showChordNames = persisted.showChordNames;
           if ([1, 2, 3, 4].includes(Number(persisted.chordSize))) state.chordSize = Number(persisted.chordSize);
+          if (persisted.triadVoicingMode === "root" || persisted.triadVoicingMode === "inversions") {
+            state.triadVoicingMode = persisted.triadVoicingMode;
+          }
           if (Number.isFinite(Number(persisted.maxInterval))) state.maxInterval = clamp(Math.round(Number(persisted.maxInterval)), 1, 24);
+          if (Array.isArray(persisted.activePitchClasses)) {
+            state.pitchClasses.forEach((pitch, index) => {
+              if (typeof persisted.activePitchClasses[index] === "boolean") pitch.active = persisted.activePitchClasses[index];
+            });
+            if (!state.pitchClasses.some((pitch) => pitch.active)) state.pitchClasses[0].active = true;
+          }
+          if (Array.isArray(persisted.activeIntervals)) {
+            for (let interval = 1; interval <= 24; interval += 1) {
+              if (typeof persisted.activeIntervals[interval] === "boolean") state.activeIntervals[interval] = persisted.activeIntervals[interval];
+            }
+            if (!state.activeIntervals.slice(1).some(Boolean)) state.activeIntervals[1] = true;
+          }
+          if (Array.isArray(persisted.activeTriads)) {
+            state.activeTriads = TRIADS.map((_, index) => typeof persisted.activeTriads[index] === "boolean" ? persisted.activeTriads[index] : true);
+            if (!state.activeTriads.some(Boolean)) state.activeTriads[0] = true;
+          }
+          if (Array.isArray(persisted.activeTetrads)) {
+            state.activeTetrads = TETRADS.map((_, index) => typeof persisted.activeTetrads[index] === "boolean" ? persisted.activeTetrads[index] : true);
+            if (!state.activeTetrads.some(Boolean)) state.activeTetrads[0] = true;
+          }
           if (typeof persisted.equalLoudness === "boolean") state.equalLoudness = persisted.equalLoudness;
           if (typeof persisted.waveform === "string" && waveformGainMultiplier(persisted.waveform)) state.waveform = persisted.waveform;
           if (Number.isFinite(Number(persisted.baseGain))) {
@@ -848,21 +1193,30 @@
         return Math.max(min, Math.min(max, value));
       }
 
+      function isContinuousMode() {
+        return state.playMode === "continuous";
+      }
+
+      function isDemoMode() {
+        return state.playMode === "demo";
+      }
+
+      function isToggleMode() {
+        return state.playMode === "toggle";
+      }
+
+      function showsScoreButton() {
+        return !isDemoMode() && !isToggleMode();
+      }
+
       function getPromptGain() {
         return Math.min(0.95, state.baseGain * waveformGainMultiplier(state.waveform));
       }
 
       function compensatedGain(midi, baseGain) {
         if (!state.equalLoudness) return baseGain;
-        const freq = audioEngine.midiToFreq(midi);
-        const octaveOffset = Math.log2(freq / 440);
-        let multiplier = 1;
-        if (octaveOffset < 0) {
-          const depth = -octaveOffset;
-          multiplier *= 1 + Math.min(1.15, depth * 0.28 + depth * depth * 0.06);
-        } else if (octaveOffset > 1.5) {
-          multiplier *= 1 + Math.min(0.18, (octaveOffset - 1.5) * 0.08);
-        }
+        const lookupIndex = clamp(midi - ISO226_MIN_MIDI, 0, ISO226_40PHON_GAIN.length - 1);
+        const multiplier = ISO226_40PHON_GAIN[lookupIndex] ** 0.6;
         return Math.min(0.95, baseGain * multiplier);
       }
 
@@ -873,37 +1227,117 @@
       function syncMaxIntervalControl() {
         if (maxIntervalBox) maxIntervalBox.textContent = `Max Interval: ${state.maxInterval} (${INTERVAL_NAMES[state.maxInterval]})`;
         if (maxIntervalControl) maxIntervalControl.hidden = state.chordSize !== 2;
+        if (triadVoicingControl) triadVoicingControl.hidden = ![3, 4].includes(state.chordSize);
+      }
+
+      function showsChordNamesToggle() {
+        return state.chordSize === 3 || state.chordSize === 4;
+      }
+
+      function showsKeyboardShortcutToggle() {
+        return !isMobileLayout() && (state.chordSize === 1 || state.chordSize === 2);
+      }
+
+      function syncChordNamesControl() {
+        if (chordNamesLabel) chordNamesLabel.hidden = !showsChordNamesToggle();
+        if (chordNamesControl) chordNamesControl.hidden = !showsChordNamesToggle();
+        chordNamesHideBtn?.classList.toggle("is-active", !state.showChordNames);
+        chordNamesShowBtn?.classList.toggle("is-active", state.showChordNames);
+        syncPillThumb(chordNamesGroup, state.showChordNames ? chordNamesShowBtn : chordNamesHideBtn);
+      }
+
+      function syncKeyboardShortcutControl() {
+        if (keyboardShortcutLabel) keyboardShortcutLabel.hidden = !showsKeyboardShortcutToggle();
+        if (keyboardShortcutControl) keyboardShortcutControl.hidden = !showsKeyboardShortcutToggle();
+        keyboardShortcutHideBtn?.classList.toggle("is-active", !state.showKeyboardShortcuts);
+        keyboardShortcutShowBtn?.classList.toggle("is-active", state.showKeyboardShortcuts);
+        syncPillThumb(keyboardShortcutGroup, state.showKeyboardShortcuts ? keyboardShortcutShowBtn : keyboardShortcutHideBtn);
       }
 
       function syncPillThumb(groupEl, activeButton) {
         if (!groupEl || !activeButton) return;
         const thumb = groupEl.querySelector(".pill-thumb");
         if (!thumb) return;
+        const inset = 4;
         const left = activeButton.offsetLeft - 4;
+        const top = activeButton.offsetTop - 4;
+        const thumbRadius = activeButton.offsetHeight / 2;
         thumb.style.width = `${activeButton.offsetWidth}px`;
-        thumb.style.transform = `translateX(${left}px)`;
+        thumb.style.height = `${activeButton.offsetHeight}px`;
+        thumb.style.borderRadius = `${thumbRadius}px`;
+        thumb.style.transform = `translate(${left}px, ${top}px)`;
+        groupEl.style.borderRadius = `${thumbRadius + inset}px`;
+      }
+
+      function animatePillGroup(groupEl, updateFn) {
+        if (!groupEl) {
+          updateFn();
+          return;
+        }
+        groupEl.classList.add("is-animating");
+        updateFn();
+        window.setTimeout(() => {
+          groupEl.classList.remove("is-animating");
+        }, 220);
+      }
+
+      function setupPillResizeObservers() {
+        if (typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(() => {
+          window.requestAnimationFrame(syncControls);
+        });
+        [
+          playModePressBtn?.parentElement,
+          scoreModeTodayBtn?.parentElement,
+          chordSizeGroup,
+          chordNamesGroup,
+          keyboardShortcutGroup,
+          triadVoicingGroup,
+        ].filter(Boolean).forEach((groupEl) => observer.observe(groupEl));
       }
 
       function syncControls() {
-        playModePressBtn.classList.toggle("is-active", !state.playContinuously);
-        playModeContinuousBtn.classList.toggle("is-active", state.playContinuously);
-        scoreModeTodayBtn.classList.toggle("is-active", state.todayOnlyScore);
-        scoreModeAllBtn.classList.toggle("is-active", !state.todayOnlyScore);
+        playModePressBtn.classList.toggle("is-active", state.playMode === "press");
+        playModeContinuousBtn.classList.toggle("is-active", state.playMode === "continuous");
+        playModeDemoBtn.classList.toggle("is-active", state.playMode === "demo");
+        playModeToggleBtn.classList.toggle("is-active", state.playMode === "toggle");
+        scoreModeRecentBtn.classList.toggle("is-active", state.scoreMode === "recent");
+        scoreModeTodayBtn.classList.toggle("is-active", state.scoreMode === "today");
+        scoreModeAllBtn.classList.toggle("is-active", state.scoreMode === "all");
         chordSize1Btn.classList.toggle("is-active", state.chordSize === 1);
         chordSize2Btn.classList.toggle("is-active", state.chordSize === 2);
         chordSize3Btn.classList.toggle("is-active", state.chordSize === 3);
         chordSize4Btn.classList.toggle("is-active", state.chordSize === 4);
-        syncPillThumb(playModePressBtn.parentElement, state.playContinuously ? playModeContinuousBtn : playModePressBtn);
-        syncPillThumb(scoreModeTodayBtn.parentElement, state.todayOnlyScore ? scoreModeTodayBtn : scoreModeAllBtn);
+        triadVoicingRootBtn?.classList.toggle("is-active", state.triadVoicingMode === "root");
+        triadVoicingInversionsBtn?.classList.toggle("is-active", state.triadVoicingMode === "inversions");
+        syncPillThumb(playModePressBtn.parentElement, ({
+          press: playModePressBtn,
+          continuous: playModeContinuousBtn,
+          demo: playModeDemoBtn,
+          toggle: playModeToggleBtn,
+        })[state.playMode]);
+        syncPillThumb(scoreModeTodayBtn.parentElement, ({
+          recent: scoreModeRecentBtn,
+          today: scoreModeTodayBtn,
+          all: scoreModeAllBtn,
+        })[state.scoreMode]);
         syncPillThumb(chordSizeGroup, [chordSize1Btn, chordSize2Btn, chordSize3Btn, chordSize4Btn][state.chordSize - 1]);
+        syncPillThumb(chordNamesGroup, state.showChordNames ? chordNamesShowBtn : chordNamesHideBtn);
+        syncPillThumb(keyboardShortcutGroup, state.showKeyboardShortcuts ? keyboardShortcutShowBtn : keyboardShortcutHideBtn);
+        syncPillThumb(triadVoicingGroup, state.triadVoicingMode === "inversions" ? triadVoicingInversionsBtn : triadVoicingRootBtn);
         syncWaveformGainControl();
         syncMaxIntervalControl();
+        syncChordNamesControl();
+        syncKeyboardShortcutControl();
         waveformPager?._rerenderPager?.();
       }
 
       function currentScore() {
         const chordSize = state.chordSize;
-        if (state.todayOnlyScore) {
+        if (state.scoreMode === "recent") {
+          return state.recentScore;
+        }
+        if (state.scoreMode === "today") {
           return state.perfectPitch.scoreByDateAndChordSize[scoreKeyFor(yyMmDd(), chordSize)] || [0, 0, chordSize];
         }
         let correct = 0;
@@ -922,28 +1356,25 @@
 
       function parseYyMmDd(dateString) {
         const [yy, mm, dd] = dateString.split("-").map(Number);
-        return new Date(2000 + yy, (mm || 1) - 1, dd || 1);
+        return new Date(2000 + yy, (mm || 1) - 1, dd || 1, 12);
       }
 
-      function daysBetweenYyMmDd(earlier, later) {
-        const msPerDay = 24 * 60 * 60 * 1000;
-        const earlierDate = parseYyMmDd(earlier);
-        const laterDate = parseYyMmDd(later);
-        return Math.round((laterDate - earlierDate) / msPerDay);
+      function addDays(date, days) {
+        const next = new Date(date);
+        next.setDate(next.getDate() + days);
+        return next;
       }
 
       function currentStreak() {
-        const today = yyMmDd();
         const chordSize = state.chordSize;
-        const activeDates = Object.entries(state.perfectPitch.scoreByDateAndChordSize)
+        const activeDates = new Set(Object.entries(state.perfectPitch.scoreByDateAndChordSize)
           .filter(([, entry]) => (entry[2] || 1) === chordSize && (entry[1] || 0) > 0)
-          .map(([key]) => key.split("|")[0]);
-        const uniqueDates = [...new Set(activeDates)].sort();
-        if (!uniqueDates.length || uniqueDates[uniqueDates.length - 1] !== today) return 0;
-        let streak = 1;
-        for (let index = uniqueDates.length - 1; index > 0; index -= 1) {
-          if (daysBetweenYyMmDd(uniqueDates[index - 1], uniqueDates[index]) !== 1) break;
+          .map(([key]) => key.split("|")[0]));
+        let cursor = new Date();
+        let streak = 0;
+        while (activeDates.has(yyMmDd(cursor))) {
           streak += 1;
+          cursor = addDays(cursor, -1);
         }
         return streak;
       }
@@ -951,6 +1382,54 @@
       function updateScoreLabel() {
         const [correct, total] = currentScore();
         wheelSvg.setAttribute("aria-label", `Pitch wheel. Score ${correct} / ${total}`);
+      }
+
+      function drawScoreBadge(NS, cx, cy, r) {
+        const streak = currentStreak();
+        if (streak >= 2) {
+          const streakText = document.createElementNS(NS, "text");
+          streakText.setAttribute("x", String(cx));
+          streakText.setAttribute("y", String(cy - r * 0.6));
+          streakText.setAttribute("text-anchor", "middle");
+          streakText.setAttribute("dominant-baseline", "middle");
+          streakText.setAttribute("fill", "#ffb14a");
+          streakText.setAttribute("font-size", String(r * 0.28));
+          streakText.setAttribute("font-weight", "800");
+          streakText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+          streakText.textContent = `🔥${streak}`;
+          wheelSvg.appendChild(streakText);
+        }
+
+        const [correct, total] = currentScore();
+        const scoreString = `${correct} / ${total}`;
+        const scoreText = document.createElementNS(NS, "text");
+        scoreText.setAttribute("x", String(cx));
+        scoreText.setAttribute("y", String(cy));
+        scoreText.setAttribute("text-anchor", "middle");
+        scoreText.setAttribute("dominant-baseline", "middle");
+        scoreText.setAttribute("fill", "#ffffff");
+        scoreText.setAttribute("font-size", String(r * 0.42));
+        scoreText.setAttribute("font-weight", "700");
+        scoreText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+        scoreText.dataset.centerControl = "true";
+        scoreText.textContent = scoreString;
+        wheelSvg.appendChild(scoreText);
+        const maxScoreWidth = r * 1.7;
+        const measuredWidth = typeof scoreText.getComputedTextLength === "function" ? scoreText.getComputedTextLength() : 0;
+        if (measuredWidth > maxScoreWidth && measuredWidth > 0) {
+          const fittedFontSize = (r * 0.42 * maxScoreWidth) / measuredWidth;
+          scoreText.setAttribute("font-size", String(fittedFontSize));
+        }
+      }
+
+      function highlightPriority(kind) {
+        return {
+          neutral: 0,
+          wrong: 1,
+          correct: 2,
+          revealed: 3,
+          awaiting: 4,
+        }[kind] ?? 0;
       }
 
       function midiToName(midi) {
@@ -1116,7 +1595,10 @@
       function setBaseGain(nextGain) {
         state.baseGain = clamp(nextGain, 0.02, 0.7);
         syncWaveformGainControl();
-        if (state.holdActive) audioEngine.updatePromptGain(state.chordSize === 2 ? state.targetMidis : state.targetMidi, getPromptGain());
+        if (state.holdActive) {
+          const promptTarget = [2, 3, 4].includes(state.chordSize) ? state.targetMidis : state.targetMidi;
+          audioEngine.updatePromptGain(promptTarget, getPromptGain());
+        }
         if (state.rangeHoldMidi !== null) startRangeHoldNote(state.rangeHoldMidi).catch(() => {});
         saveSettings();
       }
@@ -1185,11 +1667,12 @@
         const NS = "http://www.w3.org/2000/svg";
         rangePiano.innerHTML = "";
         state.pianoKeyEls.clear();
-        const width = 1040;
+        const width = Math.max(rangePiano.clientWidth || rangePiano.parentElement?.clientWidth || 1040, 520);
         const whiteW = width / 52;
         const whiteH = 140;
         const blackW = whiteW * 0.62;
         const blackH = 88;
+        rangePiano.setAttribute("viewBox", `0 0 ${width} ${whiteH}`);
         const whiteMidis = [];
         for (let midi = PIANO_MIN_MIDI; midi <= PIANO_MAX_MIDI; midi += 1) if (![1, 3, 6, 8, 10].includes(midi % 12)) whiteMidis.push(midi);
         const whiteIndexByMidi = new Map();
@@ -1240,6 +1723,9 @@
           if (!key) return;
           event.preventDefault();
           const midi = Number(key.dataset.midi);
+          state.rangeHoldWasHolding = state.holdActive;
+          state.suppressPromptPlayback = true;
+          if (isContinuousMode() && state.holdActive) stopHoldCurrentNote();
           if (event.button === 2) setRangeEnd(midi);
           else if (event.button === 0) setRangeStart(midi);
           else return;
@@ -1251,6 +1737,8 @@
 
       function buildRangeWheels() {
         if (!rangeStartWheel || !rangeEndWheel) return;
+        rangeStartWheel.classList.remove("is-ready");
+        rangeEndWheel.classList.remove("is-ready");
         rangeStartWheel.innerHTML = "";
         rangeEndWheel.innerHTML = "";
         for (let midi = PIANO_MIN_MIDI; midi <= PIANO_MAX_MIDI; midi += 1) {
@@ -1268,6 +1756,10 @@
           rangeEndWheel.appendChild(endItem);
         }
         updateRangeText();
+        window.requestAnimationFrame(() => {
+          rangeStartWheel.classList.add("is-ready");
+          rangeEndWheel.classList.add("is-ready");
+        });
       }
 
       function midiToWheelIndex(midi) {
@@ -1354,7 +1846,16 @@
         updateWheelSelectionClass(wheelEl, midi);
       }
 
+      function clearRangeWheelSnapTimers() {
+        for (const timerKey of ["start", "end"]) {
+          if (!state.rangeWheelSnapTimers[timerKey]) continue;
+          window.clearTimeout(state.rangeWheelSnapTimers[timerKey]);
+          state.rangeWheelSnapTimers[timerKey] = null;
+        }
+      }
+
       function snapRangeWheel(which) {
+        if (!isMobileLayout()) return;
         const wheelEl = which === "start" ? rangeStartWheel : rangeEndWheel;
         if (!wheelEl) return;
         const midi = selectedWheelMidi(wheelEl);
@@ -1364,12 +1865,26 @@
       }
 
       function scheduleRangeWheelSnap(which) {
+        if (!isMobileLayout()) return;
         const timerKey = which === "start" ? "start" : "end";
         if (state.rangeWheelSnapTimers[timerKey]) window.clearTimeout(state.rangeWheelSnapTimers[timerKey]);
         state.rangeWheelSnapTimers[timerKey] = window.setTimeout(() => {
           state.rangeWheelSnapTimers[timerKey] = null;
           snapRangeWheel(which);
         }, 90);
+      }
+
+      function syncMobileSettingsHeight() {
+        if (!settingsPanel) return;
+        const summary = settingsPanel.querySelector("summary");
+        const summaryHeight = summary ? summary.getBoundingClientRect().height : 0;
+        const styles = window.getComputedStyle(settingsPanel);
+        const paddingTop = parseFloat(styles.paddingTop) || 0;
+        const paddingBottom = parseFloat(styles.paddingBottom) || 0;
+        const borderTop = parseFloat(styles.borderTopWidth) || 0;
+        const borderBottom = parseFloat(styles.borderBottomWidth) || 0;
+        const closedHeight = summaryHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+        document.documentElement.style.setProperty("--mobile-settings-closed-height", `${Math.ceil(closedHeight)}px`);
       }
 
       function chooseMidiForPc(pc) {
@@ -1382,14 +1897,23 @@
         return state.pitchClasses.filter((pitch) => pitch.active);
       }
 
+      function activeIntervalsInRange() {
+        const out = [];
+        const maxInterval = maxDisplayedInterval();
+        for (let interval = 1; interval <= maxInterval; interval += 1) {
+          if (state.activeIntervals[interval]) out.push(interval);
+        }
+        return out;
+      }
+
       function pcsAvailableInRange() {
         const out = new Set();
         for (let midi = state.rangeStartMidi; midi <= state.rangeEndMidi; midi += 1) out.add(midi % 12);
         return out;
       }
 
-      function pitchColor(pc, lightness, chroma) {
-        return `oklch(${lightness} ${chroma} ${PITCH_HUES[pc]})`;
+      function colorAtHue(hue, lightness, chroma) {
+        return `oklch(${lightness} ${chroma} ${hue})`;
       }
 
       function polarPoint(cx, cy, radius, angle) {
@@ -1412,9 +1936,48 @@
         return numerator / denominator;
       }
 
+      function drawSvgKeycap(NS, x, centerY, label, options = {}) {
+        const text = String(label);
+        const labelFontSize = options.labelFontSize ?? 16;
+        const fontSize = options.fontSize ?? Math.max(9, labelFontSize * 0.7);
+        const padding = options.padding ?? (labelFontSize * .0);
+
+        const textEl = document.createElementNS(NS, "text");
+        textEl.setAttribute("x", String(x));
+        textEl.setAttribute("y", String(centerY));
+        textEl.setAttribute("text-anchor", "middle");
+        textEl.setAttribute("dominant-baseline", "middle");
+        textEl.setAttribute("fill", "#0f1620");
+        textEl.setAttribute("font-size", String(fontSize));
+        textEl.setAttribute("font-weight", "700");
+        textEl.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+        textEl.setAttribute("pointer-events", "none");
+        textEl.textContent = text;
+        wheelSvg.appendChild(textEl);
+
+        const textWidth = textEl.getComputedTextLength();
+        const bbox = textEl.getBBox();
+        const side = options.side ?? (Math.max(textWidth, bbox.height) + padding * 2);
+        const radius = options.radius ?? Math.max(4, side * 0.25);
+        const glyphCenterY = bbox.y + bbox.height / 2;
+        const rect = document.createElementNS(NS, "rect");
+        rect.setAttribute("x", String(x - side / 2));
+        rect.setAttribute("y", String(glyphCenterY - side / 2));
+        rect.setAttribute("width", String(side));
+        rect.setAttribute("height", String(side));
+        rect.setAttribute("rx", String(radius));
+        rect.setAttribute("fill", "rgba(220,226,234,0.92)");
+        rect.setAttribute("stroke", "rgba(10,16,24,0.38)");
+        rect.setAttribute("stroke-width", "1");
+        rect.setAttribute("pointer-events", "none");
+        wheelSvg.insertBefore(rect, textEl);
+      }
+
       function clockDegreesToSvgRadians(clockDegrees) {
         return (clockDegrees * Math.PI) / 180 - Math.PI / 2;
       }
+
+      const BIPHONIC_SPIRAL_START_DEGREES = 18;
 
       function spiralPoint(cx, cy, radius, clockDegrees) {
         const angle = clockDegreesToSvgRadians(clockDegrees);
@@ -1431,7 +1994,7 @@
           const t = index / steps;
           const clockDegrees = startClockDegrees + (endClockDegrees - startClockDegrees) * t;
           const theta = clockDegreesToSvgRadians(clockDegrees);
-          const thetaOffset = theta - clockDegreesToSvgRadians(15);
+          const thetaOffset = theta - clockDegreesToSvgRadians(BIPHONIC_SPIRAL_START_DEGREES);
           const innerRadius = unitRadius + growthPerRadian * thetaOffset;
           const outerRadius = innerRadius + unitRadius;
           outerPoints.push(spiralPoint(cx, cy, outerRadius, clockDegrees));
@@ -1449,16 +2012,18 @@
 
       function drawBiphonicSpiral(NS, cx, cy) {
         const unitRadius = 62;
-        const centerRadius = unitRadius;
         const growthPerRadian = unitRadius / (2 * Math.PI);
-        const startClockDegrees = 15;
+        const startClockDegrees = BIPHONIC_SPIRAL_START_DEGREES;
         const segmentDegrees = 30;
         const segmentCount = maxDisplayedInterval();
+        const showShortcuts = state.showKeyboardShortcuts && !isMobileLayout();
+        const overlayGroup = document.createElementNS(NS, "g");
+        const overlayEntries = [];
         const bounds = {
-          minX: cx - centerRadius,
-          maxX: cx + centerRadius,
-          minY: cy - centerRadius,
-          maxY: cy + centerRadius,
+          minX: cx - unitRadius,
+          maxX: cx + unitRadius,
+          minY: cy - unitRadius,
+          maxY: cy + unitRadius,
         };
 
         function includePoint(point) {
@@ -1468,78 +2033,772 @@
           bounds.maxY = Math.max(bounds.maxY, point.y);
         }
 
-        const bg = document.createElementNS(NS, "rect");
-        bg.setAttribute("fill", "#0f1b2a");
-        bg.setAttribute("stroke", "#2d3f59");
-        bg.setAttribute("stroke-width", "1");
-        wheelSvg.appendChild(bg);
-
         for (let index = 0; index < segmentCount; index += 1) {
           const start = startClockDegrees + index * segmentDegrees;
           const end = start + segmentDegrees;
           const interval = index + 1;
           const pc = index % 12;
+          const active = !!state.activeIntervals[interval];
           const hovered = state.hoveredPc === interval && state.hoveredZone === "pitch";
           let stroke = "rgba(255,255,255,0.22)";
           let strokeWidth = "1.2";
+          let highlightKind = "neutral";
           if (state.perfectPitch.awaitingAdvance && state.targetInterval === interval) {
             stroke = "#d4af37";
             strokeWidth = "4";
+            highlightKind = "awaiting";
           } else if (state.perfectPitch.feedbackPc === interval) {
             stroke = state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73";
             strokeWidth = "4";
+            highlightKind = state.perfectPitch.feedbackKind === "correct" ? "correct" : "wrong";
           } else if (state.revealed && state.targetInterval === interval) {
             stroke = "#ffffff";
             strokeWidth = "4";
+            highlightKind = "revealed";
           }
           const segment = document.createElementNS(NS, "path");
           const geometry = spiralSegmentGeometry(cx, cy, unitRadius, start, end, growthPerRadian);
           segment.setAttribute("d", geometry.path);
-          segment.setAttribute("fill", pitchColor(pc, hovered ? PITCH_HOVER_LIGHTNESS : PITCH_MUTED_LIGHTNESS, hovered ? PITCH_HOVER_CHROMA : PITCH_MUTED_CHROMA));
-          segment.setAttribute("stroke", stroke);
-          segment.setAttribute("stroke-width", strokeWidth);
+          segment.setAttribute("fill", active ? colorAtHue((pc * 360) / EDO, hovered ? PITCH_HOVER_LIGHTNESS : PITCH_MUTED_LIGHTNESS, hovered ? PITCH_HOVER_CHROMA : PITCH_MUTED_CHROMA) : "rgba(95,105,120,0.28)");
           segment.dataset.pc = String(interval);
           segment.dataset.zone = "pitch";
           wheelSvg.appendChild(segment);
+
+          const overlay = document.createElementNS(NS, "path");
+          overlay.setAttribute("d", geometry.path);
+          overlay.setAttribute("fill", "none");
+          overlay.setAttribute("stroke", stroke);
+          overlay.setAttribute("stroke-width", strokeWidth);
+          overlay.dataset.pc = String(interval);
+          overlay.dataset.zone = "pitch";
+          overlayEntries.push({ priority: highlightPriority(highlightKind), overlay });
+
           geometry.outerPoints.forEach(includePoint);
           geometry.innerPoints.forEach(includePoint);
 
           const labelAngle = start + segmentDegrees / 2;
-          const labelThetaOffset = clockDegreesToSvgRadians(labelAngle) - clockDegreesToSvgRadians(15);
+          const labelThetaOffset = clockDegreesToSvgRadians(labelAngle) - clockDegreesToSvgRadians(BIPHONIC_SPIRAL_START_DEGREES);
           const labelInnerRadius = unitRadius + growthPerRadian * labelThetaOffset;
           const labelOuterRadius = labelInnerRadius + unitRadius;
           const labelPoint = spiralPoint(cx, cy, (labelInnerRadius + labelOuterRadius) / 2, labelAngle);
-          includePoint({ x: labelPoint.x - 24, y: labelPoint.y - 10 });
-          includePoint({ x: labelPoint.x + 24, y: labelPoint.y + 10 });
+          const labelFontSize = 11;
+          const groupCenterY = labelPoint.y;
+          const shortcutFontSize = Math.max(9, labelFontSize * 0.7);
+          const keycapPadding = labelFontSize * 0.1;
+          const keycapHeight = shortcutFontSize + keycapPadding * 2;
+          const gap = labelFontSize * 0.3;
+          const stackedHalfHeight = (labelFontSize + gap + keycapHeight) / 2;
+          const labelCenterY = showShortcuts ? groupCenterY - (stackedHalfHeight - labelFontSize / 2) : groupCenterY;
+          const keycapCenterY = showShortcuts ? groupCenterY + (stackedHalfHeight - keycapHeight / 2) : groupCenterY;
+          const keycapLabel = INTERVAL_SHORTCUTS[interval];
+          const halfWidth = Math.max(24, showShortcuts ? 28 : 24);
+          includePoint({ x: labelPoint.x - halfWidth, y: showShortcuts ? labelCenterY - labelFontSize / 2 : labelCenterY - labelFontSize / 2 });
+          includePoint({ x: labelPoint.x + halfWidth, y: showShortcuts ? keycapCenterY + keycapHeight / 2 : labelCenterY + labelFontSize / 2 });
           const label = document.createElementNS(NS, "text");
           label.setAttribute("x", String(labelPoint.x));
-          label.setAttribute("y", String(labelPoint.y));
+          label.setAttribute("y", String(labelCenterY));
           label.setAttribute("text-anchor", "middle");
           label.setAttribute("dominant-baseline", "middle");
           label.setAttribute("fill", "#ffffff");
-          label.setAttribute("font-size", "11");
+          label.setAttribute("font-size", String(labelFontSize));
           label.setAttribute("font-weight", "700");
           label.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
           label.setAttribute("pointer-events", "none");
-          label.textContent = INTERVAL_NAMES[interval];
+          label.textContent = INTERVAL_SHORT_NAMES[interval];
           wheelSvg.appendChild(label);
+          if (showShortcuts) {
+            drawSvgKeycap(NS, labelPoint.x, keycapCenterY, keycapLabel, { labelFontSize });
+          }
         }
 
-        const centerCircle = document.createElementNS(NS, "circle");
-        centerCircle.setAttribute("cx", String(cx));
-        centerCircle.setAttribute("cy", String(cy));
-        centerCircle.setAttribute("r", String(centerRadius));
-        centerCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
-        centerCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
-        centerCircle.setAttribute("stroke-width", "2");
-        centerCircle.dataset.centerControl = "true";
-        wheelSvg.appendChild(centerCircle);
-        bg.setAttribute("x", String(bounds.minX - 18));
-        bg.setAttribute("y", String(bounds.minY - 18));
-        bg.setAttribute("width", String(bounds.maxX - bounds.minX + 36));
-        bg.setAttribute("height", String(bounds.maxY - bounds.minY + 36));
-        bg.setAttribute("rx", "18");
-        return { bounds, centerRadius };
+        if (showsScoreButton()) {
+          const centerCircle = document.createElementNS(NS, "circle");
+          centerCircle.setAttribute("cx", String(cx));
+          centerCircle.setAttribute("cy", String(cy));
+          centerCircle.setAttribute("r", String(unitRadius));
+          centerCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+          centerCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+          centerCircle.setAttribute("stroke-width", "2");
+          centerCircle.dataset.centerControl = "true";
+          wheelSvg.appendChild(centerCircle);
+        }
+        overlayEntries.sort((a, b) => a.priority - b.priority).forEach(({ overlay }) => overlayGroup.appendChild(overlay));
+        wheelSvg.appendChild(overlayGroup);
+        return { bounds };
+      }
+
+      function drawGridScaffold(NS, left, top, columns, rows, cellSize, clipPrefix) {
+        const gridWidth = columns * cellSize;
+        const gridHeight = rows * cellSize;
+        const clipId = `${clipPrefix}-${Math.random().toString(36).slice(2, 10)}`;
+
+        const defs = document.createElementNS(NS, "defs");
+        const clipPath = document.createElementNS(NS, "clipPath");
+        clipPath.setAttribute("id", clipId);
+        const clipRect = document.createElementNS(NS, "rect");
+        clipRect.setAttribute("x", String(left));
+        clipRect.setAttribute("y", String(top));
+        clipRect.setAttribute("width", String(gridWidth));
+        clipRect.setAttribute("height", String(gridHeight));
+        clipPath.appendChild(clipRect);
+        defs.appendChild(clipPath);
+        wheelSvg.appendChild(defs);
+
+        const gridLinesGroup = document.createElementNS(NS, "g");
+        gridLinesGroup.setAttribute("clip-path", `url(#${clipId})`);
+        wheelSvg.appendChild(gridLinesGroup);
+
+        for (let column = 0; column <= columns; column += 1) {
+          const line = document.createElementNS(NS, "line");
+          const x = left + column * cellSize;
+          line.setAttribute("x1", String(x));
+          line.setAttribute("y1", String(top));
+          line.setAttribute("x2", String(x));
+          line.setAttribute("y2", String(top + gridHeight));
+          line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+          line.setAttribute("stroke-width", "1");
+          gridLinesGroup.appendChild(line);
+        }
+
+        for (let row = 0; row <= rows; row += 1) {
+          const line = document.createElementNS(NS, "line");
+          const y = top + row * cellSize;
+          line.setAttribute("x1", String(left));
+          line.setAttribute("y1", String(y));
+          line.setAttribute("x2", String(left + gridWidth));
+          line.setAttribute("y2", String(y));
+          line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+          line.setAttribute("stroke-width", "1");
+          gridLinesGroup.appendChild(line);
+        }
+
+        const border = document.createElementNS(NS, "rect");
+        border.setAttribute("x", String(left));
+        border.setAttribute("y", String(top));
+        border.setAttribute("width", String(gridWidth));
+        border.setAttribute("height", String(gridHeight));
+        border.setAttribute("fill", "none");
+        border.setAttribute("stroke", "rgba(255,255,255,0.16)");
+        border.setAttribute("stroke-width", "1.25");
+        wheelSvg.appendChild(border);
+
+        return {
+          bounds: {
+            minX: left,
+            maxX: left + gridWidth,
+            minY: top,
+            maxY: top + gridHeight,
+          },
+        };
+      }
+
+      function gridCellHighlight(index) {
+        if (state.perfectPitch.awaitingAdvance && state.targetPc === index) {
+          return { stroke: "#d4af37", strokeWidth: "5", kind: "awaiting" };
+        }
+        if (state.perfectPitch.feedbackPc === index) {
+          return {
+            stroke: state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73",
+            strokeWidth: "5",
+            kind: state.perfectPitch.feedbackKind === "correct" ? "correct" : "wrong",
+          };
+        }
+        if (state.revealed && state.targetPc === index) {
+          return { stroke: "#ffffff", strokeWidth: "5", kind: "revealed" };
+        }
+        return { stroke: "rgba(255,255,255,0.30)", strokeWidth: "1.5", kind: "neutral" };
+      }
+
+      function drawGridCells(NS, cells, cellSize, labelFontSize) {
+        const overlayGroup = document.createElementNS(NS, "g");
+        const overlayEntries = [];
+        for (const cell of cells) {
+          const hovered = state.hoveredPc === cell.index && state.hoveredZone === "pitch";
+          const { stroke, strokeWidth, kind } = gridCellHighlight(cell.index);
+
+          const rect = document.createElementNS(NS, "rect");
+          rect.setAttribute("x", String(cell.left));
+          rect.setAttribute("y", String(cell.top));
+          rect.setAttribute("width", String(cellSize));
+          rect.setAttribute("height", String(cellSize));
+          rect.setAttribute(
+            "fill",
+            cell.active ? colorAtHue(
+              cell.hue,
+              hovered ? PITCH_HOVER_LIGHTNESS : PITCH_MUTED_LIGHTNESS,
+              hovered ? PITCH_HOVER_CHROMA : PITCH_MUTED_CHROMA
+            ) : "rgba(95,105,120,0.28)"
+          );
+          rect.dataset.pc = String(cell.index);
+          rect.dataset.zone = "pitch";
+          wheelSvg.appendChild(rect);
+
+          const overlay = document.createElementNS(NS, "rect");
+          overlay.setAttribute("x", String(cell.left));
+          overlay.setAttribute("y", String(cell.top));
+          overlay.setAttribute("width", String(cellSize));
+          overlay.setAttribute("height", String(cellSize));
+          overlay.setAttribute("fill", "none");
+          overlay.setAttribute("stroke", stroke);
+          overlay.setAttribute("stroke-width", strokeWidth);
+          overlay.dataset.pc = String(cell.index);
+          overlay.dataset.zone = "pitch";
+          overlayEntries.push({ priority: highlightPriority(kind), overlay });
+
+          const centerX = cell.left + cellSize / 2;
+          const centerY = cell.top + cellSize / 2;
+          const showSubtitle = state.showChordNames && !!cell.subtitle;
+
+          const label = document.createElementNS(NS, "text");
+          label.setAttribute("x", String(centerX));
+          label.setAttribute("y", String(centerY + 1));
+          label.setAttribute("text-anchor", "middle");
+          label.setAttribute("dominant-baseline", "middle");
+          label.setAttribute("fill", "#ffffff");
+          label.setAttribute("font-size", String(labelFontSize));
+          label.setAttribute("font-weight", "700");
+          label.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+          label.setAttribute("pointer-events", "none");
+          label.textContent = cell.label;
+          wheelSvg.appendChild(label);
+
+          if (showSubtitle) {
+            const subtitle = document.createElementNS(NS, "text");
+            subtitle.setAttribute("x", String(centerX));
+            subtitle.setAttribute("y", String(centerY + labelFontSize * 1));
+            subtitle.setAttribute("text-anchor", "middle");
+            subtitle.setAttribute("dominant-baseline", "middle");
+            subtitle.setAttribute("fill", "rgba(255,255,255,0.92)");
+            subtitle.setAttribute("font-size", String(labelFontSize * .7));
+            subtitle.setAttribute("font-weight", "700");
+            subtitle.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+            subtitle.setAttribute("pointer-events", "none");
+            subtitle.textContent = cell.subtitle;
+            wheelSvg.appendChild(subtitle);
+          }
+        }
+        overlayEntries.sort((a, b) => a.priority - b.priority).forEach(({ overlay }) => overlayGroup.appendChild(overlay));
+        wheelSvg.appendChild(overlayGroup);
+      }
+
+      function drawTriphonicGrid(NS, cx, cy) {
+        {
+          const columns = 4;
+          const rows = 7;
+          const cellSize = 100;
+          const labelFontSize = Math.round(cellSize * 0.3);
+          const left = cx - (columns * cellSize) / 2;
+          const top = cy - (rows * cellSize) / 2;
+          const { bounds } = drawGridScaffold(NS, left, top, columns, rows, cellSize, "triphonic-grid-clip");
+          const cells = [];
+          for (let row = 0; row < rows; row += 1) {
+            for (let column = 0; column < columns; column += 1) {
+              const xValue = column + 1;
+              const yValue = row + 2;
+              const canonicalKey = `${xValue},${yValue}`;
+              const triadIndex = TRIADS.indexOf(canonicalKey);
+              if (triadIndex === -1) continue;
+              cells.push({
+                left: left + column * cellSize,
+                top: top + row * cellSize,
+                index: triadIndex,
+                label: canonicalKey,
+                subtitle: TRIAD_NAMES[canonicalKey] || "",
+                hue: (triadIndex * 360) / TRIADS.length,
+                active: state.activeTriads[triadIndex],
+              });
+            }
+          }
+          drawGridCells(NS, cells, cellSize, labelFontSize);
+
+          const scoreBox = {
+            x: left + cellSize * 2,
+            y: top,
+            width: cellSize * 2,
+            height: cellSize * 2,
+          };
+
+          if (showsScoreButton()) {
+            const scoreCircle = document.createElementNS(NS, "circle");
+            scoreCircle.setAttribute("cx", String(scoreBox.x + scoreBox.width / 2));
+            scoreCircle.setAttribute("cy", String(scoreBox.y + scoreBox.height / 2));
+            scoreCircle.setAttribute("r", String(Math.min(scoreBox.width, scoreBox.height) / 2));
+            scoreCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+            scoreCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+            scoreCircle.setAttribute("stroke-width", "2");
+            scoreCircle.dataset.centerControl = "true";
+            wheelSvg.appendChild(scoreCircle);
+          }
+
+          return { bounds, scoreBox };
+        }
+
+        const xValues = Array.from({ length: 4 }, (_, index) => index + 1);
+        const yValues = Array.from({ length: 7 }, (_, index) => index + 2);
+        const cellSize = 100;
+        const labelFontSize = Math.round(cellSize * 0.3);
+        const overlayGroup = document.createElementNS(NS, "g");
+        const overlayEntries = [];
+        const gridWidth = xValues.length * cellSize;
+        const gridHeight = yValues.length * cellSize;
+        const left = cx - gridWidth / 2;
+        const top = cy - gridHeight / 2;
+        const bounds = {
+          minX: left,
+          maxX: left + gridWidth,
+          minY: top,
+          maxY: top + gridHeight,
+        };
+        const clipId = `triphonic-grid-clip-${Math.random().toString(36).slice(2, 10)}`;
+
+        const defs = document.createElementNS(NS, "defs");
+        const clipPath = document.createElementNS(NS, "clipPath");
+        clipPath.setAttribute("id", clipId);
+        const clipRect = document.createElementNS(NS, "rect");
+        clipRect.setAttribute("x", String(left));
+        clipRect.setAttribute("y", String(top));
+        clipRect.setAttribute("width", String(gridWidth));
+        clipRect.setAttribute("height", String(gridHeight));
+        clipPath.appendChild(clipRect);
+        defs.appendChild(clipPath);
+        wheelSvg.appendChild(defs);
+
+        const gridLinesGroup = document.createElementNS(NS, "g");
+        gridLinesGroup.setAttribute("clip-path", `url(#${clipId})`);
+        wheelSvg.appendChild(gridLinesGroup);
+
+        for (let column = 0; column <= xValues.length; column += 1) {
+          const line = document.createElementNS(NS, "line");
+          const x = left + column * cellSize;
+          line.setAttribute("x1", String(x));
+          line.setAttribute("y1", String(top));
+          line.setAttribute("x2", String(x));
+          line.setAttribute("y2", String(top + gridHeight));
+          line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+          line.setAttribute("stroke-width", "1");
+          gridLinesGroup.appendChild(line);
+        }
+
+        for (let row = 0; row <= yValues.length; row += 1) {
+          const line = document.createElementNS(NS, "line");
+          const y = top + row * cellSize;
+          line.setAttribute("x1", String(left));
+          line.setAttribute("y1", String(y));
+          line.setAttribute("x2", String(left + gridWidth));
+          line.setAttribute("y2", String(y));
+          line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+          line.setAttribute("stroke-width", "1");
+          gridLinesGroup.appendChild(line);
+        }
+
+        const border = document.createElementNS(NS, "rect");
+        border.setAttribute("x", String(left));
+        border.setAttribute("y", String(top));
+        border.setAttribute("width", String(gridWidth));
+        border.setAttribute("height", String(gridHeight));
+        border.setAttribute("fill", "none");
+        border.setAttribute("stroke", "rgba(255,255,255,0.16)");
+        border.setAttribute("stroke-width", "1.25");
+        wheelSvg.appendChild(border);
+
+        for (let row = 0; row < yValues.length; row += 1) {
+          for (let column = 0; column < xValues.length; column += 1) {
+            const xValue = xValues[column];
+            const yValue = yValues[row];
+              const canonicalKey = `${xValue},${yValue}`;
+              if (!TRIADS.includes(canonicalKey)) continue;
+              const triadIndex = TRIADS.indexOf(canonicalKey);
+              const active = state.activeTriads[triadIndex];
+              const cellLeft = left + column * cellSize;
+              const cellTop = top + row * cellSize;
+              const hovered = state.hoveredPc === triadIndex && state.hoveredZone === "pitch";
+            let stroke = "rgba(255,255,255,0.30)";
+            let strokeWidth = "1.5";
+            let highlightKind = "neutral";
+            if (state.perfectPitch.awaitingAdvance && state.targetPc === triadIndex) {
+              stroke = "#d4af37";
+              strokeWidth = "5";
+              highlightKind = "awaiting";
+            } else if (state.perfectPitch.feedbackPc === triadIndex) {
+              stroke = state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73";
+              strokeWidth = "5";
+              highlightKind = state.perfectPitch.feedbackKind === "correct" ? "correct" : "wrong";
+            } else if (state.revealed && state.targetPc === triadIndex) {
+              stroke = "#ffffff";
+              strokeWidth = "5";
+              highlightKind = "revealed";
+            }
+            const rect = document.createElementNS(NS, "rect");
+            rect.setAttribute("x", String(cellLeft));
+            rect.setAttribute("y", String(cellTop));
+            rect.setAttribute("width", String(cellSize));
+            rect.setAttribute("height", String(cellSize));
+            const triadHue = triadIndex === -1 ? 0 : (triadIndex * 360) / TRIADS.length;
+              rect.setAttribute(
+                "fill",
+                active ? colorAtHue(
+                  triadHue,
+                  hovered ? PITCH_HOVER_LIGHTNESS : PITCH_MUTED_LIGHTNESS,
+                  hovered ? PITCH_HOVER_CHROMA : PITCH_MUTED_CHROMA
+                ) : "rgba(95,105,120,0.28)"
+              );
+            rect.dataset.pc = String(triadIndex);
+            rect.dataset.zone = "pitch";
+            wheelSvg.appendChild(rect);
+
+            const overlay = document.createElementNS(NS, "rect");
+            overlay.setAttribute("x", String(cellLeft));
+            overlay.setAttribute("y", String(cellTop));
+            overlay.setAttribute("width", String(cellSize));
+            overlay.setAttribute("height", String(cellSize));
+            overlay.setAttribute("fill", "none");
+            overlay.setAttribute("stroke", stroke);
+            overlay.setAttribute("stroke-width", strokeWidth);
+            overlay.dataset.pc = String(triadIndex);
+            overlay.dataset.zone = "pitch";
+            overlayEntries.push({ priority: highlightPriority(highlightKind), overlay });
+
+            const label = document.createElementNS(NS, "text");
+            label.setAttribute("x", String(cellLeft + cellSize / 2));
+            label.setAttribute("y", String(cellTop + cellSize / 2 + 1));
+            label.setAttribute("text-anchor", "middle");
+            label.setAttribute("dominant-baseline", "middle");
+            label.setAttribute("fill", "#ffffff");
+            label.setAttribute("font-size", String(labelFontSize));
+            label.setAttribute("font-weight", "700");
+            label.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+            label.setAttribute("pointer-events", "none");
+            label.textContent = `${xValue},${yValue}`;
+            wheelSvg.appendChild(label);
+          }
+        }
+
+        const scoreBox = {
+          x: left + cellSize * 2,
+          y: top,
+          width: cellSize * 2,
+          height: cellSize * 2,
+        };
+
+        if (showsScoreButton()) {
+          const scoreCircle = document.createElementNS(NS, "circle");
+          scoreCircle.setAttribute("cx", String(scoreBox.x + scoreBox.width / 2));
+          scoreCircle.setAttribute("cy", String(scoreBox.y + scoreBox.height / 2));
+          scoreCircle.setAttribute("r", String(Math.min(scoreBox.width, scoreBox.height) / 2));
+          scoreCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+          scoreCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+          scoreCircle.setAttribute("stroke-width", "2");
+          scoreCircle.dataset.centerControl = "true";
+          wheelSvg.appendChild(scoreCircle);
+        }
+        overlayEntries.sort((a, b) => a.priority - b.priority).forEach(({ overlay }) => overlayGroup.appendChild(overlay));
+        wheelSvg.appendChild(overlayGroup);
+
+        return { bounds, scoreBox };
+      }
+
+      function drawTetradGrids(NS, cx, cy) {
+        {
+          const cellSize = 72;
+          const labelFontSize = Math.round(cellSize * 0.22);
+          const slices = [
+            { first: 1, xValues: [2, 3, 4, 5, 6], yValues: [3, 4, 5, 6, 7, 8] },
+            { first: 2, xValues: [3, 4, 5, 6], yValues: [4, 5, 6, 7, 8] },
+            { first: 3, xValues: [4, 5, 6], yValues: [5, 6, 7, 8, 9] },
+          ];
+          const rootStyles = window.getComputedStyle(document.documentElement);
+          const appPad = parseFloat(rootStyles.getPropertyValue("--app-pad")) || 0;
+          const closedSettingsHeight = parseFloat(rootStyles.getPropertyValue("--mobile-settings-closed-height")) || 0;
+          const svgRect = wheelSvg.getBoundingClientRect();
+          const availableWidth = Math.max(
+            isMobileLayout() ? window.innerWidth - appPad * 2 : svgRect.width || 0,
+            1
+          );
+          const availableHeight = Math.max(
+            isMobileLayout() ? window.innerHeight - closedSettingsHeight - appPad * 3 : svgRect.height || 0,
+            1
+          );
+          const verticalUnit = Math.min(availableWidth / 5, availableHeight / 16);
+          const horizontalUnit = Math.min(availableWidth / 12, availableHeight / 6);
+          const horizontalLayout = horizontalUnit > verticalUnit;
+          const verticalSliceColumns = 5;
+          const horizontalSliceRows = 6;
+          const bounds = horizontalLayout
+            ? { minX: cx - (12 * cellSize) / 2, maxX: cx + (12 * cellSize) / 2, minY: cy - (6 * cellSize) / 2, maxY: cy + (6 * cellSize) / 2 }
+            : { minX: cx - (5 * cellSize) / 2, maxX: cx + (5 * cellSize) / 2, minY: cy - (16 * cellSize) / 2, maxY: cy + (16 * cellSize) / 2 };
+
+          const cells = [];
+          let currentTop = bounds.minY;
+          let currentLeft = bounds.minX;
+          let scoreBox = null;
+
+          for (let sliceIndex = 0; sliceIndex < slices.length; sliceIndex += 1) {
+            const slice = slices[sliceIndex];
+            const scaffoldColumns = horizontalLayout ? slice.xValues.length : verticalSliceColumns;
+            const scaffoldRows = horizontalLayout ? horizontalSliceRows : slice.yValues.length;
+            const left = currentLeft;
+            const top = currentTop;
+            const contentTop = horizontalLayout ? currentTop + (horizontalSliceRows - slice.yValues.length) * cellSize : currentTop;
+            drawGridScaffold(NS, left, top, scaffoldColumns, scaffoldRows, cellSize, `tetrad-grid-clip-${slice.first}`);
+
+            if (sliceIndex === 0) {
+              scoreBox = {
+                x: left + scaffoldColumns * cellSize - cellSize * 2,
+                y: contentTop,
+                width: cellSize * 2,
+                height: cellSize * 2,
+              };
+            }
+
+            for (let row = 0; row < slice.yValues.length; row += 1) {
+              for (let column = 0; column < slice.xValues.length; column += 1) {
+                const xValue = slice.xValues[column];
+                const yValue = slice.yValues[row];
+                const canonicalKey = `${slice.first},${xValue},${yValue}`;
+                const tetradIndex = TETRADS.indexOf(canonicalKey);
+                if (tetradIndex === -1) continue;
+                cells.push({
+                  left: left + column * cellSize,
+                  top: contentTop + row * cellSize,
+                  index: tetradIndex,
+                  label: canonicalKey,
+                  subtitle: TETRAD_NAMES[canonicalKey] || "",
+                  hue: (tetradIndex * 360) / TETRADS.length,
+                  active: state.activeTetrads[tetradIndex],
+                });
+              }
+            }
+
+            if (horizontalLayout) currentLeft += slice.xValues.length * cellSize;
+            else currentTop += slice.yValues.length * cellSize;
+          }
+
+          drawGridCells(NS, cells, cellSize, labelFontSize);
+
+          if (scoreBox && showsScoreButton()) {
+            const scoreCircle = document.createElementNS(NS, "circle");
+            scoreCircle.setAttribute("cx", String(scoreBox.x + scoreBox.width / 2));
+            scoreCircle.setAttribute("cy", String(scoreBox.y + scoreBox.height / 2));
+            scoreCircle.setAttribute("r", String(Math.min(scoreBox.width, scoreBox.height) / 2));
+            scoreCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+            scoreCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+            scoreCircle.setAttribute("stroke-width", "2");
+            scoreCircle.dataset.centerControl = "true";
+            wheelSvg.appendChild(scoreCircle);
+          }
+
+          return { bounds, scoreBox };
+        }
+
+        const cellSize = 72;
+        const labelFontSize = Math.round(cellSize * 0.22);
+        const overlayGroup = document.createElementNS(NS, "g");
+        const overlayEntries = [];
+        const slices = [
+          { first: 1, xValues: [2, 3, 4, 5, 6], yValues: [3, 4, 5, 6, 7, 8] },
+          { first: 2, xValues: [3, 4, 5, 6], yValues: [4, 5, 6, 7, 8] },
+          { first: 3, xValues: [4, 5, 6], yValues: [5, 6, 7, 8, 9] },
+        ];
+        const rootStyles = window.getComputedStyle(document.documentElement);
+        const appPad = parseFloat(rootStyles.getPropertyValue("--app-pad")) || 0;
+        const closedSettingsHeight = parseFloat(rootStyles.getPropertyValue("--mobile-settings-closed-height")) || 0;
+        const svgRect = wheelSvg.getBoundingClientRect();
+        const availableWidth = Math.max(
+          isMobileLayout() ? window.innerWidth - appPad * 2 : svgRect.width || 0,
+          1
+        );
+        const availableHeight = Math.max(
+          isMobileLayout() ? window.innerHeight - closedSettingsHeight - appPad * 3 : svgRect.height || 0,
+          1
+        );
+        const verticalUnit = Math.min(availableWidth / 5, availableHeight / 16);
+        const horizontalUnit = Math.min(availableWidth / 12, availableHeight / 6);
+        const horizontalLayout = horizontalUnit > verticalUnit;
+        const verticalSliceColumns = 5;
+        const horizontalSliceRows = 6;
+
+        let bounds;
+        if (horizontalLayout) {
+          bounds = {
+            minX: cx - (12 * cellSize) / 2,
+            maxX: cx + (12 * cellSize) / 2,
+            minY: cy - (6 * cellSize) / 2,
+            maxY: cy + (6 * cellSize) / 2,
+          };
+        } else {
+          bounds = {
+            minX: cx - (5 * cellSize) / 2,
+            maxX: cx + (5 * cellSize) / 2,
+            minY: cy - (16 * cellSize) / 2,
+            maxY: cy + (16 * cellSize) / 2,
+          };
+        }
+
+        let currentTop = bounds.minY;
+        let currentLeft = bounds.minX;
+        let scoreBox = null;
+
+        slices.forEach((slice, sliceIndex) => {
+          const gridWidth = slice.xValues.length * cellSize;
+          const gridHeight = slice.yValues.length * cellSize;
+          const scaffoldWidth = horizontalLayout ? gridWidth : verticalSliceColumns * cellSize;
+          const scaffoldHeight = horizontalLayout ? horizontalSliceRows * cellSize : gridHeight;
+          const left = currentLeft;
+          const top = horizontalLayout ? currentTop + (horizontalSliceRows - slice.yValues.length) * cellSize : currentTop;
+
+          if (sliceIndex === 0) {
+            scoreBox = {
+              x: left + scaffoldWidth - cellSize * 2,
+              y: top,
+              width: cellSize * 2,
+              height: cellSize * 2,
+            };
+          }
+
+          const clipId = `tetrad-grid-clip-${slice.first}-${Math.random().toString(36).slice(2, 10)}`;
+          const defs = document.createElementNS(NS, "defs");
+          const clipPath = document.createElementNS(NS, "clipPath");
+          clipPath.setAttribute("id", clipId);
+          const clipRect = document.createElementNS(NS, "rect");
+          clipRect.setAttribute("x", String(left));
+          clipRect.setAttribute("y", String(horizontalLayout ? currentTop : top));
+          clipRect.setAttribute("width", String(scaffoldWidth));
+          clipRect.setAttribute("height", String(scaffoldHeight));
+          clipPath.appendChild(clipRect);
+          defs.appendChild(clipPath);
+          wheelSvg.appendChild(defs);
+
+          const gridLinesGroup = document.createElementNS(NS, "g");
+          gridLinesGroup.setAttribute("clip-path", `url(#${clipId})`);
+          wheelSvg.appendChild(gridLinesGroup);
+
+          for (let column = 0; column <= (horizontalLayout ? slice.xValues.length : verticalSliceColumns); column += 1) {
+            const line = document.createElementNS(NS, "line");
+            const x = left + column * cellSize;
+            line.setAttribute("x1", String(x));
+            line.setAttribute("y1", String(horizontalLayout ? currentTop : top));
+            line.setAttribute("x2", String(x));
+            line.setAttribute("y2", String((horizontalLayout ? currentTop : top) + scaffoldHeight));
+            line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+            line.setAttribute("stroke-width", "1");
+            gridLinesGroup.appendChild(line);
+          }
+
+          for (let row = 0; row <= (horizontalLayout ? horizontalSliceRows : slice.yValues.length); row += 1) {
+            const line = document.createElementNS(NS, "line");
+            const rowTop = horizontalLayout ? currentTop : top;
+            const y = rowTop + row * cellSize;
+            line.setAttribute("x1", String(left));
+            line.setAttribute("y1", String(y));
+            line.setAttribute("x2", String(left + scaffoldWidth));
+            line.setAttribute("y2", String(y));
+            line.setAttribute("stroke", "rgba(255,255,255,0.10)");
+            line.setAttribute("stroke-width", "1");
+            gridLinesGroup.appendChild(line);
+          }
+
+          const border = document.createElementNS(NS, "rect");
+          border.setAttribute("x", String(left));
+          border.setAttribute("y", String(horizontalLayout ? currentTop : top));
+          border.setAttribute("width", String(scaffoldWidth));
+          border.setAttribute("height", String(scaffoldHeight));
+          border.setAttribute("fill", "none");
+          border.setAttribute("stroke", "rgba(255,255,255,0.16)");
+          border.setAttribute("stroke-width", "1.25");
+          wheelSvg.appendChild(border);
+
+          for (let row = 0; row < slice.yValues.length; row += 1) {
+            for (let column = 0; column < slice.xValues.length; column += 1) {
+              const xValue = slice.xValues[column];
+              const yValue = slice.yValues[row];
+              const canonicalKey = `${slice.first},${xValue},${yValue}`;
+              if (!TETRADS.includes(canonicalKey)) continue;
+              const tetradIndex = TETRADS.indexOf(canonicalKey);
+              const active = state.activeTetrads[tetradIndex];
+              const cellLeft = left + column * cellSize;
+              const cellTop = top + row * cellSize;
+              const hovered = state.hoveredPc === tetradIndex && state.hoveredZone === "pitch";
+              let stroke = "rgba(255,255,255,0.30)";
+              let strokeWidth = "1.5";
+              let highlightKind = "neutral";
+              if (state.perfectPitch.awaitingAdvance && state.targetPc === tetradIndex) {
+                stroke = "#d4af37";
+                strokeWidth = "5";
+                highlightKind = "awaiting";
+              } else if (state.perfectPitch.feedbackPc === tetradIndex) {
+                stroke = state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73";
+                strokeWidth = "5";
+                highlightKind = state.perfectPitch.feedbackKind === "correct" ? "correct" : "wrong";
+              } else if (state.revealed && state.targetPc === tetradIndex) {
+                stroke = "#ffffff";
+                strokeWidth = "5";
+                highlightKind = "revealed";
+              }
+
+              const rect = document.createElementNS(NS, "rect");
+              rect.setAttribute("x", String(cellLeft));
+              rect.setAttribute("y", String(cellTop));
+              rect.setAttribute("width", String(cellSize));
+              rect.setAttribute("height", String(cellSize));
+              const tetradHue = (tetradIndex * 360) / TETRADS.length;
+              rect.setAttribute(
+                "fill",
+                active ? colorAtHue(
+                  tetradHue,
+                  hovered ? PITCH_HOVER_LIGHTNESS : PITCH_MUTED_LIGHTNESS,
+                  hovered ? PITCH_HOVER_CHROMA : PITCH_MUTED_CHROMA
+                ) : "rgba(95,105,120,0.28)"
+              );
+              rect.dataset.pc = String(tetradIndex);
+              rect.dataset.zone = "pitch";
+              wheelSvg.appendChild(rect);
+
+              const overlay = document.createElementNS(NS, "rect");
+              overlay.setAttribute("x", String(cellLeft));
+              overlay.setAttribute("y", String(cellTop));
+              overlay.setAttribute("width", String(cellSize));
+              overlay.setAttribute("height", String(cellSize));
+              overlay.setAttribute("fill", "none");
+              overlay.setAttribute("stroke", stroke);
+              overlay.setAttribute("stroke-width", strokeWidth);
+              overlay.dataset.pc = String(tetradIndex);
+              overlay.dataset.zone = "pitch";
+              overlayEntries.push({ priority: highlightPriority(highlightKind), overlay });
+
+              const label = document.createElementNS(NS, "text");
+              label.setAttribute("x", String(cellLeft + cellSize / 2));
+              label.setAttribute("y", String(cellTop + cellSize / 2 + 1));
+              label.setAttribute("text-anchor", "middle");
+              label.setAttribute("dominant-baseline", "middle");
+              label.setAttribute("fill", "#ffffff");
+              label.setAttribute("font-size", String(labelFontSize));
+              label.setAttribute("font-weight", "700");
+              label.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
+              label.setAttribute("pointer-events", "none");
+              label.textContent = `${slice.first},${xValue},${yValue}`;
+              wheelSvg.appendChild(label);
+            }
+          }
+
+          if (horizontalLayout) currentLeft += gridWidth;
+          else currentTop += gridHeight;
+        });
+
+        if (scoreBox && showsScoreButton()) {
+          const scoreCircle = document.createElementNS(NS, "circle");
+          scoreCircle.setAttribute("cx", String(scoreBox.x + scoreBox.width / 2));
+          scoreCircle.setAttribute("cy", String(scoreBox.y + scoreBox.height / 2));
+          scoreCircle.setAttribute("r", String(Math.min(scoreBox.width, scoreBox.height) / 2));
+          scoreCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+          scoreCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+          scoreCircle.setAttribute("stroke-width", "2");
+          scoreCircle.dataset.centerControl = "true";
+          wheelSvg.appendChild(scoreCircle);
+        }
+
+        overlayEntries.sort((a, b) => a.priority - b.priority).forEach(({ overlay }) => overlayGroup.appendChild(overlay));
+        wheelSvg.appendChild(overlayGroup);
+        return { bounds, scoreBox };
       }
 
       function drawWheel() {
@@ -1548,63 +2807,60 @@
         const cy = 310;
         const pitchOuter = 250;
         const pitchInner = 112;
-        const toggleInner = pitchOuter;
-        const toggleOuter = 270;
         wheelSvg.innerHTML = "";
-        wheelSvg.setAttribute("viewBox", "32 32 556 556");
+        const monophonicOuterRadius = pitchOuter + 2;
+        wheelSvg.setAttribute(
+          "viewBox",
+          `${cx - monophonicOuterRadius} ${cy - monophonicOuterRadius} ${monophonicOuterRadius * 2} ${monophonicOuterRadius * 2}`
+        );
 
         if (state.chordSize === 2) {
-          const { bounds } = drawBiphonicSpiral(NS, cx, cy);
-
-          const streak = currentStreak();
-          if (streak >= 2) {
-            const streakText = document.createElementNS(NS, "text");
-            streakText.setAttribute("x", String(cx));
-            streakText.setAttribute("y", String(cy - 62));
-            streakText.setAttribute("text-anchor", "middle");
-            streakText.setAttribute("dominant-baseline", "middle");
-            streakText.setAttribute("fill", "#ffb14a");
-            streakText.setAttribute("font-size", String(String(streak).length >= 3 ? 17 : 19));
-            streakText.setAttribute("font-weight", "800");
-            streakText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
-            streakText.textContent = `🔥${streak}🔥`;
-            wheelSvg.appendChild(streakText);
-            bounds.minX = Math.min(bounds.minX, cx - 44);
-            bounds.maxX = Math.max(bounds.maxX, cx + 44);
-            bounds.minY = Math.min(bounds.minY, cy - 78);
-          }
-
-          const [correct, total] = currentScore();
-          const scoreText = document.createElementNS(NS, "text");
-          scoreText.setAttribute("x", String(cx));
-          scoreText.setAttribute("y", String(cy + 8));
-          scoreText.setAttribute("text-anchor", "middle");
-          scoreText.setAttribute("fill", "#ffffff");
-          scoreText.setAttribute("font-size", "28");
-          scoreText.setAttribute("font-weight", "700");
-          scoreText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
-          scoreText.dataset.centerControl = "true";
-          scoreText.textContent = `${correct} / ${total}`;
-          wheelSvg.appendChild(scoreText);
-          bounds.minX = Math.min(bounds.minX, cx - 46);
-          bounds.maxX = Math.max(bounds.maxX, cx + 46);
-          bounds.minY = Math.min(bounds.minY, cy - 20);
-          bounds.maxY = Math.max(bounds.maxY, cy + 20);
-
-          const pad = 18;
+          drawBiphonicSpiral(NS, cx, cy);
+          const unitRadius = 62;
+          if (showsScoreButton()) drawScoreBadge(NS, cx, cy, unitRadius);
+          const segmentCount = maxDisplayedInterval();
+          const symmetricRadius = unitRadius * (2 + segmentCount / 12);
           wheelSvg.setAttribute(
             "viewBox",
-            `${bounds.minX - pad} ${bounds.minY - pad} ${bounds.maxX - bounds.minX + pad * 2} ${bounds.maxY - bounds.minY + pad * 2}`
+            `${cx - symmetricRadius} ${cy - symmetricRadius} ${symmetricRadius * 2} ${symmetricRadius * 2}`
           );
 
           updateScoreLabel();
           return;
         }
 
+        if (state.chordSize === 3) {
+          const { bounds, scoreBox } = drawTriphonicGrid(NS, cx, cy);
+          wheelSvg.setAttribute(
+            "viewBox",
+            `${bounds.minX} ${bounds.minY} ${bounds.maxX - bounds.minX} ${bounds.maxY - bounds.minY}`
+          );
+          if (showsScoreButton()) drawScoreBadge(NS, scoreBox.x + scoreBox.width / 2, scoreBox.y + scoreBox.height / 2, Math.min(scoreBox.width, scoreBox.height) / 2);
+
+          updateScoreLabel();
+          return;
+        }
+
+        if (state.chordSize === 4) {
+          const { bounds, scoreBox } = drawTetradGrids(NS, cx, cy);
+          wheelSvg.setAttribute(
+            "viewBox",
+            `${bounds.minX} ${bounds.minY} ${bounds.maxX - bounds.minX} ${bounds.maxY - bounds.minY}`
+          );
+          if (scoreBox && showsScoreButton()) {
+            drawScoreBadge(NS, scoreBox.x + scoreBox.width / 2, scoreBox.y + scoreBox.height / 2, Math.min(scoreBox.width, scoreBox.height) / 2);
+          }
+
+          updateScoreLabel();
+          return;
+        }
+
         const bg = document.createElementNS(NS, "circle");
+        const pitchOverlayGroup = document.createElementNS(NS, "g");
+        const overlayEntries = [];
         bg.setAttribute("cx", String(cx));
         bg.setAttribute("cy", String(cy));
-        bg.setAttribute("r", String(toggleOuter + 2));
+        bg.setAttribute("r", String(pitchOuter + 2));
         bg.setAttribute("fill", "#0f1b2a");
         bg.setAttribute("stroke", "#2d3f59");
         bg.setAttribute("stroke-width", "1");
@@ -1614,131 +2870,91 @@
           const start = -Math.PI / 2 + (i * Math.PI * 2) / 12;
           const end = -Math.PI / 2 + ((i + 1) * Math.PI * 2) / 12;
           const pitch = state.pitchClasses[i];
-          const mutedColor = pitchColor(i, PITCH_MUTED_LIGHTNESS, PITCH_MUTED_CHROMA);
-          const hoverColor = pitchColor(i, PITCH_HOVER_LIGHTNESS, PITCH_HOVER_CHROMA);
+          const mutedColor = colorAtHue((i * 360) / EDO, PITCH_MUTED_LIGHTNESS, PITCH_MUTED_CHROMA);
+          const hoverColor = colorAtHue((i * 360) / EDO, PITCH_HOVER_LIGHTNESS, PITCH_HOVER_CHROMA);
           const pitchHovered = state.hoveredPc === i && state.hoveredZone === "pitch";
-          const toggleHovered = state.hoveredPc === i && state.hoveredZone === "toggle";
           let stroke = "rgba(255,255,255,0.30)";
           let strokeWidth = "1.5";
+          let highlightKind = "neutral";
           if (state.perfectPitch.awaitingAdvance && state.targetPc === i) {
             stroke = "#d4af37";
             strokeWidth = "5";
+            highlightKind = "awaiting";
           } else if (state.perfectPitch.feedbackPc === i) {
             stroke = state.perfectPitch.feedbackKind === "correct" ? "#40d97b" : "#ff5d73";
             strokeWidth = "5";
+            highlightKind = state.perfectPitch.feedbackKind === "correct" ? "correct" : "wrong";
           } else if (state.revealed && state.targetPc === i) {
             stroke = "#ffffff";
             strokeWidth = "5";
+            highlightKind = "revealed";
           }
-
-          const togglePath = document.createElementNS(NS, "path");
-          togglePath.setAttribute("d", sectorPath(cx, cy, toggleInner, toggleOuter, start, end));
-          togglePath.setAttribute("fill", toggleHovered ? "#7c848f" : (pitch.active ? "#f3f6fb" : "#111318"));
-          togglePath.setAttribute("stroke", "rgba(255,255,255,0.38)");
-          togglePath.setAttribute("stroke-width", "1");
-          togglePath.dataset.pc = String(i);
-          togglePath.dataset.zone = "toggle";
-          wheelSvg.appendChild(togglePath);
 
           const pitchPath = document.createElementNS(NS, "path");
           pitchPath.setAttribute("d", sectorPath(cx, cy, pitchInner, pitchOuter, start, end));
           pitchPath.setAttribute("fill", pitch.active ? (pitchHovered ? hoverColor : mutedColor) : "rgba(95,105,120,0.28)");
-          pitchPath.setAttribute("stroke", stroke);
-          pitchPath.setAttribute("stroke-width", strokeWidth);
           pitchPath.dataset.pc = String(i);
           pitchPath.dataset.zone = "pitch";
           wheelSvg.appendChild(pitchPath);
+
+          const pitchOverlay = document.createElementNS(NS, "path");
+          pitchOverlay.setAttribute("d", sectorPath(cx, cy, pitchInner, pitchOuter, start, end));
+          pitchOverlay.setAttribute("fill", "none");
+          pitchOverlay.setAttribute("stroke", stroke);
+          pitchOverlay.setAttribute("stroke-width", strokeWidth);
+          pitchOverlay.dataset.pc = String(i);
+          pitchOverlay.dataset.zone = "pitch";
+          overlayEntries.push({ priority: highlightPriority(highlightKind), overlay: pitchOverlay });
 
           const angle = (start + end) / 2;
           const theta = end - start;
           const centroidRadius = annularSectorCentroidRadius(pitchInner, pitchOuter, theta);
           const tx = cx + Math.cos(angle) * centroidRadius;
           const ty = cy + Math.sin(angle) * centroidRadius;
-          const mobileLayout = isMobileLayout();
-          const groupCenterY = ty + (mobileLayout ? 0 : 3);
-          const desktopGroupGap = 6;
+          const labelFontSize = 23;
+          const showShortcuts = state.showKeyboardShortcuts && !isMobileLayout();
+          const groupCenterY = ty;
+          const shortcutFontSize = Math.max(9, labelFontSize * 0.7);
+          const keycapPadding = labelFontSize * 0.1;
+          const keycapHeight = shortcutFontSize + keycapPadding * 2;
+          const gap = labelFontSize * 0.3;
+          const stackedHalfHeight = (labelFontSize + gap + keycapHeight) / 2;
+          const labelCenterY = showShortcuts ? groupCenterY - (stackedHalfHeight - labelFontSize / 2) : groupCenterY;
+          const keycapCenterY = showShortcuts ? groupCenterY + (stackedHalfHeight - keycapHeight / 2) : groupCenterY;
+          const keycapLabel = PC_SHORTCUTS[i];
 
           const nameText = document.createElementNS(NS, "text");
           nameText.setAttribute("x", String(tx));
-          nameText.setAttribute("y", String(mobileLayout ? groupCenterY + 1 : groupCenterY - (10 + desktopGroupGap / 2)));
+          nameText.setAttribute("y", String(labelCenterY));
           nameText.setAttribute("text-anchor", "middle");
           nameText.setAttribute("dominant-baseline", "middle");
           nameText.setAttribute("fill", "#ffffff");
-          nameText.setAttribute("font-size", "23");
+          nameText.setAttribute("font-size", String(labelFontSize));
           nameText.setAttribute("font-weight", "700");
           nameText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
           nameText.setAttribute("pointer-events", "none");
           nameText.textContent = pitch.name;
           wheelSvg.appendChild(nameText);
-
-          if (!mobileLayout) {
-            const isTabKey = i === 6;
-            const keycapWidth = isTabKey ? 42 : 22;
-            const keycapHeight = 20;
-            const keycapRect = document.createElementNS(NS, "rect");
-            keycapRect.setAttribute("x", String(tx - keycapWidth / 2));
-            keycapRect.setAttribute("y", String(groupCenterY + desktopGroupGap / 2));
-            keycapRect.setAttribute("width", String(keycapWidth));
-            keycapRect.setAttribute("height", String(keycapHeight));
-            keycapRect.setAttribute("rx", "5");
-            keycapRect.setAttribute("fill", "rgba(255,255,255,0.92)");
-            keycapRect.setAttribute("stroke", "rgba(10,16,24,0.38)");
-            keycapRect.setAttribute("stroke-width", "1");
-            keycapRect.setAttribute("pointer-events", "none");
-            wheelSvg.appendChild(keycapRect);
-
-            const shortcutText = document.createElementNS(NS, "text");
-            shortcutText.setAttribute("x", String(tx));
-            shortcutText.setAttribute("y", String(groupCenterY + desktopGroupGap / 2 + keycapHeight / 2 + 1));
-            shortcutText.setAttribute("text-anchor", "middle");
-            shortcutText.setAttribute("dominant-baseline", "middle");
-            shortcutText.setAttribute("fill", "#0f1620");
-            shortcutText.setAttribute("font-size", isTabKey ? "10" : "13");
-            shortcutText.setAttribute("font-weight", "700");
-            shortcutText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
-            shortcutText.setAttribute("pointer-events", "none");
-            shortcutText.textContent = isTabKey ? "Tab ↹" : PC_SHORTCUTS[i];
-            wheelSvg.appendChild(shortcutText);
+          if (showShortcuts) {
+            drawSvgKeycap(NS, tx, keycapCenterY, keycapLabel, { labelFontSize });
           }
+
         }
 
-        const centerCircle = document.createElementNS(NS, "circle");
-        centerCircle.setAttribute("cx", String(cx));
-        centerCircle.setAttribute("cy", String(cy));
-        centerCircle.setAttribute("r", String(pitchInner - 2));
-        centerCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
-        centerCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
-        centerCircle.setAttribute("stroke-width", "2");
-        centerCircle.dataset.centerControl = "true";
-        wheelSvg.appendChild(centerCircle);
-
-        const streak = currentStreak();
-        if (streak >= 2) {
-          const streakText = document.createElementNS(NS, "text");
-          streakText.setAttribute("x", String(cx));
-          streakText.setAttribute("y", String(cy - 62));
-          streakText.setAttribute("text-anchor", "middle");
-          streakText.setAttribute("dominant-baseline", "middle");
-          streakText.setAttribute("fill", "#ffb14a");
-          streakText.setAttribute("font-size", String(String(streak).length >= 3 ? 17 : 19));
-          streakText.setAttribute("font-weight", "800");
-          streakText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
-          streakText.textContent = `🔥${streak}🔥`;
-          wheelSvg.appendChild(streakText);
+        if (showsScoreButton()) {
+          const centerCircle = document.createElementNS(NS, "circle");
+          centerCircle.setAttribute("cx", String(cx));
+          centerCircle.setAttribute("cy", String(cy));
+          centerCircle.setAttribute("r", String(pitchInner - 2));
+          centerCircle.setAttribute("fill", "rgba(8, 14, 22, 0.95)");
+          centerCircle.setAttribute("stroke", "rgba(255,255,255,0.24)");
+          centerCircle.setAttribute("stroke-width", "2");
+          centerCircle.dataset.centerControl = "true";
+          wheelSvg.appendChild(centerCircle);
         }
-
-        const [correct, total] = currentScore();
-        const scoreText = document.createElementNS(NS, "text");
-        scoreText.setAttribute("x", String(cx));
-        scoreText.setAttribute("y", String(cy + 8));
-        scoreText.setAttribute("text-anchor", "middle");
-        scoreText.setAttribute("fill", "#ffffff");
-        scoreText.setAttribute("font-size", "28");
-        scoreText.setAttribute("font-weight", "700");
-        scoreText.setAttribute("font-family", "Avenir Next, Trebuchet MS, sans-serif");
-        scoreText.dataset.centerControl = "true";
-        scoreText.textContent = `${correct} / ${total}`;
-        wheelSvg.appendChild(scoreText);
+        overlayEntries.sort((a, b) => a.priority - b.priority).forEach(({ overlay }) => pitchOverlayGroup.appendChild(overlay));
+        wheelSvg.appendChild(pitchOverlayGroup);
+        if (showsScoreButton()) drawScoreBadge(NS, cx, cy, pitchInner - 2);
 
         updateScoreLabel();
       }
@@ -1753,17 +2969,55 @@
         const pitch = state.pitchClasses[pc];
         pitch.active = !pitch.active;
         if (!activePitchClasses().length) pitch.active = true;
+        resetRecentScore();
         startNewRound();
         saveSettings();
       }
 
+      function toggleIntervalActive(interval) {
+        state.activeIntervals[interval] = !state.activeIntervals[interval];
+        if (!state.activeIntervals.slice(1).some(Boolean)) state.activeIntervals[interval] = true;
+        resetRecentScore();
+        startNewRound();
+        saveSettings();
+      }
+
+      function toggleTriadActive(index) {
+        state.activeTriads[index] = !state.activeTriads[index];
+        if (!state.activeTriads.some(Boolean)) state.activeTriads[index] = true;
+        resetRecentScore();
+        startNewRound();
+        saveSettings();
+      }
+
+      function toggleTetradActive(index) {
+        state.activeTetrads[index] = !state.activeTetrads[index];
+        if (!state.activeTetrads.some(Boolean)) state.activeTetrads[index] = true;
+        resetRecentScore();
+        startNewRound();
+        saveSettings();
+      }
+
+      function toggleSelection(pc) {
+        if (state.chordSize === 2) {
+          toggleIntervalActive(pc);
+          return;
+        }
+        if (state.chordSize === 3) {
+          toggleTriadActive(pc);
+          return;
+        }
+        if (state.chordSize === 4) {
+          toggleTetradActive(pc);
+          return;
+        }
+        togglePitchClassActive(pc);
+      }
+
       function chooseRandomInterval() {
-        const maxInterval = maxDisplayedInterval();
-        const options = [];
-        for (let interval = 1; interval <= maxInterval; interval += 1) options.push(interval);
-        const distinct = state.targetInterval == null ? options : options.filter((interval) => interval !== state.targetInterval);
-        const pool = distinct.length ? distinct : options;
-        return pool[Math.floor(Math.random() * pool.length)];
+        const options = activeIntervalsInRange();
+        if (!options.length) return null;
+        return options[Math.floor(Math.random() * options.length)];
       }
 
       function chooseDyadForInterval(interval) {
@@ -1774,10 +3028,211 @@
         return [root, root + interval];
       }
 
-      function startNewRound() {
+      function parseTriadKey(triadKey) {
+        const [middle, top] = triadKey.split(",").map(Number);
+        return [0, middle, top];
+      }
+
+      function parseTetradKey(tetradKey) {
+        const [second, third, fourth] = tetradKey.split(",").map(Number);
+        return [0, second, third, fourth];
+      }
+
+      function chooseRandomTriad() {
+        const options = [];
+        for (let index = 0; index < TRIADS.length; index += 1) {
+          if (!state.activeTriads[index]) continue;
+          const triad = parseTriadKey(TRIADS[index]);
+          const topInterval = triad[2];
+          const maxRoot = state.rangeEndMidi - topInterval;
+          if (maxRoot < state.rangeStartMidi) continue;
+          options.push({ index, triad });
+        }
+        if (!options.length) return null;
+        return options[Math.floor(Math.random() * options.length)];
+      }
+
+      function chooseVoicingForTriad(triad) {
+        const topInterval = triad[2];
+        const roots = [];
+        for (let root = state.rangeStartMidi; root + topInterval <= state.rangeEndMidi; root += 1) roots.push(root);
+        if (!roots.length) return null;
+        const root = roots[Math.floor(Math.random() * roots.length)];
+        const baseVoicing = triad.map((interval) => root + interval);
+        if (state.triadVoicingMode === "root") return baseVoicing;
+        return baseVoicing
+          .map((midi) => (midi + 12 <= state.rangeEndMidi && Math.random() < 0.5 ? midi + 12 : midi))
+          .sort((a, b) => a - b);
+      }
+
+      function chooseRandomTetrad() {
+        const options = [];
+        for (let index = 0; index < TETRADS.length; index += 1) {
+          if (!state.activeTetrads[index]) continue;
+          const tetrad = parseTetradKey(TETRADS[index]);
+          const topInterval = tetrad[3];
+          const maxRoot = state.rangeEndMidi - topInterval;
+          if (maxRoot < state.rangeStartMidi) continue;
+          options.push({ index, tetrad });
+        }
+        if (!options.length) return null;
+        return options[Math.floor(Math.random() * options.length)];
+      }
+
+      function chooseVoicingForTetrad(tetrad) {
+        const topInterval = tetrad[3];
+        const roots = [];
+        for (let root = state.rangeStartMidi; root + topInterval <= state.rangeEndMidi; root += 1) roots.push(root);
+        if (!roots.length) return null;
+        const root = roots[Math.floor(Math.random() * roots.length)];
+        const baseVoicing = tetrad.map((interval) => root + interval);
+        if (state.triadVoicingMode === "root") return baseVoicing;
+        return baseVoicing
+          .map((midi) => (midi + 12 <= state.rangeEndMidi && Math.random() < 0.5 ? midi + 12 : midi))
+          .sort((a, b) => a - b);
+      }
+
+      function rangeMidpoint() {
+        return (state.rangeStartMidi + state.rangeEndMidi) / 2;
+      }
+
+      function chooseCenteredMidiForPc(pc) {
+        const candidates = [];
+        for (let midi = state.rangeStartMidi; midi <= state.rangeEndMidi; midi += 1) {
+          if (midi % 12 === pc) candidates.push(midi);
+        }
+        if (!candidates.length) return null;
+        const midpoint = rangeMidpoint();
+        return candidates.reduce((best, midi) => {
+          if (best == null) return midi;
+          return Math.abs(midi - midpoint) < Math.abs(best - midpoint) ? midi : best;
+        }, null);
+      }
+
+      function chooseCenteredVoicing(intervals, allowInversions = false) {
+        const minInterval = Math.min(...intervals);
+        const maxInterval = Math.max(...intervals);
+        const midpoint = rangeMidpoint();
+        const roots = [];
+        for (let root = state.rangeStartMidi - minInterval; root + maxInterval <= state.rangeEndMidi; root += 1) roots.push(root);
+        if (!roots.length) return null;
+        let bestVoicing = null;
+        let bestDistance = Infinity;
+        let bestSpan = Infinity;
+        for (const root of roots) {
+          const baseVoicing = intervals.map((interval) => root + interval);
+          const masks = allowInversions ? Array.from({ length: 1 << baseVoicing.length }, (_, index) => index) : [0];
+          for (const mask of masks) {
+            const voicing = baseVoicing.map((midi, index) => {
+              if (allowInversions && (mask & (1 << index)) && midi + 12 <= state.rangeEndMidi) return midi + 12;
+              return midi;
+            }).sort((a, b) => a - b);
+            if (voicing[0] < state.rangeStartMidi || voicing[voicing.length - 1] > state.rangeEndMidi) continue;
+            const center = (voicing[0] + voicing[voicing.length - 1]) / 2;
+            const distance = Math.abs(center - midpoint);
+            const span = voicing[voicing.length - 1] - voicing[0];
+            if (distance < bestDistance || (distance === bestDistance && span < bestSpan)) {
+              bestVoicing = voicing;
+              bestDistance = distance;
+              bestSpan = span;
+            }
+          }
+        }
+        return bestVoicing;
+      }
+
+      function chooseRandomPlacedVoicing(intervals) {
+        const minInterval = Math.min(...intervals);
+        const maxInterval = Math.max(...intervals);
+        const roots = [];
+        for (let root = state.rangeStartMidi - minInterval; root + maxInterval <= state.rangeEndMidi; root += 1) {
+          roots.push(root);
+        }
+        if (!roots.length) return null;
+        const root = roots[Math.floor(Math.random() * roots.length)];
+        return intervals.map((interval) => root + interval).sort((a, b) => a - b);
+      }
+
+      function chooseDemoChordVoicing(intervals, allowInversions = false) {
+        if (!allowInversions) return chooseCenteredVoicing(intervals, false);
+        const rangeSpan = state.rangeEndMidi - state.rangeStartMidi;
+        const liftedIntervals = intervals.map((interval) => (
+          interval + 12 <= rangeSpan && Math.random() < 0.5 ? interval + 12 : interval
+        )).sort((a, b) => a - b);
+        return chooseRandomPlacedVoicing(liftedIntervals);
+      }
+
+      function stopDemoPlayback() {
+        if (state.demoPlaybackTimer !== null) {
+          window.clearTimeout(state.demoPlaybackTimer);
+          state.demoPlaybackTimer = null;
+        }
+        audioEngine.stopPrompt();
+      }
+
+      function demoSelectionNotes(selection) {
+        if (selection == null) return null;
+        if (state.chordSize === 1) {
+          const midi = chooseCenteredMidiForPc(selection);
+          return midi;
+        }
+        if (state.chordSize === 2) {
+          return chooseCenteredVoicing([0, selection], false);
+        }
+        if (state.chordSize === 3) {
+          const triad = parseTriadKey(TRIADS[selection]);
+          return chooseDemoChordVoicing(triad, state.triadVoicingMode === "inversions");
+        }
+        if (state.chordSize === 4) {
+          const tetrad = parseTetradKey(TETRADS[selection]);
+          return chooseDemoChordVoicing(tetrad, state.triadVoicingMode === "inversions");
+        }
+        return null;
+      }
+
+      async function startDemoHoldSelection(selection, triggerType, triggerCode = null) {
+        const notes = demoSelectionNotes(selection);
+        if (notes == null) return;
+        stopDemoPlayback();
         stopHoldCurrentNote();
+        state.demoHoldTriggerType = triggerType;
+        state.demoHoldTriggerCode = triggerCode;
+        await audioEngine.startPrompt(notes, getPromptGain());
+      }
+
+      function stopDemoHold(triggerType = null, triggerCode = null) {
+        if (state.demoHoldTriggerType === null) return;
+        if (triggerType !== null && state.demoHoldTriggerType !== triggerType) return;
+        if (triggerCode !== null && state.demoHoldTriggerCode !== triggerCode) return;
+        state.demoHoldTriggerType = null;
+        state.demoHoldTriggerCode = null;
+        stopDemoPlayback();
+      }
+
+      function startNewRound() {
+        stopDemoPlayback();
+        state.demoHoldTriggerType = null;
+        state.demoHoldTriggerCode = null;
+        stopHoldCurrentNote();
+        if (isDemoMode()) {
+          state.targetPc = null;
+          state.targetMidi = null;
+          state.targetInterval = null;
+          state.targetMidis = null;
+          state.revealed = false;
+          state.perfectPitch.feedbackPc = null;
+          state.perfectPitch.feedbackKind = null;
+          state.perfectPitch.awaitingAdvance = false;
+          state.perfectPitch.awaitingRelease = false;
+          state.perfectPitch.releaseTriggerType = null;
+          state.perfectPitch.releaseTriggerCode = null;
+          drawWheel();
+          saveSettings();
+          return;
+        }
         if (state.chordSize === 2) {
           const interval = chooseRandomInterval();
+          if (interval === null) return;
           const midis = chooseDyadForInterval(interval);
           if (!midis) return;
           state.targetPc = null;
@@ -1791,16 +3246,56 @@
           state.perfectPitch.awaitingRelease = false;
           state.perfectPitch.releaseTriggerType = null;
           state.perfectPitch.releaseTriggerCode = null;
-          if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+          if (isContinuousMode() && !state.suppressPromptPlayback) startHoldCurrentNote().catch(() => {});
+          drawWheel();
+          saveSettings();
+          return;
+        }
+        if (state.chordSize === 3) {
+          const triadChoice = chooseRandomTriad();
+          if (!triadChoice) return;
+          const midis = chooseVoicingForTriad(triadChoice.triad);
+          if (!midis) return;
+          state.targetPc = triadChoice.index;
+          state.targetMidi = null;
+          state.targetInterval = null;
+          state.targetMidis = midis;
+          state.revealed = false;
+          state.perfectPitch.feedbackPc = null;
+          state.perfectPitch.feedbackKind = null;
+          state.perfectPitch.awaitingAdvance = false;
+          state.perfectPitch.awaitingRelease = false;
+          state.perfectPitch.releaseTriggerType = null;
+          state.perfectPitch.releaseTriggerCode = null;
+          if (isContinuousMode() && !state.suppressPromptPlayback) startHoldCurrentNote().catch(() => {});
+          drawWheel();
+          saveSettings();
+          return;
+        }
+        if (state.chordSize === 4) {
+          const tetradChoice = chooseRandomTetrad();
+          if (!tetradChoice) return;
+          const midis = chooseVoicingForTetrad(tetradChoice.tetrad);
+          if (!midis) return;
+          state.targetPc = tetradChoice.index;
+          state.targetMidi = null;
+          state.targetInterval = null;
+          state.targetMidis = midis;
+          state.revealed = false;
+          state.perfectPitch.feedbackPc = null;
+          state.perfectPitch.feedbackKind = null;
+          state.perfectPitch.awaitingAdvance = false;
+          state.perfectPitch.awaitingRelease = false;
+          state.perfectPitch.releaseTriggerType = null;
+          state.perfectPitch.releaseTriggerCode = null;
+          if (isContinuousMode() && !state.suppressPromptPlayback) startHoldCurrentNote().catch(() => {});
           drawWheel();
           saveSettings();
           return;
         }
         const active = activePitchClasses().filter((pitch) => pcsAvailableInRange().has(pitch.pc));
         if (!active.length) return;
-        const previousPc = state.targetPc;
-        const distinct = previousPc === null ? active : active.filter((pitch) => pitch.pc !== previousPc);
-        const chosenPc = (distinct.length ? distinct : active)[Math.floor(Math.random() * (distinct.length ? distinct : active).length)].pc;
+        const chosenPc = active[Math.floor(Math.random() * active.length)].pc;
         const midi = chooseMidiForPc(chosenPc);
         if (midi === null) return;
         state.targetPc = chosenPc;
@@ -1812,7 +3307,7 @@
         state.perfectPitch.awaitingRelease = false;
         state.perfectPitch.releaseTriggerType = null;
         state.perfectPitch.releaseTriggerCode = null;
-        if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+        if (isContinuousMode() && !state.suppressPromptPlayback) startHoldCurrentNote().catch(() => {});
         drawWheel();
         saveSettings();
       }
@@ -1830,6 +3325,10 @@
         startNewRound();
       }
 
+      function resetRecentScore() {
+        state.recentScore = [0, 0];
+      }
+
       function updateDailyScore(correct) {
         const key = scoreKeyFor(yyMmDd(), state.chordSize);
         const entry = state.perfectPitch.scoreByDateAndChordSize[key] || [0, 0, state.chordSize];
@@ -1837,10 +3336,17 @@
         if (correct) entry[0] += 1;
         entry[2] = state.chordSize;
         state.perfectPitch.scoreByDateAndChordSize[key] = entry;
+        state.recentScore[1] += 1;
+        if (correct) state.recentScore[0] += 1;
         saveDailyLog();
+        saveSettings();
       }
 
       function handleGuess(pc, triggerType, triggerCode) {
+        if (isDemoMode()) {
+          startDemoHoldSelection(pc, triggerType, triggerType === "key" ? triggerCode : null).catch(() => {});
+          return;
+        }
         if (state.chordSize === 2) {
           if (state.targetInterval === null || state.perfectPitch.awaitingRelease) return;
           if (state.perfectPitch.awaitingAdvance) {
@@ -1857,6 +3363,72 @@
             return;
           }
           if (pc === state.targetInterval) {
+            updateDailyScore(true);
+            state.perfectPitch.feedbackPc = pc;
+            state.perfectPitch.feedbackKind = "correct";
+            beginAdvanceOnRelease(triggerType, triggerCode);
+            drawWheel();
+            saveSettings();
+            return;
+          }
+          state.perfectPitch.feedbackPc = pc;
+          state.perfectPitch.feedbackKind = "wrong";
+          updateDailyScore(false);
+          state.revealed = true;
+          state.perfectPitch.awaitingAdvance = true;
+          drawWheel();
+          saveSettings();
+          return;
+        }
+        if (state.chordSize === 3) {
+          if (state.targetPc === null || state.perfectPitch.awaitingRelease) return;
+          if (state.perfectPitch.awaitingAdvance) {
+            if (pc === state.targetPc) {
+              state.perfectPitch.feedbackPc = pc;
+              state.perfectPitch.feedbackKind = "correct";
+              beginAdvanceOnRelease(triggerType, triggerCode);
+              drawWheel();
+            } else {
+              state.perfectPitch.feedbackPc = pc;
+              state.perfectPitch.feedbackKind = "wrong";
+              drawWheel();
+            }
+            return;
+          }
+          if (pc === state.targetPc) {
+            updateDailyScore(true);
+            state.perfectPitch.feedbackPc = pc;
+            state.perfectPitch.feedbackKind = "correct";
+            beginAdvanceOnRelease(triggerType, triggerCode);
+            drawWheel();
+            saveSettings();
+            return;
+          }
+          state.perfectPitch.feedbackPc = pc;
+          state.perfectPitch.feedbackKind = "wrong";
+          updateDailyScore(false);
+          state.revealed = true;
+          state.perfectPitch.awaitingAdvance = true;
+          drawWheel();
+          saveSettings();
+          return;
+        }
+        if (state.chordSize === 4) {
+          if (state.targetPc === null || state.perfectPitch.awaitingRelease) return;
+          if (state.perfectPitch.awaitingAdvance) {
+            if (pc === state.targetPc) {
+              state.perfectPitch.feedbackPc = pc;
+              state.perfectPitch.feedbackKind = "correct";
+              beginAdvanceOnRelease(triggerType, triggerCode);
+              drawWheel();
+            } else {
+              state.perfectPitch.feedbackPc = pc;
+              state.perfectPitch.feedbackKind = "wrong";
+              drawWheel();
+            }
+            return;
+          }
+          if (pc === state.targetPc) {
             updateDailyScore(true);
             state.perfectPitch.feedbackPc = pc;
             state.perfectPitch.feedbackKind = "correct";
@@ -1907,7 +3479,8 @@
       }
 
       async function startHoldCurrentNote() {
-        if (state.chordSize === 2) {
+        if (isDemoMode()) return;
+        if (state.chordSize === 2 || state.chordSize === 3 || state.chordSize === 4) {
           if (!state.targetMidis) return;
           state.holdActive = true;
           await audioEngine.startPrompt(state.targetMidis, getPromptGain());
@@ -1925,18 +3498,22 @@
 
       async function startRangeHoldNote(midi) {
         state.rangeHoldMidi = midi;
-        if (state.playContinuously && state.holdActive) stopHoldCurrentNote();
-        state.rangeHoldHandle = await audioEngine.startNote(midi, getPromptGain());
+        await audioEngine.startRangePrompt(midi, getPromptGain());
       }
 
       function stopRangeHoldNote() {
-        if (state.rangeHoldHandle) state.rangeHoldHandle.stop();
+        audioEngine.stopRangePrompt();
         state.rangeHoldHandle = null;
         state.rangeHoldMidi = null;
+        state.suppressPromptPlayback = false;
+        if (state.rangeHoldWasHolding && isContinuousMode()) startHoldCurrentNote().catch(() => {});
+        state.rangeHoldWasHolding = false;
       }
 
       function syncContinuousPlaybackAfterGesture(skipStart = false) {
-        if (!audioEngine.unlocked || skipStart || !state.playContinuously || state.targetMidi === null || state.holdActive) return;
+        if (!audioEngine.unlocked || skipStart || !isContinuousMode() || state.holdActive || state.suppressPromptPlayback) return;
+        if ((state.chordSize === 2 || state.chordSize === 3 || state.chordSize === 4) && !state.targetMidis) return;
+        if (state.chordSize !== 2 && state.chordSize !== 3 && state.chordSize !== 4 && state.targetMidi === null) return;
         startHoldCurrentNote().catch(() => {});
       }
 
@@ -1944,16 +3521,39 @@
         audioEngine.ensureContext().then(() => syncContinuousPlaybackAfterGesture(skipContinuousStart)).catch(() => {});
       }
 
-      function setPlayContinuously(nextValue) {
-        state.playContinuously = nextValue;
+      function releaseCenterControl(pointerId = null) {
+        if (state.centerControlPointerId === null) return;
+        if (pointerId !== null && state.centerControlPointerId !== pointerId) return;
+        const heldPointerId = state.centerControlPointerId;
+        state.centerControlPointerId = null;
+        if (heldPointerId !== null && wheelSvg.hasPointerCapture?.(heldPointerId)) {
+          wheelSvg.releasePointerCapture(heldPointerId);
+        }
+        if (isContinuousMode()) startHoldCurrentNote().catch(() => {});
+        else if (state.playMode === "press") stopHoldCurrentNote();
+      }
+
+      function setPlayMode(nextValue) {
+        if (!["press", "continuous", "demo", "toggle"].includes(nextValue)) return;
+        state.playMode = nextValue;
+        state.demoHoldTriggerType = null;
+        state.demoHoldTriggerCode = null;
+        stopDemoPlayback();
         stopHoldCurrentNote();
-        if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+        if (isContinuousMode()) startHoldCurrentNote().catch(() => {});
         syncControls();
+        drawWheel();
+        if (!isDemoMode() && state.targetPc === null && state.targetMidi === null && state.targetInterval === null && state.targetMidis === null) {
+          startNewRound();
+          return;
+        }
+        if (isDemoMode()) startNewRound();
         saveSettings();
       }
 
-      function setTodayOnlyScore(nextValue) {
-        state.todayOnlyScore = nextValue;
+      function setScoreMode(nextValue) {
+        if (!["recent", "today", "all"].includes(nextValue)) return;
+        state.scoreMode = nextValue;
         syncControls();
         drawWheel();
         saveSettings();
@@ -1961,9 +3561,23 @@
 
       function setChordSize(nextValue) {
         if (![1, 2, 3, 4].includes(nextValue)) return;
+        stopHoldCurrentNote();
         state.chordSize = nextValue;
+        resetRecentScore();
+        state.targetPc = null;
+        state.targetMidi = null;
+        state.targetInterval = null;
+        state.targetMidis = null;
         syncControls();
-        drawWheel();
+        startNewRound();
+        saveSettings();
+      }
+
+      function setTriadVoicingMode(nextValue) {
+        if (!["root", "inversions"].includes(nextValue)) return;
+        state.triadVoicingMode = nextValue;
+        syncControls();
+        if (state.chordSize === 3 || state.chordSize === 4) startNewRound();
         saveSettings();
       }
 
@@ -2015,6 +3629,9 @@
       if (maxIntervalBox) {
         maxIntervalBox.addEventListener("pointerdown", (event) => {
           event.preventDefault();
+          state.maxIntervalWasHolding = state.holdActive;
+          state.suppressPromptPlayback = true;
+          stopHoldCurrentNote();
           state.maxIntervalDrag = {
             pointerId: event.pointerId,
             startY: event.clientY,
@@ -2035,6 +3652,11 @@
             maxIntervalBox.releasePointerCapture(event.pointerId);
           }
           state.maxIntervalDrag = null;
+          state.suppressPromptPlayback = false;
+          if (state.maxIntervalWasHolding && isContinuousMode()) {
+            startHoldCurrentNote().catch(() => {});
+          }
+          state.maxIntervalWasHolding = false;
         };
         maxIntervalBox.addEventListener("pointerup", finishMaxIntervalDrag);
         maxIntervalBox.addEventListener("pointercancel", finishMaxIntervalDrag);
@@ -2045,12 +3667,29 @@
         }, { passive: false });
       }
 
-      playModePressBtn.parentElement.addEventListener("click", () => {
-        setPlayContinuously(!state.playContinuously);
+      playModePressBtn.parentElement.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        animatePillGroup(playModePressBtn.parentElement, () => {
+          setPlayMode(
+            button === playModeContinuousBtn ? "continuous"
+              : button === playModeDemoBtn ? "demo"
+                : button === playModeToggleBtn ? "toggle"
+                : "press"
+          );
+        });
       });
 
-      scoreModeTodayBtn.parentElement.addEventListener("click", () => {
-        setTodayOnlyScore(!state.todayOnlyScore);
+      scoreModeTodayBtn.parentElement.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        animatePillGroup(scoreModeTodayBtn.parentElement, () => {
+          setScoreMode(
+            button === scoreModeRecentBtn ? "recent"
+              : button === scoreModeAllBtn ? "all"
+                : "today"
+          );
+        });
       });
 
       chordSizeGroup.addEventListener("click", (event) => {
@@ -2058,7 +3697,33 @@
         if (!button) return;
         const nextValue = Number(button.textContent);
         if (!Number.isFinite(nextValue)) return;
-        setChordSize(nextValue);
+        animatePillGroup(chordSizeGroup, () => {
+          setChordSize(nextValue);
+        });
+      });
+      keyboardShortcutGroup?.addEventListener("click", (event) => {
+        if (!event.target.closest("button, .pill-thumb, .pill-toggle-group")) return;
+        animatePillGroup(keyboardShortcutGroup, () => {
+          state.showKeyboardShortcuts = !state.showKeyboardShortcuts;
+          saveSettings();
+          syncControls();
+          drawWheel();
+        });
+      });
+      chordNamesGroup?.addEventListener("click", (event) => {
+        if (!event.target.closest("button, .pill-thumb, .pill-toggle-group")) return;
+        animatePillGroup(chordNamesGroup, () => {
+          state.showChordNames = !state.showChordNames;
+          saveSettings();
+          syncControls();
+          drawWheel();
+        });
+      });
+      triadVoicingGroup?.addEventListener("click", (event) => {
+        if (!event.target.closest("button, .pill-thumb, .pill-toggle-group")) return;
+        animatePillGroup(triadVoicingGroup, () => {
+          setTriadVoicingMode(state.triadVoicingMode === "root" ? "inversions" : "root");
+        });
       });
 
       if (rangeStartWheel) {
@@ -2098,6 +3763,10 @@
         });
       }
       downloadCsvBtn.addEventListener("click", downloadDailyCsv);
+      settingsPanel.addEventListener("toggle", () => {
+        syncMobileSettingsHeight();
+        drawWheel();
+      });
 
       wheelSvg.addEventListener("mousemove", (event) => {
         const hit = wheelPointToPc(event);
@@ -2116,39 +3785,39 @@
         drawWheel();
       });
 
-      wheelSvg.addEventListener("click", (event) => {
-        const hit = wheelPointToPc(event);
-        if (hit && hit.zone === "toggle") togglePitchClassActive(hit.pc);
-      });
-
       wheelSvg.addEventListener("pointerdown", (event) => {
         const centerControl = event.target.closest("[data-center-control]");
         if (centerControl) {
           event.preventDefault();
           event.stopPropagation();
-          if (state.playContinuously) stopHoldCurrentNote();
+          if (isDemoMode() || isToggleMode()) return;
+          state.centerControlPointerId = event.pointerId;
+          wheelSvg.setPointerCapture?.(event.pointerId);
+          primeAudioOnGesture(true);
+          if (isContinuousMode()) stopHoldCurrentNote();
           else startHoldCurrentNote().catch(() => {});
           return;
         }
         const hit = wheelPointToPc(event);
         if (!hit || hit.zone !== "pitch") return;
         event.preventDefault();
+        if (isToggleMode()) {
+          toggleSelection(hit.pc);
+          return;
+        }
         handleGuess(hit.pc, "pointer", String(hit.pc));
       });
 
       wheelSvg.addEventListener("pointerup", (event) => {
-        const centerControl = event.target.closest("[data-center-control]");
-        if (centerControl) {
+        if (state.centerControlPointerId === event.pointerId) {
           event.preventDefault();
           event.stopPropagation();
-          if (state.playContinuously) startHoldCurrentNote().catch(() => {});
-          else stopHoldCurrentNote();
+          releaseCenterControl(event.pointerId);
         }
       });
 
-      wheelSvg.addEventListener("pointercancel", () => {
-        if (state.playContinuously) startHoldCurrentNote().catch(() => {});
-        else stopHoldCurrentNote();
+      wheelSvg.addEventListener("pointercancel", (event) => {
+        releaseCenterControl(event.pointerId);
       });
 
       window.addEventListener("keydown", (event) => {
@@ -2156,13 +3825,34 @@
         if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
         primeAudioOnGesture(event.code === "Space");
         if (event.code === "Space") {
-          if (state.playContinuously) stopHoldCurrentNote();
+          if (isDemoMode()) return;
+          if (isContinuousMode()) stopHoldCurrentNote();
           else startHoldCurrentNote().catch(() => {});
+          return;
+        }
+        if (event.code === "KeyS") {
+          event.preventDefault();
+          settingsPanel.open = !settingsPanel.open;
+          return;
+        }
+        if (state.chordSize === 2) {
+          const interval = KEY_TO_INTERVAL[event.code];
+          if (interval === undefined) return;
+          event.preventDefault();
+          if (isToggleMode()) {
+            toggleSelection(interval);
+            return;
+          }
+          handleGuess(interval, "key", event.code);
           return;
         }
         const pc = KEY_TO_PC[event.code];
         if (pc === undefined) return;
         event.preventDefault();
+        if (isToggleMode()) {
+          toggleSelection(pc);
+          return;
+        }
         handleGuess(pc, "key", event.code);
       });
 
@@ -2171,6 +3861,8 @@
       });
 
       window.addEventListener("pointerup", () => {
+        stopDemoHold("pointer");
+        releaseCenterControl();
         maybeAdvanceOnRelease("pointer", String(state.chordSize === 2 ? state.targetInterval : state.targetPc));
       });
 
@@ -2180,14 +3872,18 @@
         if (event.metaKey || event.ctrlKey || event.altKey) return;
         if (event.code === "Space") {
           event.preventDefault();
-          if (state.playContinuously) startHoldCurrentNote().catch(() => {});
+          if (isDemoMode()) return;
+          if (isContinuousMode()) startHoldCurrentNote().catch(() => {});
           else stopHoldCurrentNote();
           return;
         }
+        stopDemoHold("key", event.code);
         maybeAdvanceOnRelease("key", event.code);
       });
 
       window.addEventListener("blur", () => {
+        stopDemoHold();
+        stopDemoPlayback();
         stopHoldCurrentNote();
         stopRangeHoldNote();
       });
@@ -2195,23 +3891,34 @@
       window.addEventListener("resize", () => {
         const mobileLayout = isMobileLayout();
         if (mobileLayout !== lastMobileLayout) {
-          updateRangeText();
+          clearRangeWheelSnapTimers();
+          if (mobileLayout) {
+            rangeText.textContent = `${midiToName(state.rangeStartMidi)}-${midiToName(state.rangeEndMidi)}`;
+            syncRangeWheel(rangeStartWheel, state.rangeStartMidi, true);
+            syncRangeWheel(rangeEndWheel, state.rangeEndMidi, true);
+          } else {
+            updateRangeText();
+          }
           lastMobileLayout = mobileLayout;
         }
+        syncMobileSettingsHeight();
+        buildPianoSvg();
         drawWheel();
+        window.requestAnimationFrame(syncControls);
       });
 
       loadSettings();
       enforceMinimumRangeSpan("start");
       state.perfectPitch.scoreByDateAndChordSize = loadDailyLog();
       setupWaveformPager();
+      setupPillResizeObservers();
       syncControls();
+      syncMobileSettingsHeight();
       buildPianoSvg();
       buildRangeWheels();
       drawWheel();
       startNewRound();
-      if (state.playContinuously) startHoldCurrentNote().catch(() => {});
-      window.addEventListener("resize", syncControls);
+      if (isContinuousMode()) startHoldCurrentNote().catch(() => {});
     </script>
   </body>
 </html>

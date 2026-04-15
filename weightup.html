@@ -132,7 +132,7 @@ button { cursor: pointer; }
 .history-tool-btn { display: flex; align-items: center; gap: 5px; padding: 0 12px; height: 42px; border-radius: 10px; border: 2px solid var(--border); background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .history-tool-btn svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
 .history-tool-btn.sort-asc svg { transform: scaleY(-1); }
-.progress-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 16px; }
+.progress-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 12px; padding: 16px; }
 .progress-controls { min-width: 0; }
 .progress-collapse { border: 2px solid var(--border); background: var(--panel) !important; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
 .progress-collapse > summary {
@@ -155,7 +155,8 @@ button { cursor: pointer; }
   transform: rotate(-90deg);
 }
 .progress-controls-body { padding: 10px 12px 12px; }
-.threshold-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; align-items: stretch; }
+.threshold-row, .month-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
+.month-row { margin-top: 8px; }
 .threshold-label, .month-label { min-height: 38px; display: flex; align-items: center; padding: 6px 8px; font-size: 13px; color: var(--muted); font-weight: 700; border: 2px solid var(--border); background: rgba(255,255,255,.28); }
 .threshold-input, .month-input { min-height: 38px; border: 2px solid var(--border); background: white !important; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; overflow: hidden; position: relative; }
 .month-input .pager-layer { font-size: 16px; padding: 0 6px; }
@@ -287,7 +288,7 @@ button { cursor: pointer; }
 .settings-section { padding: 12px; display: grid; gap: 10px; }
 .settings-title { font-size: 16px; font-weight: 700; }
 .settings-note { color: var(--muted); font-size: 13px; line-height: 1.35; }
-.settings-status { min-height: 40px; padding: 8px 10px; border: 2px solid var(--border); background: rgba(255,255,255,.28); font-size: 14px; line-height: 1.35; white-space: pre-line; }
+.settings-status { min-height: 40px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.28); font-size: 14px; line-height: 1.35; white-space: pre-line; }
 .google-signin-slot { min-height: 40px; display: flex; align-items: center; }
 .settings-control-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
 .settings-control-row label { font-weight: 700; }
@@ -325,16 +326,13 @@ button { cursor: pointer; }
 .color-input::-webkit-color-swatch-wrapper { padding: 0; }
 .color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
 .color-input::-moz-color-swatch { border: none; border-radius: 4px; }
-@media (max-width: 900px) {
-  .progress-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-}
 @media (max-width: 640px) {
   :root { --entry-pad-x: 12px; }
   .scroll, .history-header { padding-left: var(--entry-pad-x); padding-right: var(--entry-pad-x); }
   .entry-scroll { padding-top: 12px; }
   .progress-layout { padding: 12px; }
   .card-grid-top, .card-grid-bottom { gap: 0; }
-  .threshold-row { grid-template-columns: 1fr 1fr; }
+  /* threshold-row and month-row are already 2-col, nothing to change */
 }
 </style>
 </head>
@@ -393,6 +391,8 @@ button { cursor: pointer; }
               <div class="threshold-row">
                 <div class="threshold-label">Threshold</div>
                 <div class="threshold-input" id="thresholdInput"><div class="value-main" id="thresholdValue"></div></div>
+              </div>
+              <div class="month-row">
                 <div class="month-input" id="startMonthInput"></div>
                 <div class="month-input" id="endMonthInput"></div>
               </div>
@@ -441,7 +441,7 @@ button { cursor: pointer; }
               <div class="google-signin-slot" id="cloudConnectBtn"></div>
               <button class="small-btn" id="cloudDisconnectBtn">Return To Local Only</button>
             </div>
-            <div class="settings-note">Signed out: the app only uses this browser's local storage. Signed in with an allowed Google account: the shared CSV is loaded and edits save back to the protected cloud log with monthly backups.</div>
+            <div class="settings-note">Only whitelisted Google accounts can open the shared cloud log. If you stay signed out, your sets live only in this browser.</div>
           </div>
           <div class="panel settings-section">
             <div class="settings-title">Data</div>
@@ -530,7 +530,7 @@ button { cursor: pointer; }
   let chartInspection = null;
   let historySortAsc = false;
   let cloudSession = false;
-  let cloudStatusMessage = 'Local-only mode.\nSign in in Settings to view the shared log.';
+  let cloudStatusMessage = 'Using local-only mode.\nSets save only in this browser.\nSign in below to open the shared cloud log.';
   let cloudAuthenticatedUser = '';
   let cloudLastSavedAt = '';
   let googleClientId = '';
@@ -2241,7 +2241,7 @@ function buildProgressSeries(threshold) {
   }
 
   function buildCloudStatusText() {
-    if (!googleAuthConfigured) return 'Google sign-in is not configured yet.\nAdd your Google client ID and allowed Gmail addresses on the server.';
+    if (!googleAuthConfigured) return 'Shared cloud log unavailable.\nGoogle sign-in is not configured yet.';
     if (!cloudSession) return cloudStatusMessage;
     const lines = [`Signed in to shared log as ${cloudAuthenticatedUser || 'authenticated user'}.`];
     if (cloudLastSavedAt) lines.push(`Cloud CSV updated ${new Date(cloudLastSavedAt).toLocaleString()}.`);
@@ -2268,7 +2268,7 @@ function buildProgressSeries(threshold) {
       cloudSession = !!payload.signedIn;
       cloudAuthenticatedUser = payload.authenticatedUser || '';
       cloudLastSavedAt = payload.savedAt || '';
-      cloudStatusMessage = cloudSession ? 'Signed in to shared log.' : 'Local-only mode.\nSign in in Settings to view the shared log.';
+      cloudStatusMessage = cloudSession ? 'Signed in to shared log.' : 'Using local-only mode.\nSets save only in this browser.\nSign in below to open the shared cloud log.';
       renderSettings();
       if (cloudSession && loadRemote) await loadCloudCsv();
     } catch (err) {
@@ -2356,7 +2356,7 @@ function buildProgressSeries(threshold) {
     cloudAuthenticatedUser = '';
     cloudLastSavedAt = '';
     googleButtonRendered = false;
-    cloudStatusMessage = 'Local-only mode.\nSign in in Settings to view the shared log.';
+    cloudStatusMessage = 'Using local-only mode.\nSets save only in this browser.\nSign in below to open the shared cloud log.';
     state.sets = loadSetsStorage();
     applyLatestEntryDefaults(false);
     renderAll();

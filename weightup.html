@@ -59,12 +59,13 @@ button { cursor: pointer; }
 .value-label { color: var(--muted); font-size: 14px; margin-top: 8px; }
 .value-main, .pager-layer { font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; }
 .value-main { flex: 1; margin-top: 2px; }
-.pager-layer { position: absolute; inset: 0; padding: 0 12px; color: var(--ink) !important; }
+.pager-layer { position: absolute; inset: 0; padding: 0 12px; color: var(--ink) !important; -webkit-text-fill-color: var(--ink) !important; }
+.pager-card .pager-layer, .editor-pager-card .pager-layer { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
 .partner-grid { margin-top: var(--entry-pad-x); }
 .partner-stack { height: 144px; padding: 6px; background: #fffdf9 !important; display: flex; align-items: center; justify-content: center; overflow-x: auto; border-radius: 10px; }
 .plate { width: 40px; border: 1px solid rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: var(--ink); flex: 0 0 auto; }
 .actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
-.primary { background: var(--purple) !important; color: var(--purple-ink) !important; -webkit-text-fill-color: var(--purple-ink) !important; border: 2px solid transparent; border-radius: 12px; min-height: 55px; font-size: 16.8px; font-weight: 700; }
+.primary { background: var(--purple) !important; color: var(--purple-ink) !important; -webkit-text-fill-color: var(--purple-ink) !important; border: 2px solid transparent; border-radius: 12px; min-height: 55px; font-size: 16.8px; font-weight: 700; box-shadow: 0 3px 10px rgba(0,0,0,0.13); }
 .recent-history { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
 .entry-preview-history {
   position: relative;
@@ -72,7 +73,7 @@ button { cursor: pointer; }
   mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), rgba(0,0,0,.58) calc(100% - 20px), rgba(0,0,0,0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), rgba(0,0,0,.58) calc(100% - 20px), rgba(0,0,0,0) 100%);
 }
-.history-header { position: sticky; top: 0; z-index: 4; padding: 20px 20px 12px; background: linear-gradient(to bottom, var(--bg) 78%, rgba(244,237,225,0)); }
+.history-header { position: sticky; top: 0; z-index: 4; padding: 20px 20px 12px; background: linear-gradient(to bottom, var(--bg) 78%, rgba(244,237,225,0)); box-shadow: 0 6px 10px -2px rgba(0,0,0,0.08); }
 .history-header-inner { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
 .history-filters { display: grid; gap: 10px; min-width: 0; }
 .history-filter-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -85,16 +86,16 @@ button { cursor: pointer; }
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(32,24,20,.13) !important;
-  color: var(--ink) !important;
   border-radius: 0;
   padding: 0;
   font-weight: 700;
+  transition: opacity 0.15s;
 }
 .history-filter-btn.off {
   background: rgba(255,255,255,.45) !important;
   color: var(--muted) !important;
-  opacity: .65;
+  -webkit-text-fill-color: var(--muted) !important;
+  opacity: .55;
 }
 .history-filter-label {
   display: flex;
@@ -126,9 +127,11 @@ button { cursor: pointer; }
 .tabbar.hidden { display: none; }
 .tab { height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0; border: 0; border-top: 2px solid var(--border); background: transparent !important; color: var(--muted) !important; position: relative; }
 .tab.active { background: transparent !important; color: var(--purple) !important; }
-.tab svg, .float-btn svg, .history-calendar svg { width: 24px; height: 24px; fill: currentColor; }
-.float-btn { position: absolute; right: 20px; bottom: 86px; width: 52px; height: 52px; border-radius: 12px; border: 0; background: var(--purple); color: var(--purple-ink); -webkit-text-fill-color: var(--purple-ink); display: none; align-items: center; justify-content: center; z-index: 6; }
-.float-btn.visible { display: flex; }
+.tab svg, .history-calendar svg { width: 24px; height: 24px; fill: currentColor; }
+.history-toolbar { display: flex; align-items: center; gap: 8px; }
+.history-tool-btn { display: flex; align-items: center; gap: 5px; padding: 0 12px; height: 42px; border-radius: 10px; border: 2px solid var(--border); background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.history-tool-btn svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+.history-tool-btn.sort-asc svg { transform: scaleY(-1); }
 .progress-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 16px; }
 .progress-controls { min-width: 0; }
 .progress-collapse { border: 2px solid var(--border); background: var(--panel) !important; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
@@ -173,15 +176,15 @@ button { cursor: pointer; }
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(32,24,20,.13) !important;
-  color: var(--ink) !important;
   padding: 0;
   font-weight: 700;
+  transition: opacity 0.15s;
 }
 .progress-filter-btn.off {
   background: rgba(255,255,255,.45) !important;
   color: var(--muted) !important;
-  opacity: .65;
+  -webkit-text-fill-color: var(--muted) !important;
+  opacity: .55;
 }
 .chart-wrap { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .chart-scroll { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; touch-action: pan-x pan-y pinch-zoom; }
@@ -191,7 +194,7 @@ button { cursor: pointer; }
   z-index: 30;
   pointer-events: none;
   display: none;
-  max-width: 220px;
+  max-width: min(220px, calc(100vw - 24px));
   padding: 6px 8px;
   border: 2px solid var(--border);
   background: var(--panel);
@@ -202,21 +205,23 @@ button { cursor: pointer; }
 }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
 .modal-backdrop.open { display: flex; }
+.modal-backdrop.calendar-backdrop { align-items: flex-start; }
 .modal { width: min(920px, 100%); max-height: min(92dvh, 920px); background: var(--bg) !important; border: 2px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; }
-.modal-header { padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 2px solid var(--border); }
 .modal-title { font-size: 20px; font-weight: 700; }
-.modal-body { padding: 6px; overflow: auto; }
+.modal-body { padding: 10px; overflow: auto; }
 .modal-actions { padding: 0 16px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .set-list { display: flex; flex-direction: column; gap: 8px; }
-.set-card { padding: 6px; }
+.set-card { padding: 10px; }
 .set-row-top, .set-row-bottom { display: grid; gap: 8px; }
-.set-row-top { grid-template-columns: 2fr 1fr 1fr; margin-bottom: 8px; }
+.set-row-top { grid-template-columns: 2fr 1fr auto; margin-bottom: 8px; }
 .set-row-bottom { grid-template-columns: 2fr 1fr 1fr; }
 .set-row-top > *,
 .set-row-bottom > * { min-width: 0; }
 .editor-pager-card {
   min-height: 38px;
   border: 2px solid var(--border);
+  border-radius: 8px;
   background: white !important;
   overflow: hidden;
   position: relative;
@@ -232,6 +237,7 @@ button { cursor: pointer; }
   min-width: 0;
   min-height: 38px;
   border: 2px solid var(--border);
+  border-radius: 8px;
   background: white !important;
   display: flex;
   align-items: center;
@@ -243,18 +249,39 @@ button { cursor: pointer; }
   margin-top: 0;
   font-size: 18px;
 }
-.field, .select, .date-input, .delete-btn { min-height: 38px; border: 2px solid var(--border); background: white !important; padding: 6px 8px; }
+.field, .select, .date-input { min-height: 38px; border: 2px solid var(--border); border-radius: 8px; background: white !important; padding: 6px 8px; }
 .select { appearance: none; -webkit-appearance: none; }
 .date-input { background: var(--panel) !important; }
-.delete-btn { background: var(--danger) !important; color: white !important; -webkit-text-fill-color: white; font-size: 12px; padding: 6px 8px; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 6px; justify-content: center; margin-top: 12px; }
-.calendar-cell { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 0; background: transparent !important; color: var(--muted) !important; }
-.calendar-cell.has-data { background: var(--purple) !important; color: white !important; }
-.calendar-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
-.calendar-label { text-align: center; font-weight: 700; }
+.delete-btn {
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent !important;
+  border: 2px solid var(--border);
+  color: var(--danger) !important;
+  -webkit-text-fill-color: var(--danger) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.delete-btn svg { width: 18px; height: 18px; fill: currentColor; pointer-events: none; }
+.calendar-header { align-items: center; }
+.calendar-month-nav { flex: 1; display: flex; align-items: center; gap: 8px; }
+.calendar-month-nav .small-btn { width: 36px; min-height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.calendar-label { flex: 1; text-align: center; font-weight: 700; font-size: 16px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; }
+.calendar-day-label { display: flex; align-items: center; justify-content: center; padding: 4px 0 6px; font-size: 11px; font-weight: 700; color: var(--muted) !important; -webkit-text-fill-color: var(--muted) !important; }
+.calendar-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 0; background: transparent !important; color: var(--ink) !important; -webkit-text-fill-color: var(--ink) !important; font-size: 14px; font-weight: 600; }
+.calendar-cell.has-data { background: var(--purple) !important; color: white !important; -webkit-text-fill-color: white !important; }
+.calendar-cell.is-today { box-shadow: inset 0 0 0 2px var(--purple); color: var(--purple) !important; -webkit-text-fill-color: var(--purple) !important; }
+.calendar-cell.has-data.is-today { box-shadow: none; color: white !important; -webkit-text-fill-color: white !important; }
 .hidden-file { display: none; }
 .utility-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-top: 12px; }
-.small-btn { min-height: 40px; border: 2px solid var(--border); background: var(--panel) !important; }
+.small-btn { min-height: 40px; border: 2px solid var(--border); background: var(--panel) !important; border-radius: 8px; padding: 0 12px; }
+.small-btn svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+.secondary { background: var(--panel) !important; color: var(--purple) !important; -webkit-text-fill-color: var(--purple) !important; border: 2px solid var(--purple); border-radius: 12px; min-height: 55px; font-size: 16.8px; font-weight: 700; }
 .settings-scroll { padding-top: 20px; }
 .settings-grid { display: grid; gap: 12px; }
 .settings-section { padding: 12px; display: grid; gap: 10px; }
@@ -262,9 +289,42 @@ button { cursor: pointer; }
 .settings-note { color: var(--muted); font-size: 13px; line-height: 1.35; }
 .settings-status { min-height: 40px; padding: 8px 10px; border: 2px solid var(--border); background: rgba(255,255,255,.28); font-size: 14px; line-height: 1.35; white-space: pre-line; }
 .google-signin-slot { min-height: 40px; display: flex; align-items: center; }
+.settings-control-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+.settings-control-row label { font-weight: 700; }
+.settings-value-card {
+  min-width: 132px;
+  min-height: 40px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+}
+.settings-value-card .value-main {
+  margin-top: 0;
+  font-size: 18px;
+}
 .color-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center; }
 .color-grid label { font-weight: 700; }
-.color-input { width: 56px; height: 40px; padding: 0; border: 2px solid var(--border); background: white !important; }
+.color-grid-3 { display: grid; grid-template-columns: 1fr auto auto; gap: 10px 10px; align-items: center; }
+.color-grid-3 label { font-weight: 700; }
+.color-grid-3 .color-grid-person-hdr { font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: .04em; }
+.color-input {
+  width: 48px;
+  height: 36px;
+  padding: 3px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+.color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.color-input::-moz-color-swatch { border: none; border-radius: 4px; }
 @media (max-width: 900px) {
   .progress-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
 }
@@ -310,11 +370,18 @@ button { cursor: pointer; }
           <div class="history-filters">
             <div class="history-filter-grid exercises" id="historyExerciseFilters"></div>
           </div>
-          <button class="primary" id="historyCalendarBtn">Calendar View</button>
+          <div class="history-toolbar">
+            <button class="history-tool-btn" id="historySortBtn" aria-label="Sort order">
+              <svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zm0-5h9v-2H3v2zm0-7v2h12V6H3zm16 9.59V10h-2v7.59l-2.29-2.3L13.3 16.7 17 20.41l3.7-3.71-1.41-1.41L17 17.59z"/></svg>
+              <span id="historySortLabel">Newest</span>
+            </button>
+            <div style="flex:1"></div>
+            <button class="history-tool-btn" id="scrollTopBtn" aria-label="Scroll to top"><svg viewBox="0 0 24 24"><path d="M12 5l-7 7h4v7h6v-7h4z"/></svg></button>
+            <button class="history-tool-btn" id="historyCalendarBtn" aria-label="Calendar view"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h5v5H7z"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="scroll" id="historyScroll"><div class="history-content" id="historyContent"></div></div>
-      <button class="float-btn" id="scrollTopBtn" aria-label="Scroll to top"><svg viewBox="0 0 24 24"><path d="M12 5l-7 7h4v7h6v-7h4z"/></svg></button>
     </section>
 
     <section class="page" data-page="progress">
@@ -357,7 +424,15 @@ button { cursor: pointer; }
           </div>
           <div class="panel settings-section">
             <div class="settings-title">Exercises</div>
-            <div class="color-grid" id="exerciseColorGrid"></div>
+            <div class="color-grid-3" id="exerciseColorGrid"></div>
+          </div>
+          <div class="panel settings-section">
+            <div class="settings-title">Behavior</div>
+            <div class="settings-control-row">
+              <label for="maxAddedPlateCard">Max Added Plate</label>
+              <div class="settings-value-card" id="maxAddedPlateCard"><div class="value-main" id="maxAddedPlateValue"></div></div>
+            </div>
+            <button class="small-btn" id="toggleSetCompressionBtn"></button>
           </div>
           <div class="panel settings-section">
             <div class="settings-title">Cloud Log</div>
@@ -388,8 +463,8 @@ button { cursor: pointer; }
   </nav>
 </div>
 
-<div class="modal-backdrop" id="editorModal"><div class="modal"><div class="modal-header"><div class="modal-title" id="editorTitle"></div><button class="small-btn" id="editorCloseBtn">X</button></div><div class="modal-body"><div class="set-list" id="editorSetList"></div></div><div class="modal-actions"><button class="primary" id="editorAddBtn">Add Set</button><button class="primary" id="editorSaveBtn">Save</button></div></div></div>
-<div class="modal-backdrop" id="calendarModal"><div class="modal" style="width:min(420px,100%)"><div class="modal-header"><div class="modal-title">Calendar</div><button class="small-btn" id="calendarCloseBtn">X</button></div><div class="modal-body"><div class="calendar-nav"><button class="small-btn" id="calendarPrevBtn">&lt;</button><div class="calendar-label" id="calendarLabel"></div><button class="small-btn" id="calendarNextBtn">&gt;</button></div><div class="calendar-grid" id="calendarGrid"></div></div></div></div>
+<div class="modal-backdrop" id="editorModal"><div class="modal"><div class="modal-header"><div class="modal-title" id="editorTitle"></div><button class="small-btn" id="editorCloseBtn"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div class="set-list" id="editorSetList"></div></div><div class="modal-actions"><button class="secondary" id="editorAddBtn">Add Set</button><button class="primary" id="editorSaveBtn">Save</button></div></div></div>
+<div class="modal-backdrop calendar-backdrop" id="calendarModal"><div class="modal" style="width:min(364px,100%)"><div class="modal-header calendar-header"><div class="calendar-month-nav"><button class="small-btn" id="calendarPrevBtn"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button><div class="calendar-label" id="calendarLabel"></div><button class="small-btn" id="calendarNextBtn"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button></div><button class="small-btn" id="calendarCloseBtn"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div class="calendar-grid" id="calendarGrid"></div></div></div></div>
 
 <script>
 (() => {
@@ -404,7 +479,7 @@ button { cursor: pointer; }
   ];
   const NAMES = ['Diego', 'Iris'];
   const PLATES = [45,25,10,5,2.5];
-  const MAX_OUTER_PARTNER_PLATE = 25;
+  const DEFAULT_MAX_OUTER_PARTNER_PLATE = 25;
   const DAY_MS = 86400000;
   const SET_ID = 0;
   const SET_DATE = 1;
@@ -417,12 +492,20 @@ button { cursor: pointer; }
     theme: { primary: '#5c39db', onPrimary: '#ffffff' },
     people: { Diego: '#8eb5ed', Iris: '#cea5e9' },
     exercises: {
-      'Flat Bench': '#df3a89',
-      'Incline Bench': '#e5a4be',
-      'Back Squat': '#34ba55',
-      'Front Squat': '#94e29d',
-      'Deadlift': '#29bcb3',
-      'Smith Deadlift': '#98e7e3'
+      'Flat Bench': '#f03860',
+      'Incline Bench': '#f08818',
+      'Back Squat': '#40d828',
+      'Front Squat': '#10c0e0',
+      'Deadlift': '#5050f0',
+      'Smith Deadlift': '#f038c0'
+    },
+    exercisesDiego: {
+      'Flat Bench': '#c02845',
+      'Incline Bench': '#c05e10',
+      'Back Squat': '#1a9830',
+      'Front Squat': '#0888a8',
+      'Deadlift': '#2828c0',
+      'Smith Deadlift': '#a81888'
     }
   };
   const DEFAULT_EXERCISE_WEIGHTS = {
@@ -445,8 +528,7 @@ button { cursor: pointer; }
   let editorContext = null;
   let chartZoom = 1;
   let chartInspection = null;
-  let topButtonTimer = null;
-  let topButtonVisible = false;
+  let historySortAsc = false;
   let cloudSession = false;
   let cloudStatusMessage = 'Local-only mode.\nSign in in Settings to view the shared log.';
   let cloudAuthenticatedUser = '';
@@ -478,6 +560,7 @@ button { cursor: pointer; }
     historyScroll: byId('historyScroll'),
     historyCalendarBtn: byId('historyCalendarBtn'),
     scrollTopBtn: byId('scrollTopBtn'),
+    historySortBtn: byId('historySortBtn'),
     progressCollapse: byId('progressCollapse'),
     thresholdInput: byId('thresholdInput'),
     thresholdValue: byId('thresholdValue'),
@@ -491,6 +574,9 @@ button { cursor: pointer; }
     exportThemeBtn: byId('exportThemeBtn'),
     personColorGrid: byId('personColorGrid'),
     exerciseColorGrid: byId('exerciseColorGrid'),
+    maxAddedPlateCard: byId('maxAddedPlateCard'),
+    maxAddedPlateValue: byId('maxAddedPlateValue'),
+    toggleSetCompressionBtn: byId('toggleSetCompressionBtn'),
     resetThemeBtn: byId('resetThemeBtn'),
     editorModal: byId('editorModal'),
     editorTitle: byId('editorTitle'),
@@ -570,7 +656,7 @@ button { cursor: pointer; }
     $$('.page').forEach(p => p.classList.toggle('active', p.dataset.page === currentPage));
     $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === currentPage));
     ui.tabbar.classList.toggle('hidden', currentPage === 'progress' && state.progressControlsOpen === false);
-    if (currentPage !== 'history') hideTopButton(true);
+    if (currentPage !== 'history') {}
     if (currentPage === 'entry') updateEntryPreviewLayout();
     if (currentPage === 'progress') renderProgress();
   }
@@ -581,17 +667,14 @@ button { cursor: pointer; }
   }
 
   function bindHistory() {
-    ui.historyScroll.addEventListener('scroll', () => {
-      clearTimeout(topButtonTimer);
-      hideTopButton();
-      if (currentPage !== 'history' || ui.historyScroll.scrollTop < 600) return;
-      topButtonTimer = setTimeout(() => {
-        if (currentPage === 'history' && ui.historyScroll.scrollTop >= 600) showTopButton();
-      }, 1000);
-    }, { passive: true });
     ui.scrollTopBtn.addEventListener('click', () => {
-      hideTopButton(true);
       ui.historyScroll.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    ui.historySortBtn.addEventListener('click', () => {
+      historySortAsc = !historySortAsc;
+      ui.historySortBtn.classList.toggle('sort-asc', historySortAsc);
+      byId('historySortLabel').textContent = historySortAsc ? 'Oldest' : 'Newest';
+      renderHistory();
     });
     ui.historyCalendarBtn.addEventListener('click', openCalendarModal);
     ui.calendarPrevBtn.addEventListener('click', () => { calendarMonth = addMonths(calendarMonth, -1); renderCalendar(); });
@@ -654,10 +737,28 @@ button { cursor: pointer; }
       state.colors = {
         theme: { ...DEFAULT_COLORS.theme },
         people: { ...DEFAULT_COLORS.people },
-        exercises: { ...DEFAULT_COLORS.exercises }
+        exercises: { ...DEFAULT_COLORS.exercises },
+        exercisesDiego: { ...DEFAULT_COLORS.exercisesDiego }
       };
       saveState();
       renderAll();
+    });
+    setupDiscreteStepper(ui.maxAddedPlateCard, () => {
+      const current = state.maxAddedPartnerPlate ?? DEFAULT_MAX_OUTER_PARTNER_PLATE;
+      const index = PLATES.indexOf(current);
+      return index >= 0 ? index : PLATES.indexOf(DEFAULT_MAX_OUTER_PARTNER_PLATE);
+    }, index => {
+      state.maxAddedPartnerPlate = PLATES[clamp(index, 0, PLATES.length - 1)];
+      saveState();
+      renderEntry();
+      renderSettings();
+    });
+    ui.toggleSetCompressionBtn.addEventListener('click', () => {
+      state.compressSetDisplay = !state.compressSetDisplay;
+      saveState();
+      renderEntry();
+      renderHistory();
+      renderSettings();
     });
     ui.cloudDisconnectBtn.addEventListener('click', disconnectCloudLog);
     ui.resetExerciseWeightsBtn.addEventListener('click', resetSavedWeightsToLastPerformedSets);
@@ -744,6 +845,9 @@ button { cursor: pointer; }
 
   function summarizeSets(sets) {
     if (!sets.length) return '';
+    if (state.compressSetDisplay === false) {
+      return sets.map(s => `${s.reps}x${formatWeight(s.weight)}`).join('\n');
+    }
     const same = sets.every(s => s.reps === sets[0].reps && s.weight === sets[0].weight);
     if (same) return `${sets.length}x${sets[0].reps}x${formatWeight(sets[0].weight)}`;
     return sets.map(s => `${s.reps}x${formatWeight(s.weight)}`).join('\n');
@@ -791,7 +895,8 @@ button { cursor: pointer; }
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) draft.dayKey = dateInput.value;
     };
     const namePager = el('div', { className: 'editor-pager-card' });
-    const deleteBtn = el('button', { className: 'delete-btn', textContent: 'Delete' });
+    const deleteBtn = el('button', { className: 'delete-btn' });
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
     deleteBtn.onclick = () => { draft.deleted = true; renderEditor(); };
     rowTop.append(dateInput, namePager, deleteBtn);
 
@@ -872,16 +977,19 @@ button { cursor: pointer; }
   function renderCalendar() {
     ui.calendarLabel.textContent = calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     ui.calendarGrid.innerHTML = '';
-    ['S','M','T','W','T','F','S'].forEach(l => ui.calendarGrid.appendChild(el('div', { className: 'calendar-cell', textContent: l })));
+    ['S','M','T','W','T','F','S'].forEach(l => ui.calendarGrid.appendChild(el('div', { className: 'calendar-day-label', textContent: l })));
     const first = new Date(calendarMonth);
     const startPad = first.getDay();
-    for (let i=0;i<startPad;i++) ui.calendarGrid.appendChild(el('div', { className: 'calendar-cell' }));
+    const todayKey = dayKey(new Date());
+    for (let i=0;i<startPad;i++) ui.calendarGrid.appendChild(el('div'));
     const month = first.getMonth();
     const map = groupedHistoryFilteredMap();
     while (first.getMonth() === month) {
       const key = dayKey(first);
       const has = map.has(key);
-      const cell = el('button', { className: `calendar-cell${has ? ' has-data':''}`, textContent: String(first.getDate()) });
+      const isToday = key === todayKey;
+      const classes = ['calendar-cell', has && 'has-data', isToday && 'is-today'].filter(Boolean).join(' ');
+      const cell = el('button', { className: classes, textContent: String(first.getDate()) });
       if (has) cell.onclick = () => { closeCalendarModal(); openEditor(key); };
       ui.calendarGrid.appendChild(cell);
       first.setDate(first.getDate()+1);
@@ -921,6 +1029,13 @@ button { cursor: pointer; }
             className: `progress-filter-btn${enabled ? '' : ' off'}`,
             textContent: spec.text
           });
+          if (enabled) {
+            const col = progressColor(spec.exercise, spec.name);
+            const ink = '#ffffff';
+            btn.style.background = col;
+            btn.style.color = ink;
+            btn.style.webkitTextFillColor = ink;
+          }
           btn.onclick = () => {
             setVisibilityCell(state.progressVisibility, exerciseIndex(spec.exercise), spec.name, !enabled);
             persist();
@@ -954,7 +1069,7 @@ button { cursor: pointer; }
     drawChart(series);
   }
 
-  function buildProgressSeries(threshold) {
+function buildProgressSeries(threshold) {
     const series = [];
     const dayGroups = [...groupedHistory()]
       .reverse()
@@ -968,7 +1083,7 @@ button { cursor: pointer; }
         });
         if (!cleanedPoints.length) return;
         series.push({
-          label: `${exercise} ${name}`,
+          label: `${exerciseShortCode(exercise)}-${name[0]}`,
           color: progressColor(exercise, name),
           points: markProgressMilestones(cleanedPoints)
         });
@@ -1016,8 +1131,19 @@ button { cursor: pointer; }
   function positionChartTooltip(event) {
     const tooltip = ui.chartTooltip;
     if (!tooltip) return;
-    tooltip.style.left = `${event.clientX + 12}px`;
-    tooltip.style.top = `${event.clientY + 12}px`;
+    const margin = 12;
+    const clientX = Number(event?.clientX ?? pointX(event));
+    const clientY = Number(event?.clientY ?? pointY(event));
+    let left = clientX + 12;
+    let top = clientY + 12;
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    const maxLeft = window.innerWidth - width - margin;
+    const maxTop = window.innerHeight - height - margin;
+    if (left > maxLeft) left = Math.max(margin, maxLeft);
+    if (top > maxTop) top = Math.max(margin, clientY - height - 12);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
   }
 
   function showChartTooltip(event, point) {
@@ -1160,6 +1286,18 @@ button { cursor: pointer; }
         .attr('stroke-linecap', 'round')
         .attr('d', line);
 
+      // All logged points — small dim dot so non-PR days are visible on the line
+      plot.selectAll(null)
+        .data(s.points)
+        .enter()
+        .append('circle')
+        .attr('cx', d => x(parseDayKey(d.x)))
+        .attr('cy', d => y(d.y))
+        .attr('r', 2.5)
+        .attr('fill', s.color)
+        .attr('opacity', 0.35);
+
+      // Running PR — full-size filled dot (was the best at this point in time)
       const runningPr = s.points.filter(p => p.runningPr);
       plot.selectAll(null)
         .data(runningPr)
@@ -1167,8 +1305,10 @@ button { cursor: pointer; }
         .append('circle')
         .attr('cx', d => x(parseDayKey(d.x)))
         .attr('cy', d => y(d.y))
-        .attr('r', 4)
+        .attr('r', 4.5)
         .attr('fill', s.color);
+
+      // All-time PR — gold ring outside the filled dot (never been beaten)
       const globalPr = s.points.filter(p => p.globalPr);
       plot.selectAll(null)
         .data(globalPr)
@@ -1176,10 +1316,10 @@ button { cursor: pointer; }
         .append('circle')
         .attr('cx', d => x(parseDayKey(d.x)))
         .attr('cy', d => y(d.y))
-        .attr('r', 6)
+        .attr('r', 7.5)
         .attr('fill', 'none')
-        .attr('stroke', '#000')
-        .attr('stroke-width', 2);
+        .attr('stroke', '#e8970e')
+        .attr('stroke-width', 2.5);
 
       const inspected = chartInspection
         ? s.points.filter(p => sameInspectionPoint(p, chartInspection))
@@ -1204,6 +1344,7 @@ button { cursor: pointer; }
         .attr('r', 14)
         .attr('fill', 'transparent')
         .style('cursor', 'pointer')
+        .on('pointerdown', function(event, d) { showChartTooltip(event, d); })
         .on('mouseenter', function(event, d) { showChartTooltip(event, d); })
         .on('mousemove', function(event) { positionChartTooltip(event); })
         .on('mouseleave', hideChartTooltip)
@@ -1223,7 +1364,7 @@ button { cursor: pointer; }
   }
 
   function renderSettings() {
-    if (!ui.themeColorGrid || !ui.personColorGrid || !ui.exerciseColorGrid || !ui.cloudStatus || !ui.cloudConnectBtn || !ui.cloudDisconnectBtn) return;
+    if (!ui.themeColorGrid || !ui.personColorGrid || !ui.exerciseColorGrid || !ui.maxAddedPlateValue || !ui.toggleSetCompressionBtn || !ui.cloudStatus || !ui.cloudConnectBtn || !ui.cloudDisconnectBtn) return;
     ui.themeColorGrid.innerHTML = '';
     [
       ['Primary Button', state.colors.theme.primary, value => { state.colors.theme.primary = value; }],
@@ -1254,18 +1395,30 @@ button { cursor: pointer; }
       ui.personColorGrid.appendChild(input);
     });
     ui.exerciseColorGrid.innerHTML = '';
+    // header row
+    ui.exerciseColorGrid.appendChild(el('div'));
+    ['I', 'D'].forEach(ltr => {
+      ui.exerciseColorGrid.appendChild(el('div', { className: 'color-grid-person-hdr', textContent: ltr }));
+    });
     EXERCISE_MATRIX.flat().forEach(exercise => {
       ui.exerciseColorGrid.appendChild(el('label', { textContent: exercise }));
-      const input = el('input', { className: 'color-input' });
-      input.type = 'color';
-      input.value = exerciseColorHex(exercise);
-      input.onchange = () => {
-        state.colors.exercises[exercise] = input.value;
-        saveState();
-        renderAll();
-      };
-      ui.exerciseColorGrid.appendChild(input);
+      [
+        { key: 'exercises', getter: () => exerciseColorHex(exercise) },
+        { key: 'exercisesDiego', getter: () => (state.colors.exercisesDiego && state.colors.exercisesDiego[exercise]) || DEFAULT_COLORS.exercisesDiego[exercise] }
+      ].forEach(({ key, getter }) => {
+        const input = el('input', { className: 'color-input' });
+        input.type = 'color';
+        input.value = getter();
+        input.onchange = () => {
+          state.colors[key][exercise] = input.value;
+          saveState();
+          renderAll();
+        };
+        ui.exerciseColorGrid.appendChild(input);
+      });
     });
+    ui.maxAddedPlateValue.textContent = `${formatWeight(state.maxAddedPartnerPlate ?? DEFAULT_MAX_OUTER_PARTNER_PLATE)} lb`;
+    ui.toggleSetCompressionBtn.textContent = `Set Compression: ${state.compressSetDisplay === false ? 'Off' : 'On'}`;
     ui.cloudStatus.textContent = buildCloudStatusText();
     ui.cloudConnectBtn.style.display = cloudSession || !googleAuthConfigured ? 'none' : '';
     ui.cloudDisconnectBtn.style.display = cloudSession ? '' : 'none';
@@ -1305,6 +1458,13 @@ button { cursor: pointer; }
             className: `history-filter-btn${enabled ? '' : ' off'}`,
             textContent: spec.text
           });
+          if (enabled) {
+            const col = progressColor(spec.exercise, spec.name);
+            const ink = '#ffffff';
+            btn.style.background = col;
+            btn.style.color = ink;
+            btn.style.webkitTextFillColor = ink;
+          }
           btn.onclick = () => {
             setVisibilityCell(state.historyVisibility, exerciseIndex(spec.exercise), spec.name, !enabled);
             saveState();
@@ -1337,7 +1497,7 @@ button { cursor: pointer; }
   function computePartnerLoading(a, b) {
     const lighter = Math.min(a,b), heavier = Math.max(a,b);
     const shared = loadOneSide(lighter);
-    const extra = loadDifferenceOneSide(heavier - lighter, MAX_OUTER_PARTNER_PLATE);
+    const extra = loadDifferenceOneSide(heavier - lighter, state.maxAddedPartnerPlate ?? DEFAULT_MAX_OUTER_PARTNER_PLATE);
     return { shared, extra };
   }
 
@@ -1454,7 +1614,7 @@ button { cursor: pointer; }
 
   function groupedHistory() {
     const map = groupedHistoryMap();
-    return [...map.entries()].sort((a,b) => b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
+    return [...map.entries()].sort((a,b) => historySortAsc ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
   }
 
   function groupedHistoryFiltered() {
@@ -1466,7 +1626,7 @@ button { cursor: pointer; }
       if (!map.has(set.date)) map.set(set.date, []);
       map.get(set.date).push(set);
     });
-    return [...map.entries()].sort((a,b) => b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
+    return [...map.entries()].sort((a,b) => historySortAsc ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])).map(([dayKey, sets]) => ({ dayKey, sets }));
   }
   function groupedHistoryFilteredMap() {
     const map = new Map();
@@ -1779,6 +1939,22 @@ button { cursor: pointer; }
     card.addEventListener('pointerup', finish); card.addEventListener('pointercancel', finish);
   }
 
+  function setupDiscreteStepper(card, getter, setter) {
+    let startY = null, acc = 0;
+    card.addEventListener('pointerdown', e => { startY = e.clientY; acc = 0; card.setPointerCapture?.(e.pointerId); });
+    card.addEventListener('pointermove', e => {
+      if (startY == null) return;
+      acc += e.clientY - startY;
+      startY = e.clientY;
+      while (acc <= -18) { setter(getter() - 1); acc += 18; }
+      while (acc >= 18) { setter(getter() + 1); acc -= 18; }
+      e.preventDefault();
+    });
+    const finish = () => { startY = null; acc = 0; };
+    card.addEventListener('pointerup', finish);
+    card.addEventListener('pointercancel', finish);
+  }
+
   function setupListPager(card, adapter) {
     card.innerHTML = '';
     const pages = ['top','center','bottom'].map(() => {
@@ -1941,8 +2117,6 @@ button { cursor: pointer; }
     };
   }
 
-  function showTopButton() { if (!topButtonVisible) { topButtonVisible = true; ui.scrollTopBtn.classList.add('visible'); } }
-  function hideTopButton(immediate=false) { topButtonVisible = false; ui.scrollTopBtn.classList.remove('visible'); if (immediate) clearTimeout(topButtonTimer); }
 
   function loadState() {
     return withDefaults(loadUiStorage());
@@ -1954,6 +2128,8 @@ button { cursor: pointer; }
       selection: Object.assign({ nameIndex: 0, exerciseRow: 0, exerciseCol: 0, weight: 135, reps: 5 }, s.selection || {}),
       sets,
       savedWeights: normalizeSavedWeights(s.savedWeights, sets),
+      maxAddedPartnerPlate: PLATES.includes(Number(s.maxAddedPartnerPlate)) ? Number(s.maxAddedPartnerPlate) : DEFAULT_MAX_OUTER_PARTNER_PLATE,
+      compressSetDisplay: s.compressSetDisplay !== false,
       historyVisibility: normalizeVisibilityCsv(s.historyVisibility),
       progressVisibility: normalizeVisibilityCsv(s.progressVisibility),
       progressControlsOpen: s.progressControlsOpen !== false,
@@ -1969,6 +2145,8 @@ button { cursor: pointer; }
       currentPage: state.currentPage,
       selection: state.selection,
       savedWeights: state.savedWeights,
+      maxAddedPartnerPlate: state.maxAddedPartnerPlate,
+      compressSetDisplay: state.compressSetDisplay,
       historyVisibility: encodeVisibilityCsv(state.historyVisibility),
       progressVisibility: encodeVisibilityCsv(state.progressVisibility),
       progressControlsOpen: state.progressControlsOpen,
@@ -2004,6 +2182,10 @@ button { cursor: pointer; }
           exercises: Object.fromEntries(EXERCISE_MATRIX.flat().map(exercise => [
             exercise,
             parsed.exercises && parsed.exercises[exercise] || DEFAULT_COLORS.exercises[exercise]
+          ])),
+          exercisesDiego: Object.fromEntries(EXERCISE_MATRIX.flat().map(exercise => [
+            exercise,
+            parsed.exercisesDiego && parsed.exercisesDiego[exercise] || DEFAULT_COLORS.exercisesDiego[exercise]
           ]))
         };
       }
@@ -2011,7 +2193,8 @@ button { cursor: pointer; }
     return {
       theme: { ...DEFAULT_COLORS.theme },
       people: { ...DEFAULT_COLORS.people },
-      exercises: { ...DEFAULT_COLORS.exercises }
+      exercises: { ...DEFAULT_COLORS.exercises },
+      exercisesDiego: { ...DEFAULT_COLORS.exercisesDiego }
     };
   }
 
@@ -2085,9 +2268,7 @@ button { cursor: pointer; }
       cloudSession = !!payload.signedIn;
       cloudAuthenticatedUser = payload.authenticatedUser || '';
       cloudLastSavedAt = payload.savedAt || '';
-      cloudStatusMessage = cloudSession
-        ? 'Signed in to shared log.'
-        : 'Local-only mode.\nSign in in Settings to view the shared log.';
+      cloudStatusMessage = cloudSession ? 'Signed in to shared log.' : 'Local-only mode.\nSign in in Settings to view the shared log.';
       renderSettings();
       if (cloudSession && loadRemote) await loadCloudCsv();
     } catch (err) {
@@ -2314,9 +2495,28 @@ button { cursor: pointer; }
   function exerciseColorHex(exercise) { return state.colors.exercises[exercise] || DEFAULT_COLORS.exercises[exercise] || '#cccccc'; }
   function exerciseColor(exercise) { return exerciseColorHex(exercise); }
   function progressColor(exercise, name) {
-    const base = exerciseColorHex(exercise);
-    if (name === 'Iris') return base;
-    return darken(base, 0.78);
+    if (name === 'Diego') {
+      return (state.colors.exercisesDiego && state.colors.exercisesDiego[exercise]) ||
+             DEFAULT_COLORS.exercisesDiego[exercise] ||
+             darken(exerciseColorHex(exercise), 0.78);
+    }
+    return exerciseColorHex(exercise);
+  }
+  function contrastColor(hex) {
+    const n = (hex || '').replace('#', '');
+    if (n.length < 6) return '#1a1a1a';
+    const r = parseInt(n.slice(0, 2), 16);
+    const g = parseInt(n.slice(2, 4), 16);
+    const b = parseInt(n.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? '#1a1a1a' : '#ffffff';
+  }
+  function exerciseShortCode(exercise) {
+    return String(exercise || '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
   }
   function darken(hex, factor) {
     const n = hex.replace('#',''); const r = Math.round(parseInt(n.slice(0,2),16)*factor), g=Math.round(parseInt(n.slice(2,4),16)*factor), b=Math.round(parseInt(n.slice(4,6),16)*factor);

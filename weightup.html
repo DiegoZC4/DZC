@@ -594,7 +594,7 @@ button { cursor: pointer; }
 
   init();
 
-  function init() {
+  async function init() {
     bindTabs();
     bindEntry();
     bindHistory();
@@ -633,9 +633,9 @@ button { cursor: pointer; }
     }, 5, true);
     setupStepper(ui.repsCard, () => state.selection.reps, v => { state.selection.reps = Math.max(1, Math.round(v)); saveState(); renderEntry(); }, 1, true);
 
+    await refreshCloudStatus();
     renderAll();
     applyCurrentPage();
-    refreshCloudStatus();
     window.addEventListener('resize', () => {
       updateEntryPreviewLayout();
       if (currentPage === 'progress') renderProgress();
@@ -1654,8 +1654,25 @@ function buildProgressSeries(threshold) {
     return [...new Set(sets.map(s => s.exercise))].sort((a,b) => order.indexOf(a) - order.indexOf(b));
   }
 
-  function exportCsv() {
-    downloadFile('weightup.csv', encodeSetsCsv(state.sets), 'text/csv');
+  async function exportCsv() {
+    if (!cloudSession) {
+      downloadFile('weightup.csv', encodeSetsCsv(state.sets), 'text/csv');
+      return;
+    }
+    try {
+      const response = await fetch(remoteApiUrl('download'), {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`Cloud export failed (${response.status}).`);
+      const csvText = await response.text();
+      downloadFile('weightup.csv', csvText, 'text/csv');
+    } catch (err) {
+      cloudStatusMessage = `Cloud export failed.\n${err && err.message ? err.message : err}`;
+      renderSettings();
+      alert(cloudStatusMessage);
+    }
   }
 
   async function importCsvFile(ev) {
@@ -2244,8 +2261,8 @@ function buildProgressSeries(threshold) {
     if (!googleAuthConfigured) return 'Shared cloud log unavailable.\nGoogle sign-in is not configured yet.';
     if (!cloudSession) return cloudStatusMessage;
     const lines = [`Signed in to shared log as ${cloudAuthenticatedUser || 'authenticated user'}.`];
-    if (cloudLastSavedAt) lines.push(`Cloud CSV updated ${new Date(cloudLastSavedAt).toLocaleString()}.`);
-    lines.push('Edits now save to the shared CSV with monthly backups.');
+    if (cloudLastSavedAt) lines.push(`Cloud database updated ${new Date(cloudLastSavedAt).toLocaleString()}.`);
+    lines.push('Edits now save to the shared SQLite log with monthly backups.');
     return lines.join('\n');
   }
 
@@ -2270,7 +2287,7 @@ function buildProgressSeries(threshold) {
       cloudLastSavedAt = payload.savedAt || '';
       cloudStatusMessage = cloudSession ? 'Signed in to shared log.' : 'Using local-only mode.\nSets save only in this browser.\nSign in below to open the shared cloud log.';
       renderSettings();
-      if (cloudSession && loadRemote) await loadCloudCsv();
+      if (cloudSession && loadRemote) await loadCloudSets();
     } catch (err) {
       cloudSession = false;
       googleAuthConfigured = false;
@@ -2303,7 +2320,7 @@ function buildProgressSeries(threshold) {
 
   async function handleGoogleCredential(response) {
     try {
-      if (state.sets.length && !confirm('Signing in will replace the current on-screen log with the shared cloud CSV for this session. Your local-only log stays in this browser. Continue?')) return;
+      if (state.sets.length && !confirm('Signing in will replace the current on-screen log with the shared cloud database for this session. Your local-only log stays in this browser. Continue?')) return;
       const loginResponse = await fetch(remoteApiUrl('google_login'), {
         method: 'POST',
         credentials: 'include',
@@ -2318,7 +2335,7 @@ function buildProgressSeries(threshold) {
       cloudLastSavedAt = payload.savedAt || '';
       cloudStatusMessage = 'Signed in to shared log.';
       renderSettings();
-      await loadCloudCsv();
+      await loadCloudSets();
     } catch (err) {
       cloudStatusMessage = `Google sign-in failed.\n${err && err.message ? err.message : err}`;
       renderSettings();
@@ -2326,7 +2343,7 @@ function buildProgressSeries(threshold) {
     }
   }
 
-  async function loadCloudCsv() {
+  async function loadCloudSets() {
     const response = await fetch(remoteApiUrl('load'), {
       method: 'GET',
       credentials: 'include',

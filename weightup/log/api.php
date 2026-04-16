@@ -8,19 +8,22 @@ session_start([
 ]);
 
 const MAX_REQUEST_BYTES = 2_000_000;
-const API_VERSION = '3';
+const API_VERSION = '4';
 const CSV_HEADER = "date,time,name,exercise,weight,reps\n";
 
 $config = require __DIR__ . '/config.php';
 
 $dataDir = __DIR__ . '/data';
 $backupDir = $dataDir . '/backups';
-$csvPath = $dataDir . '/weightup.csv';
-$metaPath = $dataDir . '/meta.json';
+$dbPath = $dataDir . '/weightup.sqlite3';
+$legacyCsvPath = $dataDir . '/weightup.csv';
 
 ensureDir($dataDir);
 ensureDir($backupDir);
-ensureCsvExists($csvPath);
+
+$db = openDatabase($dbPath);
+initializeDatabase($db);
+seedDatabaseIfEmpty($db, $legacyCsvPath);
 
 $action = strtolower((string)($_GET['action'] ?? 'status'));
 
@@ -36,7 +39,7 @@ try {
                 'googleClientId' => (string)($config['google_client_id'] ?? ''),
                 'signedIn' => $session !== null,
                 'authenticatedUser' => $session['email'] ?? null,
-                'savedAt' => latestSavedAt($metaPath),
+                'savedAt' => latestSavedAt($db),
                 'backupCount' => countMonthlyBackups($backupDir),
             ]);
             break;
@@ -66,7 +69,7 @@ try {
                 'version' => API_VERSION,
                 'signedIn' => true,
                 'authenticatedUser' => $email,
-                'savedAt' => latestSavedAt($metaPath),
+                'savedAt' => latestSavedAt($db),
             ]);
             break;
 
@@ -92,8 +95,8 @@ try {
                 'ok' => true,
                 'version' => API_VERSION,
                 'authenticatedUser' => $session['email'],
-                'savedAt' => latestSavedAt($metaPath),
-                'setsCsv' => readCsv($csvPath),
+                'savedAt' => latestSavedAt($db),
+                'setsCsv' => encodeCsvFromDatabase($db),
             ]);
             break;
 
@@ -102,23 +105,14 @@ try {
             requireSameOriginIfPresent();
             $session = requireSignedInUser();
             $body = readJsonBody();
-            $setsCsv = extractSetsCsv($body);
-            $normalizedCsv = normalizeCsv($setsCsv);
-            createMonthlyBackupIfNeeded($csvPath, $backupDir);
-            writeAtomically($csvPath, $normalizedCsv);
-            writeMeta($metaPath, [
-                'savedAt' => gmdate('c'),
-                'authenticatedUser' => $session['email'],
-                'remoteAddr' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-                'client' => normalizeClientMetadata($body['client'] ?? null),
-                'apiVersion' => API_VERSION,
-            ]);
+            $rows = parseSetsCsv(extractSetsCsv($body));
+            createMonthlyBackupIfNeeded($db, $dbPath, $backupDir);
+            saveRowsToDatabase($db, $rows, $session['email'], normalizeClientMetadata($body['client'] ?? null));
             jsonResponse([
                 'ok' => true,
                 'version' => API_VERSION,
                 'authenticatedUser' => $session['email'],
-                'savedAt' => latestSavedAt($metaPath),
+                'savedAt' => latestSavedAt($db),
             ]);
             break;
 
@@ -127,7 +121,7 @@ try {
             requireSignedInUser();
             header('Content-Type: text/csv; charset=utf-8');
             header('Cache-Control: no-store');
-            echo readCsv($csvPath);
+            echo encodeCsvFromDatabase($db);
             exit;
 
         default:
@@ -138,6 +132,201 @@ try {
         'ok' => false,
         'error' => $e->getMessage(),
     ], 400);
+}
+
+function openDatabase(string $dbPath): PDO
+{
+    if (!extension_loaded('pdo_sqlite')) {
+        throw new RuntimeException('SQLite support is not enabled on this server.');
+    }
+    $db = new PDO('sqlite:' . $dbPath, null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    $db->exec('PRAGMA journal_mode = DELETE');
+    $db->exec('PRAGMA busy_timeout = 5000');
+    return $db;
+}
+
+function initializeDatabase(PDO $db): void
+{
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS sets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL DEFAULT \'\',
+            name TEXT NOT NULL,
+            exercise TEXT NOT NULL,
+            weight REAL NOT NULL,
+            reps INTEGER NOT NULL
+        )'
+    );
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS meta (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )'
+    );
+}
+
+function seedDatabaseIfEmpty(PDO $db, string $legacyCsvPath): void
+{
+    $count = (int)$db->query('SELECT COUNT(*) FROM sets')->fetchColumn();
+    if ($count > 0 || !is_file($legacyCsvPath)) {
+        return;
+    }
+    $rows = parseSetsCsv((string)file_get_contents($legacyCsvPath));
+    if (!$rows) {
+        return;
+    }
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare('INSERT INTO sets (date, time, name, exercise, weight, reps) VALUES (?, ?, ?, ?, ?, ?)');
+        foreach ($rows as $row) {
+            $stmt->execute([$row['date'], $row['time'], $row['name'], $row['exercise'], $row['weight'], $row['reps']]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        throw $e;
+    }
+}
+
+function encodeCsvFromDatabase(PDO $db): string
+{
+    $lines = [rtrim(CSV_HEADER, "\n")];
+    $stmt = $db->query('SELECT date, time, name, exercise, weight, reps FROM sets ORDER BY date ASC, time ASC, id ASC');
+    while ($row = $stmt->fetch()) {
+        $lines[] = implode(',', [
+            (string)$row['date'],
+            (string)$row['time'],
+            csvCell((string)$row['name']),
+            csvCell((string)$row['exercise']),
+            formatWeight((float)$row['weight']),
+            (string)((int)$row['reps']),
+        ]);
+    }
+    return implode("\n", $lines) . "\n";
+}
+
+function csvCell(string $value): string
+{
+    if (!str_contains($value, ',') && !str_contains($value, '"') && !str_contains($value, "\n") && !str_contains($value, "\r")) {
+        return $value;
+    }
+    return '"' . str_replace('"', '""', $value) . '"';
+}
+
+function formatWeight(float $value): string
+{
+    $text = rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+    return $text === '' ? '0' : $text;
+}
+
+function parseSetsCsv(string $csv): array
+{
+    $normalized = str_replace(["\r\n", "\r"], "\n", trim($csv));
+    if ($normalized === '') {
+        return [];
+    }
+    $handle = fopen('php://temp', 'r+');
+    if ($handle === false) {
+        throw new RuntimeException('Could not open temporary CSV buffer.');
+    }
+    fwrite($handle, $normalized . "\n");
+    rewind($handle);
+    $header = fgetcsv($handle);
+    $expected = ['date', 'time', 'name', 'exercise', 'weight', 'reps'];
+    if (!is_array($header) || array_map('strtolower', $header) !== $expected) {
+        fclose($handle);
+        throw new InvalidArgumentException('CSV header must be date,time,name,exercise,weight,reps.');
+    }
+    $rows = [];
+    while (($row = fgetcsv($handle)) !== false) {
+        if ($row === [null] || $row === false) {
+            continue;
+        }
+        $row = array_pad($row, 6, '');
+        $date = trim((string)$row[0]);
+        $time = trim((string)$row[1]);
+        $name = trim((string)$row[2]);
+        $exercise = trim((string)$row[3]);
+        if ($date === '' || $name === '' || $exercise === '') {
+            continue;
+        }
+        $rows[] = [
+            'date' => $date,
+            'time' => $time,
+            'name' => $name,
+            'exercise' => $exercise,
+            'weight' => (float)$row[4],
+            'reps' => (int)round((float)$row[5]),
+        ];
+    }
+    fclose($handle);
+    return $rows;
+}
+
+function saveRowsToDatabase(PDO $db, array $rows, string $email, ?array $client): void
+{
+    $savedAt = gmdate('c');
+    $db->beginTransaction();
+    try {
+        $db->exec('DELETE FROM sets');
+        $stmt = $db->prepare('INSERT INTO sets (date, time, name, exercise, weight, reps) VALUES (?, ?, ?, ?, ?, ?)');
+        foreach ($rows as $row) {
+            $stmt->execute([$row['date'], $row['time'], $row['name'], $row['exercise'], $row['weight'], $row['reps']]);
+        }
+        writeMetaValue($db, 'savedAt', $savedAt);
+        writeMetaValue($db, 'authenticatedUser', $email);
+        writeMetaValue($db, 'remoteAddr', (string)($_SERVER['REMOTE_ADDR'] ?? ''));
+        writeMetaValue($db, 'userAgent', (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        writeMetaValue($db, 'apiVersion', API_VERSION);
+        writeMetaValue($db, 'client', json_encode($client, JSON_UNESCAPED_SLASHES) ?: '');
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        throw $e;
+    }
+}
+
+function writeMetaValue(PDO $db, string $key, string $value): void
+{
+    $stmt = $db->prepare('INSERT INTO meta(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
+    $stmt->execute([$key, $value]);
+}
+
+function latestSavedAt(PDO $db): ?string
+{
+    $stmt = $db->prepare('SELECT value FROM meta WHERE key = ?');
+    $stmt->execute(['savedAt']);
+    $value = $stmt->fetchColumn();
+    return is_string($value) && $value !== '' ? $value : null;
+}
+
+function createMonthlyBackupIfNeeded(PDO $db, string $dbPath, string $backupDir): void
+{
+    $monthKey = gmdate('Y-m');
+    $sqliteBackupPath = $backupDir . '/weightup-' . $monthKey . '.sqlite3';
+    $csvBackupPath = $backupDir . '/weightup-' . $monthKey . '.csv';
+    if (!is_file($sqliteBackupPath) && is_file($dbPath)) {
+        if (!copy($dbPath, $sqliteBackupPath)) {
+            throw new RuntimeException('Could not create SQLite backup.');
+        }
+    }
+    if (!is_file($csvBackupPath)) {
+        writeAtomically($csvBackupPath, encodeCsvFromDatabase($db));
+    }
+}
+
+function countMonthlyBackups(string $backupDir): int
+{
+    $files = glob($backupDir . '/weightup-*.sqlite3');
+    return is_array($files) ? count($files) : 0;
 }
 
 function requireMethod(string $method): void
@@ -278,69 +467,6 @@ function extractSetsCsv(array $body): string
     return $setsCsv;
 }
 
-function normalizeCsv(string $csv): string
-{
-    $normalized = str_replace(["\r\n", "\r"], "\n", trim($csv));
-    if ($normalized === '') {
-        return CSV_HEADER;
-    }
-    if (!str_starts_with(strtolower($normalized), 'date,time,name,exercise,weight,reps')) {
-        throw new InvalidArgumentException('CSV header must be date,time,name,exercise,weight,reps.');
-    }
-    return $normalized . "\n";
-}
-
-function readCsv(string $path): string
-{
-    ensureCsvExists($path);
-    $contents = file_get_contents($path);
-    if ($contents === false) {
-        throw new RuntimeException('Could not read CSV file.');
-    }
-    return $contents;
-}
-
-function ensureDir(string $path): void
-{
-    if (is_dir($path)) {
-        return;
-    }
-    if (!mkdir($path, 0775, true) && !is_dir($path)) {
-        throw new RuntimeException('Could not create directory.');
-    }
-}
-
-function ensureCsvExists(string $path): void
-{
-    if (is_file($path)) {
-        return;
-    }
-    writeAtomically($path, CSV_HEADER);
-}
-
-function createMonthlyBackupIfNeeded(string $csvPath, string $backupDir): void
-{
-    if (!is_file($csvPath)) {
-        return;
-    }
-    $monthKey = gmdate('Y-m');
-    $backupPath = $backupDir . '/weightup-' . $monthKey . '.csv';
-    if (is_file($backupPath)) {
-        return;
-    }
-    $current = file_get_contents($csvPath);
-    if ($current === false || trim($current) === '') {
-        return;
-    }
-    writeAtomically($backupPath, $current);
-}
-
-function countMonthlyBackups(string $backupDir): int
-{
-    $files = glob($backupDir . '/weightup-*.csv');
-    return is_array($files) ? count($files) : 0;
-}
-
 function normalizeClientMetadata($value): ?array
 {
     if (!is_array($value)) {
@@ -361,22 +487,14 @@ function normalizeOptionalString($value): ?string
     return is_scalar($value) ? (string)$value : null;
 }
 
-function writeMeta(string $path, array $meta): void
+function ensureDir(string $path): void
 {
-    $json = json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    if ($json === false) {
-        throw new RuntimeException('Could not encode metadata.');
+    if (is_dir($path)) {
+        return;
     }
-    writeAtomically($path, $json . PHP_EOL);
-}
-
-function latestSavedAt(string $metaPath): ?string
-{
-    if (!is_file($metaPath)) {
-        return null;
+    if (!mkdir($path, 0775, true) && !is_dir($path)) {
+        throw new RuntimeException('Could not create directory.');
     }
-    $decoded = json_decode((string)file_get_contents($metaPath), true);
-    return is_array($decoded) ? ($decoded['savedAt'] ?? null) : null;
 }
 
 function writeAtomically(string $path, string $contents): void

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human Speed Records</title>
+  <style>
+    :root {
+      --bg: #f7f8f4;
+      --ink: #16201d;
+      --muted: #68716d;
+      --grid: #d8ddd3;
+      --running: #0f7b7b;
+      --swimming: #2d62b7;
+      --cycling: #b84a62;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: 100vw;
+      height: 100vh;
+      padding: 16px;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #fffdf8;
+      border: 1px solid var(--grid);
+    }
+    .grid {
+      stroke: var(--grid);
+      stroke-width: 1;
+      shape-rendering: crispEdges;
+    }
+    .axis {
+      stroke: #9aa49f;
+      stroke-width: 1.2;
+      shape-rendering: crispEdges;
+    }
+    .axis.swim-axis {
+      stroke: var(--swimming);
+    }
+    .axis.run-axis {
+      stroke: var(--running);
+    }
+    .axis.cycle-axis {
+      stroke: var(--cycling);
+    }
+    .swim-tick {
+      fill: var(--swimming);
+    }
+    .run-tick {
+      fill: var(--running);
+    }
+    .cycle-tick {
+      fill: var(--cycling);
+    }
+    text {
+      fill: var(--muted);
+      font-size: 12px;
+    }
+    .axis-title {
+      fill: var(--ink);
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .emoji-label {
+      font-size: 20px;
+      dominant-baseline: middle;
+    }
+    .series {
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+    .point {
+      stroke: #fff;
+      stroke-width: 1.5;
+    }
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      width: max-content;
+      max-width: calc(100vw - 24px);
+      background: rgba(22, 32, 29, .94);
+      color: #fff;
+      border-radius: 7px;
+      padding: 9px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      opacity: 0;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <svg id="chart" role="img" aria-label="Log-log graph of men's running swimming and cycling world record speeds by distance"></svg>
+  </main>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const series = [
+      {
+        sport: "Running",
+        color: "var(--running)",
+        rows: [
+          ["200 m", 200, 19.19, "Usain Bolt"],
+          ["400 m", 400, 43.03, "Wayde van Niekerk"],
+          ["800 m", 800, 100.91, "David Rudisha"],
+          ["1000 m", 1000, 131.96, "Noah Ngeny"],
+          ["1500 m", 1500, 206.00, "Hicham El Guerrouj"],
+          ["1 mile", 1609.344, 223.13, "Hicham El Guerrouj"],
+          ["2000 m", 2000, 283.13, "Jakob Ingebrigtsen"],
+          ["3000 m", 3000, 440.67, "Daniel Komen"],
+          ["5000 m", 5000, 755.36, "Joshua Cheptegei"],
+          ["10000 m", 10000, 1571.00, "Joshua Cheptegei"],
+          ["Half marathon", 21097.5, 3402.00, "Jacob Kiplimo"],
+          ["Marathon", 42195, 7170.00, "Sabastian Sawe"]
+        ]
+      },
+      {
+        sport: "Swimming freestyle",
+        color: "var(--swimming)",
+        rows: [
+          ["50 m freestyle", 50, 20.88, "Cameron McEvoy"],
+          ["100 m freestyle", 100, 46.40, "Pan Zhanle"],
+          ["200 m freestyle", 200, 102.00, "Paul Biedermann"],
+          ["400 m freestyle", 400, 220.07, "Paul Biedermann"],
+          ["800 m freestyle", 800, 452.12, "Zhang Lin"],
+          ["1500 m freestyle", 1500, 870.67, "Sun Yang"]
+        ]
+      },
+      {
+        sport: "Track cycling",
+        color: "var(--cycling)",
+        rows: [
+          ["Flying 200 m", 200, 8.857, "Matthew Richardson"],
+          ["Flying 500 m", 500, 24.564, "Jeffrey Hoogland"],
+          ["1 km time trial", 1000, 55.433, "Jeffrey Hoogland"],
+          ["4 km individual pursuit", 4000, 239.153, "Jonathan Milan"],
+          ["UCI hour record", 56792, 3600, "Filippo Ganna"]
+        ]
+      }
+    ].map(s => ({
+      ...s,
+      rows: s.rows.map(([event, distance, time, athlete]) => ({
+        sport: s.sport,
+        color: s.color,
+        event,
+        distance,
+        time,
+        athlete,
+        speed: distance / time
+      })).sort((a, b) => a.distance - b.distance)
+    }));
+
+    const svg = document.getElementById("chart");
+    const tooltip = document.getElementById("tooltip");
+
+    function render() {
+      svg.innerHTML = "";
+      const box = svg.getBoundingClientRect();
+      const width = Math.max(740, box.width || 960);
+      const height = Math.max(520, box.height || 640);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      const margin = { top: 24, right: 28, bottom: 58, left: 74 };
+      const all = series.flatMap(s => s.rows);
+      const maxDistance = Math.max(...all.map(d => d.distance));
+      const xDomain = [50, maxDistance * 1.16];
+      const swimYDomain = [1, 2.5];
+      const runYDomain = [5, 12.5];
+      const cycleYDomain = [10, 25];
+      const x = logScale(xDomain, [margin.left, width - margin.right]);
+      const swimY = logScale(swimYDomain, [height - margin.bottom, margin.top]);
+      const runY = logScale(runYDomain, [height - margin.bottom, margin.top]);
+      const cycleY = logScale(cycleYDomain, [height - margin.bottom, margin.top]);
+
+      drawAxes(width, height, margin, x, xDomain, swimY, runY, cycleY);
+      series.forEach(s => drawSeries(s, x, yScaleForSeries(s, swimY, runY, cycleY)));
+    }
+
+    function logScale(domain, range) {
+      const d0 = Math.log(domain[0]);
+      const d1 = Math.log(domain[1]);
+      const [r0, r1] = range;
+      return value => r0 + (Math.log(value) - d0) * (r1 - r0) / (d1 - d0);
+    }
+
+    function logTicks(domain) {
+      const out = [];
+      for (let e = Math.floor(Math.log10(domain[0])); e <= Math.ceil(Math.log10(domain[1])); e++) {
+        for (const k of [1, 2, 5]) {
+          const v = k * 10 ** e;
+          if (v >= domain[0] && v <= domain[1]) out.push(v);
+        }
+      }
+      return out;
+    }
+
+    function drawAxes(width, height, margin, x, xDomain, swimY, runY, cycleY) {
+      const xTicks = logTicks(xDomain);
+      const swimYTicks = [1, 1.25, 1.5, 2, 2.5];
+      const runYTicks = [5, 7.5, 10, 12.5];
+      const cycleYTicks = [10, 15, 20, 25];
+      const swimAxisX = x(50);
+      const fastAxisX = x(200);
+      const runAxisX = fastAxisX - 4;
+      const cycleAxisX = fastAxisX + 4;
+      for (const t of xTicks) {
+        const xPos = x(t);
+        line(xPos, margin.top, xPos, height - margin.bottom, "grid");
+        text(xPos, height - margin.bottom + 22, fmt(t), "middle");
+      }
+      for (const t of swimYTicks) {
+        const yPos = swimY(t);
+        line(swimAxisX, yPos, x(200), yPos, "grid", "rgba(45, 98, 183, .24)");
+        line(swimAxisX - 5, yPos, swimAxisX, yPos, "axis swim-axis");
+        text(swimAxisX - 10, yPos + 4, fmt(t), "end", "swim-tick");
+      }
+      for (const t of runYTicks) {
+        const yPos = runY(t);
+        line(runAxisX, yPos, width - margin.right, yPos, "grid", "rgba(15, 123, 123, .18)");
+        line(runAxisX - 5, yPos, runAxisX, yPos, "axis run-axis");
+        text(runAxisX - 10, yPos + 4, fmt(t), "end", "run-tick");
+      }
+      for (const t of cycleYTicks) {
+        const yPos = cycleY(t);
+        line(cycleAxisX, yPos, width - margin.right, yPos, "grid", "rgba(184, 74, 98, .18)");
+        line(cycleAxisX, yPos, cycleAxisX + 5, yPos, "axis cycle-axis");
+        text(cycleAxisX + 10, yPos + 4, fmt(t), "start", "cycle-tick");
+      }
+      line(margin.left, height - margin.bottom, width - margin.right, height - margin.bottom, "axis");
+      line(swimAxisX, margin.top, swimAxisX, height - margin.bottom, "axis swim-axis");
+      line(runAxisX, margin.top, runAxisX, height - margin.bottom, "axis run-axis");
+      line(cycleAxisX, margin.top, cycleAxisX, height - margin.bottom, "axis cycle-axis");
+      text((margin.left + width - margin.right) / 2, height - 16, "meters", "middle", "axis-title");
+      const yLabel = make("text", {
+        x: 18,
+        y: (margin.top + height - margin.bottom) / 2,
+        transform: `rotate(-90 18 ${(margin.top + height - margin.bottom) / 2})`,
+        "text-anchor": "middle",
+        class: "axis-title"
+      });
+      yLabel.textContent = "meters per second";
+      svg.appendChild(yLabel);
+      text(swimAxisX + 12, swimY(1.5), "🏊", "start", "emoji-label");
+      text(runAxisX - 40, runY(7.5), "🏃", "middle", "emoji-label");
+      text(cycleAxisX + 40, cycleY(15), "🚴", "middle", "emoji-label");
+    }
+
+    function yScaleForSeries(s, swimY, runY, cycleY) {
+      if (s.sport === "Swimming freestyle") return swimY;
+      if (s.sport === "Running") return runY;
+      return cycleY;
+    }
+
+    function drawSeries(s, x, y) {
+      const points = s.rows.map(d => `${x(d.distance)},${y(d.speed)}`).join(" ");
+      svg.appendChild(make("polyline", { points, class: "series", stroke: s.color }));
+      for (const d of s.rows) {
+        const c = make("circle", {
+          cx: x(d.distance),
+          cy: y(d.speed),
+          r: 5,
+          fill: s.color,
+          class: "point"
+        });
+        c.addEventListener("mousemove", ev => showTooltip(ev, d));
+        c.addEventListener("mouseleave", hideTooltip);
+        svg.appendChild(c);
+      }
+    }
+
+    function showTooltip(ev, d) {
+      tooltip.innerHTML = [
+        `<b>${escapeHtml(d.sport)}</b>`,
+        escapeHtml(d.event),
+        escapeHtml(d.athlete),
+        `${fmt(d.distance)} m in ${formatDuration(d.time)}`,
+        `${d.speed.toFixed(3)} m/s`,
+        `${(d.speed * 3.6).toFixed(2)} km/h`,
+        `${(d.speed * 2.2369362921).toFixed(2)} mph`,
+        `${formatPace(1000 / d.speed)} / km`,
+        `${formatPace(1609.344 / d.speed)} / mile`,
+        `${(100 / d.speed).toFixed(2)} s / 100 m`
+      ].join("<br>");
+      tooltip.style.opacity = 1;
+      positionTooltip(ev);
+    }
+
+    function positionTooltip(ev) {
+      const gap = 12;
+      const edge = 8;
+      const rect = tooltip.getBoundingClientRect();
+      let left = ev.clientX - rect.width / 2;
+      let top = ev.clientY - rect.height - gap;
+      if (top < edge) top = ev.clientY + gap;
+      left = Math.max(edge, Math.min(left, window.innerWidth - rect.width - edge));
+      top = Math.max(edge, Math.min(top, window.innerHeight - rect.height - edge));
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.style.opacity = 0;
+    }
+
+    function line(x1, y1, x2, y2, klass, stroke = null) {
+      const attrs = { x1, y1, x2, y2 };
+      if (klass) attrs.class = klass;
+      if (stroke) attrs.stroke = stroke;
+      svg.appendChild(make("line", attrs));
+    }
+
+    function text(x, y, value, anchor, klass = null) {
+      const node = make("text", { x, y, "text-anchor": anchor });
+      if (klass) node.setAttribute("class", klass);
+      node.textContent = value;
+      svg.appendChild(node);
+    }
+
+    function make(name, attrs) {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+      Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+      return node;
+    }
+
+    function fmt(v) {
+      return v >= 1000 ? Number(v.toPrecision(3)).toLocaleString() : Number(v.toPrecision(3)).toString();
+    }
+
+    function formatDuration(seconds) {
+      if (seconds < 60) return `${seconds.toFixed(2)} s`;
+      return formatPace(seconds);
+    }
+
+    function formatPace(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remaining = Math.round(seconds - minutes * 60);
+      if (remaining === 60) return `${minutes + 1}:00`;
+      return `${minutes}:${String(remaining).padStart(2, "0")}`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    window.addEventListener("resize", render);
+    render();
+  </script>
+</body>
+</html>

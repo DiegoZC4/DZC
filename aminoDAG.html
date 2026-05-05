@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amino Acid Additive DAG</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --paper: #fffdf8;
+      --ink: #171512;
+      --muted: #665f55;
+      --line: #d7cec0;
+      --carbon: #2f6f4e;
+      --oxygen: #b34235;
+      --sulfur: #a37416;
+      --nitrogen: #385fa8;
+      --added: #000000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Avenir Next, Trebuchet MS, Verdana, sans-serif;
+      line-height: 1.35;
+    }
+    main {
+      height: 100vh;
+      padding: 0;
+    }
+    .stage {
+      overflow: auto;
+      width: 100%;
+      height: 100%;
+      background: #fbf8f1;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    text {
+      filter: drop-shadow(0 1px 2px #fbf8f1) drop-shadow(0 -1px 2px #fbf8f1);
+    }
+    .edge-path {
+      fill: none;
+      stroke: var(--edge-color);
+      stroke-width: 2.7;
+      stroke-linecap: round;
+      opacity: .72;
+    }
+    .edge-label {
+      font-size: 12px;
+      font-weight: 800;
+      fill: #51483f;
+      dominant-baseline: central;
+      alignment-baseline: middle;
+      pointer-events: none;
+    }
+    .edge-label-prefix {
+      font-size: 10px;
+      font-weight: 800;
+      fill: #51483f;
+      dominant-baseline: central;
+      alignment-baseline: middle;
+      pointer-events: none;
+    }
+    .node {
+      filter: drop-shadow(0 8px 14px rgba(45, 35, 25, .09));
+    }
+    .node .mol-frame {
+      fill: var(--paper);
+      stroke: var(--line);
+      stroke-width: 1.3;
+      rx: 8;
+    }
+    .node .label {
+      font-size: 13px;
+      font-weight: 700;
+      fill: var(--ink);
+    }
+    .mol2d line {
+      stroke: #000000;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    .mol2d line.double {
+      stroke-width: 2;
+    }
+    .mol2d circle {
+      stroke: #3f3832;
+      stroke-width: 0;
+    }
+    .mol2d .added-halo {
+      fill: var(--added);
+      stroke: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="stage" aria-label="Amino acid DAG">
+      <svg id="dag" viewBox="0 0 1120 520" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="svgTitle svgDesc">
+        <title id="svgTitle">Heavy atom additive DAG of amino acid side chains</title>
+        <desc id="svgDesc">Molecule nodes are positioned from x and y grid coordinates in the nodes CSV.</desc>
+        <g id="edges"></g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+  </main>
+  <script>
+    const EDGE_TYPES = {
+      C: { full: "add carbon", color: "var(--carbon)" },
+      "+C": { full: "add carbon branch", color: "var(--carbon)" },
+      N: { full: "add nitrogen", color: "var(--nitrogen)" },
+      "+N": { full: "add nitrogen branch", color: "var(--nitrogen)" },
+      O: { full: "add oxygen", color: "var(--oxygen)" },
+      "+O": { full: "add oxygen branch", color: "var(--oxygen)" },
+      S: { full: "add sulfur", color: "var(--sulfur)" },
+      "+S": { full: "add sulfur branch", color: "var(--sulfur)" },
+      CN: { full: "add carbon then nitrogen", color: "var(--nitrogen)" },
+      NCNN: { full: "add guanidino group", color: "var(--nitrogen)" },
+      "6C": { full: "add six-carbon aromatic ring", color: "var(--carbon)" },
+      ImH: { full: "add imidazole ring", color: "var(--nitrogen)" },
+      Indole: { full: "add indole ring system", color: "var(--nitrogen)" },
+      SC: { full: "add sulfur then carbon", color: "var(--sulfur)" },
+      Pyr: { full: "add pyrrolidine ring", color: "var(--nitrogen)" }
+    };
+const NODES_CSV = `id,label,x,y
+G,Glycine,0,0
+A,Alanine,1,0
+BG,,2,0
+V,Valine,2,2
+I,Isoleucine,3,2
+S,Serine,1,-3
+T,Threonine,2,-3
+C,Cysteine,1,1
+M,Methionine,4,1
+GD,,3,0
+L,Leucine,3,1
+GO,,2,-1
+D,Aspartic Acid,3,-3
+N,Asparagine,3,-2
+DO,,3,-1
+E,Glutamic Acid,4,-3
+Q,Glutamine,4,-2
+K,Lysine,5,0
+R,Arginine,5,-1
+F,Phenylalanine,1.5,-.7
+Y,Tyrosine,1.5,-2
+H,Histidine,1.5,.7
+W,Tryptophan,1.5,2
+P,Proline,1,2`;
+    const EDGES_CSV = `from,to,type,labelT
+G,A,C,
+A,BG,C,
+A,S,+O,
+A,C,+S,
+BG,V,+C,
+V,I,C,
+S,T,C,
+BG,M,SC,.8
+BG,GD,C,
+GD,L,+C,.3
+BG,GO,+O,
+GO,D,+O,
+GO,N,+N,
+GD,DO,+O,
+DO,E,+O,
+DO,Q,+N,
+GD,K,CN,
+GD,R,NCNN,
+A,F,6C,
+F,Y,+O,
+A,H,ImH,
+A,W,Indole,.8
+G,P,Pyr,`;
+    const ATOMS_CSV = `node,atom,element,q,r
+G,0,C,0,0
+G,1,O,0,-1
+G,2,O,-1,1
+G,3,C,1,0
+G,4,N,1,1
+A,5,C,2,0
+BG,6,C,3,0
+V,7,C,2,1
+I,9,C,4,0
+S,8,O,2,-1
+T,6,C,3,0
+C,10,S,2,-1
+M,11,S,4,0
+M,12,C,5,0
+GD,14,C,4,0
+L,13,C,3,1
+GO,15,O,3,-1
+D,16,O,4,0
+N,17,N,4,0
+DO,18,O,4,-1
+E,19,O,5,0
+Q,20,N,5,0
+K,21,C,5,0
+K,22,N,6,0
+R,23,N,5,0
+R,24,C,6,0
+R,25,N,7,-1
+R,26,N,6,1
+F,27,C,3,-1
+F,28,C,4,-1
+F,29,C,4,0
+F,30,C,3,1
+F,31,C,2,1
+F,32,C,2,0
+Y,33,O,5,0
+H,34,C,3,0
+H,35,N,4.5,-1
+H,36,C,5,0
+H,37,N,4,1
+H,38,C,3,1
+W,39,C,3,0
+W,40,C,4.5,-1
+W,41,C,5,0
+W,42,C,4,1
+W,43,N,3,1
+W,44,C,6,0
+W,45,C,6,1
+W,46,C,5,2
+W,47,C,4,2
+P,48,C,2.5,-1
+P,49,C,3,0
+P,50,C,2,1`;
+    const BONDS_CSV = `node,from,to,order
+G,0,1,2
+G,0,2,1
+G,0,3,1
+G,3,4,1
+A,3,5,1
+BG,5,6,1
+V,5,7,1
+I,6,9,1
+S,5,8,1
+T,5,6,1
+C,5,10,1
+M,6,11,1
+M,11,12,1
+GD,6,14,1
+L,6,13,1
+GO,6,15,2
+D,6,16,1
+N,6,17,1
+DO,14,18,2
+E,14,19,1
+Q,14,20,1
+K,14,21,1
+K,21,22,1
+R,14,23,1
+R,23,24,1
+R,24,25,2
+R,24,26,1
+F,5,27,1
+F,27,28,2
+F,28,29,1
+F,29,30,2
+F,30,31,1
+F,31,32,2
+F,32,27,1
+Y,29,33,1
+H,5,34,1
+H,34,35,2
+H,35,36,1
+H,36,37,2
+H,37,38,1
+H,38,34,1
+W,5,39,1
+W,39,40,2
+W,40,41,1
+W,41,42,2
+W,42,43,1
+W,43,39,1
+W,41,44,1
+W,44,45,2
+W,45,46,1
+W,46,47,2
+W,47,42,1
+P,3,48,1
+P,48,49,1
+P,49,50,1
+P,50,4,1`;
+    let NODES = {};
+    let EDGES = [];
+    let ATOMS = {};
+    let BONDS = {};
+    let DATA_WARNINGS = [];
+
+    const LABEL_H = 20;
+    const ATOM_R = 7.5;
+    const ADDED_HALO = 2;
+    const MOLECULE_PAD = ATOM_R + ADDED_HALO + 4;
+    const ISO_GRID_PITCH = 25;
+    const NODE_GRID_COLUMN_GAPS = [0, 130, 350, 170, 200, 200];
+    const NODE_GRID_EXTRA_COLUMN_GAP = 175;
+    const NODE_GRID_Y = 130;
+    const DIAGONAL_EDGE_CORNER_INSET = 7;
+    const edgeLayer = document.getElementById("edges");
+    const nodeLayer = document.getElementById("nodes");
+    const svg = document.getElementById("dag");
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (quoted) {
+          if (ch === '"' && next === '"') {
+            cell += '"';
+            i++;
+          } else if (ch === '"') {
+            quoted = false;
+          } else {
+            cell += ch;
+          }
+        } else if (ch === '"') {
+          quoted = true;
+        } else if (ch === ",") {
+          row.push(cell);
+          cell = "";
+        } else if (ch === "\n") {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = "";
+        } else if (ch !== "\r") {
+          cell += ch;
+        }
+      }
+      if (cell || row.length) {
+        row.push(cell);
+        rows.push(row);
+      }
+      const header = (rows.shift() || []).map((key) => key.trim());
+      return rows
+        .filter((items) => items.some((item) => item.trim()))
+        .map((items) => Object.fromEntries(header.map((key, i) => [key, (items[i] || "").trim()])));
+    }
+    function normalizeNodes(rows) {
+      return Object.fromEntries(rows
+        .map((row) => [row.id, {
+          id: row.id,
+          label: row.label || "",
+          gridX: Number(row.x || 0),
+          gridY: Number(row.y || 0)
+        }])
+        .filter(([id]) => id));
+    }
+    function normalizeEdges(rows) {
+      const incoming = new Set();
+      DATA_WARNINGS = [];
+      return rows
+        .map((row) => ({
+          from: row.from,
+          to: row.to,
+          type: row.type,
+          labelT: row.labelT === "" ? .5 : Number(row.labelT || .5)
+        }))
+        .filter((edge) => {
+          if (!edge.from || !edge.to || !edge.type) return false;
+          if (!EDGE_TYPES[edge.type]) DATA_WARNINGS.push(`Unknown edge type ${edge.type}; using C styling.`);
+          if (incoming.has(edge.to)) {
+            DATA_WARNINGS.push(`Skipped ${edge.from}->${edge.to}: ${edge.to} already has a parent.`);
+            return false;
+          }
+          if (edge.from === edge.to) {
+            DATA_WARNINGS.push(`Skipped ${edge.from}->${edge.to}: self edge.`);
+            return false;
+          }
+          incoming.add(edge.to);
+          return true;
+        });
+    }
+    function normalizeAtoms(rows) {
+      const atoms = {};
+      rows.forEach((row) => {
+        const node = row.node;
+        const atom = row.atom;
+        const element = row.element;
+        if (!node || atom === "" || !element) return;
+        if (!atoms[node]) atoms[node] = [];
+        atoms[node].push({
+          id: String(atom),
+          el: element,
+          q: Number(row.q || 0),
+          r: Number(row.r || 0)
+        });
+      });
+      Object.values(atoms).forEach((items) => items.sort((a, b) => Number(a.id) - Number(b.id)));
+      return atoms;
+    }
+    function normalizeBonds(rows) {
+      const bonds = {};
+      rows.forEach((row) => {
+        const node = row.node;
+        if (!node || row.from === "" || row.to === "") return;
+        if (!bonds[node]) bonds[node] = [];
+        bonds[node].push({
+          from: String(row.from),
+          to: String(row.to),
+          order: Number(row.order || 1)
+        });
+      });
+      return bonds;
+    }
+    function computeLayout() {
+      const ids = Object.keys(NODES);
+      ids.forEach((id) => {
+        const size = measureNode(id);
+        NODES[id].w = size.w;
+        NODES[id].h = size.h;
+        const gx = NODES[id].gridX;
+        const gridCx = 10 + columnX(gx);
+        const gridCy = 10 + NODES[id].gridY * NODE_GRID_Y;
+        NODES[id].x = gridCx - NODES[id].frameX - NODES[id].frameW / 2;
+        NODES[id].y = gridCy - NODES[id].frameY - NODES[id].frameH / 2;
+      });
+      fitViewBox(ids);
+    }
+    function columnX(gx) {
+      const wholeColumns = Math.floor(gx);
+      const fraction = gx - wholeColumns;
+      let x = 0;
+      for (let column = 1; column <= wholeColumns; column++) {
+        x += NODE_GRID_COLUMN_GAPS[column] ?? NODE_GRID_EXTRA_COLUMN_GAP;
+      }
+      if (fraction > 0) {
+        x += fraction * (NODE_GRID_COLUMN_GAPS[wholeColumns + 1] ?? NODE_GRID_EXTRA_COLUMN_GAP);
+      }
+      return x;
+    }
+    function fitViewBox(ids) {
+      if (!ids.length) {
+        svg.setAttribute("viewBox", "0 0 1 1");
+        return;
+      }
+      const pad = 18;
+      const minX = Math.min(...ids.map((id) => NODES[id].x)) - pad;
+      const minY = Math.min(...ids.map((id) => NODES[id].y)) - pad;
+      const maxX = Math.max(...ids.map((id) => NODES[id].x + NODES[id].w)) + pad;
+      const maxY = Math.max(...ids.map((id) => NODES[id].y + NODES[id].h)) + pad;
+      svg.setAttribute("viewBox", `${minX} ${minY} ${maxX - minX} ${maxY - minY}`);
+    }
+    function center(id) {
+      const node = NODES[id];
+      return {
+        x: node.x + node.frameX + node.frameW / 2,
+        y: node.y + node.frameY + node.frameH / 2
+      };
+    }
+    function frameBox(id) {
+      const node = NODES[id];
+      const x1 = node.x + node.frameX;
+      const y1 = node.y + node.frameY;
+      const x2 = x1 + node.frameW;
+      const y2 = y1 + node.frameH;
+      return { x1, y1, x2, y2, cx: (x1 + x2) / 2, cy: (y1 + y2) / 2 };
+    }
+    function frameCorners(id) {
+      const { x1, y1, x2, y2 } = frameBox(id);
+      return [
+        { x: x1, y: y1 },
+        { x: x2, y: y1 },
+        { x: x1, y: y2 },
+        { x: x2, y: y2 }
+      ];
+    }
+    function closestCorner(id, target) {
+      return frameCorners(id).reduce((best, corner) => {
+        const bestDist = Math.hypot(best.x - target.x, best.y - target.y);
+        const cornerDist = Math.hypot(corner.x - target.x, corner.y - target.y);
+        return cornerDist < bestDist ? corner : best;
+      });
+    }
+    function insetToward(point, target, amount) {
+      const dx = target.x - point.x;
+      const dy = target.y - point.y;
+      const length = Math.hypot(dx, dy) || 1;
+      return {
+        x: point.x + dx / length * amount,
+        y: point.y + dy / length * amount
+      };
+    }
+    function edgeEndpoints(edge) {
+      const fromCenter = center(edge.from);
+      const toCenter = center(edge.to);
+      const fromBox = frameBox(edge.from);
+      const toBox = frameBox(edge.to);
+      if (NODES[edge.from].gridX === NODES[edge.to].gridX) {
+        const fromBelow = fromBox.cy < toBox.cy;
+        return {
+          from: { x: fromBox.cx, y: fromBelow ? fromBox.y2 : fromBox.y1 },
+          to: { x: toBox.cx, y: fromBelow ? toBox.y1 : toBox.y2 }
+        };
+      }
+      if (NODES[edge.from].gridY === NODES[edge.to].gridY) {
+        const fromLeft = fromBox.cx < toBox.cx;
+        return {
+          from: { x: fromLeft ? fromBox.x2 : fromBox.x1, y: fromBox.cy },
+          to: { x: fromLeft ? toBox.x1 : toBox.x2, y: toBox.cy }
+        };
+      }
+      return {
+        from: insetToward(closestCorner(edge.from, toCenter), fromCenter, DIAGONAL_EDGE_CORNER_INSET),
+        to: insetToward(closestCorner(edge.to, fromCenter), toCenter, DIAGONAL_EDGE_CORNER_INSET)
+      };
+    }
+    function edgeColor(edge) {
+      return (EDGE_TYPES[edge.type] || EDGE_TYPES.C).color;
+    }
+    function pathFor(edge) {
+      const { from: a, to: b } = edgeEndpoints(edge);
+      return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+    }
+    function labelPoint(edge) {
+      const { from: a, to: b } = edgeEndpoints(edge);
+      const t = Number.isFinite(edge.labelT) ? edge.labelT : .5;
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+    function parentEdge(id) {
+      return EDGES.find((edge) => edge.to === id) || null;
+    }
+    function bondKey(bond) {
+      const a = String(bond.from);
+      const b = String(bond.to);
+      return a < b ? `${a}-${b}-${bond.order}` : `${b}-${a}-${bond.order}`;
+    }
+    function lineage(id) {
+      const chain = [];
+      const seen = new Set();
+      let cursor = id;
+      while (cursor && !seen.has(cursor)) {
+        chain.push(cursor);
+        seen.add(cursor);
+        const edge = parentEdge(cursor);
+        cursor = edge ? edge.from : null;
+      }
+      return chain.reverse();
+    }
+    function materializeMolecule(id) {
+      const atomMap = new Map();
+      const bondMap = new Map();
+      lineage(id).forEach((nodeId) => {
+        (ATOMS[nodeId] || []).forEach((atom) => atomMap.set(atom.id, atom));
+        (BONDS[nodeId] || []).forEach((bond) => bondMap.set(bondKey(bond), bond));
+      });
+      return {
+        atoms: [...atomMap.values()].sort((a, b) => Number(a.id) - Number(b.id)),
+        bonds: [...bondMap.values()]
+      };
+    }
+    function addedParts(id) {
+      if (!parentEdge(id)) return { atoms: new Set(), bonds: new Set() };
+      return {
+        atoms: new Set((ATOMS[id] || []).map((atom) => atom.id)),
+        bonds: new Set((BONDS[id] || []).map((bond) => bondKey(bond)))
+      };
+    }
+    function gridToPoint(q, r) {
+      return {
+        x: (q + r * .5) * ISO_GRID_PITCH,
+        y: r * ISO_GRID_PITCH * .866
+      };
+    }
+    function moleculeGeometry(id) {
+      const molecule = materializeMolecule(id);
+      const atoms = molecule.atoms.map((atom) => {
+        const point = gridToPoint(atom.q, atom.r);
+        return { ...atom, x: point.x, y: point.y };
+      });
+      const xs = atoms.map((atom) => atom.x);
+      const ys = atoms.map((atom) => atom.y);
+      const minX = Math.min(...xs) - MOLECULE_PAD;
+      const maxX = Math.max(...xs) + MOLECULE_PAD;
+      const minY = Math.min(...ys) - MOLECULE_PAD;
+      const maxY = Math.max(...ys) + MOLECULE_PAD;
+      return {
+        atoms: atoms.map((atom) => ({ ...atom, x: atom.x - minX, y: atom.y - minY })),
+        bonds: molecule.bonds,
+        w: Math.ceil(maxX - minX),
+        h: Math.ceil(maxY - minY)
+      };
+    }
+    function measureNode(id) {
+      const geometry = moleculeGeometry(id);
+      const labelW = (NODES[id].label || "").length * 7.5 + 4;
+      const w = Math.max(geometry.w, labelW, 1);
+      NODES[id].frameX = (w - geometry.w) / 2;
+      NODES[id].frameY = LABEL_H;
+      NODES[id].frameW = geometry.w;
+      NODES[id].frameH = geometry.h;
+      return { w, h: geometry.h + LABEL_H };
+    }
+    function moleculeSvg(id) {
+      const geometry = moleculeGeometry(id);
+      const frameX = NODES[id].frameX;
+      const frameY = NODES[id].frameY;
+      const atoms = geometry.atoms.map((atom) => ({ ...atom, x: atom.x + frameX, y: atom.y + frameY }));
+      const atomById = Object.fromEntries(atoms.map((atom) => [atom.id, atom]));
+      const bonds = geometry.bonds;
+      const added = addedParts(id);
+      const colors = { C: "#444444", N: "#315cff", O: "#e53935", S: "#d8a21d" };
+      const parts = [
+        `<rect class="mol-frame" x="${frameX}" y="${frameY}" width="${geometry.w}" height="${geometry.h}" rx="8"></rect>`,
+        `<g class="mol2d">`
+      ];
+      bonds.forEach((bond) => {
+        const a = atomById[bond.from];
+        const b = atomById[bond.to];
+        if (!a || !b) return;
+        if (bond.order === 2) {
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const nx = -dy / len * 3;
+          const ny = dx / len * 3;
+          parts.push(`<line class="double" x1="${a.x + nx}" y1="${a.y + ny}" x2="${b.x + nx}" y2="${b.y + ny}"></line>`);
+          parts.push(`<line class="double" x1="${a.x - nx}" y1="${a.y - ny}" x2="${b.x - nx}" y2="${b.y - ny}"></line>`);
+        } else {
+          parts.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"></line>`);
+        }
+      });
+      atoms.forEach((atom) => {
+        if (added.atoms.has(atom.id)) {
+          parts.push(`<circle class="added-halo" cx="${atom.x}" cy="${atom.y}" r="${ATOM_R + ADDED_HALO}"></circle>`);
+        }
+        parts.push(`<circle cx="${atom.x}" cy="${atom.y}" r="${ATOM_R}" fill="${colors[atom.el] || "#fff"}"></circle>`);
+      });
+      parts.push(`</g>`);
+      return parts.join("");
+    }
+    function appendEdgeLabel(group, edge) {
+      const pt = labelPoint(edge);
+      if (/^\+[CNOS]$/.test(edge.type)) {
+        const prefix = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        prefix.setAttribute("class", "edge-label-prefix");
+        prefix.setAttribute("x", pt.x - 8);
+        prefix.setAttribute("y", pt.y);
+        prefix.setAttribute("text-anchor", "middle");
+        prefix.textContent = "+";
+        group.appendChild(prefix);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("class", "edge-label");
+        label.setAttribute("x", pt.x);
+        label.setAttribute("y", pt.y);
+        label.setAttribute("text-anchor", "middle");
+        label.textContent = edge.type.slice(1);
+        group.appendChild(label);
+        return;
+      }
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("class", "edge-label");
+      label.setAttribute("x", pt.x);
+      label.setAttribute("y", pt.y);
+      label.setAttribute("text-anchor", "middle");
+      label.textContent = edge.type;
+      group.appendChild(label);
+    }
+    function renderEdges() {
+      edgeLayer.innerHTML = "";
+      EDGES.forEach((edge, index) => {
+        if (!NODES[edge.from] || !NODES[edge.to]) return;
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.classList.add("edge");
+        group.dataset.from = edge.from;
+        group.dataset.to = edge.to;
+        group.style.setProperty("--edge-color", edgeColor(edge));
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("class", "edge-path");
+        path.setAttribute("d", pathFor(edge));
+        path.setAttribute("id", `edge-${index}`);
+        group.appendChild(path);
+
+        appendEdgeLabel(group, edge);
+        edgeLayer.appendChild(group);
+      });
+    }
+    function renderNodes() {
+      nodeLayer.innerHTML = "";
+      Object.entries(NODES).forEach(([id, node]) => {
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.classList.add("node");
+        group.dataset.id = id;
+        group.setAttribute("transform", `translate(${node.x} ${node.y})`);
+        group.setAttribute("aria-label", `${node.label || "intermediate"} ${id}`);
+
+        if (node.label) {
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("class", "label");
+          label.setAttribute("x", node.w / 2);
+          label.setAttribute("y", 13);
+          label.setAttribute("text-anchor", "middle");
+          label.textContent = node.label;
+          group.appendChild(label);
+        }
+
+        const mol = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        mol.innerHTML = moleculeSvg(id);
+        group.appendChild(mol);
+
+        nodeLayer.appendChild(group);
+      });
+    }
+    function renderAll() {
+      computeLayout();
+      renderEdges();
+      renderNodes();
+    }
+    function loadInlineCSV() {
+      NODES = normalizeNodes(parseCSV(NODES_CSV));
+      EDGES = normalizeEdges(parseCSV(EDGES_CSV));
+      ATOMS = normalizeAtoms(parseCSV(ATOMS_CSV));
+      BONDS = normalizeBonds(parseCSV(BONDS_CSV));
+      renderAll();
+    }
+    loadInlineCSV();
+  </script>
+</body>
+</html>

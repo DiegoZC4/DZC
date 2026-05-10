@@ -234,7 +234,7 @@ function yt_channels(PDO $db): array
     return $stmt->fetchAll();
 }
 
-function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50, string $videoId = ''): array
+function yt_search(PDO $db, string $query, array|string $channel = '', int $limit = 50, string $videoId = ''): array
 {
     $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
     if ($query === '') {
@@ -251,9 +251,15 @@ function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50
             JOIN videos v ON v.youtube_id = videos_fts.youtube_id
             WHERE videos_fts MATCH :match';
     $params = [':match' => $match];
-    if ($channel !== '') {
-        $sql .= ' AND v.channel = :channel';
-        $params[':channel'] = $channel;
+    $channels = yt_normalize_channels($channel);
+    if ($channels) {
+        $placeholders = [];
+        foreach ($channels as $index => $channelName) {
+            $key = ':channel_' . $index;
+            $placeholders[] = $key;
+            $params[$key] = $channelName;
+        }
+        $sql .= ' AND v.channel IN (' . implode(', ', $placeholders) . ')';
     }
     if ($videoId !== '') {
         $sql .= ' AND v.youtube_id = :video_id';
@@ -286,6 +292,21 @@ function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50
         }
     }
     return $results;
+}
+
+function yt_normalize_channels(array|string $channels): array
+{
+    if (is_string($channels)) {
+        $channels = $channels === '' ? [] : [$channels];
+    }
+    $clean = [];
+    foreach ($channels as $channel) {
+        $channel = trim((string)$channel);
+        if ($channel !== '') {
+            $clean[$channel] = true;
+        }
+    }
+    return array_keys($clean);
 }
 
 function yt_fts_query(string $query): string

@@ -40,16 +40,18 @@ try {
 
     if ($action === 'search') {
         yt_require_data($db);
+        $channels = ytscripts_request_channels();
         ytscripts_json([
             'ok' => true,
             'version' => YT_API_VERSION,
             'query' => $query,
-            'channel' => (string)($_GET['channel'] ?? ''),
+            'channel' => count($channels) === 1 ? $channels[0] : '',
+            'channels' => $channels,
             'video_id' => (string)($_GET['video_id'] ?? ''),
             'results' => yt_search(
                 $db,
                 $query,
-                (string)($_GET['channel'] ?? ''),
+                $channels,
                 (int)($_GET['limit'] ?? 50),
                 (string)($_GET['video_id'] ?? '')
             ),
@@ -59,6 +61,22 @@ try {
     ytscripts_json(['ok' => false, 'error' => 'Unknown action.'], 404);
 } catch (Throwable $e) {
     ytscripts_json(['ok' => false, 'error' => $e->getMessage()], 400);
+}
+
+function ytscripts_request_channels(): array
+{
+    $channels = $_GET['channels'] ?? [];
+    if (is_string($channels)) {
+        $channels = $channels === '' ? [] : explode(',', $channels);
+    }
+    if (!is_array($channels)) {
+        $channels = [];
+    }
+    $legacy = (string)($_GET['channel'] ?? '');
+    if ($legacy !== '') {
+        $channels[] = $legacy;
+    }
+    return yt_normalize_channels($channels);
 }
 
 function ytscripts_json(array $payload, int $status = 200): void

@@ -18,21 +18,38 @@ try {
     if ($action === 'search') {
         yt_require_data($db);
         $query = (string)($_GET['q'] ?? '');
-        $channel = (string)($_GET['channel'] ?? '');
+        $channels = yt_request_channels();
         $videoId = (string)($_GET['video_id'] ?? '');
         $limit = (int)($_GET['limit'] ?? 50);
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
             'query' => $query,
-            'channel' => $channel,
+            'channel' => count($channels) === 1 ? $channels[0] : '',
+            'channels' => $channels,
             'video_id' => $videoId,
-            'results' => yt_search($db, $query, $channel, $limit, $videoId),
+            'results' => yt_search($db, $query, $channels, $limit, $videoId),
         ]);
     }
     yt_json(['ok' => false, 'error' => 'Unknown action.'], 404);
 } catch (Throwable $e) {
     yt_json(['ok' => false, 'error' => $e->getMessage()], 400);
+}
+
+function yt_request_channels(): array
+{
+    $channels = $_GET['channels'] ?? [];
+    if (is_string($channels)) {
+        $channels = $channels === '' ? [] : explode(',', $channels);
+    }
+    if (!is_array($channels)) {
+        $channels = [];
+    }
+    $legacy = (string)($_GET['channel'] ?? '');
+    if ($legacy !== '') {
+        $channels[] = $legacy;
+    }
+    return yt_normalize_channels($channels);
 }
 
 function yt_json(array $payload, int $status = 200): void

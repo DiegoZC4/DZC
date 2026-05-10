@@ -17,13 +17,15 @@ try {
     if ($action === 'search') {
         $query = (string)($_GET['q'] ?? '');
         $channel = (string)($_GET['channel'] ?? '');
+        $videoId = (string)($_GET['video_id'] ?? '');
         $limit = (int)($_GET['limit'] ?? 50);
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
             'query' => $query,
             'channel' => $channel,
-            'results' => yt_search($db, $query, $channel, $limit),
+            'video_id' => $videoId,
+            'results' => yt_search($db, $query, $channel, $limit, $videoId),
         ]);
     }
     yt_json(['ok' => false, 'error' => 'Unknown action.'], 404);
@@ -39,4 +41,3 @@ function yt_json(array $payload, int $status = 200): void
     echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
 }
-

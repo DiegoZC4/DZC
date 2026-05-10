@@ -228,7 +228,7 @@ function yt_channels(PDO $db): array
     return $stmt->fetchAll();
 }
 
-function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50): array
+function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50, string $videoId = ''): array
 {
     $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
     if ($query === '') {
@@ -248,6 +248,10 @@ function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50
     if ($channel !== '') {
         $sql .= ' AND v.channel = :channel';
         $params[':channel'] = $channel;
+    }
+    if ($videoId !== '') {
+        $sql .= ' AND v.youtube_id = :video_id';
+        $params[':video_id'] = $videoId;
     }
     $sql .= ' ORDER BY rank LIMIT 200';
     $stmt = $db->prepare($sql);

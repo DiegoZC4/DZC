@@ -21,6 +21,7 @@ try {
             'examples' => [
                 '/ytscripts?action=channels',
                 '/ytscripts?q=movement&channel=Lex%20Fridman',
+                '/ytscripts?q=physics&video_id=-t1_ffaFXao',
                 '/ytscripts?action=search&q=bro%20science&limit=10',
             ],
         ]);
@@ -41,11 +42,13 @@ try {
             'version' => YT_API_VERSION,
             'query' => $query,
             'channel' => (string)($_GET['channel'] ?? ''),
+            'video_id' => (string)($_GET['video_id'] ?? ''),
             'results' => yt_search(
                 $db,
                 $query,
                 (string)($_GET['channel'] ?? ''),
-                (int)($_GET['limit'] ?? 50)
+                (int)($_GET['limit'] ?? 50),
+                (string)($_GET['video_id'] ?? '')
             ),
         ]);
     }

@@ -23,7 +23,11 @@ The generated database is:
 youtube-transcripts/data/transcripts.sqlite3
 ```
 
-The database is ignored by git. Upload it to the same path on Hostinger when deploying transcript data.
+The database is ignored by git. The current full import is about 928 MB, which is too large for normal GitHub tracking. Upload it to the same path on Hostinger when deploying transcript data:
+
+```text
+public_html/youtube-transcripts/data/transcripts.sqlite3
+```
 
 ## Test
 
@@ -43,5 +47,30 @@ The `/ytscripts` route is JSON-first, so you can test without opening the UI:
 /ytscripts
 /ytscripts?action=channels
 /ytscripts?q=bro%20science
+/ytscripts?q=physics&video_id=-t1_ffaFXao
 /ytscripts?action=search&q=movement&channel=Lex%20Fridman&limit=10
 ```
+
+## Local Full-DB Benchmark
+
+Full import tested locally:
+
+- Source markdown: 13 files, 464 MB
+- SQLite DB: 928 MB
+- Videos: 5,806
+- Timestamp anchors: 6,814,641
+- Indexed transcript text: 241,566,206 characters
+- Import time: about 3 minutes
+
+Representative local search timings, 5 runs each:
+
+| Scope | Query | Chars in scope | Results | Median |
+| --- | --- | ---: | ---: | ---: |
+| Single large video | `physics` | 259,331 | 20 | 17.2 ms |
+| Small channel | `number` | 688,593 | 50 | 3.9 ms |
+| Medium channel | `bro science` | 1,277,042 | 50 | 3.0 ms |
+| Large channel | `fighter` | 89,804,623 | 50 | 3.1 ms |
+| All channels common | `the` | 241,566,206 | 50 | 20.8 ms |
+| All channels phrase | `machine learning` | 241,566,206 | 50 | 10.7 ms |
+
+These timings are local CLI timings against SQLite FTS. Hostinger will add web/PHP overhead and may be slower depending on plan I/O.

@@ -94,16 +94,21 @@ async function init() {
 
 async function loadChannels() {
   try {
-    const payload = await getJson('api.php?action=channels');
+    const payload = await getJson('channels.json');
     channelRows = payload.channels || [];
     renderChannelChoices(channelRows);
     const stats = payload.stats || {};
     meta.textContent = `${stats.videos || 0} videos, ${stats.channels || 0} channels indexed`;
+    warmTranscriptApi();
   } catch (error) {
     channelSummary.textContent = 'Could not load channels';
-    channelGrid.innerHTML = '<div class="empty">Open this page through the website server, not as a local file. If this is already live, the API error is shown below.</div>';
+    channelGrid.innerHTML = '<div class="empty">Could not load the static channel list. If this is live, the error is shown below.</div>';
     meta.textContent = error.message;
   }
+}
+
+function warmTranscriptApi() {
+  fetch('api.php?action=channels', { cache: 'no-store' }).catch(() => {});
 }
 
 function renderChannelChoices(rows) {

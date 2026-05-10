@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "version": "1",
+  "channels": [
+    { "channel": "3Blue1Brown", "video_count": 149 },
+    { "channel": "BroScienceLife", "video_count": 181 },
+    { "channel": "Dwarkesh Patel", "video_count": 119 },
+    { "channel": "Human Behavioral Biology - Sapolsky (Stanford)", "video_count": 27 },
+    { "channel": "Jake and Amir", "video_count": 619 },
+    { "channel": "JennaMarbles", "video_count": 230 },
+    { "channel": "Key & Peele", "video_count": 340 },
+    { "channel": "Lex Fridman", "video_count": 572 },
+    { "channel": "Mathologer", "video_count": 113 },
+    { "channel": "Rick & Esther Have A Time", "video_count": 14 },
+    { "channel": "Rick Glassman", "video_count": 362 },
+    { "channel": "Stand-up Maths", "video_count": 57 },
+    { "channel": "Steve Mould", "video_count": 23 },
+    { "channel": "Supergood", "video_count": 685 },
+    { "channel": "The Fighter and The Kid", "video_count": 1777 },
+    { "channel": "TigerBelly", "video_count": 533 },
+    { "channel": "Veritasium", "video_count": 409 }
+  ],
+  "stats": {
+    "videos": 6210,
+    "segments": 7093163,
+    "channels": 17
+  }
+}

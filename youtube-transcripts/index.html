@@ -100,6 +100,8 @@ async function loadChannels() {
     const stats = payload.stats || {};
     meta.textContent = `${stats.videos || 0} videos, ${stats.channels || 0} channels indexed`;
   } catch (error) {
+    channelSummary.textContent = 'Could not load channels';
+    channelGrid.innerHTML = '<div class="empty">Open this page through the website server, not as a local file. If this is already live, the API error is shown below.</div>';
     meta.textContent = error.message;
   }
 }

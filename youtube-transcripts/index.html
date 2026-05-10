@@ -32,7 +32,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .channel { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .time { flex: 0 0 auto; color: var(--accent); background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; padding: 4px 9px; font-weight: 800; text-decoration: none; }
 .snippet { color: #30302e; line-height: 1.45; }
-.snippet mark { background: transparent; color: var(--ink); font-weight: 900; padding: 0; }
+.snippet strong { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
 .match-count { color: var(--muted); font-size: 12px; font-weight: 700; margin-left: 6px; }
 .empty { padding: 18px 0; color: var(--muted); }
 @media (max-width: 680px) {
@@ -155,9 +155,9 @@ function renderSnippet(container, item) {
   const fragment = document.createDocumentFragment();
   for (const part of parts) {
     if (part.match) {
-      const mark = document.createElement('mark');
-      mark.textContent = part.text || '';
-      fragment.appendChild(mark);
+      const strong = document.createElement('strong');
+      strong.textContent = part.text || '';
+      fragment.appendChild(strong);
     } else {
       fragment.appendChild(document.createTextNode(part.text || ''));
     }

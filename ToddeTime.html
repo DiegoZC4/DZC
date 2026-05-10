@@ -756,6 +756,22 @@
                   <svg class="svg-slider" id="durationSlider" viewBox="0 0 520 520" role="img" aria-label="Time allocation by 10 numbers"></svg>
                   <div class="allocation-list" id="allocationList"></div>
                 </div>
+                <div class="value-control">
+                  <span>Glyph coverage, percent</span>
+                  <strong class="value-dial" id="glyphCoverageInput" data-key="glyphCoverage" data-min="0" data-max="100" data-step="1" role="spinbutton" tabindex="0" aria-label="Glyph coverage percent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75">75%</strong>
+                </div>
+                <div class="value-control">
+                  <span>Outside rate, percent</span>
+                  <strong class="value-dial" id="outsideRateInput" data-key="outsideRate" data-min="0" data-max="100" data-step="1" role="spinbutton" tabindex="0" aria-label="Outside rate percent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35">35%</strong>
+                </div>
+                <div class="value-control">
+                  <span>Canvas size, pixels</span>
+                  <strong class="value-dial" id="canvasSizeInput" data-key="canvasSize" data-min="64" data-max="512" data-step="16" role="spinbutton" tabindex="0" aria-label="Canvas size in pixels" aria-valuemin="64" aria-valuemax="512" aria-valuenow="192">192px</strong>
+                </div>
+                <div class="value-control">
+                  <span>Pen thickness, pixels</span>
+                  <strong class="value-dial" id="penThicknessInput" data-key="penThickness" data-min="4" data-max="80" data-step="1" role="spinbutton" tabindex="0" aria-label="Pen thickness in pixels" aria-valuemin="4" aria-valuemax="80" aria-valuenow="24">24px</strong>
+                </div>
                 <button class="primary-action" id="startButton" type="button">Start Counting</button>
                 <div class="value-control">
                   <span>Representation</span>
@@ -795,6 +811,10 @@
       totalDuration: 120,
       current: 0,
       previewNumber: 8,
+      glyphCoverage: 75,
+      outsideRate: 35,
+      canvasSize: 192,
+      penThickness: 24,
       representation: "arabic",
       timerId: null,
       startTime: 0,
@@ -886,6 +906,10 @@
         totalDuration: app.totalDuration,
         current: app.current,
         previewNumber: app.previewNumber,
+        glyphCoverage: app.glyphCoverage,
+        outsideRate: app.outsideRate,
+        canvasSize: app.canvasSize,
+        penThickness: app.penThickness,
         representation: app.representation,
         blockDurations: app.blockDurations,
         view: app.view
@@ -906,6 +930,10 @@
         if (Number.isFinite(saved.totalDuration)) app.totalDuration = clamp(Math.round(saved.totalDuration), minimumDurationForMax(), 300);
         if (Number.isFinite(saved.current)) app.current = clamp(Math.round(saved.current), 0, app.maxNumber);
         if (Number.isFinite(saved.previewNumber)) app.previewNumber = clamp(Math.round(saved.previewNumber), 0, 200);
+        if (Number.isFinite(saved.glyphCoverage)) app.glyphCoverage = clamp(Math.round(saved.glyphCoverage), 0, 100);
+        if (Number.isFinite(saved.outsideRate)) app.outsideRate = clamp(Math.round(saved.outsideRate), 0, 100);
+        if (Number.isFinite(saved.canvasSize)) app.canvasSize = clamp(Math.round(saved.canvasSize / 16) * 16, 64, 512);
+        if (Number.isFinite(saved.penThickness)) app.penThickness = clamp(Math.round(saved.penThickness), 4, 80);
         if (representations.some(rep => rep.id === saved.representation)) app.representation = saved.representation;
         if (Array.isArray(saved.blockDurations)) {
           app.blockDurations = saved.blockDurations
@@ -1352,15 +1380,27 @@
       const maxDial = document.querySelector("#maxNumberInput");
       const durationDial = document.querySelector("#totalDurationInput");
       const previewDial = document.querySelector("#previewNumberInput");
+      const glyphCoverageDial = document.querySelector("#glyphCoverageInput");
+      const outsideRateDial = document.querySelector("#outsideRateInput");
+      const canvasSizeDial = document.querySelector("#canvasSizeInput");
+      const penThicknessDial = document.querySelector("#penThicknessInput");
       const minDuration = minimumDurationForMax();
       durationDial.dataset.min = minDuration;
       durationDial.setAttribute("aria-valuemin", minDuration);
       maxDial.textContent = app.maxNumber;
       durationDial.textContent = `${app.totalDuration}s`;
       previewDial.textContent = app.previewNumber;
+      glyphCoverageDial.textContent = `${app.glyphCoverage}%`;
+      outsideRateDial.textContent = `${app.outsideRate}%`;
+      canvasSizeDial.textContent = `${app.canvasSize}px`;
+      penThicknessDial.textContent = `${app.penThickness}px`;
       maxDial.setAttribute("aria-valuenow", app.maxNumber);
       durationDial.setAttribute("aria-valuenow", app.totalDuration);
       previewDial.setAttribute("aria-valuenow", app.previewNumber);
+      glyphCoverageDial.setAttribute("aria-valuenow", app.glyphCoverage);
+      outsideRateDial.setAttribute("aria-valuenow", app.outsideRate);
+      canvasSizeDial.setAttribute("aria-valuenow", app.canvasSize);
+      penThicknessDial.setAttribute("aria-valuenow", app.penThickness);
     }
 
     function dialMeta(dial) {
@@ -1375,9 +1415,7 @@
     function setDialValue(dial, value) {
       const { min, max, step, key } = dialMeta(dial);
       const next = clamp(Math.round(value / step) * step, min, max);
-      if (key === "maxNumber") app.maxNumber = next;
-      if (key === "totalDuration") app.totalDuration = next;
-      if (key === "previewNumber") app.previewNumber = next;
+      if (Object.hasOwn(app, key)) app[key] = next;
       applyDialChange(key);
     }
 
@@ -1386,6 +1424,10 @@
       app.totalDuration = clamp(Math.round(app.totalDuration), minimumDurationForMax(), 300);
       app.current = clamp(app.current, 0, app.maxNumber);
       app.previewNumber = clamp(app.previewNumber, 0, 200);
+      app.glyphCoverage = clamp(Math.round(app.glyphCoverage), 0, 100);
+      app.outsideRate = clamp(Math.round(app.outsideRate), 0, 100);
+      app.canvasSize = clamp(Math.round(app.canvasSize / 16) * 16, 64, 512);
+      app.penThickness = clamp(Math.round(app.penThickness), 4, 80);
       if (key === "maxNumber" || key === "totalDuration") {
         app.blockDurations = distributeDuration(app.totalDuration);
       }
@@ -1692,7 +1734,7 @@
         app.valueDialDrag = {
           pointerId: event.pointerId,
           startY: event.clientY,
-          startValue: key === "maxNumber" ? app.maxNumber : key === "totalDuration" ? app.totalDuration : app.previewNumber,
+          startValue: Number(app[key]),
           step
         };
         dial.classList.add("dragging");
@@ -1718,7 +1760,7 @@
 
       dial.addEventListener("keydown", event => {
         const { step, key } = dialMeta(dial);
-        const currentValue = key === "maxNumber" ? app.maxNumber : key === "totalDuration" ? app.totalDuration : app.previewNumber;
+        const currentValue = Number(app[key]);
         if (event.key === "ArrowDown") {
           event.preventDefault();
           setDialValue(dial, currentValue - step);

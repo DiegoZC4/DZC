@@ -32,6 +32,8 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .channel { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .time { flex: 0 0 auto; color: var(--accent); background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; padding: 4px 9px; font-weight: 800; text-decoration: none; }
 .snippet { color: #30302e; line-height: 1.45; }
+.snippet mark { background: transparent; color: var(--ink); font-weight: 900; padding: 0; }
+.match-count { color: var(--muted); font-size: 12px; font-weight: 700; margin-left: 6px; }
 .empty { padding: 18px 0; color: var(--muted); }
 @media (max-width: 680px) {
   .searchbar { grid-template-columns: 1fr 82px; }
@@ -127,14 +129,40 @@ function renderResults(items, query) {
       <div class="snippet"></div>
     `;
     article.querySelector('.title').textContent = item.title || item.youtube_id;
-    article.querySelector('.channel').textContent = item.channel || '';
     const time = article.querySelector('.time');
     time.href = item.url;
     time.textContent = item.timestamp || '0:00';
-    article.querySelector('.snippet').textContent = item.snippet || '';
+    const channel = article.querySelector('.channel');
+    channel.textContent = item.channel || '';
+    if (item.match_count > 1) {
+      const count = document.createElement('span');
+      count.className = 'match-count';
+      count.textContent = `${item.match_count} nearby matches`;
+      channel.appendChild(count);
+    }
+    renderSnippet(article.querySelector('.snippet'), item);
     fragment.appendChild(article);
   }
   results.replaceChildren(fragment);
+}
+
+function renderSnippet(container, item) {
+  const parts = Array.isArray(item.snippet_parts) ? item.snippet_parts : [];
+  if (!parts.length) {
+    container.textContent = item.snippet || '';
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  for (const part of parts) {
+    if (part.match) {
+      const mark = document.createElement('mark');
+      mark.textContent = part.text || '';
+      fragment.appendChild(mark);
+    } else {
+      fragment.appendChild(document.createTextNode(part.text || ''));
+    }
+  }
+  container.replaceChildren(fragment);
 }
 
 async function getJson(url) {

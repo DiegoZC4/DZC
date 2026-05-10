@@ -264,8 +264,10 @@ function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50
 
     $results = [];
     while (($row = $stmt->fetch()) && count($results) < $limit) {
-        foreach (yt_find_occurrences((string)$row['transcript'], $query) as $offset) {
-            $seconds = yt_seconds_for_char_index($db, (string)$row['youtube_id'], $offset);
+        foreach (yt_group_occurrences(yt_find_occurrences((string)$row['transcript'], $query)) as $group) {
+            $firstMatch = $group[0];
+            $seconds = yt_seconds_for_char_index($db, (string)$row['youtube_id'], (int)$firstMatch['offset']);
+            $snippet = yt_snippet((string)$row['transcript'], $group);
             $results[] = [
                 'youtube_id' => $row['youtube_id'],
                 'channel' => $row['channel'],
@@ -273,7 +275,9 @@ function yt_search(PDO $db, string $query, string $channel = '', int $limit = 50
                 'start_seconds' => $seconds,
                 'timestamp' => yt_format_timestamp($seconds),
                 'url' => 'https://www.youtube.com/watch?v=' . rawurlencode((string)$row['youtube_id']) . '&t=' . $seconds . 's',
-                'snippet' => yt_snippet((string)$row['transcript'], $offset, strlen($query)),
+                'snippet' => $snippet['text'],
+                'snippet_parts' => $snippet['parts'],
+                'match_count' => count($group),
             ];
             if (count($results) >= $limit) {
                 break;
@@ -301,7 +305,37 @@ function yt_find_occurrences(string $transcript, string $query): array
         return [];
     }
     preg_match_all('/' . $pattern . '/iu', $transcript, $matches, PREG_OFFSET_CAPTURE);
-    return array_map(static fn(array $match): int => (int)$match[1], $matches[0] ?? []);
+    return array_map(
+        static fn(array $match): array => [
+            'offset' => (int)$match[1],
+            'length' => strlen((string)$match[0]),
+        ],
+        $matches[0] ?? []
+    );
+}
+
+function yt_group_occurrences(array $occurrences, int $maxGap = 100): array
+{
+    if (!$occurrences) {
+        return [];
+    }
+    $groups = [];
+    $current = [];
+    $previousEnd = null;
+    foreach ($occurrences as $occurrence) {
+        $offset = (int)$occurrence['offset'];
+        $length = max(1, (int)$occurrence['length']);
+        if ($previousEnd !== null && $offset - $previousEnd >= $maxGap) {
+            $groups[] = $current;
+            $current = [];
+        }
+        $current[] = ['offset' => $offset, 'length' => $length];
+        $previousEnd = $offset + $length;
+    }
+    if ($current) {
+        $groups[] = $current;
+    }
+    return $groups;
 }
 
 function yt_seconds_for_char_index(PDO $db, string $youtubeId, int $charIndex): int
@@ -317,19 +351,52 @@ function yt_seconds_for_char_index(PDO $db, string $youtubeId, int $charIndex): 
     return $value === false ? 0 : (int)$value;
 }
 
-function yt_snippet(string $transcript, int $offset, int $length): string
+function yt_snippet(string $transcript, array $matches): array
 {
-    $start = max(0, $offset - 110);
-    $end = min(strlen($transcript), $offset + max($length, 1) + 150);
-    $snippet = trim(substr($transcript, $start, $end - $start));
-    $snippet = preg_replace('/\s+/', ' ', $snippet) ?? $snippet;
+    $first = $matches[0];
+    $last = $matches[count($matches) - 1];
+    $start = max(0, (int)$first['offset'] - 110);
+    $end = min(strlen($transcript), (int)$last['offset'] + max(1, (int)$last['length']) + 150);
+    $parts = [];
     if ($start > 0) {
-        $snippet = '...' . $snippet;
+        $parts[] = ['text' => '...', 'match' => false];
+    }
+    $cursor = $start;
+    foreach ($matches as $match) {
+        $offset = max($start, (int)$match['offset']);
+        $matchEnd = min($end, (int)$match['offset'] + max(1, (int)$match['length']));
+        if ($offset > $cursor) {
+            yt_add_snippet_part($parts, substr($transcript, $cursor, $offset - $cursor), false);
+        }
+        if ($matchEnd > $offset) {
+            yt_add_snippet_part($parts, substr($transcript, $offset, $matchEnd - $offset), true);
+        }
+        $cursor = max($cursor, $matchEnd);
+    }
+    if ($cursor < $end) {
+        yt_add_snippet_part($parts, substr($transcript, $cursor, $end - $cursor), false);
     }
     if ($end < strlen($transcript)) {
-        $snippet .= '...';
+        $parts[] = ['text' => '...', 'match' => false];
     }
-    return $snippet;
+    return [
+        'text' => implode('', array_column($parts, 'text')),
+        'parts' => $parts,
+    ];
+}
+
+function yt_add_snippet_part(array &$parts, string $text, bool $match): void
+{
+    $text = preg_replace('/\s+/', ' ', $text) ?? $text;
+    if ($text === '') {
+        return;
+    }
+    $lastIndex = count($parts) - 1;
+    if ($lastIndex >= 0 && ($parts[$lastIndex]['match'] ?? false) === $match) {
+        $parts[$lastIndex]['text'] .= $text;
+        return;
+    }
+    $parts[] = ['text' => $text, 'match' => $match];
 }
 
 function yt_format_timestamp(int $seconds): string

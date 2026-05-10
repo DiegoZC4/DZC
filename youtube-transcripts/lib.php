@@ -14,10 +14,13 @@ function yt_db_path(): string
     return yt_data_dir() . '/transcripts.sqlite3';
 }
 
-function yt_db(): PDO
+function yt_db(bool $create = true): PDO
 {
     if (!extension_loaded('pdo_sqlite')) {
         throw new RuntimeException('SQLite support is not enabled.');
+    }
+    if (!$create && !is_file(yt_db_path())) {
+        throw new RuntimeException('Transcript database is missing. Upload transcripts.sqlite3 to youtube-transcripts/data/.');
     }
     if (!is_dir(yt_data_dir()) && !mkdir(yt_data_dir(), 0775, true) && !is_dir(yt_data_dir())) {
         throw new RuntimeException('Could not create data directory.');
@@ -29,7 +32,9 @@ function yt_db(): PDO
     $db->exec('PRAGMA foreign_keys = ON');
     $db->exec('PRAGMA journal_mode = WAL');
     $db->exec('PRAGMA busy_timeout = 5000');
-    yt_init_schema($db);
+    if ($create) {
+        yt_init_schema($db);
+    }
     return $db;
 }
 
@@ -342,4 +347,23 @@ function yt_stats(PDO $db): array
         'segments' => (int)$db->query('SELECT COUNT(*) FROM segments')->fetchColumn(),
         'channels' => (int)$db->query('SELECT COUNT(DISTINCT channel) FROM videos')->fetchColumn(),
     ];
+}
+
+function yt_database_info(PDO $db): array
+{
+    $stats = yt_stats($db);
+    return [
+        'path' => yt_db_path(),
+        'exists' => is_file(yt_db_path()),
+        'bytes' => is_file(yt_db_path()) ? filesize(yt_db_path()) : 0,
+        'ready' => $stats['videos'] > 0,
+        'stats' => $stats,
+    ];
+}
+
+function yt_require_data(PDO $db): void
+{
+    if (yt_stats($db)['videos'] === 0) {
+        throw new RuntimeException('Transcript database is empty. Upload the populated transcripts.sqlite3 file to youtube-transcripts/data/.');
+    }
 }

@@ -4,17 +4,19 @@ declare(strict_types=1);
 require __DIR__ . '/lib.php';
 
 try {
-    $db = yt_db();
+    $db = yt_db(false);
     $action = strtolower((string)($_GET['action'] ?? 'search'));
     if ($action === 'channels') {
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
             'channels' => yt_channels($db),
+            'database' => yt_database_info($db),
             'stats' => yt_stats($db),
         ]);
     }
     if ($action === 'search') {
+        yt_require_data($db);
         $query = (string)($_GET['q'] ?? '');
         $channel = (string)($_GET['channel'] ?? '');
         $videoId = (string)($_GET['video_id'] ?? '');

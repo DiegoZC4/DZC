@@ -4,7 +4,7 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/youtube-transcripts/lib.php';
 
 try {
-    $db = yt_db();
+    $db = yt_db(false);
     $action = strtolower((string)($_GET['action'] ?? ''));
     $query = trim((string)($_GET['q'] ?? ''));
 
@@ -17,6 +17,7 @@ try {
             'ok' => true,
             'version' => YT_API_VERSION,
             'route' => '/ytscripts',
+            'database' => yt_database_info($db),
             'stats' => yt_stats($db),
             'examples' => [
                 '/ytscripts?action=channels',
@@ -32,11 +33,13 @@ try {
             'ok' => true,
             'version' => YT_API_VERSION,
             'channels' => yt_channels($db),
+            'database' => yt_database_info($db),
             'stats' => yt_stats($db),
         ]);
     }
 
     if ($action === 'search') {
+        yt_require_data($db);
         ytscripts_json([
             'ok' => true,
             'version' => YT_API_VERSION,

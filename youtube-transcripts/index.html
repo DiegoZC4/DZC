@@ -27,10 +27,13 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .meta { min-height: 24px; color: var(--muted); font-size: 14px; margin: 2px 0 14px; }
 .results { display: grid; gap: 9px; }
 .result { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
-.result-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+.result-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
 .title { font-weight: 800; line-height: 1.25; }
 .channel { color: var(--muted); font-size: 13px; margin-top: 2px; }
-.time { flex: 0 0 auto; color: var(--accent); background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; padding: 4px 9px; font-weight: 800; text-decoration: none; }
+.video-count { color: var(--muted); flex: 0 0 auto; font-size: 13px; font-weight: 800; }
+.hits { display: grid; gap: 8px; }
+.hit { border-top: 1px solid var(--line); display: grid; gap: 6px; grid-template-columns: auto minmax(0, 1fr); padding-top: 9px; }
+.time { align-self: start; color: var(--accent); background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; padding: 4px 9px; font-weight: 800; text-decoration: none; }
 .snippet { color: #30302e; line-height: 1.45; }
 .snippet strong { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
 .match-count { color: var(--muted); font-size: 12px; font-weight: 700; margin-left: 6px; }
@@ -109,13 +112,15 @@ async function search() {
 }
 
 function renderResults(items, query) {
-  meta.textContent = `${items.length} result${items.length === 1 ? '' : 's'} for "${query}"`;
+  const groups = groupResultsByVideo(items);
+  const videoCount = groups.length;
+  meta.textContent = `${items.length} result${items.length === 1 ? '' : 's'} in ${videoCount} video${videoCount === 1 ? '' : 's'} for "${query}"`;
   if (!items.length) {
     results.innerHTML = '<div class="empty">No matches.</div>';
     return;
   }
   const fragment = document.createDocumentFragment();
-  for (const item of items) {
+  for (const group of groups) {
     const article = document.createElement('article');
     article.className = 'result';
     article.innerHTML = `
@@ -124,26 +129,57 @@ function renderResults(items, query) {
           <div class="title"></div>
           <div class="channel"></div>
         </div>
-        <a class="time" target="_blank" rel="noreferrer"></a>
+        <div class="video-count"></div>
       </div>
-      <div class="snippet"></div>
+      <div class="hits"></div>
     `;
-    article.querySelector('.title').textContent = item.title || item.youtube_id;
-    const time = article.querySelector('.time');
-    time.href = item.url;
-    time.textContent = item.timestamp || '0:00';
+    const first = group.items[0];
+    article.querySelector('.title').textContent = first.title || first.youtube_id;
     const channel = article.querySelector('.channel');
-    channel.textContent = item.channel || '';
-    if (item.match_count > 1) {
-      const count = document.createElement('span');
-      count.className = 'match-count';
-      count.textContent = `${item.match_count} nearby matches`;
-      channel.appendChild(count);
+    channel.textContent = first.channel || '';
+    article.querySelector('.video-count').textContent = `${group.items.length} hit${group.items.length === 1 ? '' : 's'}`;
+    const hits = article.querySelector('.hits');
+    for (const item of group.items) {
+      const hit = document.createElement('div');
+      hit.className = 'hit';
+      hit.innerHTML = `
+        <a class="time" target="_blank" rel="noreferrer"></a>
+        <div>
+          <div class="snippet"></div>
+        </div>
+      `;
+      const time = hit.querySelector('.time');
+      time.href = item.url;
+      time.textContent = item.timestamp || '0:00';
+      const snippet = hit.querySelector('.snippet');
+      renderSnippet(snippet, item);
+      if (item.match_count > 1) {
+        const count = document.createElement('span');
+        count.className = 'match-count';
+        count.textContent = `${item.match_count} nearby matches`;
+        snippet.appendChild(count);
+      }
+      hits.appendChild(hit);
     }
-    renderSnippet(article.querySelector('.snippet'), item);
     fragment.appendChild(article);
   }
   results.replaceChildren(fragment);
+}
+
+function groupResultsByVideo(items) {
+  const groups = [];
+  const byVideo = new Map();
+  for (const item of items) {
+    const key = item.youtube_id || `${item.channel}:${item.title}`;
+    let group = byVideo.get(key);
+    if (!group) {
+      group = { key, items: [] };
+      byVideo.set(key, group);
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  return groups;
 }
 
 function renderSnippet(container, item) {

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 const YT_API_VERSION = '1';
 const YT_DEFAULT_SOURCE_DIR = '/Users/diego/Desktop/Read/YouTube Channel Transcripts';
+const YT_SNIPPET_CONTEXT_CHARS = 120;
 
 function yt_data_dir(): string
 {
@@ -314,7 +315,7 @@ function yt_find_occurrences(string $transcript, string $query): array
     );
 }
 
-function yt_group_occurrences(array $occurrences, int $maxGap = 100): array
+function yt_group_occurrences(array $occurrences, int $maxGap = YT_SNIPPET_CONTEXT_CHARS): array
 {
     if (!$occurrences) {
         return [];
@@ -325,7 +326,7 @@ function yt_group_occurrences(array $occurrences, int $maxGap = 100): array
     foreach ($occurrences as $occurrence) {
         $offset = (int)$occurrence['offset'];
         $length = max(1, (int)$occurrence['length']);
-        if ($previousEnd !== null && $offset - $previousEnd >= $maxGap) {
+        if ($previousEnd !== null && $offset - $previousEnd > $maxGap) {
             $groups[] = $current;
             $current = [];
         }
@@ -355,8 +356,8 @@ function yt_snippet(string $transcript, array $matches): array
 {
     $first = $matches[0];
     $last = $matches[count($matches) - 1];
-    $start = max(0, (int)$first['offset'] - 110);
-    $end = min(strlen($transcript), (int)$last['offset'] + max(1, (int)$last['length']) + 150);
+    $start = max(0, (int)$first['offset'] - YT_SNIPPET_CONTEXT_CHARS);
+    $end = min(strlen($transcript), (int)$last['offset'] + max(1, (int)$last['length']) + YT_SNIPPET_CONTEXT_CHARS);
     $parts = [];
     if ($start > 0) {
         $parts[] = ['text' => '...', 'match' => false];

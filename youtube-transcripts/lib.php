@@ -231,7 +231,51 @@ function yt_save_video(PDO $db, string $youtubeId, string $channel, string $titl
 function yt_channels(PDO $db): array
 {
     $stmt = $db->query('SELECT channel, COUNT(*) AS video_count FROM videos GROUP BY channel ORDER BY channel COLLATE NOCASE');
-    return $stmt->fetchAll();
+    $channels = $stmt->fetchAll();
+    foreach ($channels as &$row) {
+        $row['category'] = yt_channel_category((string)$row['channel']);
+    }
+    return $channels;
+}
+
+function yt_channel_category(string $channel): string
+{
+    static $categories = [
+        '3Blue1Brown' => 'Math',
+        '12tone' => 'Music',
+        'Adam Neely' => 'Music',
+        'BarryHarrisVideos' => 'Music',
+        'Bill Burr' => 'Comedy',
+        'Bret Weinstein' => 'Philosophy',
+        'BroScienceLife' => 'Comedy',
+        'Cape Falcon Kayak' => 'Engineering',
+        'Dwarkesh Patel' => 'AI',
+        'Eric Weinstein' => 'Philosophy',
+        'Henry Segerman' => 'Math',
+        'Human Behavioral Biology - Sapolsky (Stanford)' => 'Science',
+        'Jacob Collier' => 'Music',
+        'Jake and Amir' => 'Comedy',
+        'JennaMarbles' => 'Comedy',
+        'Jonathan Pageau' => 'Philosophy',
+        'June Lee' => 'Music',
+        'Key & Peele' => 'Comedy',
+        'Lex Fridman' => 'AI',
+        'Mathologer' => 'Math',
+        'Numberphile' => 'Math',
+        'Rick & Esther Have A Time' => 'Comedy',
+        'Rick Glassman' => 'Comedy',
+        'Robert Miles AI Safety' => 'AI',
+        'Sam Harris' => 'Philosophy',
+        'Stand-up Maths' => 'Math',
+        'Steve Mould' => 'Engineering',
+        'Supergood' => 'Comedy',
+        'The Fighter and The Kid' => 'Comedy',
+        'The Tim Dillon Show' => 'Comedy',
+        'Theo Von' => 'Comedy',
+        'TigerBelly' => 'Comedy',
+        'Veritasium' => 'Science',
+    ];
+    return $categories[$channel] ?? 'Other';
 }
 
 function yt_search(PDO $db, string $query, array|string $channel = '', int $limit = 50, string $videoId = ''): array

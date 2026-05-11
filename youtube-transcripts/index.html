@@ -25,10 +25,14 @@ input, button { min-height: 46px; border: 1px solid var(--line); background: var
 input { padding: 0 12px; border-radius: 7px; }
 button { border-radius: 7px; cursor: pointer; font-weight: 800; }
 button.primary { border-color: var(--accent); background: var(--accent); color: white; }
-.channels { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; margin-bottom: 12px; padding: 10px; }
+.channels { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 10px; margin-bottom: 12px; padding: 10px; }
 .channel-tools { align-items: center; display: flex; gap: 10px; justify-content: space-between; }
 .channel-tools button { min-height: 34px; padding: 0 12px; }
 .channel-summary { color: var(--muted); font-size: 13px; }
+.category-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.category-toggle { align-items: center; background: #f3f3ee; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); display: inline-flex; font-size: 13px; font-weight: 850; gap: 6px; min-height: 34px; padding: 0 11px; }
+.category-toggle[data-state="all"] { background: var(--accent-soft); border-color: #ffd2cf; color: var(--accent); }
+.category-toggle[data-state="some"] { background: #fff9e7; border-color: #ead9a5; color: #8b6200; }
 .channel-grid { display: flex; flex-wrap: wrap; gap: 6px; }
 .channel-choice { align-items: center; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; display: inline-flex; font-size: 13px; font-weight: 750; gap: 6px; padding: 7px 10px; }
 .channel-choice input { accent-color: var(--accent); min-height: 0; }
@@ -65,6 +69,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
       <button type="button" id="allChannelsButton">All</button>
       <div class="channel-summary" id="channelSummary">Loading channels...</div>
     </div>
+    <div class="category-grid" id="categoryGrid" aria-label="Channel categories"></div>
     <div class="channel-grid" id="channelGrid"></div>
   </section>
   <div class="meta" id="meta"></div>
@@ -74,6 +79,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 const form = document.getElementById('searchForm');
 const queryInput = document.getElementById('queryInput');
 const allChannelsButton = document.getElementById('allChannelsButton');
+const categoryGrid = document.getElementById('categoryGrid');
 const channelGrid = document.getElementById('channelGrid');
 const channelSummary = document.getElementById('channelSummary');
 const meta = document.getElementById('meta');
@@ -89,13 +95,21 @@ async function init() {
     search();
   });
   allChannelsButton.addEventListener('click', toggleAllChannels);
+  categoryGrid.addEventListener('click', event => {
+    const button = event.target.closest('[data-category]');
+    if (button) toggleCategory(button.dataset.category);
+  });
   channelGrid.addEventListener('change', updateChannelSummary);
 }
 
 async function loadChannels() {
   try {
     const payload = await getJson('channels.json');
-    channelRows = payload.channels || [];
+    channelRows = (payload.channels || []).map(row => ({
+      ...row,
+      category: row.category || inferChannelCategory(row.channel)
+    }));
+    renderCategoryToggles(channelRows);
     renderChannelChoices(channelRows);
     const stats = payload.stats || {};
     meta.textContent = `${stats.videos || 0} videos, ${stats.channels || 0} channels indexed`;
@@ -121,11 +135,28 @@ function renderChannelChoices(rows) {
       <span></span>
     `;
     label.querySelector('input').value = row.channel;
+    label.querySelector('input').dataset.category = row.category;
     label.querySelector('span').textContent = `${row.channel} (${row.video_count})`;
     fragment.appendChild(label);
   }
   channelGrid.replaceChildren(fragment);
   updateChannelSummary();
+}
+
+function renderCategoryToggles(rows) {
+  const categories = [...new Set(rows.map(row => row.category || 'Other'))].sort((a, b) => a.localeCompare(b));
+  const fragment = document.createDocumentFragment();
+  for (const category of categories) {
+    const count = rows.filter(row => (row.category || 'Other') === category).length;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'category-toggle';
+    button.dataset.category = category;
+    button.textContent = `${category} (${count})`;
+    fragment.appendChild(button);
+  }
+  categoryGrid.replaceChildren(fragment);
+  updateCategoryStates();
 }
 
 function selectedChannels() {
@@ -136,6 +167,7 @@ function updateChannelSummary() {
   const selected = selectedChannels().length;
   const total = channelRows.length;
   channelSummary.textContent = `${selected} of ${total} channels selected`;
+  updateCategoryStates();
 }
 
 function toggleAllChannels() {
@@ -145,6 +177,66 @@ function toggleAllChannels() {
     input.checked = shouldSelect;
   }
   updateChannelSummary();
+}
+
+function toggleCategory(category) {
+  const inputs = categoryInputs(category);
+  const shouldSelect = inputs.some(input => !input.checked);
+  for (const input of inputs) {
+    input.checked = shouldSelect;
+  }
+  updateChannelSummary();
+}
+
+function updateCategoryStates() {
+  for (const button of categoryGrid.querySelectorAll('[data-category]')) {
+    const inputs = categoryInputs(button.dataset.category);
+    const selected = inputs.filter(input => input.checked).length;
+    button.dataset.state = selected === 0 ? 'none' : selected === inputs.length ? 'all' : 'some';
+  }
+}
+
+function categoryInputs(category) {
+  return [...channelGrid.querySelectorAll('input[name="channels"]')].filter(input => input.dataset.category === category);
+}
+
+function inferChannelCategory(channel) {
+  const categories = {
+    '3Blue1Brown': 'Math',
+    '12tone': 'Music',
+    'Adam Neely': 'Music',
+    'BarryHarrisVideos': 'Music',
+    'Bill Burr': 'Comedy',
+    'Bret Weinstein': 'Philosophy',
+    'BroScienceLife': 'Comedy',
+    'Cape Falcon Kayak': 'Engineering',
+    'Dwarkesh Patel': 'AI',
+    'Eric Weinstein': 'Philosophy',
+    'Henry Segerman': 'Math',
+    'Human Behavioral Biology - Sapolsky (Stanford)': 'Science',
+    'Jacob Collier': 'Music',
+    'Jake and Amir': 'Comedy',
+    'JennaMarbles': 'Comedy',
+    'Jonathan Pageau': 'Philosophy',
+    'June Lee': 'Music',
+    'Key & Peele': 'Comedy',
+    'Lex Fridman': 'AI',
+    'Mathologer': 'Math',
+    'Numberphile': 'Math',
+    'Rick & Esther Have A Time': 'Comedy',
+    'Rick Glassman': 'Comedy',
+    'Robert Miles AI Safety': 'AI',
+    'Sam Harris': 'Philosophy',
+    'Stand-up Maths': 'Math',
+    'Steve Mould': 'Engineering',
+    'Supergood': 'Comedy',
+    'The Fighter and The Kid': 'Comedy',
+    'The Tim Dillon Show': 'Comedy',
+    'Theo Von': 'Comedy',
+    'TigerBelly': 'Comedy',
+    'Veritasium': 'Science'
+  };
+  return categories[channel] || 'Other';
 }
 
 async function search() {

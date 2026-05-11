@@ -14,16 +14,16 @@ This app searches YouTube transcript markdown files with PHP and SQLite FTS.
 From a machine that can read the transcript markdown files:
 
 ```bash
-/opt/homebrew/bin/php /Users/diego/Desktop/Ego/public_html/youtube-transcripts/import.php --rebuild
+/opt/homebrew/bin/php "/Users/diego/Desktop/Read/YouTube Channel Transcripts/import.php" --rebuild
 ```
 
 The generated database is:
 
 ```text
-youtube-transcripts/data/transcripts.sqlite3
+/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3
 ```
 
-The database is ignored by git. The current full import is about 928 MB, which is too large for normal GitHub tracking. Upload it to the same path on Hostinger when deploying transcript data:
+The database is ignored by git. The current full import is about 2.0 GB, which is too large for normal GitHub tracking. Upload it to the same path on Hostinger when deploying transcript data:
 
 ```text
 public_html/youtube-transcripts/data/transcripts.sqlite3
@@ -32,11 +32,11 @@ public_html/youtube-transcripts/data/transcripts.sqlite3
 ## Test
 
 ```bash
-/opt/homebrew/bin/php -l youtube-transcripts/lib.php
-/opt/homebrew/bin/php -l youtube-transcripts/api.php
-/opt/homebrew/bin/php -l youtube-transcripts/import.php
-sqlite3 youtube-transcripts/data/transcripts.sqlite3 ".schema videos"
-sqlite3 youtube-transcripts/data/transcripts.sqlite3 ".schema segments"
+/opt/homebrew/bin/php -l "/Users/diego/Desktop/Read/YouTube Channel Transcripts/lib.php"
+/opt/homebrew/bin/php -l "/Users/diego/Desktop/Read/YouTube Channel Transcripts/api.php"
+/opt/homebrew/bin/php -l "/Users/diego/Desktop/Read/YouTube Channel Transcripts/import.php"
+sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" ".schema videos"
+sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" ".schema segments"
 ```
 
 ## Direct API

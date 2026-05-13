@@ -1289,11 +1289,11 @@
           if (typeof persisted.equalLoudness === "boolean") state.equalLoudness = persisted.equalLoudness;
           if (typeof persisted.waveform === "string" && waveformGainMultiplier(persisted.waveform)) state.waveform = persisted.waveform;
           if (Number.isFinite(Number(persisted.baseGain))) {
-            state.baseGain = clamp(Number(persisted.baseGain), 0.02, 0.7);
+            state.baseGain = clamp(Number(persisted.baseGain), 0, 1);
           } else if (persisted.waveformGains && typeof persisted.waveformGains === "object") {
             const legacyGain = Number(persisted.waveformGains[state.waveform]);
             if (Number.isFinite(legacyGain)) {
-              state.baseGain = clamp(legacyGain / waveformGainMultiplier(state.waveform), 0.02, 0.7);
+              state.baseGain = clamp(legacyGain / waveformGainMultiplier(state.waveform), 0, 1);
             }
           }
           if (Number.isFinite(Number(persisted.timbreBlend))) state.timbreBlend = clamp(Number(persisted.timbreBlend), 0, 1);
@@ -1789,7 +1789,7 @@
       }
 
       function setBaseGain(nextGain) {
-        state.baseGain = clamp(nextGain, 0.02, 0.7);
+        state.baseGain = clamp(nextGain, 0, 1);
         syncWaveformGainControl();
         if (state.holdActive) {
           const promptTarget = [2, 3, 4].includes(state.chordSize) ? state.targetMidis : state.targetMidi;
@@ -3411,7 +3411,7 @@
       attachValueDrag(gainBox, {
         get: () => state.baseGain,
         set: setBaseGain,
-        dragScale: 0.68 / 240,
+        dragScale: 1 / 240,
         wheelStep: 0.01,
       });
       attachValueDrag(timbreBlendBox, {

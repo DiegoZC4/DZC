@@ -33,12 +33,26 @@ class Segment:
 
 
 @dataclass
+class Cue:
+    index: int
+    start_seconds: float
+    end_seconds: float
+    char_start: int
+    char_end: int
+    text: str
+
+
+@dataclass
 class Marker:
     index: int
     char_start: int
     char_end: int
     start_seconds: float
     end_seconds: float
+    cue_index: int = 0
+    cue_char_start: int = 0
+    cue_char_end: int = 0
+    cue_text: str = ""
     window_index: int = 0
     window_start: float = 0.0
     window_end: float = 0.0
@@ -163,53 +177,77 @@ def seconds_for_char(segments: list[Segment], offset: int) -> tuple[float, float
     return start, max(start + 0.5, end)
 
 
-def find_markers(transcript: str, segments: list[Segment], context_chars: int) -> list[Marker]:
-    markers = []
-    pos = 0
-    while True:
-        offset = transcript.find(MARKER, pos)
-        if offset < 0:
-            break
-        start_seconds, end_seconds = seconds_for_char(segments, offset)
-        before_start = max(0, offset - context_chars)
-        after_end = min(len(transcript), offset + len(MARKER) + context_chars)
-        markers.append(
-            Marker(
-                index=len(markers),
-                char_start=offset,
-                char_end=offset + len(MARKER),
-                start_seconds=start_seconds,
-                end_seconds=end_seconds,
-                youtube_before=transcript[before_start:offset],
-                youtube_after=transcript[offset + len(MARKER):after_end],
-                youtube_excerpt=transcript[before_start:after_end],
+def build_cues(transcript: str, segments: list[Segment]) -> list[Cue]:
+    cues: list[Cue] = []
+    for index, segment in enumerate(segments):
+        char_end = segments[index + 1].char_index if index + 1 < len(segments) else len(transcript)
+        end_seconds = float(segments[index + 1].start_seconds) if index + 1 < len(segments) else float(segment.start_seconds + 8)
+        cues.append(
+            Cue(
+                index=index,
+                start_seconds=float(segment.start_seconds),
+                end_seconds=max(float(segment.start_seconds) + 0.5, end_seconds),
+                char_start=segment.char_index,
+                char_end=max(segment.char_index, char_end),
+                text=transcript[segment.char_index:char_end],
             )
         )
-        pos = offset + len(MARKER)
+    return cues
+
+
+def find_markers(transcript: str, segments: list[Segment], context_chars: int) -> list[Marker]:
+    return find_markers_by_cue(transcript, segments)
+
+
+def find_markers_by_cue(transcript: str, segments: list[Segment]) -> list[Marker]:
+    markers = []
+    for cue in build_cues(transcript, segments):
+        pos = 0
+        while True:
+            offset = cue.text.find(MARKER, pos)
+            if offset < 0:
+                break
+            char_start = cue.char_start + offset
+            previous_marker = cue.text.rfind(MARKER, 0, offset)
+            before_start = previous_marker + len(MARKER) if previous_marker >= 0 else 0
+            next_marker = cue.text.find(MARKER, offset + len(MARKER))
+            after_end = next_marker if next_marker >= 0 else len(cue.text)
+            markers.append(
+                Marker(
+                    index=len(markers),
+                    char_start=char_start,
+                    char_end=char_start + len(MARKER),
+                    start_seconds=cue.start_seconds,
+                    end_seconds=cue.end_seconds,
+                    cue_index=cue.index,
+                    cue_char_start=cue.char_start,
+                    cue_char_end=cue.char_end,
+                    cue_text=cue.text,
+                    youtube_before=cue.text[before_start:offset],
+                    youtube_after=cue.text[offset + len(MARKER):after_end],
+                    youtube_excerpt=cue.text,
+                )
+            )
+            pos = offset + len(MARKER)
     return markers
 
 
 def build_windows(markers: list[Marker], duration: float, pad: float, merge_gap: float) -> list[tuple[float, float, list[Marker]]]:
-    intervals = []
+    by_cue: dict[int, list[Marker]] = {}
     for marker in markers:
-        start = max(0.0, marker.start_seconds - pad)
-        end = min(duration, max(marker.end_seconds, marker.start_seconds + 0.5) + pad)
-        intervals.append((start, end, marker))
-    intervals.sort(key=lambda item: item[0])
-    windows: list[list[Any]] = []
-    for start, end, marker in intervals:
-        if not windows or start > float(windows[-1][1]) + merge_gap:
-            windows.append([start, end, [marker]])
-        else:
-            windows[-1][1] = max(float(windows[-1][1]), end)
-            windows[-1][2].append(marker)
-    out = []
-    for index, (start, end, window_markers) in enumerate(windows):
+        by_cue.setdefault(marker.cue_index, []).append(marker)
+    out: list[tuple[float, float, list[Marker]]] = []
+    for index, cue_index in enumerate(sorted(by_cue)):
+        window_markers = by_cue[cue_index]
+        cue_start = min(marker.start_seconds for marker in window_markers)
+        cue_end = max(marker.end_seconds for marker in window_markers)
+        start = max(0.0, cue_start - pad)
+        end = min(duration, max(cue_end, cue_start + 0.5) + pad)
         for marker in window_markers:
             marker.window_index = index
             marker.window_start = float(start)
             marker.window_end = float(end)
-        out.append((float(start), float(end), list(window_markers)))
+        out.append((float(start), float(end), sorted(window_markers, key=lambda marker: marker.char_start)))
     return out
 
 
@@ -266,6 +304,12 @@ def cut_audio(audio_url: str, start: float, end: float, out_path: Path) -> None:
 
 
 def transcribe_window(wav_path: Path, out_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
+    if args.backend == "mlx":
+        return transcribe_window_mlx(wav_path, out_dir, args)
+    return transcribe_window_openai(wav_path, out_dir, args)
+
+
+def transcribe_window_openai(wav_path: Path, out_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
     proc = run([
         str(args.whisper_bin),
         str(wav_path),
@@ -280,7 +324,7 @@ def transcribe_window(wav_path: Path, out_dir: Path, args: argparse.Namespace) -
         "--fp16",
         "False",
         "--word_timestamps",
-        "True",
+        str(args.word_timestamps),
         "--condition_on_previous_text",
         "False",
         "--output_format",
@@ -296,6 +340,29 @@ def transcribe_window(wav_path: Path, out_dir: Path, args: argparse.Namespace) -
     if not json_path.exists():
         raise RuntimeError(f"Whisper did not write {json_path}")
     return json.loads(json_path.read_text(encoding="utf-8"))
+
+
+def transcribe_window_mlx(wav_path: Path, out_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        import mlx_whisper
+    except ImportError as exc:
+        raise RuntimeError(
+            "mlx-whisper is not importable. Run this backend with "
+            f"{WHISPER.parent / 'python'} refresh/stt_patch_censored.py --backend mlx ..."
+        ) from exc
+
+    result = mlx_whisper.transcribe(
+        str(wav_path),
+        path_or_hf_repo=args.mlx_model,
+        language="en",
+        word_timestamps=args.word_timestamps,
+        condition_on_previous_text=False,
+        verbose=False,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    json_path = out_dir / (wav_path.stem + ".json")
+    json_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    return result
 
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9']+")
@@ -353,53 +420,60 @@ def find_subsequence(tokens: list[str], needle: list[str], *, start: int = 0, en
     return matches
 
 
-def choose_replacement(marker: Marker, words: list[Word], stt_text: str) -> tuple[str, float, str, str]:
+def choose_replacement(marker: Marker, words: list[Word], stt_text: str, args: argparse.Namespace) -> tuple[str, float, str, str]:
     tokens = word_tokens(words)
-    before_all = context_tokens(marker.youtube_before, from_right=True)
-    after_all = context_tokens(marker.youtube_after, from_right=False)
+    before_all = context_tokens(marker.youtube_before, from_right=True, max_tokens=args.context_tokens)
+    after_all = context_tokens(marker.youtube_after, from_right=False, max_tokens=args.context_tokens)
     if not words or not tokens:
         return "", 0.0, "skipped", "empty STT output"
 
     best: tuple[float, str, int, int, str] | None = None
-    for before_len in range(min(5, len(before_all)), 0, -1):
+    for before_len in range(min(args.context_tokens, len(before_all)), -1, -1):
         before = before_all[-before_len:]
-        before_matches = find_subsequence(tokens, before)
+        before_matches = find_subsequence(tokens, before) if before_len else [0]
         for before_index in before_matches:
             candidate_start = before_index + before_len
-            for after_len in range(min(5, len(after_all)), 0, -1):
+            max_after_len = min(args.context_tokens, len(after_all))
+            after_lengths = range(max_after_len, -1, -1) if max_after_len else [0]
+            for after_len in after_lengths:
+                if before_len == 0 and after_len == 0:
+                    continue
                 after = after_all[:after_len]
-                after_matches = find_subsequence(tokens, after, start=candidate_start)
+                after_matches = find_subsequence(tokens, after, start=candidate_start) if after_len else [
+                    min(len(tokens), candidate_start + args.max_replacement_tokens)
+                ]
                 for after_index in after_matches:
                     candidate_end = after_index
                     candidate_words = words[candidate_start:candidate_end]
-                    if not candidate_words or len(candidate_words) > 6:
+                    if not candidate_words:
                         continue
-                    midpoint = (candidate_words[0].start + candidate_words[-1].end) / 2
-                    distance = abs(midpoint - marker.start_seconds)
-                    if distance > 6:
+                    if len(candidate_words) > args.max_replacement_tokens:
                         continue
                     replacement = clean_replacement(" ".join(word.text for word in candidate_words))
-                    if not replacement:
+                    if not replacement or len(replacement) > args.max_replacement_chars:
                         continue
-                    score = before_len + after_len - (distance / 10)
-                    reason = f"matched {before_len} before token(s), {after_len} after token(s), {distance:.1f}s from cue"
+                    has_left_boundary = before_len > 0
+                    has_right_boundary = after_len > 0
+                    if not (has_left_boundary and has_right_boundary) and len(candidate_words) > 1:
+                        continue
+                    score = before_len + after_len - (0.15 * max(0, len(candidate_words) - 1))
+                    if not (has_left_boundary and has_right_boundary):
+                        score = min(score, args.context_tokens)
+                    reason = f"cue bounded; matched {before_len} before token(s), {after_len} after token(s)"
                     if best is None or score > best[0]:
                         best = (score, replacement, candidate_start, candidate_end, reason)
 
     if best is not None:
         score, replacement, start, end, reason = best
-        confidence = max(0.0, min(1.0, score / 10.0))
+        available_context = min(args.context_tokens, len(before_all)) + min(args.context_tokens, len(after_all))
+        confidence = max(0.0, min(1.0, score / max(1, available_context)))
         return replacement, confidence, "proposed", reason
 
-    # Conservative fallback: keep a record but do not auto-apply.
-    nearby = [
-        word for word in words
-        if marker.start_seconds - 1.0 <= word.start <= marker.end_seconds + 1.0
-    ]
-    nearby_text = clean_replacement(" ".join(word.text for word in nearby))
-    if nearby_text:
-        return nearby_text, 0.25, "review", "nearby words only; context alignment failed"
-    return "", 0.0, "skipped", "context alignment failed"
+    cue_text = clean_replacement(stt_text)
+    reason = "cue alignment failed"
+    if cue_text:
+        reason += f"; STT cue was {len(cue_text)} chars"
+    return "", 0.0, "skipped", reason
 
 
 def clean_replacement(text: str) -> str:
@@ -430,6 +504,7 @@ def stt_excerpt(words: list[Word], marker: Marker, text: str) -> str:
 
 
 def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace) -> int:
+    model_name = args.mlx_model if args.backend == "mlx" else args.model
     cursor = conn.execute(
         """
         INSERT INTO stt_patch_runs (
@@ -440,7 +515,7 @@ def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace
         (
             datetime.now(timezone.utc).isoformat(),
             video_id,
-            args.model,
+            f"{args.backend}:{model_name}",
             args.pad_seconds,
             args.merge_gap_seconds,
             1 if args.apply else 0,
@@ -540,15 +615,115 @@ def apply_replacements(
     return new_transcript
 
 
+def restore_run(conn: sqlite3.Connection, run_id: int, *, delete_run: bool = False) -> dict[str, Any]:
+    run = conn.execute(
+        "SELECT video_id, status FROM stt_patch_runs WHERE id = ?",
+        (run_id,),
+    ).fetchone()
+    if not run:
+        raise SystemExit(f"Run not found: {run_id}")
+    video_id = str(run[0])
+    video = fetch_video(conn, video_id)
+    segments = fetch_segments(conn, video_id)
+    rows = conn.execute(
+        """
+        SELECT marker_char_start, marker_char_end, replacement_text
+        FROM stt_patch_markers
+        WHERE run_id = ? AND applied = 1 AND replacement_text <> ''
+        ORDER BY marker_char_start
+        """,
+        (run_id,),
+    ).fetchall()
+    transcript = str(video["transcript"])
+    positions: list[tuple[int, int, str]] = []
+    current_delta = 0
+    for original_start, original_end, replacement in rows:
+        replacement = str(replacement)
+        current_start = int(original_start) + current_delta
+        current_end = current_start + len(replacement)
+        actual = transcript[current_start:current_end]
+        if actual != replacement:
+            raise RuntimeError(
+                f"Cannot safely restore run {run_id}: expected {replacement!r} at current offset "
+                f"{current_start}, found {actual!r}"
+            )
+        positions.append((current_start, current_end, replacement))
+        current_delta += len(replacement) - (int(original_end) - int(original_start))
+
+    if positions:
+        parts = []
+        cursor = 0
+        for current_start, current_end, replacement in positions:
+            parts.append(transcript[cursor:current_start])
+            parts.append(MARKER)
+            cursor = current_end
+        parts.append(transcript[cursor:])
+        restored_transcript = "".join(parts)
+
+        shifted_segments = []
+        restore_delta = 0
+        position_index = 0
+        for segment in segments:
+            while position_index < len(positions) and segment.char_index > positions[position_index][1]:
+                replacement = positions[position_index][2]
+                restore_delta += len(MARKER) - len(replacement)
+                position_index += 1
+            shifted_segments.append((segment.start_seconds, segment.char_index + restore_delta))
+
+        conn.execute(
+            "UPDATE videos SET transcript = ?, imported_at = ? WHERE youtube_id = ?",
+            (restored_transcript, datetime.now(timezone.utc).isoformat(), video_id),
+        )
+        conn.execute("DELETE FROM segments WHERE video_id = ?", (video_id,))
+        conn.executemany(
+            "INSERT INTO segments (video_id, start_seconds, char_index) VALUES (?, ?, ?)",
+            [(video_id, start, index) for start, index in shifted_segments],
+        )
+        conn.execute("DELETE FROM videos_fts WHERE youtube_id = ?", (video_id,))
+        conn.execute(
+            """
+            INSERT INTO videos_fts (youtube_id, channel, title, transcript)
+            SELECT v.youtube_id, c.name, v.title, v.transcript
+            FROM videos v
+            JOIN channels c ON c.id = v.channel_id
+            WHERE v.youtube_id = ?
+            """,
+            (video_id,),
+        )
+
+    if delete_run:
+        conn.execute("DELETE FROM stt_patch_runs WHERE id = ?", (run_id,))
+    conn.commit()
+    return {
+        "run_id": run_id,
+        "video_id": video_id,
+        "restored_replacements": len(positions),
+        "deleted_run": delete_run,
+    }
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Patch YouTube '[ __ ]' caption censor markers using local STT on tiny audio windows.")
-    parser.add_argument("--video-id", required=True)
+    parser = argparse.ArgumentParser(description="Patch YouTube '[ __ ]' caption censor markers using local STT on cue-bounded audio windows.")
+    parser.add_argument("--video-id")
+    parser.add_argument("--restore-run-id", type=int, action="append", default=[], help="Restore applied markers from a prior run and exit.")
+    parser.add_argument("--delete-restored-run", action="store_true", help="Delete restored audit runs after reversing their applied replacements.")
     parser.add_argument("--apply", action="store_true", help="Apply high-confidence replacements to videos.transcript and videos_fts.")
     parser.add_argument("--apply-threshold", type=float, default=0.55)
-    parser.add_argument("--pad-seconds", type=float, default=2.0)
-    parser.add_argument("--merge-gap-seconds", type=float, default=15.0)
+    parser.add_argument("--pad-seconds", type=float, default=0.2)
+    parser.add_argument("--merge-gap-seconds", type=float, default=0.0, help="Deprecated; cue-bounded mode does not merge separate cues.")
     parser.add_argument("--context-chars", type=int, default=220)
+    parser.add_argument("--context-tokens", type=int, default=4)
+    parser.add_argument("--max-replacement-chars", type=int, default=20)
+    parser.add_argument(
+        "--max-replacement-tokens",
+        type=int,
+        default=1,
+        help="Auto-apply only short censored spans by default; raise this for phrase-level review.",
+    )
     parser.add_argument("--model", default="small.en")
+    parser.add_argument("--backend", choices=["openai", "mlx"], default="openai")
+    parser.add_argument("--mlx-model", default="mlx-community/whisper-tiny")
+    parser.add_argument("--word-timestamps", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--model-dir", type=Path, default=Path.home() / ".cache" / "whisper")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--cookies-from-browser", default="chrome")
@@ -563,6 +738,18 @@ def main() -> int:
     conn.execute("PRAGMA journal_mode = WAL")
     ensure_tables(conn)
     conn.commit()
+
+    if args.restore_run_id:
+        restored = []
+        for run_id in args.restore_run_id:
+            restored.append(restore_run(conn, run_id, delete_run=args.delete_restored_run))
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.close()
+        print(json.dumps({"restored": restored}, indent=2))
+        return 0
+
+    if not args.video_id:
+        raise SystemExit("--video-id is required unless --restore-run-id is used")
 
     video = fetch_video(conn, args.video_id)
     segments = fetch_segments(conn, args.video_id)
@@ -605,7 +792,7 @@ def main() -> int:
                 text = stt_text(payload)
                 words = whisper_words(payload, start)
                 for marker in window_markers:
-                    candidate, confidence, marker_status, reason = choose_replacement(marker, words, text)
+                    candidate, confidence, marker_status, reason = choose_replacement(marker, words, text, args)
                     apply_marker = bool(args.apply and marker_status == "proposed" and confidence >= args.apply_threshold)
                     replacement_text = candidate if apply_marker else ""
                     if apply_marker:

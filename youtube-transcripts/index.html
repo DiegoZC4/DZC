@@ -28,9 +28,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .channel-summary { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
 .subnav { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
 .subnav a { color: var(--accent); font-size: 13px; font-weight: 850; text-decoration: none; }
-.view-tabs { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-.view-tab { background: transparent; border-color: var(--line); color: var(--muted); font-size: 13px; min-height: 32px; padding: 0 10px; }
-.view-tab[data-active="true"] { background: var(--ink); border-color: var(--ink); color: white; }
+.page-nav { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
 .channel-picker { min-width: 0; position: relative; }
 .channel-tokenbox { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; cursor: text; display: flex; flex-wrap: wrap; gap: 6px; min-height: 46px; min-width: 0; padding: 6px; }
 .channel-tokenbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204, 36, 29, 0.12); }
@@ -66,29 +64,11 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .video-result:hover { border-color: #c9c8bf; background: #fbfbf8; }
 .video-result-channel { color: var(--muted); font-size: 12px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .video-result-title { font-size: 14px; font-weight: 750; line-height: 1.24; overflow-wrap: anywhere; }
-.patch-panel { display: grid; gap: 10px; }
-.patch-toolbar { align-items: center; color: var(--muted); display: flex; font-size: 13px; gap: 10px; justify-content: space-between; }
-.patch-toolbar button { font-size: 13px; min-height: 34px; padding: 0 11px; }
-.patch-results { display: grid; gap: 9px; }
-.patch-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; padding: 9px 10px; }
-.patch-card-top { align-items: center; display: grid; gap: 8px; grid-template-columns: 24px minmax(0, 1fr) auto; }
-.patch-title { font-size: 14px; font-weight: 850; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.patch-meta { color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.patch-status { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; white-space: nowrap; }
-.patch-body { display: grid; gap: 8px; }
-.patch-window { border-top: 1px solid var(--line); display: grid; gap: 6px; padding-top: 8px; }
-.patch-window-head { color: var(--muted); font-size: 12px; font-weight: 850; }
-.patch-window-text { color: #30302e; font-size: 13.5px; line-height: 1.36; }
-.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
-.patch-word[data-applied="false"] { background: transparent; box-shadow: inset 0 -2px 0 var(--accent-soft); }
-.patch-links { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
-.patch-chip { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; text-decoration: none; }
-.patch-chip[data-applied="false"] { background: #fff; color: var(--muted); }
 .empty { padding: 18px 0; color: var(--muted); }
 @media (max-width: 680px) {
   .searchbar { grid-template-columns: 1fr; }
   .subnav { align-items: flex-start; flex-direction: column; }
-  .view-tabs { justify-content: flex-start; }
+  .page-nav { justify-content: flex-start; }
   .results { grid-template-columns: 1fr; }
   .channel-filter-input { flex-basis: 140px; }
   .video-result { grid-template-columns: 24px minmax(0, 1fr); }
@@ -112,26 +92,16 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
   </form>
   <div class="subnav">
     <div class="channel-summary" id="channelSummary">Loading channels...</div>
-    <div class="view-tabs">
-      <button class="view-tab" id="searchTab" type="button" data-active="true">Search</button>
-      <button class="view-tab" id="patchesTab" type="button">STT Patches</button>
+    <div class="page-nav">
+      <a href="patches.html">Patches</a>
       <a href="stats.html">Stats</a>
     </div>
   </div>
   <div class="meta" id="meta"></div>
   <section class="results" id="results"></section>
-  <section class="patch-panel" id="patchPanel" hidden>
-    <div class="patch-toolbar">
-      <div id="patchMeta">Loading patch audit...</div>
-      <button id="refreshPatches" type="button">Refresh</button>
-    </div>
-    <section class="patch-results" id="patchResults"></section>
-  </section>
 </main>
 <script>
 const form = document.getElementById('searchForm');
-const searchTab = document.getElementById('searchTab');
-const patchesTab = document.getElementById('patchesTab');
 const titleInput = document.getElementById('titleInput');
 const queryInput = document.getElementById('queryInput');
 const channelPicker = document.getElementById('channelPicker');
@@ -141,15 +111,10 @@ const channelOptions = document.getElementById('channelOptions');
 const channelSummary = document.getElementById('channelSummary');
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
-const patchPanel = document.getElementById('patchPanel');
-const patchMeta = document.getElementById('patchMeta');
-const patchResults = document.getElementById('patchResults');
-const refreshPatches = document.getElementById('refreshPatches');
 let channelRows = [];
 let channelByName = new Map();
 let selectedFilters = [];
 let activeOptionIndex = -1;
-let patchesLoaded = false;
 const CATEGORY_STYLES = {
   AI: { accent: '#2563eb', bg: '#f4f8ff', soft: '#dbeafe', chip: '#eff6ff', ink: '#1d4ed8', line: '#bfdbfe' },
   Comedy: { accent: '#db2777', bg: '#fff5fa', soft: '#fce7f3', chip: '#fdf2f8', ink: '#be185d', line: '#fbcfe8' },
@@ -172,9 +137,6 @@ async function init() {
     event.preventDefault();
     search();
   });
-  searchTab.addEventListener('click', () => setView('search'));
-  patchesTab.addEventListener('click', () => setView('patches'));
-  refreshPatches.addEventListener('click', () => loadPatches(true));
   channelTokenbox.addEventListener('click', () => channelFilterInput.focus());
   channelFilterInput.addEventListener('input', renderChannelOptions);
   channelFilterInput.addEventListener('focus', openChannelOptions);
@@ -478,218 +440,6 @@ function inferChannelCategory(channel) {
     'Veritasium': 'Science'
   };
   return categories[channel] || 'Other';
-}
-
-function setView(view) {
-  const showingPatches = view === 'patches';
-  form.hidden = showingPatches;
-  meta.hidden = showingPatches;
-  results.hidden = showingPatches;
-  channelSummary.hidden = showingPatches;
-  patchPanel.hidden = !showingPatches;
-  searchTab.dataset.active = showingPatches ? 'false' : 'true';
-  patchesTab.dataset.active = showingPatches ? 'true' : 'false';
-  if (showingPatches) loadPatches();
-}
-
-async function loadPatches(force = false) {
-  if (patchesLoaded && !force) return;
-  patchesLoaded = true;
-  patchMeta.textContent = 'Loading patch audit...';
-  patchResults.innerHTML = '';
-  try {
-    const payload = await getJson('api.php?action=patches&limit=200');
-    renderPatches(payload.patches || {});
-  } catch (error) {
-    patchMeta.textContent = error.message;
-    patchResults.innerHTML = '';
-  }
-}
-
-function renderPatches(payload) {
-  const markers = payload.markers || [];
-  const runs = payload.runs || [];
-  const latestRun = runs[0] || null;
-  const appliedCount = markers.filter(item => item.applied).length;
-  const groups = groupPatchMarkers(markers);
-  const videoCount = new Set(markers.map(item => item.video_id)).size;
-  if (markers.length) {
-    patchMeta.textContent = `${groups.length} patch card${groups.length === 1 ? '' : 's'} · ${markers.length} marker${markers.length === 1 ? '' : 's'} from ${videoCount} video${videoCount === 1 ? '' : 's'} · ${appliedCount} applied`;
-  } else if (latestRun) {
-    const error = latestRun.error ? ` · ${latestRun.error}` : '';
-    patchMeta.textContent = `Latest run #${latestRun.id}: ${latestRun.status}${error}`;
-  } else {
-    patchMeta.textContent = 'No STT patch runs yet.';
-  }
-
-  if (!markers.length) {
-    patchResults.innerHTML = '<div class="empty">No patch markers recorded yet.</div>';
-    return;
-  }
-
-  const fragment = document.createDocumentFragment();
-  for (const group of groups) {
-    const first = group.markers[0];
-    const article = document.createElement('article');
-    article.className = 'patch-card';
-    article.innerHTML = `
-      <div class="patch-card-top">
-        <span class="avatar-slot"></span>
-        <div>
-          <div class="patch-title"></div>
-          <div class="patch-meta"></div>
-        </div>
-        <div class="patch-status"></div>
-      </div>
-      <div class="patch-body"></div>
-    `;
-    article.querySelector('.avatar-slot').replaceWith(channelAvatarElement(first.channel || ''));
-    article.querySelector('.patch-title').textContent = first.title || first.video_id || '';
-    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · run #${first.run_id} · ${group.windows.length} audio window${group.windows.length === 1 ? '' : 's'}`;
-    const status = article.querySelector('.patch-status');
-    status.textContent = `${group.applied} / ${group.markers.length} applied`;
-
-    const body = article.querySelector('.patch-body');
-    for (const windowGroup of group.windows) {
-      const windowElement = document.createElement('section');
-      windowElement.className = 'patch-window';
-      windowElement.innerHTML = `
-        <div class="patch-window-head"></div>
-        <div class="patch-window-text"></div>
-        <div class="patch-links"></div>
-      `;
-      windowElement.querySelector('.patch-window-head').textContent = `Window ${windowGroup.start || '0:00'}-${windowGroup.end || '0:00'} · ${windowGroup.markers.length} marker${windowGroup.markers.length === 1 ? '' : 's'}`;
-      renderPatchWindowText(windowElement.querySelector('.patch-window-text'), windowGroup);
-      renderPatchLinks(windowElement.querySelector('.patch-links'), windowGroup.markers);
-      body.appendChild(windowElement);
-    }
-    fragment.appendChild(article);
-  }
-  patchResults.replaceChildren(fragment);
-}
-
-function groupPatchMarkers(markers) {
-  const groupsByKey = new Map();
-  for (const marker of markers) {
-    const key = `${marker.run_id}:${marker.video_id}`;
-    if (!groupsByKey.has(key)) {
-      groupsByKey.set(key, {
-        key,
-        markers: [],
-        applied: 0,
-        windowsByKey: new Map()
-      });
-    }
-    const group = groupsByKey.get(key);
-    group.markers.push(marker);
-    if (marker.applied) group.applied++;
-    const windowKey = String(marker.window_index);
-    if (!group.windowsByKey.has(windowKey)) {
-      group.windowsByKey.set(windowKey, {
-        index: marker.window_index,
-        start: marker.window_start_timestamp,
-        end: marker.window_end_timestamp,
-        text: stripPatchMarkers(marker.stt_text || marker.stt_excerpt || ''),
-        markers: []
-      });
-    }
-    const windowGroup = group.windowsByKey.get(windowKey);
-    if (!windowGroup.text && (marker.stt_text || marker.stt_excerpt)) {
-      windowGroup.text = stripPatchMarkers(marker.stt_text || marker.stt_excerpt || '');
-    }
-    windowGroup.markers.push(marker);
-  }
-  return [...groupsByKey.values()].map(group => ({
-    ...group,
-    markers: group.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds)),
-    windows: [...group.windowsByKey.values()]
-      .map(windowGroup => ({
-        ...windowGroup,
-        markers: windowGroup.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds))
-      }))
-      .sort((a, b) => Number(a.index) - Number(b.index))
-  }));
-}
-
-function renderPatchWindowText(container, windowGroup) {
-  const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
-  const highlights = windowGroup.markers
-    .filter(marker => marker.applied)
-    .map(marker => ({
-      marker,
-      text: stripPatchMarkers(marker.replacement_text || marker.candidate_text || '')
-    }))
-    .filter(item => item.text);
-
-  if (!text || !highlights.length) {
-    container.textContent = text || 'No local STT text for this window.';
-    return;
-  }
-
-  const fragment = document.createDocumentFragment();
-  const lowerText = text.toLowerCase();
-  let cursor = 0;
-  let matched = 0;
-  for (const item of highlights) {
-    const needle = item.text.toLowerCase();
-    const index = lowerText.indexOf(needle, cursor);
-    if (index < 0) continue;
-    if (index > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
-    const mark = document.createElement('span');
-    mark.className = 'patch-word';
-    mark.dataset.applied = item.marker.applied ? 'true' : 'false';
-    mark.title = `${item.marker.marker_timestamp || '0:00'} · ${item.marker.status || 'review'} · confidence ${formatConfidence(item.marker.confidence)}`;
-    mark.textContent = text.slice(index, index + item.text.length);
-    fragment.appendChild(mark);
-    cursor = index + item.text.length;
-    matched++;
-  }
-  if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
-  container.replaceChildren(matched ? fragment : document.createTextNode(text));
-}
-
-function renderPatchLinks(container, markers) {
-  const fragment = document.createDocumentFragment();
-  for (const marker of markers) {
-    const link = document.createElement('a');
-    link.className = 'patch-chip';
-    link.dataset.applied = marker.applied ? 'true' : 'false';
-    link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    const word = stripPatchMarkers(marker.replacement_text || marker.candidate_text || marker.status || '');
-    link.textContent = `${marker.marker_timestamp || '0:00'}${word ? ` ${word}` : ''}`;
-    link.title = `${marker.status || 'review'} · confidence ${formatConfidence(marker.confidence)}${marker.reason ? ` · ${marker.reason}` : ''}`;
-    fragment.appendChild(link);
-  }
-  container.replaceChildren(fragment);
-}
-
-function fallbackPatchText(markers) {
-  return markers.map(marker => {
-    const before = compactPatchContext(marker.youtube_before || '', 90, true);
-    const after = compactPatchContext(marker.youtube_after || '', 110, false);
-    const replacement = marker.replacement_text || marker.candidate_text || '';
-    return `${before} ${replacement} ${after}`.trim();
-  }).join(' ');
-}
-
-function compactPatchContext(text, length, fromEnd) {
-  const clean = stripPatchMarkers(text).replace(/\s+/g, ' ').trim();
-  if (clean.length <= length) return clean;
-  return fromEnd ? clean.slice(clean.length - length) : clean.slice(0, length);
-}
-
-function stripPatchMarkers(text) {
-  return String(text || '')
-    .replace(/\[\s*__\s*\]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function formatConfidence(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(2) : '0.00';
 }
 
 async function search() {

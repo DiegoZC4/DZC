@@ -20,6 +20,7 @@ html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--in
 main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .topbar { align-items: center; display: flex; gap: 10px; justify-content: space-between; margin-bottom: 12px; }
 .topbar a { color: var(--accent); font-size: 14px; font-weight: 850; text-decoration: none; }
+.page-nav { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
 .meta { color: var(--muted); font-size: 14px; min-height: 22px; }
 .controls { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .metric-button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 10px; }
@@ -59,7 +60,10 @@ th:first-child, td:first-child { text-align: left; }
 <main>
   <div class="topbar">
     <div class="meta" id="meta">Loading stats...</div>
-    <a href="index.html">Search</a>
+    <div class="page-nav">
+      <a href="index.html">Search</a>
+      <a href="patches.html">Patches</a>
+    </div>
   </div>
   <div class="controls" id="controls"></div>
   <section class="summary" id="summary"></section>

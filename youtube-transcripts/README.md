@@ -140,7 +140,9 @@ sqlite3 -cmd ".timeout 600000" data/transcripts.sqlite3 "
 
 ## Patch Censored Captions With Local STT
 
-Use this only for videos whose YouTube transcript contains `[ __ ]`. The patcher keeps the YouTube transcript as the source of truth, finds each censored marker, maps it to timestamp cues through `segments.char_index`, merges nearby markers into small audio windows, downloads only those audio windows, runs local Whisper, and replaces a marker only when the local STT aligns with the surrounding YouTube words.
+Use this only for videos whose YouTube transcript contains `[ __ ]`. The patcher keeps the YouTube transcript as the source of truth, finds each censored marker, maps it to the exact subtitle cue through `segments.char_index`, cuts audio from that cue only, runs local Whisper, and replaces a marker only when the local STT aligns with the surrounding YouTube words inside that cue. By default it auto-applies one-token replacements only; use `--max-replacement-tokens` for phrase-level review.
+
+For Apple Silicon GPU notes and the faster MLX path, see `README-stt-gpu.md`.
 
 Trial on one known short video:
 
@@ -150,9 +152,20 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   --video-id M4d8jWOOaCI \
   --apply \
   --model small.en \
-  --pad-seconds 2 \
-  --merge-gap-seconds 15 \
+  --pad-seconds 0.2 \
   --keep-workdir \
+  --cookies-from-browser ''
+```
+
+MLX/Metal test run:
+
+```bash
+"/Users/diego/Desktop/Read/YouTube Channel Transcripts/Whisper/.venv/bin/python" \
+  refresh/stt_patch_censored.py \
+  --backend mlx \
+  --mlx-model mlx-community/whisper-tiny \
+  --video-id M4d8jWOOaCI \
+  --apply \
   --cookies-from-browser ''
 ```
 
@@ -162,6 +175,7 @@ Important behavior:
 - `--keep-workdir` keeps `summary.json` and Whisper JSON/report files, but not audio.
 - `--apply` updates `videos.transcript`, shifts later `segments.char_index` values when replacements change text length, and refreshes `videos_fts` for that video.
 - Without `--apply`, it records candidates for review but does not mutate transcript rows.
+- `--restore-run-id RUN_ID --delete-restored-run` reverses previously applied replacements from that audit run back to `[ __ ]`, then deletes the stale run.
 - The audit tables are `stt_patch_runs` and `stt_patch_markers`.
 - The UI has an `STT Patches` tab backed by `api.php?action=patches`, showing timestamped YouTube links, original YouTube excerpts, local STT excerpts, candidates, confidence, and apply status.
 
@@ -181,7 +195,7 @@ sqlite3 -cmd ".timeout 5000" data/transcripts.sqlite3 "
 "
 ```
 
-Default windowing is intentionally conservative: `--pad-seconds 2` and `--merge-gap-seconds 15`. Increase the merge gap when many censored words are close together and you want fewer audio cuts; decrease it if Whisper context starts bleeding between unrelated sections.
+Default windowing is cue-bounded and intentionally strict: `--pad-seconds 0.2`, no cross-cue merging, and `--max-replacement-tokens 1`. This avoids long low-confidence candidates that merely duplicate surrounding transcript text. Raise `--max-replacement-tokens` only when you want to review possible multi-word censor spans.
 
 ## Dedupe Rolling Transcript Overlaps
 

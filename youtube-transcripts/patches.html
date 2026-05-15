@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube Transcript Patches</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff0000'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='28' font-weight='900' fill='white'%3ECC%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f7f7f4;
+  --ink: #181818;
+  --muted: #6f706c;
+  --line: #d9d8d0;
+  --panel: #ffffff;
+  --accent: #cc241d;
+  --accent-soft: #fff0ef;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
+.topbar { align-items: center; display: flex; gap: 12px; justify-content: space-between; margin-bottom: 12px; }
+.meta { color: var(--muted); font-size: 14px; min-height: 22px; }
+.page-nav { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.page-nav a { color: var(--accent); font-size: 14px; font-weight: 850; text-decoration: none; }
+.toolbar { align-items: center; display: flex; justify-content: flex-end; margin-bottom: 10px; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 11px; }
+.patch-results { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+.patch-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; padding: 9px 10px; }
+.patch-card-top { align-items: center; display: grid; gap: 8px; grid-template-columns: 24px minmax(0, 1fr) auto; }
+.channel-avatar { background: var(--category-soft, #e2e8f0); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 50%; color: var(--category-ink, var(--muted)); display: inline-grid; font-size: 10px; font-weight: 950; height: 24px; line-height: 1; object-fit: cover; overflow: hidden; place-items: center; text-transform: uppercase; width: 24px; }
+.patch-title { font-size: 14px; font-weight: 850; line-height: 1.22; overflow-wrap: anywhere; }
+.patch-meta { color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patch-status { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; white-space: nowrap; }
+.patch-body { display: grid; gap: 8px; }
+.patch-window { border-top: 1px solid var(--line); display: grid; gap: 6px; padding-top: 8px; }
+.patch-window-head { color: var(--muted); font-size: 12px; font-weight: 850; }
+.patch-window-text { color: #30302e; font-size: 13.5px; line-height: 1.36; }
+.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
+.patch-word[data-applied="false"] { background: transparent; box-shadow: inset 0 -2px 0 var(--accent-soft); }
+.patch-links { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
+.patch-chip { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; text-decoration: none; }
+.patch-chip[data-applied="false"] { background: #fff; color: var(--muted); }
+.empty { color: var(--muted); padding: 18px 0; }
+@media (max-width: 680px) {
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .page-nav { justify-content: flex-start; }
+  .patch-results { grid-template-columns: 1fr; }
+  .patch-card-top { grid-template-columns: 24px minmax(0, 1fr); }
+  .patch-status { justify-self: start; grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <div class="meta" id="patchMeta">Loading patch audit...</div>
+    <div class="page-nav">
+      <a href="index.html">Search</a>
+      <a href="stats.html">Stats</a>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button id="refreshPatches" type="button">Refresh</button>
+  </div>
+  <section class="patch-results" id="patchResults"></section>
+</main>
+<script>
+const patchMeta = document.getElementById('patchMeta');
+const patchResults = document.getElementById('patchResults');
+const refreshPatches = document.getElementById('refreshPatches');
+let channelByName = new Map();
+
+const CATEGORY_STYLES = {
+  AI: { accent: '#2563eb', bg: '#f4f8ff', soft: '#dbeafe', chip: '#eff6ff', ink: '#1d4ed8', line: '#bfdbfe' },
+  Comedy: { accent: '#db2777', bg: '#fff5fa', soft: '#fce7f3', chip: '#fdf2f8', ink: '#be185d', line: '#fbcfe8' },
+  Engineering: { accent: '#0891b2', bg: '#f0fbff', soft: '#cffafe', chip: '#ecfeff', ink: '#0e7490', line: '#a5f3fc' },
+  Fitness: { accent: '#16a34a', bg: '#f3fbf5', soft: '#dcfce7', chip: '#f0fdf4', ink: '#15803d', line: '#bbf7d0' },
+  Food: { accent: '#c2410c', bg: '#fff7ed', soft: '#fed7aa', chip: '#ffedd5', ink: '#9a3412', line: '#fdba74' },
+  Health: { accent: '#059669', bg: '#f0fdf8', soft: '#d1fae5', chip: '#ecfdf5', ink: '#047857', line: '#a7f3d0' },
+  Math: { accent: '#7c3aed', bg: '#f8f5ff', soft: '#ede9fe', chip: '#f5f3ff', ink: '#6d28d9', line: '#ddd6fe' },
+  Music: { accent: '#d97706', bg: '#fff9ed', soft: '#fef3c7', chip: '#fffbeb', ink: '#b45309', line: '#fde68a' },
+  Philosophy: { accent: '#4f46e5', bg: '#f5f6ff', soft: '#e0e7ff', chip: '#eef2ff', ink: '#4338ca', line: '#c7d2fe' },
+  Science: { accent: '#0d9488', bg: '#f0fdfa', soft: '#ccfbf1', chip: '#f0fdfa', ink: '#0f766e', line: '#99f6e4' },
+  Other: { accent: '#64748b', bg: '#f8fafc', soft: '#e2e8f0', chip: '#f1f5f9', ink: '#475569', line: '#cbd5e1' }
+};
+
+init();
+
+async function init() {
+  refreshPatches.addEventListener('click', () => loadPatches());
+  await loadChannels();
+  await loadPatches();
+}
+
+async function loadChannels() {
+  try {
+    const payload = await getJson('api.php?action=channels');
+    channelByName = new Map((payload.channels || []).map(row => [row.channel, row]));
+  } catch {
+    channelByName = new Map();
+  }
+}
+
+async function loadPatches() {
+  patchMeta.textContent = 'Loading patch audit...';
+  patchResults.innerHTML = '';
+  try {
+    const payload = await getJson('api.php?action=patches&limit=200');
+    renderPatches(payload.patches || {});
+  } catch (error) {
+    patchMeta.textContent = error.message;
+    patchResults.innerHTML = '';
+  }
+}
+
+function renderPatches(payload) {
+  const markers = payload.markers || [];
+  const runs = payload.runs || [];
+  const latestRun = runs[0] || null;
+  const appliedCount = markers.filter(item => item.applied).length;
+  const groups = groupPatchMarkers(markers);
+  const videoCount = new Set(markers.map(item => item.video_id)).size;
+  if (markers.length) {
+    patchMeta.textContent = `${groups.length} patch card${groups.length === 1 ? '' : 's'} · ${markers.length} marker${markers.length === 1 ? '' : 's'} from ${videoCount} video${videoCount === 1 ? '' : 's'} · ${appliedCount} applied`;
+  } else if (latestRun) {
+    const error = latestRun.error ? ` · ${latestRun.error}` : '';
+    patchMeta.textContent = `Latest run #${latestRun.id}: ${latestRun.status}${error}`;
+  } else {
+    patchMeta.textContent = 'No STT patch runs yet.';
+  }
+
+  if (!markers.length) {
+    patchResults.innerHTML = '<div class="empty">No patch markers recorded yet.</div>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const group of groups) {
+    const first = group.markers[0];
+    const article = document.createElement('article');
+    article.className = 'patch-card';
+    article.innerHTML = `
+      <div class="patch-card-top">
+        <span class="avatar-slot"></span>
+        <div>
+          <div class="patch-title"></div>
+          <div class="patch-meta"></div>
+        </div>
+        <div class="patch-status"></div>
+      </div>
+      <div class="patch-body"></div>
+    `;
+    article.querySelector('.avatar-slot').replaceWith(channelAvatarElement(first.channel || ''));
+    article.querySelector('.patch-title').textContent = first.title || first.video_id || '';
+    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · run #${first.run_id} · ${group.windows.length} audio window${group.windows.length === 1 ? '' : 's'}`;
+    article.querySelector('.patch-status').textContent = `${group.applied} / ${group.markers.length} applied`;
+
+    const body = article.querySelector('.patch-body');
+    for (const windowGroup of group.windows) {
+      const windowElement = document.createElement('section');
+      windowElement.className = 'patch-window';
+      windowElement.innerHTML = `
+        <div class="patch-window-head"></div>
+        <div class="patch-window-text"></div>
+        <div class="patch-links"></div>
+      `;
+      windowElement.querySelector('.patch-window-head').textContent = `Window ${windowGroup.start || '0:00'}-${windowGroup.end || '0:00'} · ${windowGroup.markers.length} marker${windowGroup.markers.length === 1 ? '' : 's'}`;
+      renderPatchWindowText(windowElement.querySelector('.patch-window-text'), windowGroup);
+      renderPatchLinks(windowElement.querySelector('.patch-links'), windowGroup.markers);
+      body.appendChild(windowElement);
+    }
+    fragment.appendChild(article);
+  }
+  patchResults.replaceChildren(fragment);
+}
+
+function groupPatchMarkers(markers) {
+  const groupsByKey = new Map();
+  for (const marker of markers) {
+    const key = `${marker.run_id}:${marker.video_id}`;
+    if (!groupsByKey.has(key)) {
+      groupsByKey.set(key, { key, markers: [], applied: 0, windowsByKey: new Map() });
+    }
+    const group = groupsByKey.get(key);
+    group.markers.push(marker);
+    if (marker.applied) group.applied++;
+    const windowKey = String(marker.window_index);
+    if (!group.windowsByKey.has(windowKey)) {
+      group.windowsByKey.set(windowKey, {
+        index: marker.window_index,
+        start: marker.window_start_timestamp,
+        end: marker.window_end_timestamp,
+        text: stripPatchMarkers(marker.stt_text || marker.stt_excerpt || ''),
+        markers: []
+      });
+    }
+    const windowGroup = group.windowsByKey.get(windowKey);
+    if (!windowGroup.text && (marker.stt_text || marker.stt_excerpt)) {
+      windowGroup.text = stripPatchMarkers(marker.stt_text || marker.stt_excerpt || '');
+    }
+    windowGroup.markers.push(marker);
+  }
+  return [...groupsByKey.values()].map(group => ({
+    ...group,
+    markers: group.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds)),
+    windows: [...group.windowsByKey.values()]
+      .map(windowGroup => ({
+        ...windowGroup,
+        markers: windowGroup.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds))
+      }))
+      .sort((a, b) => Number(a.index) - Number(b.index))
+  }));
+}
+
+function renderPatchWindowText(container, windowGroup) {
+  const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
+  const highlights = windowGroup.markers
+    .filter(marker => marker.applied)
+    .map(marker => ({ marker, text: stripPatchMarkers(marker.replacement_text || marker.candidate_text || '') }))
+    .filter(item => item.text);
+
+  if (!text || !highlights.length) {
+    container.textContent = text || 'No local STT text for this window.';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  const lowerText = text.toLowerCase();
+  let cursor = 0;
+  let matched = 0;
+  for (const item of highlights) {
+    const needle = item.text.toLowerCase();
+    const index = lowerText.indexOf(needle, cursor);
+    if (index < 0) continue;
+    if (index > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
+    const mark = document.createElement('span');
+    mark.className = 'patch-word';
+    mark.dataset.applied = item.marker.applied ? 'true' : 'false';
+    mark.title = `${item.marker.marker_timestamp || '0:00'} · ${item.marker.status || 'review'} · confidence ${formatConfidence(item.marker.confidence)}`;
+    mark.textContent = text.slice(index, index + item.text.length);
+    fragment.appendChild(mark);
+    cursor = index + item.text.length;
+    matched++;
+  }
+  if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
+  container.replaceChildren(matched ? fragment : document.createTextNode(text));
+}
+
+function renderPatchLinks(container, markers) {
+  const fragment = document.createDocumentFragment();
+  for (const marker of markers) {
+    const link = document.createElement('a');
+    link.className = 'patch-chip';
+    link.dataset.applied = marker.applied ? 'true' : 'false';
+    link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    const word = stripPatchMarkers(marker.replacement_text || marker.candidate_text || marker.status || '');
+    link.textContent = `${marker.marker_timestamp || '0:00'}${word ? ` ${word}` : ''}`;
+    link.title = `${marker.status || 'review'} · confidence ${formatConfidence(marker.confidence)}${marker.reason ? ` · ${marker.reason}` : ''}`;
+    fragment.appendChild(link);
+  }
+  container.replaceChildren(fragment);
+}
+
+function fallbackPatchText(markers) {
+  return markers.map(marker => {
+    const before = compactPatchContext(marker.youtube_before || '', 90, true);
+    const after = compactPatchContext(marker.youtube_after || '', 110, false);
+    const replacement = marker.replacement_text || marker.candidate_text || '';
+    return `${before} ${replacement} ${after}`.trim();
+  }).join(' ');
+}
+
+function compactPatchContext(text, length, fromEnd) {
+  const clean = stripPatchMarkers(text).replace(/\s+/g, ' ').trim();
+  if (clean.length <= length) return clean;
+  return fromEnd ? clean.slice(clean.length - length) : clean.slice(0, length);
+}
+
+function stripPatchMarkers(text) {
+  return String(text || '')
+    .replace(/\[\s*__\s*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function channelAvatarElement(channelName) {
+  const row = channelByName.get(channelName) || {};
+  const category = row.category || inferChannelCategory(channelName);
+  const url = row.avatar_url || '';
+  const label = `${channelName || 'Channel'} avatar`;
+  const element = url ? document.createElement('img') : document.createElement('span');
+  element.className = 'channel-avatar';
+  element.title = channelName || '';
+  element.setAttribute('aria-label', label);
+  applyCategoryStyle(element, category);
+  if (url) {
+    element.src = url;
+    element.alt = label;
+    element.loading = 'lazy';
+    element.decoding = 'async';
+    element.referrerPolicy = 'no-referrer';
+  } else {
+    element.textContent = initialsFor(channelName);
+  }
+  return element;
+}
+
+function applyCategoryStyle(element, category) {
+  const style = CATEGORY_STYLES[category] || CATEGORY_STYLES.Other;
+  element.style.setProperty('--category-soft', style.soft);
+  element.style.setProperty('--category-ink', style.ink);
+}
+
+function inferChannelCategory(channel) {
+  const categories = {
+    '80,000 Hours': 'AI',
+    '3Blue1Brown': 'Math',
+    '12tone': 'Music',
+    'Adam Neely': 'Music',
+    'Adam Ragusea': 'Food',
+    'BarryHarrisVideos': 'Music',
+    'Binging with Babish': 'Food',
+    'Bill Burr': 'Comedy',
+    'Bret Weinstein': 'Philosophy',
+    'BroScienceLife': 'Comedy',
+    'Cape Falcon Kayak': 'Engineering',
+    'Destiny': 'Philosophy',
+    'Dwarkesh Patel': 'AI',
+    'Ear Biscuits': 'Comedy',
+    'Eric Weinstein': 'Philosophy',
+    'Henry Segerman': 'Math',
+    'Robert Sapolsky': 'Science',
+    'Jacob Collier': 'Music',
+    'Jake and Amir': 'Comedy',
+    'JennaMarbles': 'Comedy',
+    'Jordan B Peterson': 'Philosophy',
+    'Jonathan Pageau': 'Philosophy',
+    'June Lee': 'Music',
+    'Key & Peele': 'Comedy',
+    'Lex Fridman': 'AI',
+    'Mathologer': 'Math',
+    'Numberphile': 'Math',
+    'Peter Attia MD': 'Health',
+    'Practical Engineering': 'Engineering',
+    'Rick & Esther Have A Time': 'Comedy',
+    'Rick Beato': 'Music',
+    'Rick Glassman': 'Comedy',
+    'Robert Miles AI Safety': 'AI',
+    'Sam Harris': 'Philosophy',
+    'SmarterEveryDay': 'Science',
+    'Starting Strength': 'Fitness',
+    'Stand-up Maths': 'Math',
+    'Steve Mould': 'Engineering',
+    'Supergood': 'Comedy',
+    'Tech Ingredients': 'Engineering',
+    'Technology Connections': 'Engineering',
+    'The Fighter and The Kid': 'Comedy',
+    'The Tim Dillon Show': 'Comedy',
+    'Theo Von': 'Comedy',
+    'TigerBelly': 'Comedy',
+    'Veritasium': 'Science'
+  };
+  return categories[channel] || 'Other';
+}
+
+function initialsFor(value) {
+  const words = String(value || '?').replace(/&/g, ' ').match(/[A-Za-z0-9]+/g) || ['?'];
+  return words.slice(0, 2).map(word => word[0]).join('');
+}
+
+function formatConfidence(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toFixed(2) : '0.00';
+}
+
+async function getJson(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  const payload = await response.json();
+  if (!payload.ok) throw new Error(payload.error || 'Request failed');
+  return payload;
+}
+</script>
+</body>
+</html>

@@ -29,6 +29,9 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .subnav { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
 .subnav a { color: var(--accent); font-size: 13px; font-weight: 850; text-decoration: none; }
 .page-nav { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.recent-searches { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.recent-search { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; font-weight: 850; min-height: 30px; max-width: min(100%, 320px); overflow: hidden; padding: 0 10px; text-overflow: ellipsis; white-space: nowrap; }
+.recent-search:hover { border-color: #c9c8bf; color: var(--accent); }
 .channel-picker { min-width: 0; position: relative; }
 .channel-tokenbox { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; cursor: text; display: flex; flex-wrap: wrap; gap: 6px; min-height: 46px; min-width: 0; padding: 6px; }
 .channel-tokenbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204, 36, 29, 0.12); }
@@ -97,6 +100,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
       <a href="stats.html">Stats</a>
     </div>
   </div>
+  <div class="recent-searches" id="recentSearches" hidden></div>
   <div class="meta" id="meta"></div>
   <section class="results" id="results"></section>
 </main>
@@ -109,12 +113,17 @@ const channelTokenbox = document.getElementById('channelTokenbox');
 const channelFilterInput = document.getElementById('channelFilterInput');
 const channelOptions = document.getElementById('channelOptions');
 const channelSummary = document.getElementById('channelSummary');
+const recentSearches = document.getElementById('recentSearches');
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
 let channelRows = [];
 let channelByName = new Map();
 let selectedFilters = [];
 let activeOptionIndex = -1;
+let activeCachedSearch = null;
+let hasRenderedSearch = false;
+const SEARCH_CACHE_KEY = 'ytTranscriptSearches:v1';
+const MAX_CACHED_SEARCHES = 5;
 const CATEGORY_STYLES = {
   AI: { accent: '#2563eb', bg: '#f4f8ff', soft: '#dbeafe', chip: '#eff6ff', ink: '#1d4ed8', line: '#bfdbfe' },
   Comedy: { accent: '#db2777', bg: '#fff5fa', soft: '#fce7f3', chip: '#fdf2f8', ink: '#be185d', line: '#fbcfe8' },
@@ -131,8 +140,7 @@ const CATEGORY_STYLES = {
 
 init();
 
-async function init() {
-  await loadChannels();
+function init() {
   form.addEventListener('submit', event => {
     event.preventDefault();
     search();
@@ -149,6 +157,9 @@ async function init() {
   document.addEventListener('mousedown', event => {
     if (!channelPicker.contains(event.target)) closeChannelOptions();
   });
+  renderRecentSearches();
+  restoreLatestSearch();
+  loadChannels();
 }
 
 async function loadChannels() {
@@ -162,11 +173,15 @@ async function loadChannels() {
     renderSelectedFilters();
     renderChannelOptions();
     const stats = payload.stats || {};
-    meta.textContent = `${stats.videos || 0} videos, ${stats.channels || 0} channels indexed`;
+    if (activeCachedSearch) {
+      restoreCachedSearch(activeCachedSearch);
+    } else if (!hasRenderedSearch) {
+      meta.textContent = `${stats.videos || 0} videos, ${stats.channels || 0} channels indexed`;
+    }
   } catch (error) {
     channelSummary.textContent = 'Could not load channels';
     channelOptions.innerHTML = '<div class="channel-option-empty">Could not load the static channel list.</div>';
-    meta.textContent = error.message;
+    if (!hasRenderedSearch) meta.textContent = error.message;
   }
 }
 
@@ -390,6 +405,125 @@ function normalize(value) {
   return String(value).trim().toLowerCase();
 }
 
+function readSearchCache() {
+  try {
+    const raw = localStorage.getItem(SEARCH_CACHE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(isValidCachedSearch).slice(0, MAX_CACHED_SEARCHES) : [];
+  } catch {
+    return [];
+  }
+}
+
+function isValidCachedSearch(entry) {
+  return entry && typeof entry === 'object' && (entry.query || entry.titleFilter) && entry.payload;
+}
+
+function writeSearchCache(entries) {
+  const next = entries.slice(0, MAX_CACHED_SEARCHES);
+  while (next.length) {
+    try {
+      localStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(next));
+      return;
+    } catch {
+      next.pop();
+    }
+  }
+  try {
+    localStorage.removeItem(SEARCH_CACHE_KEY);
+  } catch {
+    // Local storage is optional; search should still work without it.
+  }
+}
+
+function currentSearchState() {
+  return {
+    titleFilter: titleInput.value.trim(),
+    query: queryInput.value.trim(),
+    filters: selectedFilters.map(filter => ({
+      type: filter.type,
+      value: filter.value,
+      label: filter.label,
+      category: filter.category
+    }))
+  };
+}
+
+function searchCacheKey(state) {
+  return JSON.stringify({
+    titleFilter: state.titleFilter,
+    query: state.query,
+    filters: state.filters.map(filter => `${filter.type}:${filter.value}`)
+  });
+}
+
+function saveSearchCache(state, payload) {
+  const results = Array.isArray(payload.results) ? payload.results : [];
+  const entry = {
+    key: searchCacheKey(state),
+    createdAt: Date.now(),
+    titleFilter: state.titleFilter,
+    query: state.query,
+    filters: state.filters,
+    channels: selectedChannels(),
+    videoIds: [...new Set(results.map(item => item.youtube_id).filter(Boolean))],
+    payload: {
+      results,
+      timing: payload.timing || null
+    }
+  };
+  const entries = readSearchCache().filter(item => item.key !== entry.key);
+  entries.unshift(entry);
+  writeSearchCache(entries);
+  renderRecentSearches();
+}
+
+function renderRecentSearches() {
+  const entries = readSearchCache();
+  recentSearches.hidden = entries.length === 0;
+  recentSearches.replaceChildren(...entries.map(entry => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'recent-search';
+    button.textContent = cachedSearchLabel(entry);
+    button.title = `${entry.videoIds?.length || 0} cached video${entry.videoIds?.length === 1 ? '' : 's'}`;
+    button.addEventListener('click', () => restoreCachedSearch(entry));
+    return button;
+  }));
+}
+
+function cachedSearchLabel(entry) {
+  const parts = [];
+  if (entry.titleFilter) parts.push(entry.titleFilter);
+  if (entry.query) parts.push(entry.query);
+  if (entry.filters?.length) parts.push(entry.filters.map(filter => filter.label || filter.value).join(', '));
+  return parts.join(' · ') || 'Search';
+}
+
+function restoreLatestSearch() {
+  const latest = readSearchCache()[0];
+  if (latest) restoreCachedSearch(latest);
+}
+
+function restoreCachedSearch(entry) {
+  activeCachedSearch = entry;
+  titleInput.value = entry.titleFilter || '';
+  queryInput.value = entry.query || '';
+  selectedFilters = cachedFiltersToOptions(entry.filters || []);
+  renderSelectedFilters();
+  renderChannelOptions();
+  const timing = entry.payload?.timing ? { ...entry.payload.timing, cached: true } : { cached: true };
+  renderResults(entry.payload?.results || [], entry.query || '', entry.titleFilter || '', timing);
+}
+
+function cachedFiltersToOptions(filters) {
+  const options = allFilterOptions();
+  return filters.map(filter => {
+    const option = options.find(item => item.type === filter.type && item.value === filter.value);
+    return option || filter;
+  }).filter(filter => filter.type && filter.value);
+}
+
 function inferChannelCategory(channel) {
   const categories = {
     '80,000 Hours': 'AI',
@@ -443,8 +577,10 @@ function inferChannelCategory(channel) {
 }
 
 async function search() {
-  const titleFilter = titleInput.value.trim();
-  const query = queryInput.value.trim();
+  activeCachedSearch = null;
+  const state = currentSearchState();
+  const titleFilter = state.titleFilter;
+  const query = state.query;
   if (!titleFilter && !query) {
     results.innerHTML = '<div class="empty">Type a video title or transcript substring.</div>';
     return;
@@ -466,20 +602,23 @@ async function search() {
     }
     const payload = await getJson(`api.php?${params}`);
     renderResults(payload.results || [], query, titleFilter, payload.timing || null);
+    saveSearchCache(state, payload);
   } catch (error) {
     meta.textContent = error.message;
   }
 }
 
 function renderResults(items, query, titleFilter = '', timing = null) {
+  hasRenderedSearch = true;
   const groups = groupResultsByVideo(items);
   const videoCount = groups.length;
   const titleOnly = titleFilter && !query;
   const titleScope = titleFilter ? ` in titles matching "${titleFilter}"` : '';
   const timingText = timing && Number.isFinite(Number(timing.total_ms)) ? ` · ${formatMs(timing.total_ms)}` : '';
+  const cacheText = timing?.cached ? ' · cached' : '';
   meta.textContent = titleOnly
-    ? `${videoCount} video title${videoCount === 1 ? '' : 's'} matching "${titleFilter}"${timingText}`
-    : `${items.length} result${items.length === 1 ? '' : 's'} in ${videoCount} video${videoCount === 1 ? '' : 's'}${titleScope} for "${query}"${timingText}`;
+    ? `${videoCount} video title${videoCount === 1 ? '' : 's'} matching "${titleFilter}"${timingText}${cacheText}`
+    : `${items.length} result${items.length === 1 ? '' : 's'} in ${videoCount} video${videoCount === 1 ? '' : 's'}${titleScope} for "${query}"${timingText}${cacheText}`;
   if (!items.length) {
     results.innerHTML = '<div class="empty">No matches.</div>';
     return;

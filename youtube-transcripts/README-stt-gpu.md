@@ -114,6 +114,21 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   --cookies-from-browser ''
 ```
 
+Bulk MLX run, keeping the model warm across videos:
+
+```bash
+cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
+"/Users/diego/Desktop/Read/YouTube Channel Transcripts/Whisper/.venv/bin/python" \
+  refresh/stt_patch_censored.py \
+  --backend mlx \
+  --mlx-model mlx-community/whisper-tiny \
+  --all-censored \
+  --limit-videos 25 \
+  --skip-successful \
+  --apply \
+  --cookies-from-browser ''
+```
+
 Use `--mlx-model mlx-community/whisper-base` or a larger MLX model only if `tiny` is not accurate enough on review samples.
 
 Important:
@@ -122,6 +137,7 @@ Important:
 - Use the venv Python path above, not plain `./refresh/stt_patch_censored.py`, so `mlx_whisper` imports from `Whisper/.venv`.
 - Keep `--word-timestamps` off unless there is a specific reason to test it.
 - Keep `--max-replacement-tokens 1` for automatic application. Multi-word replacements should be review-only until proven safe.
+- Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos already completed with the selected backend/model label.
 
 ## Scale Estimate
 
@@ -147,4 +163,4 @@ For fixing thousands of videos:
 6. Delete downloaded audio immediately after the video's cues finish.
 7. Commit replacement rows in batches and keep `stt_patch_runs` / `stt_patch_markers` as the audit trail.
 
-The next implementation step is a bulk MLX worker that processes many videos in one process. The single-video patcher can now use MLX, but a full 6,000+ video repair pass should not be done by launching one command per video or one command per cue.
+The patcher supports a bulk MLX pass with `--all-censored`, so one Python process can keep MLX imported and reuse the model across videos. The next optimization beyond that is avoiding a separate `ffmpeg` cut per cue by cutting one per-video audio file and slicing in-process.

@@ -169,6 +169,20 @@ MLX/Metal test run:
   --cookies-from-browser ''
 ```
 
+Bulk MLX pass over currently censored videos:
+
+```bash
+"/Users/diego/Desktop/Read/YouTube Channel Transcripts/Whisper/.venv/bin/python" \
+  refresh/stt_patch_censored.py \
+  --backend mlx \
+  --mlx-model mlx-community/whisper-tiny \
+  --all-censored \
+  --limit-videos 25 \
+  --skip-successful \
+  --apply \
+  --cookies-from-browser ''
+```
+
 Important behavior:
 
 - Each cut audio file is deleted in a `finally` block immediately after its Whisper pass finishes.
@@ -176,6 +190,7 @@ Important behavior:
 - `--apply` updates `videos.transcript`, shifts later `segments.char_index` values when replacements change text length, and refreshes `videos_fts` for that video.
 - Without `--apply`, it records candidates for review but does not mutate transcript rows.
 - `--restore-run-id RUN_ID --delete-restored-run` reverses previously applied replacements from that audit run back to `[ __ ]`, then deletes the stale run.
+- `--all-censored` processes every video whose current transcript still contains `[ __ ]` in the same Python process, which lets the MLX backend keep the model warm across videos.
 - The audit tables are `stt_patch_runs` and `stt_patch_markers`.
 - The UI has an `STT Patches` tab backed by `api.php?action=patches`, showing timestamped YouTube links, original YouTube excerpts, local STT excerpts, candidates, confidence, and apply status.
 

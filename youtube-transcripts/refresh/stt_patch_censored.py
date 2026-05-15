@@ -504,7 +504,7 @@ def stt_excerpt(words: list[Word], marker: Marker, text: str) -> str:
 
 
 def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace) -> int:
-    model_name = args.mlx_model if args.backend == "mlx" else args.model
+    model_name = model_label(args)
     cursor = conn.execute(
         """
         INSERT INTO stt_patch_runs (
@@ -515,7 +515,7 @@ def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace
         (
             datetime.now(timezone.utc).isoformat(),
             video_id,
-            f"{args.backend}:{model_name}",
+            model_name,
             args.pad_seconds,
             args.merge_gap_seconds,
             1 if args.apply else 0,
@@ -524,6 +524,11 @@ def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace
     )
     conn.commit()
     return int(cursor.lastrowid)
+
+
+def model_label(args: argparse.Namespace) -> str:
+    model_name = args.mlx_model if args.backend == "mlx" else args.model
+    return f"{args.backend}:{model_name}"
 
 
 def insert_marker(conn: sqlite3.Connection, run_id: int, video_id: str, marker: Marker, payload: dict[str, Any]) -> None:
@@ -702,9 +707,144 @@ def restore_run(conn: sqlite3.Connection, run_id: int, *, delete_run: bool = Fal
     }
 
 
+def censored_video_ids(conn: sqlite3.Connection, args: argparse.Namespace) -> list[str]:
+    sql = "SELECT v.youtube_id FROM videos v WHERE instr(v.transcript, ?) > 0"
+    params: list[Any] = [MARKER]
+    if args.start_after:
+        sql += " AND v.youtube_id > ?"
+        params.append(args.start_after)
+    if args.skip_successful:
+        sql += """
+            AND NOT EXISTS (
+                SELECT 1
+                FROM stt_patch_runs r
+                WHERE r.video_id = v.youtube_id
+                  AND r.status = 'success'
+                  AND r.model = ?
+            )
+        """
+        params.append(model_label(args))
+    sql += " ORDER BY v.youtube_id"
+    if args.limit_videos:
+        sql += " LIMIT ?"
+        params.append(args.limit_videos)
+    return [str(row[0]) for row in conn.execute(sql, params).fetchall()]
+
+
+def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace) -> dict[str, Any]:
+    video = fetch_video(conn, video_id)
+    segments = fetch_segments(conn, video_id)
+    if not segments:
+        raise RuntimeError("Video has no segment anchors")
+    markers = find_markers(video["transcript"], segments, args.context_chars)
+    if not markers:
+        raise RuntimeError("Video has no [ __ ] markers")
+    windows = build_windows(markers, video_duration(segments), args.pad_seconds, args.merge_gap_seconds)
+    if args.limit_windows:
+        keep_window_indexes = set(range(args.limit_windows))
+        windows = [window for index, window in enumerate(windows) if index in keep_window_indexes]
+        markers = [marker for marker in markers if marker.window_index in keep_window_indexes]
+
+    run_id = create_run(conn, video_id, args)
+    run_dir = RUNS / f"stt-patch-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{video_id}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    replacements: list[tuple[Marker, str]] = []
+    audio_seconds = 0.0
+    processed_markers = 0
+    applied_count = 0
+    status = "success"
+    error = ""
+
+    try:
+        audio_url = get_audio_url(video_id, args)
+        with tempfile.TemporaryDirectory(prefix="yt-stt-patch-") as temp_name:
+            temp_dir = Path(temp_name)
+            for window_index, (start, end, window_markers) in enumerate(windows):
+                wav_path = temp_dir / f"window_{window_index:04d}_{int(start)}-{int(end)}.wav"
+                out_dir = run_dir / f"window_{window_index:04d}"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                try:
+                    cut_audio(audio_url, start, end, wav_path)
+                    audio_seconds += max(0.0, end - start)
+                    payload = transcribe_window(wav_path, out_dir, args)
+                finally:
+                    if wav_path.exists():
+                        wav_path.unlink()
+                text = stt_text(payload)
+                words = whisper_words(payload, start)
+                for marker in window_markers:
+                    candidate, confidence, marker_status, reason = choose_replacement(marker, words, text, args)
+                    apply_marker = bool(args.apply and marker_status == "proposed" and confidence >= args.apply_threshold)
+                    replacement_text = candidate if apply_marker else ""
+                    if apply_marker:
+                        replacements.append((marker, replacement_text))
+                        applied_count += 1
+                    insert_marker(
+                        conn,
+                        run_id,
+                        video_id,
+                        marker,
+                        {
+                            "stt_text": text,
+                            "stt_excerpt": stt_excerpt(words, marker, text),
+                            "candidate_text": candidate,
+                            "replacement_text": replacement_text,
+                            "status": "applied" if apply_marker else marker_status,
+                            "confidence": confidence,
+                            "reason": reason,
+                            "applied": apply_marker,
+                        },
+                    )
+                    processed_markers += 1
+                conn.commit()
+        if replacements:
+            apply_replacements(conn, video_id, video["transcript"], segments, replacements)
+    except Exception as exc:
+        status = "error"
+        error = str(exc)
+        if not args.all_censored:
+            raise
+    finally:
+        conn.execute(
+            """
+            UPDATE stt_patch_runs
+            SET status = ?, windows = ?, markers = ?, applied = ?, audio_seconds = ?, error = ?
+            WHERE id = ?
+            """,
+            (status, len(windows), processed_markers, applied_count, audio_seconds, error[:1000], run_id),
+        )
+        conn.commit()
+
+    summary = {
+        "run_id": run_id,
+        "video_id": video_id,
+        "channel": video["channel"],
+        "title": video["title"],
+        "status": status,
+        "windows": len(windows),
+        "markers": processed_markers,
+        "applied": applied_count,
+        "audio_seconds": round(audio_seconds, 3),
+        "apply": args.apply,
+        "run_dir": str(run_dir),
+    }
+    if error:
+        summary["error"] = error
+    report_path = run_dir / "summary.json"
+    report_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    if not args.keep_workdir and status == "error":
+        shutil.rmtree(run_dir, ignore_errors=True)
+    print(json.dumps(summary, indent=2))
+    return summary
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Patch YouTube '[ __ ]' caption censor markers using local STT on cue-bounded audio windows.")
     parser.add_argument("--video-id")
+    parser.add_argument("--all-censored", action="store_true", help="Process every video whose current transcript still contains a censor marker.")
+    parser.add_argument("--limit-videos", type=int, default=0, help="Limit --all-censored to the first N videos.")
+    parser.add_argument("--start-after", default="", help="Resume --all-censored after this YouTube video id.")
+    parser.add_argument("--skip-successful", action="store_true", help="Skip videos already completed successfully with the selected backend/model.")
     parser.add_argument("--restore-run-id", type=int, action="append", default=[], help="Restore applied markers from a prior run and exit.")
     parser.add_argument("--delete-restored-run", action="store_true", help="Delete restored audit runs after reversing their applied replacements.")
     parser.add_argument("--apply", action="store_true", help="Apply high-confidence replacements to videos.transcript and videos_fts.")
@@ -748,110 +888,47 @@ def main() -> int:
         print(json.dumps({"restored": restored}, indent=2))
         return 0
 
-    if not args.video_id:
-        raise SystemExit("--video-id is required unless --restore-run-id is used")
+    if args.all_censored:
+        video_ids = censored_video_ids(conn, args)
+        print(json.dumps({"mode": "all_censored", "videos": len(video_ids), "model": model_label(args)}, indent=2))
+    elif args.video_id:
+        video_ids = [args.video_id]
+    else:
+        raise SystemExit("--video-id or --all-censored is required unless --restore-run-id is used")
 
-    video = fetch_video(conn, args.video_id)
-    segments = fetch_segments(conn, args.video_id)
-    if not segments:
-        raise SystemExit("Video has no segment anchors")
-    markers = find_markers(video["transcript"], segments, args.context_chars)
-    if not markers:
-        raise SystemExit("Video has no [ __ ] markers")
-    windows = build_windows(markers, video_duration(segments), args.pad_seconds, args.merge_gap_seconds)
-    if args.limit_windows:
-        keep_window_indexes = set(range(args.limit_windows))
-        windows = [window for index, window in enumerate(windows) if index in keep_window_indexes]
-        markers = [marker for marker in markers if marker.window_index in keep_window_indexes]
-
-    run_id = create_run(conn, args.video_id, args)
-    run_dir = RUNS / f"stt-patch-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.video_id}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    replacements: list[tuple[Marker, str]] = []
-    audio_seconds = 0.0
-    processed_markers = 0
-    applied_count = 0
-    status = "success"
-    error = ""
-
+    summaries = []
     try:
-        audio_url = get_audio_url(args.video_id, args)
-        with tempfile.TemporaryDirectory(prefix="yt-stt-patch-") as temp_name:
-            temp_dir = Path(temp_name)
-            for window_index, (start, end, window_markers) in enumerate(windows):
-                wav_path = temp_dir / f"window_{window_index:04d}_{int(start)}-{int(end)}.wav"
-                out_dir = run_dir / f"window_{window_index:04d}"
-                out_dir.mkdir(parents=True, exist_ok=True)
-                try:
-                    cut_audio(audio_url, start, end, wav_path)
-                    audio_seconds += max(0.0, end - start)
-                    payload = transcribe_window(wav_path, out_dir, args)
-                finally:
-                    if wav_path.exists():
-                        wav_path.unlink()
-                text = stt_text(payload)
-                words = whisper_words(payload, start)
-                for marker in window_markers:
-                    candidate, confidence, marker_status, reason = choose_replacement(marker, words, text, args)
-                    apply_marker = bool(args.apply and marker_status == "proposed" and confidence >= args.apply_threshold)
-                    replacement_text = candidate if apply_marker else ""
-                    if apply_marker:
-                        replacements.append((marker, replacement_text))
-                        applied_count += 1
-                    insert_marker(
-                        conn,
-                        run_id,
-                        args.video_id,
-                        marker,
-                        {
-                            "stt_text": text,
-                            "stt_excerpt": stt_excerpt(words, marker, text),
-                            "candidate_text": candidate,
-                            "replacement_text": replacement_text,
-                            "status": "applied" if apply_marker else marker_status,
-                            "confidence": confidence,
-                            "reason": reason,
-                            "applied": apply_marker,
-                        },
-                    )
-                    processed_markers += 1
-                conn.commit()
-        if replacements:
-            apply_replacements(conn, args.video_id, video["transcript"], segments, replacements)
-    except Exception as exc:
-        status = "error"
-        error = str(exc)
-        raise
+        for video_id in video_ids:
+            try:
+                summaries.append(process_video(conn, video_id, args))
+            except Exception as exc:
+                if not args.all_censored:
+                    raise
+                summary = {
+                    "video_id": video_id,
+                    "status": "error",
+                    "windows": 0,
+                    "markers": 0,
+                    "applied": 0,
+                    "audio_seconds": 0.0,
+                    "error": str(exc),
+                }
+                summaries.append(summary)
+                print(json.dumps(summary, indent=2))
     finally:
-        conn.execute(
-            """
-            UPDATE stt_patch_runs
-            SET status = ?, windows = ?, markers = ?, applied = ?, audio_seconds = ?, error = ?
-            WHERE id = ?
-            """,
-            (status, len(windows), processed_markers, applied_count, audio_seconds, error[:1000], run_id),
-        )
-        conn.commit()
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         conn.close()
-        if not args.keep_workdir and status == "error":
-            shutil.rmtree(run_dir, ignore_errors=True)
 
-    summary = {
-        "run_id": run_id,
-        "video_id": args.video_id,
-        "channel": video["channel"],
-        "title": video["title"],
-        "windows": len(windows),
-        "markers": processed_markers,
-        "applied": applied_count,
-        "audio_seconds": round(audio_seconds, 3),
-        "apply": args.apply,
-        "run_dir": str(run_dir),
-    }
-    report_path = run_dir / "summary.json"
-    report_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    print(json.dumps(summary, indent=2))
+    if args.all_censored:
+        print(json.dumps({
+            "mode": "all_censored",
+            "videos": len(summaries),
+            "success": sum(1 for item in summaries if item["status"] == "success"),
+            "errors": sum(1 for item in summaries if item["status"] == "error"),
+            "markers": sum(int(item["markers"]) for item in summaries),
+            "applied": sum(int(item["applied"]) for item in summaries),
+            "audio_seconds": round(sum(float(item["audio_seconds"]) for item in summaries), 3),
+        }, indent=2))
     return 0
 
 

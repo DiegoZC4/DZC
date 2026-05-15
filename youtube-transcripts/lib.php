@@ -153,6 +153,13 @@ function yt_column_exists(PDO $db, string $table, string $column): bool
     return false;
 }
 
+function yt_table_exists(PDO $db, string $table): bool
+{
+    $stmt = $db->prepare("SELECT 1 FROM sqlite_master WHERE type IN ('table', 'view') AND name = ? LIMIT 1");
+    $stmt->execute([$table]);
+    return (bool)$stmt->fetchColumn();
+}
+
 function yt_seed_channels_from_config(PDO $db): void
 {
     $configPath = __DIR__ . '/refresh/channels.json';
@@ -653,6 +660,164 @@ function yt_title_search(PDO $db, string $titleFilter, array|string $channel = '
         'candidate_videos' => count($results),
     ];
     return $results;
+}
+
+function yt_stt_patch_audit(PDO $db, int $limit = 200, string $videoId = '', int $runId = 0): array
+{
+    if (!yt_table_exists($db, 'stt_patch_runs') || !yt_table_exists($db, 'stt_patch_markers')) {
+        return [
+            'runs' => [],
+            'markers' => [],
+        ];
+    }
+
+    $limit = max(1, min(500, $limit));
+    $runStmt = $db->query(
+        'SELECT
+            r.id,
+            r.created_at,
+            r.video_id,
+            r.model,
+            r.pad_seconds,
+            r.merge_gap_seconds,
+            r.apply_mode,
+            r.status,
+            r.windows,
+            r.markers,
+            r.applied,
+            r.audio_seconds,
+            r.error,
+            v.title,
+            c.name AS channel
+         FROM stt_patch_runs r
+         LEFT JOIN videos v ON v.youtube_id = r.video_id
+         LEFT JOIN channels c ON c.id = v.channel_id
+         ORDER BY r.id DESC
+         LIMIT 25'
+    );
+    $runs = [];
+    foreach ($runStmt->fetchAll() as $row) {
+        $runs[] = [
+            'id' => (int)$row['id'],
+            'created_at' => (string)$row['created_at'],
+            'video_id' => (string)$row['video_id'],
+            'title' => (string)($row['title'] ?? ''),
+            'channel' => (string)($row['channel'] ?? ''),
+            'model' => (string)$row['model'],
+            'pad_seconds' => (float)$row['pad_seconds'],
+            'merge_gap_seconds' => (float)$row['merge_gap_seconds'],
+            'apply_mode' => (bool)$row['apply_mode'],
+            'status' => (string)$row['status'],
+            'windows' => (int)$row['windows'],
+            'markers' => (int)$row['markers'],
+            'applied' => (int)$row['applied'],
+            'audio_seconds' => (float)$row['audio_seconds'],
+            'error' => (string)$row['error'],
+        ];
+    }
+
+    $where = [];
+    $params = [];
+    if ($videoId !== '') {
+        $where[] = 'm.video_id = :video_id';
+        $params[':video_id'] = $videoId;
+    }
+    if ($runId > 0) {
+        $where[] = 'm.run_id = :run_id';
+        $params[':run_id'] = $runId;
+    }
+
+    $sql = 'SELECT
+                m.id,
+                m.run_id,
+                m.video_id,
+                m.marker_index,
+                m.marker_char_start,
+                m.marker_char_end,
+                m.marker_start_seconds,
+                m.marker_end_seconds,
+                m.window_index,
+                m.window_start_seconds,
+                m.window_end_seconds,
+                m.youtube_before,
+                m.youtube_after,
+                m.youtube_excerpt,
+                m.stt_text,
+                m.stt_excerpt,
+                m.candidate_text,
+                m.replacement_text,
+                m.status,
+                m.confidence,
+                m.reason,
+                m.applied,
+                m.created_at,
+                r.model,
+                r.status AS run_status,
+                v.title,
+                c.name AS channel,
+                c.avatar_url,
+                c.category
+            FROM stt_patch_markers m
+            JOIN stt_patch_runs r ON r.id = m.run_id
+            JOIN videos v ON v.youtube_id = m.video_id
+            JOIN channels c ON c.id = v.channel_id';
+    if ($where) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $sql .= ' ORDER BY m.run_id DESC, m.marker_index ASC LIMIT :limit';
+
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $markers = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $seconds = max(0, (int)floor((float)$row['marker_start_seconds']));
+        $markers[] = [
+            'id' => (int)$row['id'],
+            'run_id' => (int)$row['run_id'],
+            'video_id' => (string)$row['video_id'],
+            'youtube_id' => (string)$row['video_id'],
+            'channel' => (string)$row['channel'],
+            'avatar_url' => (string)$row['avatar_url'],
+            'category' => (string)$row['category'],
+            'title' => (string)$row['title'],
+            'marker_index' => (int)$row['marker_index'],
+            'marker_char_start' => (int)$row['marker_char_start'],
+            'marker_char_end' => (int)$row['marker_char_end'],
+            'marker_start_seconds' => (float)$row['marker_start_seconds'],
+            'marker_end_seconds' => (float)$row['marker_end_seconds'],
+            'marker_timestamp' => yt_format_timestamp($seconds),
+            'window_index' => (int)$row['window_index'],
+            'window_start_seconds' => (float)$row['window_start_seconds'],
+            'window_end_seconds' => (float)$row['window_end_seconds'],
+            'window_start_timestamp' => yt_format_timestamp(max(0, (int)floor((float)$row['window_start_seconds']))),
+            'window_end_timestamp' => yt_format_timestamp(max(0, (int)ceil((float)$row['window_end_seconds']))),
+            'youtube_before' => (string)$row['youtube_before'],
+            'youtube_after' => (string)$row['youtube_after'],
+            'youtube_excerpt' => (string)$row['youtube_excerpt'],
+            'stt_text' => (string)$row['stt_text'],
+            'stt_excerpt' => (string)$row['stt_excerpt'],
+            'candidate_text' => (string)$row['candidate_text'],
+            'replacement_text' => (string)$row['replacement_text'],
+            'status' => (string)$row['status'],
+            'confidence' => (float)$row['confidence'],
+            'reason' => (string)$row['reason'],
+            'applied' => (bool)$row['applied'],
+            'model' => (string)$row['model'],
+            'run_status' => (string)$row['run_status'],
+            'created_at' => (string)$row['created_at'],
+            'url' => 'https://www.youtube.com/watch?v=' . rawurlencode((string)$row['video_id']) . '&t=' . $seconds . 's',
+        ];
+    }
+
+    return [
+        'runs' => $runs,
+        'markers' => $markers,
+    ];
 }
 
 function yt_ensure_title_index(PDO $db): void

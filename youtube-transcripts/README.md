@@ -138,6 +138,51 @@ sqlite3 -cmd ".timeout 600000" data/transcripts.sqlite3 "
 
 `videos.transcript` remains the full concatenated clean transcript. `segments` remains the timestamp-to-character-index map used by snippets and YouTube timestamp links. Rows marked `no_subtitles` keep their existing transcript because `yt-dlp` did not return an English JSON3 subtitle for that video.
 
+## Patch Censored Captions With Local STT
+
+Use this only for videos whose YouTube transcript contains `[ __ ]`. The patcher keeps the YouTube transcript as the source of truth, finds each censored marker, maps it to timestamp cues through `segments.char_index`, merges nearby markers into small audio windows, downloads only those audio windows, runs local Whisper, and replaces a marker only when the local STT aligns with the surrounding YouTube words.
+
+Trial on one known short video:
+
+```bash
+cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
+./refresh/stt_patch_censored.py \
+  --video-id M4d8jWOOaCI \
+  --apply \
+  --model small.en \
+  --pad-seconds 2 \
+  --merge-gap-seconds 15 \
+  --keep-workdir \
+  --cookies-from-browser ''
+```
+
+Important behavior:
+
+- Each cut audio file is deleted in a `finally` block immediately after its Whisper pass finishes.
+- `--keep-workdir` keeps `summary.json` and Whisper JSON/report files, but not audio.
+- `--apply` updates `videos.transcript`, shifts later `segments.char_index` values when replacements change text length, and refreshes `videos_fts` for that video.
+- Without `--apply`, it records candidates for review but does not mutate transcript rows.
+- The audit tables are `stt_patch_runs` and `stt_patch_markers`.
+- The UI has an `STT Patches` tab backed by `api.php?action=patches`, showing timestamped YouTube links, original YouTube excerpts, local STT excerpts, candidates, confidence, and apply status.
+
+Inspect the latest run directly:
+
+```bash
+sqlite3 -cmd ".timeout 5000" data/transcripts.sqlite3 "
+  SELECT id, video_id, status, markers, applied, audio_seconds, error
+  FROM stt_patch_runs
+  ORDER BY id DESC
+  LIMIT 5;
+
+  SELECT marker_index, marker_start_seconds, status, confidence, candidate_text, replacement_text, reason
+  FROM stt_patch_markers
+  WHERE run_id = (SELECT max(id) FROM stt_patch_runs)
+  ORDER BY marker_index;
+"
+```
+
+Default windowing is intentionally conservative: `--pad-seconds 2` and `--merge-gap-seconds 15`. Increase the merge gap when many censored words are close together and you want fewer audio cuts; decrease it if Whisper context starts bleeding between unrelated sections.
+
 ## Dedupe Rolling Transcript Overlaps
 
 The JSON3 refresh path above is preferred for overlap repair because it goes back to YouTube's timed subtitle source instead of guessing. Use this heuristic cleanup only as a fallback for rows that cannot be refreshed from JSON3. Some YouTube subtitle exports repeat the trailing words from one caption chunk at the start of the next chunk. Bulk imports with sparse segment anchors can also leave exact repeated phrases inside one segment. Both patterns create duplicate phrases in snippets even when the video is only imported once. Clean those overlaps with:
@@ -253,6 +298,9 @@ cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/lib.php" \
   "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/lib.php"
 cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/index.html" \
   "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/index.html"
+mkdir -p "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/refresh"
+cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/refresh/stt_patch_censored.py" \
+  "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/refresh/stt_patch_censored.py"
 cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" \
   "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3"
 ```
@@ -266,6 +314,7 @@ git -C "/Users/diego/Desktop/Ego/public_html" add \
   youtube-transcripts/import.php \
   youtube-transcripts/lib.php \
   youtube-transcripts/index.html \
+  youtube-transcripts/refresh/stt_patch_censored.py \
   youtube-transcripts/stats.html \
   youtube-transcripts/README.md
 git -C "/Users/diego/Desktop/Ego/public_html" commit -m "Update YouTube transcript search"

@@ -37,6 +37,19 @@ try {
             'stats' => yt_channel_stats($db),
         ]);
     }
+    if ($action === 'patches') {
+        yt_require_data($db);
+        yt_json([
+            'ok' => true,
+            'version' => YT_API_VERSION,
+            'patches' => yt_stt_patch_audit(
+                $db,
+                (int)($_GET['limit'] ?? 200),
+                (string)($_GET['video_id'] ?? ''),
+                (int)($_GET['run_id'] ?? 0)
+            ),
+        ]);
+    }
     if ($action === 'search') {
         yt_require_data($db);
         $query = (string)($_GET['q'] ?? '');

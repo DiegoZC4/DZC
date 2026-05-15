@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube Transcript Stats</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff0000'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='28' font-weight='900' fill='white'%3ECC%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f7f7f4;
+  --ink: #181818;
+  --muted: #6f706c;
+  --line: #d9d8d0;
+  --panel: #ffffff;
+  --accent: #cc241d;
+  --accent-soft: #fff0ef;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
+.topbar { align-items: center; display: flex; gap: 10px; justify-content: space-between; margin-bottom: 12px; }
+.topbar a { color: var(--accent); font-size: 14px; font-weight: 850; text-decoration: none; }
+.meta { color: var(--muted); font-size: 14px; min-height: 22px; }
+.controls { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.metric-button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 10px; }
+.metric-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+.summary { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.stat strong { display: block; font-size: 18px; line-height: 1.15; }
+.stat span { color: var(--muted); display: block; font-size: 12px; font-weight: 750; margin-top: 3px; }
+.viz { align-items: start; display: grid; gap: 14px; grid-template-columns: minmax(280px, 430px) minmax(0, 1fr); margin-bottom: 14px; }
+.pie-wrap { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; justify-items: center; min-height: 340px; padding: 12px; }
+.pie { height: min(72vw, 380px); max-height: 380px; width: min(72vw, 380px); }
+.pie text { fill: var(--ink); font-size: 11px; font-weight: 850; pointer-events: none; }
+.legend { align-content: start; display: grid; gap: 7px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.legend-row { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; grid-template-columns: 13px 24px minmax(0, 1fr) auto; min-width: 0; padding: 7px 8px; }
+.swatch { border-radius: 50%; height: 13px; width: 13px; }
+.avatar { border-radius: 50%; height: 24px; object-fit: cover; width: 24px; }
+.avatar-fallback { align-items: center; background: #e2e8f0; color: #475569; display: inline-flex; font-size: 10px; font-weight: 950; justify-content: center; }
+.legend-name { font-size: 13px; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-value { color: var(--muted); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.note { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0 0 12px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid var(--line); padding: 8px 7px; text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-size: 12px; font-weight: 850; }
+td { font-size: 13px; font-weight: 700; }
+th:first-child, td:first-child { text-align: left; }
+.channel-cell { align-items: center; display: flex; gap: 8px; min-width: 220px; }
+.channel-cell span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { color: var(--muted); padding: 18px 0; }
+@media (max-width: 780px) {
+  .viz { grid-template-columns: 1fr; }
+  .pie { height: min(86vw, 360px); width: min(86vw, 360px); }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <div class="meta" id="meta">Loading stats...</div>
+    <a href="index.html">Search</a>
+  </div>
+  <div class="controls" id="controls"></div>
+  <section class="summary" id="summary"></section>
+  <section class="viz">
+    <div class="pie-wrap">
+      <svg class="pie" id="pie" viewBox="0 0 240 240" role="img" aria-label="Channel stats pie chart"></svg>
+    </div>
+    <div>
+      <p class="note" id="note"></p>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+  <section class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Channel</th>
+          <th>Runtime</th>
+          <th>Transcript</th>
+          <th>Videos</th>
+          <th>DB Est.</th>
+          <th>Segments</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+<script>
+const METRICS = [
+  { key: 'runtime_seconds', label: 'Runtime', format: formatDuration, note: 'Runtime is approximate, based on the latest transcript timestamp for each video.' },
+  { key: 'transcript_chars', label: 'Transcript Length', format: formatCount, note: 'Transcript length is stored text characters after import cleanup.' },
+  { key: 'video_count', label: 'Video Count', format: formatCount, note: 'Video count is the number of imported videos per channel.' },
+  { key: 'estimated_db_bytes', label: 'DB Storage Est.', format: formatBytes, note: 'DB storage is estimated by apportioning the SQLite file size by each channel raw text payload.' },
+  { key: 'payload_bytes', label: 'Raw Payload', format: formatBytes, note: 'Raw payload is transcript/title/id/source/import text, before SQLite and FTS overhead.' },
+  { key: 'segment_count', label: 'Segments', format: formatCount, note: 'Segments are transcript timestamp anchors used for search result links.' }
+];
+const COLORS = ['#cc241d', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#0d9488', '#4f46e5', '#c2410c', '#64748b', '#b91c1c', '#047857', '#9333ea', '#0369a1', '#be123c', '#854d0e', '#4338ca'];
+const state = { metric: 'runtime_seconds', stats: null };
+const meta = document.getElementById('meta');
+const controls = document.getElementById('controls');
+const summary = document.getElementById('summary');
+const pie = document.getElementById('pie');
+const legend = document.getElementById('legend');
+const rows = document.getElementById('rows');
+const note = document.getElementById('note');
+
+init();
+
+async function init() {
+  renderControls();
+  try {
+    const payload = await getJson('api.php?action=stats');
+    state.stats = payload.stats;
+    render();
+  } catch (error) {
+    meta.textContent = error.message;
+    document.querySelector('.viz').innerHTML = '<div class="empty">Could not load stats.</div>';
+  }
+}
+
+function renderControls() {
+  controls.replaceChildren(...METRICS.map(metric => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'metric-button';
+    button.textContent = metric.label;
+    button.setAttribute('aria-pressed', metric.key === state.metric ? 'true' : 'false');
+    button.addEventListener('click', () => {
+      state.metric = metric.key;
+      renderControls();
+      render();
+    });
+    return button;
+  }));
+}
+
+function render() {
+  const stats = state.stats;
+  if (!stats) return;
+  const metric = METRICS.find(item => item.key === state.metric) || METRICS[0];
+  const channels = [...stats.channels].sort((a, b) => Number(b[metric.key] || 0) - Number(a[metric.key] || 0));
+  const total = Number(stats.totals[metric.key] || 0);
+  meta.textContent = `${formatCount(stats.totals.video_count)} videos, ${formatCount(stats.totals.channels)} channels, ${formatBytes(stats.database_bytes)} SQLite DB`;
+  note.textContent = metric.note;
+  renderSummary(stats);
+  renderPie(channels, metric, total);
+  renderLegend(channels, metric, total);
+  renderRows(channels);
+}
+
+function renderSummary(stats) {
+  const items = [
+    ['Runtime', formatDuration(stats.totals.runtime_seconds)],
+    ['Transcript chars', formatCount(stats.totals.transcript_chars)],
+    ['Videos', formatCount(stats.totals.video_count)],
+    ['SQLite DB', formatBytes(stats.database_bytes)]
+  ];
+  summary.replaceChildren(...items.map(([label, value]) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = '<strong></strong><span></span>';
+    div.querySelector('strong').textContent = value;
+    div.querySelector('span').textContent = label;
+    return div;
+  }));
+}
+
+function renderPie(channels, metric, total) {
+  pie.replaceChildren();
+  if (!total) return;
+  const slices = pieSlices(groupSmallSlices(channels, metric.key), metric.key, total);
+  for (const slice of slices) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', describeArc(120, 120, 95, slice.start, slice.end));
+    path.setAttribute('fill', slice.color);
+    path.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'title')).textContent = `${slice.label}: ${metric.format(slice.value)} (${formatPercent(slice.value / total)})`;
+    pie.appendChild(path);
+  }
+  const hole = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  hole.setAttribute('cx', '120');
+  hole.setAttribute('cy', '120');
+  hole.setAttribute('r', '52');
+  hole.setAttribute('fill', '#f7f7f4');
+  pie.appendChild(hole);
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', '120');
+  label.setAttribute('y', '115');
+  label.setAttribute('text-anchor', 'middle');
+  label.textContent = metric.label;
+  pie.appendChild(label);
+  const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  value.setAttribute('x', '120');
+  value.setAttribute('y', '133');
+  value.setAttribute('text-anchor', 'middle');
+  value.textContent = metric.format(total);
+  pie.appendChild(value);
+}
+
+function renderLegend(channels, metric, total) {
+  const grouped = groupSmallSlices(channels, metric.key);
+  legend.replaceChildren(...grouped.map((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'legend-row';
+    row.innerHTML = '<span class="swatch"></span><span class="avatar"></span><div class="legend-name"></div><div class="legend-value"></div>';
+    row.querySelector('.swatch').style.background = COLORS[index % COLORS.length];
+    const avatarSlot = row.querySelector('.avatar');
+    avatarSlot.replaceWith(avatarFor(item));
+    row.querySelector('.legend-name').textContent = item.channel;
+    row.querySelector('.legend-value').textContent = `${metric.format(item[metric.key])} · ${formatPercent(Number(item[metric.key] || 0) / total)}`;
+    return row;
+  }));
+}
+
+function renderRows(channels) {
+  rows.replaceChildren(...channels.map(channel => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><div class="channel-cell"><span class="avatar-slot"></span><span></span></div></td>
+      <td></td><td></td><td></td><td></td><td></td>
+    `;
+    tr.querySelector('.avatar-slot').replaceWith(avatarFor(channel));
+    tr.querySelector('.channel-cell span:last-child').textContent = channel.channel;
+    tr.children[1].textContent = formatDuration(channel.runtime_seconds);
+    tr.children[2].textContent = formatCount(channel.transcript_chars);
+    tr.children[3].textContent = formatCount(channel.video_count);
+    tr.children[4].textContent = formatBytes(channel.estimated_db_bytes);
+    tr.children[5].textContent = formatCount(channel.segment_count);
+    return tr;
+  }));
+}
+
+function groupSmallSlices(channels, key) {
+  const sorted = channels.filter(item => Number(item[key] || 0) > 0);
+  const top = sorted.slice(0, 17);
+  const rest = sorted.slice(17);
+  if (!rest.length) return top;
+  const other = rest.reduce((acc, item) => {
+    acc[key] += Number(item[key] || 0);
+    return acc;
+  }, { channel: 'Other channels', avatar_url: '', [key]: 0 });
+  return [...top, other];
+}
+
+function pieSlices(items, key, total) {
+  let angle = -90;
+  return items.map((item, index) => {
+    const value = Number(item[key] || 0);
+    const span = total ? (value / total) * 360 : 0;
+    const slice = { label: item.channel, value, color: COLORS[index % COLORS.length], start: angle, end: angle + span };
+    angle += span;
+    return slice;
+  });
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polar(cx, cy, r, endAngle);
+  const end = polar(cx, cy, r, startAngle);
+  const largeArc = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+}
+
+function polar(cx, cy, r, angle) {
+  const radians = angle * Math.PI / 180;
+  return { x: cx + r * Math.cos(radians), y: cy + r * Math.sin(radians) };
+}
+
+function avatarFor(channel) {
+  if (channel.avatar_url) {
+    const img = document.createElement('img');
+    img.className = 'avatar';
+    img.src = channel.avatar_url;
+    img.alt = `${channel.channel} avatar`;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.referrerPolicy = 'no-referrer';
+    return img;
+  }
+  const span = document.createElement('span');
+  span.className = 'avatar avatar-fallback';
+  span.textContent = initials(channel.channel);
+  return span;
+}
+
+function initials(value) {
+  const words = String(value || '?').replace(/&/g, ' ').match(/[A-Za-z0-9]+/g) || ['?'];
+  return words.slice(0, 2).map(word => word[0]).join('');
+}
+
+function formatCount(value) {
+  return new Intl.NumberFormat().format(Math.round(Number(value || 0)));
+}
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let size = bytes;
+  let unit = 0;
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit++;
+  }
+  return `${size >= 10 || unit === 0 ? size.toFixed(0) : size.toFixed(1)} ${units[unit]}`;
+}
+
+function formatDuration(seconds) {
+  const hours = Number(seconds || 0) / 3600;
+  if (hours >= 1000) return `${new Intl.NumberFormat().format(Math.round(hours))} h`;
+  if (hours >= 10) return `${hours.toFixed(0)} h`;
+  return `${hours.toFixed(1)} h`;
+}
+
+function formatPercent(value) {
+  return `${(Number(value || 0) * 100).toFixed(value >= 0.1 ? 1 : 2)}%`;
+}
+
+async function getJson(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  const payload = await response.json();
+  if (!payload.ok) throw new Error(payload.error || 'Request failed');
+  return payload;
+}
+</script>
+</body>
+</html>

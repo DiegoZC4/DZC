@@ -4,12 +4,18 @@ declare(strict_types=1);
 const YT_API_VERSION = '2';
 const YT_DEFAULT_SOURCE_DIR = '/Users/diego/Desktop/Read/YouTube Channel Transcripts';
 const YT_LOCAL_CANONICAL_DB = '/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3';
+const YT_STATS_CACHE_VERSION = 1;
 const YT_SNIPPET_CONTEXT_CHARS = 120;
 const YT_IMPORT_TRANSACTION_BATCH_SIZE = 25;
 
 function yt_data_dir(): string
 {
     return __DIR__ . '/data';
+}
+
+function yt_stats_cache_path(): string
+{
+    return yt_data_dir() . '/stats-cache.json';
 }
 
 function yt_db_path(): string
@@ -1019,6 +1025,15 @@ function yt_stats(PDO $db): array
 
 function yt_channel_stats(PDO $db): array
 {
+    $cached = yt_read_channel_stats_cache();
+    if ($cached !== null) {
+        return $cached;
+    }
+    return yt_write_channel_stats_cache($db);
+}
+
+function yt_compute_channel_stats(PDO $db): array
+{
     $dbBytes = is_file(yt_db_path()) ? filesize(yt_db_path()) : 0;
     $sql = "SELECT
                 c.id,
@@ -1097,14 +1112,67 @@ function yt_channel_stats(PDO $db): array
     ];
 }
 
-function yt_channel_stats_cache_ready(PDO $db): bool
+function yt_read_channel_stats_cache(): ?array
 {
-    return true;
+    $path = yt_stats_cache_path();
+    if (!is_file($path)) {
+        return null;
+    }
+    $payload = json_decode((string)file_get_contents($path), true);
+    if (!is_array($payload) || (int)($payload['cache_version'] ?? 0) !== YT_STATS_CACHE_VERSION) {
+        return null;
+    }
+    $stats = $payload['stats'] ?? null;
+    if (!is_array($stats)) {
+        return null;
+    }
+    $dbBytes = is_file(yt_db_path()) ? filesize(yt_db_path()) : 0;
+    if ((int)($stats['database_bytes'] ?? -1) !== $dbBytes) {
+        return null;
+    }
+    $stats['cache'] = [
+        'generated_at' => (string)($payload['generated_at'] ?? ''),
+        'path' => $path,
+        'database_bytes' => $dbBytes,
+    ];
+    return $stats;
 }
 
-function yt_refresh_channel_stats(PDO $db): void
+function yt_write_channel_stats_cache(PDO $db): array
 {
-    yt_channel_stats($db);
+    $stats = yt_compute_channel_stats($db);
+    $payload = [
+        'cache_version' => YT_STATS_CACHE_VERSION,
+        'generated_at' => gmdate('c'),
+        'stats' => $stats,
+    ];
+    $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($json !== false) {
+        $path = yt_stats_cache_path();
+        $tmp = $path . '.tmp';
+        if (@file_put_contents($tmp, $json, LOCK_EX) !== false) {
+            @rename($tmp, $path);
+        }
+        if (is_file($tmp)) {
+            @unlink($tmp);
+        }
+    }
+    $stats['cache'] = [
+        'generated_at' => (string)$payload['generated_at'],
+        'path' => yt_stats_cache_path(),
+        'database_bytes' => (int)$stats['database_bytes'],
+    ];
+    return $stats;
+}
+
+function yt_channel_stats_cache_ready(PDO $db): bool
+{
+    return yt_read_channel_stats_cache() !== null;
+}
+
+function yt_refresh_channel_stats(PDO $db): array
+{
+    return yt_write_channel_stats_cache($db);
 }
 
 function yt_database_info(PDO $db): array

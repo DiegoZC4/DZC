@@ -7,11 +7,10 @@ This app searches YouTube transcript markdown files with PHP and SQLite FTS.
 - Source project: `/Users/diego/Desktop/Read/YouTube Channel Transcripts`
 - Website mirror: `/Users/diego/Desktop/Ego/public_html/youtube-transcripts`
 - Public route: `https://diegozc.com/ytscripts/`
-- Local SQLite DB: `/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3`
-- Website mirror SQLite DB: `/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3`
+- Canonical local SQLite DB: `/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3`
 - Live Hostinger SQLite DB: `/home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3`
 
-The SQLite DB is ignored by git because it is multi-GB. Git/GitHub deploys update PHP, HTML, and JSON, but they do not upload `data/transcripts.sqlite3`.
+The SQLite DB is ignored by git because it is multi-GB. Keep the complete local DB only in the source project. The local website mirror falls back to that canonical DB for preview when its own `data/transcripts.sqlite3` is absent. Git/GitHub deploys update PHP, HTML, and JSON, but they do not upload the DB.
 
 ## Schema
 
@@ -306,7 +305,7 @@ Prefer the incremental refresh script over `--rebuild` unless the whole corpus n
 
 ## Sync To Website Mirror
 
-After updating the source project, copy the app files and DB into the local website mirror:
+After updating the source project, copy only the app files into the local website mirror. Do not copy the multi-GB DB into `Ego/public_html`; the local mirror reads the canonical DB from the transcript project when `youtube-transcripts/data/transcripts.sqlite3` is absent.
 
 ```bash
 cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/api.php" \
@@ -320,8 +319,6 @@ cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/index.html" \
 mkdir -p "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/refresh"
 cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/refresh/stt_patch_censored.py" \
   "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/refresh/stt_patch_censored.py"
-cp "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" \
-  "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3"
 ```
 
 Commit and push only the tracked small files from `/Users/diego/Desktop/Ego/public_html`. The DB is ignored and must be uploaded separately.
@@ -368,9 +365,12 @@ u506224278@diegozc.com: Permission denied (publickey,password).
 If credentials or an SSH key are available, upload with `rsync`:
 
 ```bash
-rsync -av --progress -e "ssh -p 65002" \
-  "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3" \
-  "u506224278@145.223.105.221:/home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3"
+rsync -a --partial --inplace --progress -e "ssh -p 65002" \
+  "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" \
+  "u506224278@145.223.105.221:/home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3.tmp"
+
+ssh -p 65002 u506224278@145.223.105.221 \
+  "sqlite3 /home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3.tmp 'PRAGMA integrity_check;' && mv /home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3.tmp /home/u506224278/domains/diegozc.com/public_html/youtube-transcripts/data/transcripts.sqlite3"
 ```
 
 If only SFTP is available, connect to port `65002` and upload the local DB to:
@@ -391,11 +391,11 @@ sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.
 sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" ".schema segments"
 ```
 
-Before uploading a DB:
+Before uploading the canonical DB:
 
 ```bash
-sqlite3 "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3" "PRAGMA integrity_check;"
-sqlite3 "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/data/transcripts.sqlite3" \
+sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" "PRAGMA integrity_check;"
+sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3" \
   "select count(*) from videos; select count(*) from channels; select count(*) from videos where channel_id is null; select count(*) from segments;"
 ```
 

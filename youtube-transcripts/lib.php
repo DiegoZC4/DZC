@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 const YT_API_VERSION = '2';
 const YT_DEFAULT_SOURCE_DIR = '/Users/diego/Desktop/Read/YouTube Channel Transcripts';
+const YT_LOCAL_CANONICAL_DB = '/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.sqlite3';
 const YT_SNIPPET_CONTEXT_CHARS = 120;
 const YT_IMPORT_TRANSACTION_BATCH_SIZE = 25;
 
@@ -13,7 +14,22 @@ function yt_data_dir(): string
 
 function yt_db_path(): string
 {
-    return yt_data_dir() . '/transcripts.sqlite3';
+    $override = getenv('YT_TRANSCRIPTS_DB');
+    if (is_string($override) && $override !== '') {
+        return $override;
+    }
+
+    $webDb = yt_data_dir() . '/transcripts.sqlite3';
+    if (is_file($webDb)) {
+        return $webDb;
+    }
+
+    $localMirror = '/Users/diego/Desktop/Ego/public_html/youtube-transcripts';
+    if (strncmp(__DIR__, $localMirror, strlen($localMirror)) === 0 && is_file(YT_LOCAL_CANONICAL_DB)) {
+        return YT_LOCAL_CANONICAL_DB;
+    }
+
+    return $webDb;
 }
 
 function yt_db(bool $create = true): PDO

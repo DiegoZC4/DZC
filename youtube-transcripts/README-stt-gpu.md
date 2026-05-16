@@ -108,7 +108,9 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/Whisper/.venv/bin/python" \
   refresh/stt_patch_censored.py \
   --backend mlx \
-  --mlx-model mlx-community/whisper-tiny \
+  --mlx-model mlx-community/whisper-large-v3-mlx \
+  --pad-seconds 5 \
+  --word-timestamps \
   --video-id VIDEO_ID \
   --cookies-from-browser ''
 ```
@@ -120,21 +122,25 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/Whisper/.venv/bin/python" \
   refresh/stt_patch_censored.py \
   --backend mlx \
-  --mlx-model mlx-community/whisper-tiny \
+  --mlx-model mlx-community/whisper-large-v3-mlx \
+  --pad-seconds 5 \
+  --word-timestamps \
   --all-censored \
   --limit-videos 25 \
   --skip-successful \
   --cookies-from-browser ''
 ```
 
-Use `--mlx-model mlx-community/whisper-base` or a larger MLX model only if `tiny` is not accurate enough on review samples.
+The default model is now `mlx-community/whisper-large-v3-mlx`, the largest cached MLX Whisper model tested for this M2 Pro Mac mini with 16 GB memory. `mlx-community/whisper-large-v3-turbo` is also cached and is the speed fallback if full large-v3 proves too slow for bulk runs.
 
 Important:
 
 - Run this outside the Codex sandbox for Metal access.
 - Use the venv Python path above, not plain `./refresh/stt_patch_censored.py`, so `mlx_whisper` imports from `Whisper/.venv`.
-- Keep `--word-timestamps` off unless there is a specific reason to test it.
+- The patcher passes `--js-runtimes node` to `yt-dlp`; this has been more reliable than Deno-only extraction for recent YouTube player challenges.
+- Keep `--word-timestamps` on for padded cue runs. The patcher uses timestamps to limit candidate extraction back to the original YouTube cue bounds after giving Whisper 5 seconds of audio context on each side.
 - Keep `--max-replacement-tokens 1` for conservative candidate generation. Multi-word replacements should stay review-only until proven safe.
+- Reruns replace existing `uncensored` candidates for the same processed marker unless `--keep-existing-candidates` is passed.
 - Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos that already have rows in `uncensored`.
 
 ## Scale Estimate
@@ -156,8 +162,8 @@ For fixing thousands of videos:
 1. Use MLX, not OpenAI Whisper MPS.
 2. Keep one Python worker process alive so the model stays loaded.
 3. Download audio once per video, not once per cue.
-4. Cut or pass all censored cue windows for that video through the loaded MLX model. Defaults use exact cue windows with no padding; if padding is enabled, adjacent windows are clipped so they do not overlap.
-5. Keep word timestamps disabled and align the returned cue text against the YouTube cue text.
+4. Cut or pass all censored cue windows for that video through the loaded MLX model. Defaults use cue windows with 5 seconds of context on each side; overlapping padded windows are merged so they do not duplicate audio.
+5. Keep word timestamps enabled and filter candidate words back to the original YouTube cue time bounds before aligning against the YouTube cue text.
 6. Delete downloaded audio immediately after the video's cues finish.
 7. Commit replacement rows in batches to `uncensored(video_id, start_char, end_char, replacement)`. Do not apply them to `videos.transcript` until the pipeline is trusted.
 

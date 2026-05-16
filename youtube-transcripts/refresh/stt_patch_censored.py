@@ -24,6 +24,7 @@ WHISPER = APP_ROOT / "Whisper" / ".venv" / "bin" / "whisper"
 YTDLP = "/opt/homebrew/bin/yt-dlp"
 FFMPEG = "ffmpeg"
 MARKER = "[ __ ]"
+DEFAULT_MLX_MODEL = "mlx-community/whisper-large-v3-mlx"
 
 
 @dataclass
@@ -195,23 +196,23 @@ def build_windows(markers: list[Marker], duration: float, pad: float, merge_gap:
     by_cue: dict[int, list[Marker]] = {}
     for marker in markers:
         by_cue.setdefault(marker.cue_index, []).append(marker)
-    windows: list[list[Any]] = []
+    raw_windows: list[list[Any]] = []
     for cue_index in sorted(by_cue):
         window_markers = by_cue[cue_index]
         cue_start = min(marker.start_seconds for marker in window_markers)
         cue_end = max(marker.end_seconds for marker in window_markers)
         start = max(0.0, cue_start - pad)
         end = min(duration, max(cue_end, cue_start + 0.5) + pad)
-        windows.append([float(start), float(end), sorted(window_markers, key=lambda marker: marker.char_start)])
+        raw_windows.append([float(start), float(end), sorted(window_markers, key=lambda marker: marker.char_start)])
 
-    for index in range(len(windows) - 1):
-        current = windows[index]
-        following = windows[index + 1]
-        if float(current[1]) > float(following[0]):
-            boundary = (float(current[1]) + float(following[0])) / 2.0
-            if float(current[0]) < boundary < float(following[1]):
-                current[1] = boundary
-                following[0] = boundary
+    windows: list[list[Any]] = []
+    for start, end, window_markers in raw_windows:
+        if windows and float(start) <= float(windows[-1][1]) + merge_gap:
+            windows[-1][1] = max(float(windows[-1][1]), float(end))
+            windows[-1][2].extend(window_markers)
+            windows[-1][2].sort(key=lambda marker: marker.char_start)
+        else:
+            windows.append([float(start), float(end), window_markers])
 
     out: list[tuple[float, float, list[Marker]]] = []
     for index, (start, end, window_markers) in enumerate(windows):
@@ -236,6 +237,8 @@ def ytdlp_cookie_args(args: argparse.Namespace) -> list[str]:
 def get_audio_url(video_id: str, args: argparse.Namespace) -> str:
     proc = run([
         YTDLP,
+        "--js-runtimes",
+        "node",
         *ytdlp_cookie_args(args),
         "--no-playlist",
         "-f",
@@ -379,6 +382,24 @@ def word_tokens(words: list[Word]) -> list[str]:
     return [normalize_token(word.text) for word in words]
 
 
+def words_inside_cue(marker: Marker, words: list[Word], args: argparse.Namespace) -> list[Word]:
+    if not args.word_timestamps:
+        return words
+    start = marker.start_seconds - args.cue_time_tolerance
+    end = marker.end_seconds + args.cue_time_tolerance
+    bounded = []
+    for word in words:
+        word_start = min(word.start, word.end)
+        word_end = max(word.start, word.end)
+        if word_start == word_end:
+            midpoint = word_start
+            if start <= midpoint <= end:
+                bounded.append(word)
+        elif word_end >= start and word_start <= end:
+            bounded.append(word)
+    return bounded
+
+
 def find_subsequence(tokens: list[str], needle: list[str], *, start: int = 0, end: int | None = None) -> list[int]:
     if not needle:
         return []
@@ -393,10 +414,13 @@ def find_subsequence(tokens: list[str], needle: list[str], *, start: int = 0, en
 
 
 def choose_replacement(marker: Marker, words: list[Word], stt_text: str, args: argparse.Namespace) -> tuple[str, float, str, str]:
+    words = words_inside_cue(marker, words, args)
     tokens = word_tokens(words)
     before_all = context_tokens(marker.youtube_before, from_right=True, max_tokens=args.context_tokens)
     after_all = context_tokens(marker.youtube_after, from_right=False, max_tokens=args.context_tokens)
     if not words or not tokens:
+        if args.word_timestamps:
+            return "", 0.0, "skipped", "no STT words inside cue time bounds"
         return "", 0.0, "skipped", "empty STT output"
 
     best: tuple[float, str, int, int, str] | None = None
@@ -431,7 +455,7 @@ def choose_replacement(marker: Marker, words: list[Word], stt_text: str, args: a
                     score = before_len + after_len - (0.15 * max(0, len(candidate_words) - 1))
                     if not (has_left_boundary and has_right_boundary):
                         score = min(score, args.context_tokens)
-                    reason = f"cue bounded; matched {before_len} before token(s), {after_len} after token(s)"
+                    reason = f"cue/time bounded; matched {before_len} before token(s), {after_len} after token(s)"
                     if best is None or score > best[0]:
                         best = (score, replacement, candidate_start, candidate_end, reason)
 
@@ -502,6 +526,13 @@ def insert_marker(conn: sqlite3.Connection, run_id: int, video_id: str, marker: 
         ),
     )
     return conn.total_changes > before
+
+
+def clear_existing_candidates(conn: sqlite3.Connection, video_id: str, markers: list[Marker]) -> None:
+    conn.executemany(
+        "DELETE FROM uncensored WHERE video_id = ? AND start_char = ? AND end_char = ?",
+        [(video_id, marker.char_start, marker.char_end) for marker in markers],
+    )
 
 
 def apply_replacements(
@@ -677,6 +708,9 @@ def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namesp
         markers = [marker for marker in markers if marker.window_index in keep_window_indexes]
 
     run_id = create_run(conn, video_id, args)
+    if not args.keep_existing_candidates:
+        clear_existing_candidates(conn, video_id, markers)
+        conn.commit()
     run_dir = RUNS / f"stt-patch-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{video_id}"
     run_dir.mkdir(parents=True, exist_ok=True)
     audio_seconds = 0.0
@@ -767,10 +801,11 @@ def main() -> int:
     parser.add_argument("--delete-restored-run", action="store_true", help="Delete restored audit runs after reversing their applied replacements.")
     parser.add_argument("--apply", action="store_true", help="Ignored. This script now only stages candidates in uncensored.")
     parser.add_argument("--apply-threshold", type=float, default=0.55)
-    parser.add_argument("--pad-seconds", type=float, default=0.0)
-    parser.add_argument("--merge-gap-seconds", type=float, default=0.0, help="Deprecated; cue-bounded mode does not merge separate cues.")
+    parser.add_argument("--pad-seconds", type=float, default=5.0)
+    parser.add_argument("--merge-gap-seconds", type=float, default=0.0, help="Merge padded cue windows separated by at most this many seconds.")
     parser.add_argument("--context-chars", type=int, default=220)
     parser.add_argument("--context-tokens", type=int, default=4)
+    parser.add_argument("--cue-time-tolerance", type=float, default=0.25, help="Seconds of tolerance around the original cue bounds when filtering word timestamps.")
     parser.add_argument("--max-replacement-chars", type=int, default=20)
     parser.add_argument(
         "--max-replacement-tokens",
@@ -779,14 +814,15 @@ def main() -> int:
         help="Stage only short censored spans by default; raise this for phrase-level review.",
     )
     parser.add_argument("--model", default="small.en")
-    parser.add_argument("--backend", choices=["openai", "mlx"], default="openai")
-    parser.add_argument("--mlx-model", default="mlx-community/whisper-tiny")
-    parser.add_argument("--word-timestamps", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--backend", choices=["openai", "mlx"], default="mlx")
+    parser.add_argument("--mlx-model", default=DEFAULT_MLX_MODEL)
+    parser.add_argument("--word-timestamps", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--model-dir", type=Path, default=Path.home() / ".cache" / "whisper")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--cookies-from-browser", default="chrome")
     parser.add_argument("--whisper-bin", type=Path, default=WHISPER)
     parser.add_argument("--limit-windows", type=int, help="Process only the first N merged windows for a quick smoke test.")
+    parser.add_argument("--keep-existing-candidates", action="store_true", help="Keep existing uncensored rows for processed markers instead of replacing them.")
     parser.add_argument("--keep-workdir", action="store_true", help="Keep non-audio JSON/report files. Audio is always deleted.")
     args = parser.parse_args()
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YouTube Transcript Patches</title>
+<title>YouTube Transcript Uncensored Candidates</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff0000'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='28' font-weight='900' fill='white'%3ECC%3C/text%3E%3C/svg%3E">
 <style>
 :root {
@@ -36,10 +36,8 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 .patch-window-head { color: var(--muted); font-size: 12px; font-weight: 850; }
 .patch-window-text { color: #30302e; font-size: 13.5px; line-height: 1.36; }
 .patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
-.patch-word[data-applied="false"] { background: transparent; box-shadow: inset 0 -2px 0 var(--accent-soft); }
 .patch-links { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
 .patch-chip { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; text-decoration: none; }
-.patch-chip[data-applied="false"] { background: #fff; color: var(--muted); }
 .empty { color: var(--muted); padding: 18px 0; }
 @media (max-width: 680px) {
   .topbar { align-items: flex-start; flex-direction: column; }
@@ -53,7 +51,7 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 <body>
 <main>
   <div class="topbar">
-    <div class="meta" id="patchMeta">Loading patch audit...</div>
+    <div class="meta" id="patchMeta">Loading uncensored candidates...</div>
     <div class="page-nav">
       <a href="index.html">Search</a>
       <a href="stats.html">Stats</a>
@@ -102,7 +100,7 @@ async function loadChannels() {
 }
 
 async function loadPatches() {
-  patchMeta.textContent = 'Loading patch audit...';
+  patchMeta.textContent = 'Loading uncensored candidates...';
   patchResults.innerHTML = '';
   try {
     const payload = await getJson('api.php?action=patches&limit=200');
@@ -115,22 +113,16 @@ async function loadPatches() {
 
 function renderPatches(payload) {
   const markers = payload.markers || [];
-  const runs = payload.runs || [];
-  const latestRun = runs[0] || null;
-  const appliedCount = markers.filter(item => item.applied).length;
   const groups = groupPatchMarkers(markers);
   const videoCount = new Set(markers.map(item => item.video_id)).size;
   if (markers.length) {
-    patchMeta.textContent = `${groups.length} patch card${groups.length === 1 ? '' : 's'} · ${markers.length} marker${markers.length === 1 ? '' : 's'} from ${videoCount} video${videoCount === 1 ? '' : 's'} · ${appliedCount} applied`;
-  } else if (latestRun) {
-    const error = latestRun.error ? ` · ${latestRun.error}` : '';
-    patchMeta.textContent = `Latest run #${latestRun.id}: ${latestRun.status}${error}`;
+    patchMeta.textContent = `${groups.length} candidate card${groups.length === 1 ? '' : 's'} · ${markers.length} replacement${markers.length === 1 ? '' : 's'} from ${videoCount} video${videoCount === 1 ? '' : 's'}`;
   } else {
-    patchMeta.textContent = 'No STT patch runs yet.';
+    patchMeta.textContent = 'No uncensored candidates yet.';
   }
 
   if (!markers.length) {
-    patchResults.innerHTML = '<div class="empty">No patch markers recorded yet.</div>';
+    patchResults.innerHTML = '<div class="empty">No uncensored candidates recorded yet.</div>';
     return;
   }
 
@@ -152,8 +144,8 @@ function renderPatches(payload) {
     `;
     article.querySelector('.avatar-slot').replaceWith(channelAvatarElement(first.channel || ''));
     article.querySelector('.patch-title').textContent = first.title || first.video_id || '';
-    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · run #${first.run_id} · ${group.windows.length} audio window${group.windows.length === 1 ? '' : 's'}`;
-    article.querySelector('.patch-status').textContent = `${group.applied} / ${group.markers.length} applied`;
+    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · ${group.windows.length} candidate cue${group.windows.length === 1 ? '' : 's'}`;
+    article.querySelector('.patch-status').textContent = `${group.markers.length} candidate${group.markers.length === 1 ? '' : 's'}`;
 
     const body = article.querySelector('.patch-body');
     for (const windowGroup of group.windows) {
@@ -164,7 +156,7 @@ function renderPatches(payload) {
         <div class="patch-window-text"></div>
         <div class="patch-links"></div>
       `;
-      windowElement.querySelector('.patch-window-head').textContent = `Window ${windowGroup.start || '0:00'}-${windowGroup.end || '0:00'} · ${windowGroup.markers.length} marker${windowGroup.markers.length === 1 ? '' : 's'}`;
+      windowElement.querySelector('.patch-window-head').textContent = `${windowGroup.start || '0:00'} · ${windowGroup.markers.length} candidate${windowGroup.markers.length === 1 ? '' : 's'}`;
       renderPatchWindowText(windowElement.querySelector('.patch-window-text'), windowGroup);
       renderPatchLinks(windowElement.querySelector('.patch-links'), windowGroup.markers);
       body.appendChild(windowElement);
@@ -179,11 +171,10 @@ function groupPatchMarkers(markers) {
   for (const marker of markers) {
     const key = `${marker.run_id}:${marker.video_id}`;
     if (!groupsByKey.has(key)) {
-      groupsByKey.set(key, { key, markers: [], applied: 0, windowsByKey: new Map() });
+      groupsByKey.set(key, { key, markers: [], windowsByKey: new Map() });
     }
     const group = groupsByKey.get(key);
     group.markers.push(marker);
-    if (marker.applied) group.applied++;
     const windowKey = String(marker.window_index);
     if (!group.windowsByKey.has(windowKey)) {
       group.windowsByKey.set(windowKey, {
@@ -215,7 +206,6 @@ function groupPatchMarkers(markers) {
 function renderPatchWindowText(container, windowGroup) {
   const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
   const highlights = windowGroup.markers
-    .filter(marker => marker.applied)
     .map(marker => ({ marker, text: stripPatchMarkers(marker.replacement_text || marker.candidate_text || '') }))
     .filter(item => item.text);
 
@@ -235,8 +225,7 @@ function renderPatchWindowText(container, windowGroup) {
     if (index > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
     const mark = document.createElement('span');
     mark.className = 'patch-word';
-    mark.dataset.applied = item.marker.applied ? 'true' : 'false';
-    mark.title = `${item.marker.marker_timestamp || '0:00'} · ${item.marker.status || 'review'} · confidence ${formatConfidence(item.marker.confidence)}`;
+    mark.title = `${item.marker.marker_timestamp || '0:00'} · ${item.marker.status || 'candidate'}`;
     mark.textContent = text.slice(index, index + item.text.length);
     fragment.appendChild(mark);
     cursor = index + item.text.length;
@@ -251,13 +240,12 @@ function renderPatchLinks(container, markers) {
   for (const marker of markers) {
     const link = document.createElement('a');
     link.className = 'patch-chip';
-    link.dataset.applied = marker.applied ? 'true' : 'false';
     link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
     link.target = '_blank';
     link.rel = 'noreferrer';
     const word = stripPatchMarkers(marker.replacement_text || marker.candidate_text || marker.status || '');
     link.textContent = `${marker.marker_timestamp || '0:00'}${word ? ` ${word}` : ''}`;
-    link.title = `${marker.status || 'review'} · confidence ${formatConfidence(marker.confidence)}${marker.reason ? ` · ${marker.reason}` : ''}`;
+    link.title = `${marker.status || 'candidate'}${marker.reason ? ` · ${marker.reason}` : ''}`;
     fragment.appendChild(link);
   }
   container.replaceChildren(fragment);
@@ -368,11 +356,6 @@ function inferChannelCategory(channel) {
 function initialsFor(value) {
   const words = String(value || '?').replace(/&/g, ' ').match(/[A-Za-z0-9]+/g) || ['?'];
   return words.slice(0, 2).map(word => word[0]).join('');
-}
-
-function formatConfidence(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(2) : '0.00';
 }
 
 async function getJson(url) {

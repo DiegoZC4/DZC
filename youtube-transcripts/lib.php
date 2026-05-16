@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const YT_API_VERSION = '1';
+const YT_API_VERSION = '2';
 const YT_DEFAULT_SOURCE_DIR = '/Users/diego/Desktop/Read/YouTube Channel Transcripts';
 const YT_SNIPPET_CONTEXT_CHARS = 120;
 const YT_IMPORT_TRANSACTION_BATCH_SIZE = 25;
@@ -74,15 +74,13 @@ function yt_init_schema(PDO $db): void
         )'
     );
     $db->exec(
-        'CREATE TABLE IF NOT EXISTS channel_stats (
-            channel_id INTEGER PRIMARY KEY,
-            video_count INTEGER NOT NULL DEFAULT 0,
-            runtime_seconds INTEGER NOT NULL DEFAULT 0,
-            transcript_chars INTEGER NOT NULL DEFAULT 0,
-            payload_bytes INTEGER NOT NULL DEFAULT 0,
-            segment_count INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL DEFAULT \'\',
-            FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
+        'CREATE TABLE IF NOT EXISTS uncensored (
+            video_id TEXT NOT NULL,
+            start_char INTEGER NOT NULL,
+            end_char INTEGER NOT NULL,
+            replacement TEXT NOT NULL,
+            PRIMARY KEY (video_id, start_char, end_char, replacement),
+            FOREIGN KEY (video_id) REFERENCES videos(youtube_id) ON DELETE CASCADE
         )'
     );
     $db->exec(
@@ -662,9 +660,9 @@ function yt_title_search(PDO $db, string $titleFilter, array|string $channel = '
     return $results;
 }
 
-function yt_stt_patch_audit(PDO $db, int $limit = 200, string $videoId = '', int $runId = 0): array
+function yt_uncensored_candidates(PDO $db, int $limit = 200, string $videoId = ''): array
 {
-    if (!yt_table_exists($db, 'stt_patch_runs') || !yt_table_exists($db, 'stt_patch_markers')) {
+    if (!yt_table_exists($db, 'uncensored')) {
         return [
             'runs' => [],
             'markers' => [],
@@ -672,150 +670,93 @@ function yt_stt_patch_audit(PDO $db, int $limit = 200, string $videoId = '', int
     }
 
     $limit = max(1, min(500, $limit));
-    $runStmt = $db->query(
-        'SELECT
-            r.id,
-            r.created_at,
-            r.video_id,
-            r.model,
-            r.pad_seconds,
-            r.merge_gap_seconds,
-            r.apply_mode,
-            r.status,
-            r.windows,
-            r.markers,
-            r.applied,
-            r.audio_seconds,
-            r.error,
-            v.title,
-            c.name AS channel
-         FROM stt_patch_runs r
-         LEFT JOIN videos v ON v.youtube_id = r.video_id
-         LEFT JOIN channels c ON c.id = v.channel_id
-         ORDER BY r.id DESC
-         LIMIT 25'
-    );
-    $runs = [];
-    foreach ($runStmt->fetchAll() as $row) {
-        $runs[] = [
-            'id' => (int)$row['id'],
-            'created_at' => (string)$row['created_at'],
-            'video_id' => (string)$row['video_id'],
-            'title' => (string)($row['title'] ?? ''),
-            'channel' => (string)($row['channel'] ?? ''),
-            'model' => (string)$row['model'],
-            'pad_seconds' => (float)$row['pad_seconds'],
-            'merge_gap_seconds' => (float)$row['merge_gap_seconds'],
-            'apply_mode' => (bool)$row['apply_mode'],
-            'status' => (string)$row['status'],
-            'windows' => (int)$row['windows'],
-            'markers' => (int)$row['markers'],
-            'applied' => (int)$row['applied'],
-            'audio_seconds' => (float)$row['audio_seconds'],
-            'error' => (string)$row['error'],
-        ];
-    }
-
     $where = [];
     $params = [];
     if ($videoId !== '') {
-        $where[] = 'm.video_id = :video_id';
+        $where[] = 'u.video_id = :video_id';
         $params[':video_id'] = $videoId;
-    }
-    if ($runId > 0) {
-        $where[] = 'm.run_id = :run_id';
-        $params[':run_id'] = $runId;
     }
 
     $sql = 'SELECT
-                m.id,
-                m.run_id,
-                m.video_id,
-                m.marker_index,
-                m.marker_char_start,
-                m.marker_char_end,
-                m.marker_start_seconds,
-                m.marker_end_seconds,
-                m.window_index,
-                m.window_start_seconds,
-                m.window_end_seconds,
-                m.youtube_before,
-                m.youtube_after,
-                m.youtube_excerpt,
-                m.stt_text,
-                m.stt_excerpt,
-                m.candidate_text,
-                m.replacement_text,
-                m.status,
-                m.confidence,
-                m.reason,
-                m.applied,
-                m.created_at,
-                r.model,
-                r.status AS run_status,
+                u.rowid AS id,
+                u.video_id,
+                u.start_char,
+                u.end_char,
+                u.replacement,
+                v.transcript,
                 v.title,
                 c.name AS channel,
                 c.avatar_url,
                 c.category
-            FROM stt_patch_markers m
-            JOIN stt_patch_runs r ON r.id = m.run_id
-            JOIN videos v ON v.youtube_id = m.video_id
+            FROM uncensored u
+            JOIN videos v ON v.youtube_id = u.video_id
             JOIN channels c ON c.id = v.channel_id';
     if ($where) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY m.run_id DESC, m.marker_index ASC LIMIT :limit';
+    $sql .= ' ORDER BY c.name COLLATE NOCASE, v.title COLLATE NOCASE, u.start_char LIMIT :limit';
 
     $stmt = $db->prepare($sql);
     foreach ($params as $key => $value) {
-        $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
     }
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     $markers = [];
     foreach ($stmt->fetchAll() as $row) {
-        $seconds = max(0, (int)floor((float)$row['marker_start_seconds']));
+        $videoId = (string)$row['video_id'];
+        $startChar = (int)$row['start_char'];
+        $endChar = (int)$row['end_char'];
+        $transcript = (string)$row['transcript'];
+        $seconds = yt_seconds_for_char_index($db, $videoId, $startChar);
+        $beforeStart = max(0, $startChar - 180);
+        $afterEnd = min(strlen($transcript), $endChar + 220);
+        $before = substr($transcript, $beforeStart, $startChar - $beforeStart);
+        $after = substr($transcript, $endChar, $afterEnd - $endChar);
+        $replacement = (string)$row['replacement'];
+        $candidateExcerpt = trim(preg_replace('/\s+/', ' ', $before . ' ' . $replacement . ' ' . $after) ?? '');
+        $youtubeExcerpt = trim(preg_replace('/\s+/', ' ', substr($transcript, $beforeStart, $afterEnd - $beforeStart)) ?? '');
         $markers[] = [
             'id' => (int)$row['id'],
-            'run_id' => (int)$row['run_id'],
-            'video_id' => (string)$row['video_id'],
-            'youtube_id' => (string)$row['video_id'],
+            'run_id' => 0,
+            'video_id' => $videoId,
+            'youtube_id' => $videoId,
             'channel' => (string)$row['channel'],
             'avatar_url' => (string)$row['avatar_url'],
             'category' => (string)$row['category'],
             'title' => (string)$row['title'],
-            'marker_index' => (int)$row['marker_index'],
-            'marker_char_start' => (int)$row['marker_char_start'],
-            'marker_char_end' => (int)$row['marker_char_end'],
-            'marker_start_seconds' => (float)$row['marker_start_seconds'],
-            'marker_end_seconds' => (float)$row['marker_end_seconds'],
+            'marker_index' => count($markers),
+            'marker_char_start' => $startChar,
+            'marker_char_end' => $endChar,
+            'marker_start_seconds' => $seconds,
+            'marker_end_seconds' => $seconds,
             'marker_timestamp' => yt_format_timestamp($seconds),
-            'window_index' => (int)$row['window_index'],
-            'window_start_seconds' => (float)$row['window_start_seconds'],
-            'window_end_seconds' => (float)$row['window_end_seconds'],
-            'window_start_timestamp' => yt_format_timestamp(max(0, (int)floor((float)$row['window_start_seconds']))),
-            'window_end_timestamp' => yt_format_timestamp(max(0, (int)ceil((float)$row['window_end_seconds']))),
-            'youtube_before' => (string)$row['youtube_before'],
-            'youtube_after' => (string)$row['youtube_after'],
-            'youtube_excerpt' => (string)$row['youtube_excerpt'],
-            'stt_text' => (string)$row['stt_text'],
-            'stt_excerpt' => (string)$row['stt_excerpt'],
-            'candidate_text' => (string)$row['candidate_text'],
-            'replacement_text' => (string)$row['replacement_text'],
-            'status' => (string)$row['status'],
-            'confidence' => (float)$row['confidence'],
-            'reason' => (string)$row['reason'],
-            'applied' => (bool)$row['applied'],
-            'model' => (string)$row['model'],
-            'run_status' => (string)$row['run_status'],
-            'created_at' => (string)$row['created_at'],
-            'url' => 'https://www.youtube.com/watch?v=' . rawurlencode((string)$row['video_id']) . '&t=' . $seconds . 's',
+            'window_index' => $startChar,
+            'window_start_seconds' => $seconds,
+            'window_end_seconds' => $seconds,
+            'window_start_timestamp' => yt_format_timestamp($seconds),
+            'window_end_timestamp' => yt_format_timestamp($seconds),
+            'youtube_before' => $before,
+            'youtube_after' => $after,
+            'youtube_excerpt' => $youtubeExcerpt,
+            'stt_text' => $candidateExcerpt,
+            'stt_excerpt' => $candidateExcerpt,
+            'candidate_text' => $replacement,
+            'replacement_text' => $replacement,
+            'status' => 'candidate',
+            'confidence' => 0.0,
+            'reason' => 'Stored in uncensored table; not applied to transcript.',
+            'applied' => false,
+            'model' => '',
+            'run_status' => '',
+            'created_at' => '',
+            'url' => 'https://www.youtube.com/watch?v=' . rawurlencode($videoId) . '&t=' . $seconds . 's',
         ];
     }
 
     return [
-        'runs' => $runs,
+        'runs' => [],
         'markers' => $markers,
     ];
 }
@@ -933,6 +874,9 @@ function yt_group_occurrences(array $occurrences, int $maxGap = YT_SNIPPET_CONTE
 
 function yt_seconds_for_char_index(PDO $db, string $youtubeId, int $charIndex): int
 {
+    if (!yt_table_exists($db, 'segments')) {
+        return 0;
+    }
     $stmt = $db->prepare(
         'SELECT start_seconds FROM segments
          WHERE video_id = ? AND char_index <= ?
@@ -1004,16 +948,13 @@ function yt_stats(PDO $db): array
 {
     return [
         'videos' => (int)$db->query('SELECT COUNT(*) FROM videos')->fetchColumn(),
-        'segments' => (int)$db->query('SELECT COUNT(*) FROM segments')->fetchColumn(),
+        'segments' => yt_table_exists($db, 'segments') ? (int)$db->query('SELECT COUNT(*) FROM segments')->fetchColumn() : null,
         'channels' => (int)$db->query('SELECT COUNT(*) FROM channels')->fetchColumn(),
     ];
 }
 
 function yt_channel_stats(PDO $db): array
 {
-    if (!yt_channel_stats_cache_ready($db)) {
-        yt_refresh_channel_stats($db);
-    }
     $dbBytes = is_file(yt_db_path()) ? filesize(yt_db_path()) : 0;
     $sql = "SELECT
                 c.id,
@@ -1022,15 +963,33 @@ function yt_channel_stats(PDO $db): array
                 c.avatar_url,
                 c.category,
                 c.enabled,
-                cs.video_count,
-                cs.runtime_seconds,
-                cs.transcript_chars,
-                cs.payload_bytes,
-                cs.segment_count,
-                cs.updated_at
+                COUNT(p.youtube_id) AS video_count,
+                COALESCE(SUM(p.runtime_seconds), 0) AS runtime_seconds,
+                COALESCE(SUM(p.transcript_chars), 0) AS transcript_chars,
+                COALESCE(SUM(p.payload_bytes), 0) AS payload_bytes,
+                COALESCE(SUM(p.segment_count), 0) AS segment_count,
+                strftime('%Y-%m-%dT%H:%M:%SZ', 'now') AS updated_at
             FROM channels c
-            JOIN channel_stats cs ON cs.channel_id = c.id
-            WHERE cs.video_count > 0
+            JOIN (
+                SELECT
+                    v.youtube_id,
+                    v.channel_id,
+                    LENGTH(v.transcript) AS transcript_chars,
+                    LENGTH(v.transcript)
+                        + LENGTH(v.title)
+                        + LENGTH(v.youtube_id)
+                        + LENGTH(v.source_file)
+                        + LENGTH(v.imported_at)
+                        + 32 AS payload_bytes,
+                    COALESCE(MAX(s.start_seconds), 0) AS runtime_seconds,
+                    COUNT(s.start_seconds) AS segment_count
+                FROM videos v
+                LEFT JOIN segments s ON s.video_id = v.youtube_id
+                WHERE v.channel_id IS NOT NULL
+                GROUP BY v.youtube_id
+            ) p ON p.channel_id = c.id
+            GROUP BY c.id
+            HAVING COUNT(p.youtube_id) > 0
             ORDER BY c.name COLLATE NOCASE";
     $rows = $db->query($sql)->fetchAll();
     $totalPayloadBytes = array_sum(array_map(static fn(array $row): int => (int)$row['payload_bytes'], $rows));
@@ -1076,70 +1035,12 @@ function yt_channel_stats(PDO $db): array
 
 function yt_channel_stats_cache_ready(PDO $db): bool
 {
-    $channelCount = (int)$db->query('SELECT COUNT(DISTINCT channel_id) FROM videos WHERE channel_id IS NOT NULL')->fetchColumn();
-    if ($channelCount === 0) {
-        return false;
-    }
-    $statsCount = (int)$db->query('SELECT COUNT(*) FROM channel_stats WHERE video_count > 0')->fetchColumn();
-    return $statsCount >= $channelCount;
+    return true;
 }
 
 function yt_refresh_channel_stats(PDO $db): void
 {
-    $ownsTransaction = !$db->inTransaction();
-    if ($ownsTransaction) {
-        $db->beginTransaction();
-    }
-    try {
-        $db->exec('DELETE FROM channel_stats');
-        $db->exec(
-            "INSERT INTO channel_stats (
-                channel_id,
-                video_count,
-                runtime_seconds,
-                transcript_chars,
-                payload_bytes,
-                segment_count,
-                updated_at
-            )
-            WITH per_video AS (
-                SELECT
-                    v.youtube_id,
-                    v.channel_id,
-                    LENGTH(v.transcript) AS transcript_chars,
-                    LENGTH(v.transcript)
-                        + LENGTH(v.title)
-                        + LENGTH(v.youtube_id)
-                        + LENGTH(v.source_file)
-                        + LENGTH(v.imported_at)
-                        + 32 AS payload_bytes,
-                    COALESCE(MAX(s.start_seconds), 0) AS runtime_seconds,
-                    COUNT(s.start_seconds) AS segment_count
-                FROM videos v
-                LEFT JOIN segments s ON s.video_id = v.youtube_id
-                WHERE v.channel_id IS NOT NULL
-                GROUP BY v.youtube_id
-            )
-            SELECT
-                channel_id,
-                COUNT(youtube_id),
-                COALESCE(SUM(runtime_seconds), 0),
-                COALESCE(SUM(transcript_chars), 0),
-                COALESCE(SUM(payload_bytes), 0),
-                COALESCE(SUM(segment_count), 0),
-                strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-            FROM per_video
-            GROUP BY channel_id"
-        );
-        if ($ownsTransaction) {
-            $db->commit();
-        }
-    } catch (Throwable $e) {
-        if ($ownsTransaction && $db->inTransaction()) {
-            $db->rollBack();
-        }
-        throw $e;
-    }
+    yt_channel_stats($db);
 }
 
 function yt_database_info(PDO $db): array

@@ -42,11 +42,10 @@ try {
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
-            'patches' => yt_stt_patch_audit(
+            'patches' => yt_uncensored_candidates(
                 $db,
                 (int)($_GET['limit'] ?? 200),
-                (string)($_GET['video_id'] ?? ''),
-                (int)($_GET['run_id'] ?? 0)
+                (string)($_GET['video_id'] ?? '')
             ),
         ]);
     }

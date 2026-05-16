@@ -88,57 +88,16 @@ def summarize_cmd(cmd: list[str]) -> str:
 def ensure_tables(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS stt_patch_runs (
-            id INTEGER PRIMARY KEY,
-            created_at TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS uncensored (
             video_id TEXT NOT NULL,
-            model TEXT NOT NULL,
-            pad_seconds REAL NOT NULL,
-            merge_gap_seconds REAL NOT NULL,
-            apply_mode INTEGER NOT NULL,
-            status TEXT NOT NULL,
-            windows INTEGER NOT NULL DEFAULT 0,
-            markers INTEGER NOT NULL DEFAULT 0,
-            applied INTEGER NOT NULL DEFAULT 0,
-            audio_seconds REAL NOT NULL DEFAULT 0,
-            error TEXT NOT NULL DEFAULT '',
+            start_char INTEGER NOT NULL,
+            end_char INTEGER NOT NULL,
+            replacement TEXT NOT NULL,
+            PRIMARY KEY (video_id, start_char, end_char, replacement),
             FOREIGN KEY(video_id) REFERENCES videos(youtube_id) ON DELETE CASCADE
         )
         """
     )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS stt_patch_markers (
-            id INTEGER PRIMARY KEY,
-            run_id INTEGER NOT NULL,
-            video_id TEXT NOT NULL,
-            marker_index INTEGER NOT NULL,
-            marker_char_start INTEGER NOT NULL,
-            marker_char_end INTEGER NOT NULL,
-            marker_start_seconds REAL NOT NULL,
-            marker_end_seconds REAL NOT NULL,
-            window_index INTEGER NOT NULL,
-            window_start_seconds REAL NOT NULL,
-            window_end_seconds REAL NOT NULL,
-            youtube_before TEXT NOT NULL DEFAULT '',
-            youtube_after TEXT NOT NULL DEFAULT '',
-            youtube_excerpt TEXT NOT NULL DEFAULT '',
-            stt_text TEXT NOT NULL DEFAULT '',
-            stt_excerpt TEXT NOT NULL DEFAULT '',
-            candidate_text TEXT NOT NULL DEFAULT '',
-            replacement_text TEXT NOT NULL DEFAULT '',
-            status TEXT NOT NULL,
-            confidence REAL NOT NULL DEFAULT 0,
-            reason TEXT NOT NULL DEFAULT '',
-            applied INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY(run_id) REFERENCES stt_patch_runs(id) ON DELETE CASCADE,
-            FOREIGN KEY(video_id) REFERENCES videos(youtube_id) ON DELETE CASCADE
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_stt_patch_markers_video ON stt_patch_markers(video_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_stt_patch_markers_run ON stt_patch_markers(run_id)")
 
 
 def fetch_video(conn: sqlite3.Connection, video_id: str) -> dict[str, Any]:
@@ -236,18 +195,31 @@ def build_windows(markers: list[Marker], duration: float, pad: float, merge_gap:
     by_cue: dict[int, list[Marker]] = {}
     for marker in markers:
         by_cue.setdefault(marker.cue_index, []).append(marker)
-    out: list[tuple[float, float, list[Marker]]] = []
-    for index, cue_index in enumerate(sorted(by_cue)):
+    windows: list[list[Any]] = []
+    for cue_index in sorted(by_cue):
         window_markers = by_cue[cue_index]
         cue_start = min(marker.start_seconds for marker in window_markers)
         cue_end = max(marker.end_seconds for marker in window_markers)
         start = max(0.0, cue_start - pad)
         end = min(duration, max(cue_end, cue_start + 0.5) + pad)
+        windows.append([float(start), float(end), sorted(window_markers, key=lambda marker: marker.char_start)])
+
+    for index in range(len(windows) - 1):
+        current = windows[index]
+        following = windows[index + 1]
+        if float(current[1]) > float(following[0]):
+            boundary = (float(current[1]) + float(following[0])) / 2.0
+            if float(current[0]) < boundary < float(following[1]):
+                current[1] = boundary
+                following[0] = boundary
+
+    out: list[tuple[float, float, list[Marker]]] = []
+    for index, (start, end, window_markers) in enumerate(windows):
         for marker in window_markers:
             marker.window_index = index
             marker.window_start = float(start)
             marker.window_end = float(end)
-        out.append((float(start), float(end), sorted(window_markers, key=lambda marker: marker.char_start)))
+        out.append((float(start), float(end), window_markers))
     return out
 
 
@@ -504,26 +476,7 @@ def stt_excerpt(words: list[Word], marker: Marker, text: str) -> str:
 
 
 def create_run(conn: sqlite3.Connection, video_id: str, args: argparse.Namespace) -> int:
-    model_name = model_label(args)
-    cursor = conn.execute(
-        """
-        INSERT INTO stt_patch_runs (
-            created_at, video_id, model, pad_seconds, merge_gap_seconds, apply_mode, status
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            datetime.now(timezone.utc).isoformat(),
-            video_id,
-            model_name,
-            args.pad_seconds,
-            args.merge_gap_seconds,
-            1 if args.apply else 0,
-            "running",
-        ),
-    )
-    conn.commit()
-    return int(cursor.lastrowid)
+    return 0
 
 
 def model_label(args: argparse.Namespace) -> str:
@@ -531,43 +484,24 @@ def model_label(args: argparse.Namespace) -> str:
     return f"{args.backend}:{model_name}"
 
 
-def insert_marker(conn: sqlite3.Connection, run_id: int, video_id: str, marker: Marker, payload: dict[str, Any]) -> None:
+def insert_marker(conn: sqlite3.Connection, run_id: int, video_id: str, marker: Marker, payload: dict[str, Any]) -> bool:
+    candidate = str(payload.get("candidate_text", "")).strip()
+    if not candidate:
+        return False
+    before = conn.total_changes
     conn.execute(
         """
-        INSERT INTO stt_patch_markers (
-            run_id, video_id, marker_index, marker_char_start, marker_char_end,
-            marker_start_seconds, marker_end_seconds, window_index,
-            window_start_seconds, window_end_seconds, youtube_before, youtube_after,
-            youtube_excerpt, stt_text, stt_excerpt, candidate_text, replacement_text,
-            status, confidence, reason, applied, created_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO uncensored (video_id, start_char, end_char, replacement)
+        VALUES (?, ?, ?, ?)
         """,
         (
-            run_id,
             video_id,
-            marker.index,
             marker.char_start,
             marker.char_end,
-            marker.start_seconds,
-            marker.end_seconds,
-            marker.window_index,
-            marker.window_start,
-            marker.window_end,
-            marker.youtube_before[-500:],
-            marker.youtube_after[:500],
-            marker.youtube_excerpt,
-            payload["stt_text"],
-            payload["stt_excerpt"],
-            payload["candidate_text"],
-            payload["replacement_text"],
-            payload["status"],
-            payload["confidence"],
-            payload["reason"],
-            1 if payload["applied"] else 0,
-            datetime.now(timezone.utc).isoformat(),
+            candidate,
         ),
     )
+    return conn.total_changes > before
 
 
 def apply_replacements(
@@ -717,13 +651,10 @@ def censored_video_ids(conn: sqlite3.Connection, args: argparse.Namespace) -> li
         sql += """
             AND NOT EXISTS (
                 SELECT 1
-                FROM stt_patch_runs r
-                WHERE r.video_id = v.youtube_id
-                  AND r.status = 'success'
-                  AND r.model = ?
+                FROM uncensored u
+                WHERE u.video_id = v.youtube_id
             )
         """
-        params.append(model_label(args))
     sql += " ORDER BY v.youtube_id"
     if args.limit_videos:
         sql += " LIMIT ?"
@@ -748,10 +679,9 @@ def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namesp
     run_id = create_run(conn, video_id, args)
     run_dir = RUNS / f"stt-patch-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{video_id}"
     run_dir.mkdir(parents=True, exist_ok=True)
-    replacements: list[tuple[Marker, str]] = []
     audio_seconds = 0.0
     processed_markers = 0
-    applied_count = 0
+    stored_count = 0
     status = "success"
     error = ""
 
@@ -774,12 +704,7 @@ def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namesp
                 words = whisper_words(payload, start)
                 for marker in window_markers:
                     candidate, confidence, marker_status, reason = choose_replacement(marker, words, text, args)
-                    apply_marker = bool(args.apply and marker_status == "proposed" and confidence >= args.apply_threshold)
-                    replacement_text = candidate if apply_marker else ""
-                    if apply_marker:
-                        replacements.append((marker, replacement_text))
-                        applied_count += 1
-                    insert_marker(
+                    stored = insert_marker(
                         conn,
                         run_id,
                         video_id,
@@ -788,31 +713,23 @@ def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namesp
                             "stt_text": text,
                             "stt_excerpt": stt_excerpt(words, marker, text),
                             "candidate_text": candidate,
-                            "replacement_text": replacement_text,
-                            "status": "applied" if apply_marker else marker_status,
+                            "replacement_text": candidate,
+                            "status": marker_status,
                             "confidence": confidence,
                             "reason": reason,
-                            "applied": apply_marker,
+                            "applied": False,
                         },
                     )
+                    if stored:
+                        stored_count += 1
                     processed_markers += 1
                 conn.commit()
-        if replacements:
-            apply_replacements(conn, video_id, video["transcript"], segments, replacements)
     except Exception as exc:
         status = "error"
         error = str(exc)
         if not args.all_censored:
             raise
     finally:
-        conn.execute(
-            """
-            UPDATE stt_patch_runs
-            SET status = ?, windows = ?, markers = ?, applied = ?, audio_seconds = ?, error = ?
-            WHERE id = ?
-            """,
-            (status, len(windows), processed_markers, applied_count, audio_seconds, error[:1000], run_id),
-        )
         conn.commit()
 
     summary = {
@@ -823,16 +740,17 @@ def process_video(conn: sqlite3.Connection, video_id: str, args: argparse.Namesp
         "status": status,
         "windows": len(windows),
         "markers": processed_markers,
-        "applied": applied_count,
+        "stored": stored_count,
+        "applied": 0,
         "audio_seconds": round(audio_seconds, 3),
-        "apply": args.apply,
+        "apply": False,
         "run_dir": str(run_dir),
     }
     if error:
         summary["error"] = error
     report_path = run_dir / "summary.json"
     report_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    if not args.keep_workdir and status == "error":
+    if not args.keep_workdir:
         shutil.rmtree(run_dir, ignore_errors=True)
     print(json.dumps(summary, indent=2))
     return summary
@@ -844,12 +762,12 @@ def main() -> int:
     parser.add_argument("--all-censored", action="store_true", help="Process every video whose current transcript still contains a censor marker.")
     parser.add_argument("--limit-videos", type=int, default=0, help="Limit --all-censored to the first N videos.")
     parser.add_argument("--start-after", default="", help="Resume --all-censored after this YouTube video id.")
-    parser.add_argument("--skip-successful", action="store_true", help="Skip videos already completed successfully with the selected backend/model.")
-    parser.add_argument("--restore-run-id", type=int, action="append", default=[], help="Restore applied markers from a prior run and exit.")
+    parser.add_argument("--skip-successful", action="store_true", help="Skip videos that already have rows in uncensored.")
+    parser.add_argument("--restore-run-id", type=int, action="append", default=[], help="Legacy: restore applied markers from old stt_patch tables, when those tables still exist.")
     parser.add_argument("--delete-restored-run", action="store_true", help="Delete restored audit runs after reversing their applied replacements.")
-    parser.add_argument("--apply", action="store_true", help="Apply high-confidence replacements to videos.transcript and videos_fts.")
+    parser.add_argument("--apply", action="store_true", help="Ignored. This script now only stages candidates in uncensored.")
     parser.add_argument("--apply-threshold", type=float, default=0.55)
-    parser.add_argument("--pad-seconds", type=float, default=0.2)
+    parser.add_argument("--pad-seconds", type=float, default=0.0)
     parser.add_argument("--merge-gap-seconds", type=float, default=0.0, help="Deprecated; cue-bounded mode does not merge separate cues.")
     parser.add_argument("--context-chars", type=int, default=220)
     parser.add_argument("--context-tokens", type=int, default=4)
@@ -858,7 +776,7 @@ def main() -> int:
         "--max-replacement-tokens",
         type=int,
         default=1,
-        help="Auto-apply only short censored spans by default; raise this for phrase-level review.",
+        help="Stage only short censored spans by default; raise this for phrase-level review.",
     )
     parser.add_argument("--model", default="small.en")
     parser.add_argument("--backend", choices=["openai", "mlx"], default="openai")
@@ -909,6 +827,7 @@ def main() -> int:
                     "status": "error",
                     "windows": 0,
                     "markers": 0,
+                    "stored": 0,
                     "applied": 0,
                     "audio_seconds": 0.0,
                     "error": str(exc),
@@ -926,6 +845,7 @@ def main() -> int:
             "success": sum(1 for item in summaries if item["status"] == "success"),
             "errors": sum(1 for item in summaries if item["status"] == "error"),
             "markers": sum(int(item["markers"]) for item in summaries),
+            "stored": sum(int(item.get("stored", 0)) for item in summaries),
             "applied": sum(int(item["applied"]) for item in summaries),
             "audio_seconds": round(sum(float(item["audio_seconds"]) for item in summaries), 3),
         }, indent=2))

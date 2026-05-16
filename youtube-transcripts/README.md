@@ -22,6 +22,8 @@ The SQLite DB is ignored by git because it is multi-GB. Git/GitHub deploys updat
 - `videos.channel_id` references `channels.id`.
 - `videos.transcript` stores the full concatenated transcript for each video.
 - `segments` maps `(video_id, start_seconds)` to the character index where that timed subtitle cue starts in the full transcript.
+- `uncensored(video_id, start_char, end_char, replacement)` stores staged local-STT replacement candidates. `start_char` is inclusive, `end_char` is exclusive, and candidates are not applied to `videos.transcript`.
+- `videos_fts` and `video_titles_fts` are FTS5 indexes for transcript and title search. Their shadow tables are SQLite implementation details.
 - Search runs against full video transcripts, then maps each match offset to the closest preceding segment timestamp.
 
 ## Refresh Existing Channels
@@ -77,15 +79,15 @@ sqlite3 "/Users/diego/Desktop/Read/YouTube Channel Transcripts/data/transcripts.
   "DELETE FROM videos_fts WHERE channel='<Channel Name>'; INSERT INTO videos_fts (youtube_id, channel, title, transcript) SELECT v.youtube_id, c.name, v.title, v.transcript FROM videos v JOIN channels c ON c.id = v.channel_id WHERE c.name='<Channel Name>';"
 ```
 
-After a manual replay, make sure the stats cache is refreshed if you need the stats page to reflect the new import immediately:
+Stats are computed from the runtime tables, so there is no `channel_stats` cache to refresh. A manual replay only needs a checkpoint if you want to compact the WAL file:
 
 ```bash
-/opt/homebrew/bin/php -r 'require "/Users/diego/Desktop/Read/YouTube Channel Transcripts/lib.php"; yt_refresh_channel_stats(yt_db());'
+sqlite3 -cmd ".timeout 60000" data/transcripts.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 ```
 
 ## Refresh Existing Rows From JSON3
 
-Use this when existing transcript text was imported from bad rolling captions or converted SRT cues and needs to be repaired without rebuilding the whole database. The script downloads YouTube `json3` subtitles for videos already in SQLite, parses the clean timed cues, replaces `videos.transcript`, deletes and reinserts `segments`, and records resumable status in `json3_refresh_status`.
+Use this when existing transcript text was imported from bad rolling captions or converted SRT cues and needs to be repaired without rebuilding the whole database. The script downloads YouTube `json3` subtitles for videos already in SQLite, parses the clean timed cues, replaces `videos.transcript`, deletes and reinserts `segments`, and uses `json3_refresh_status` only as a temporary resumable build table. Drop that status table before shipping the DB if you want the live DB to contain only runtime tables.
 
 Single-worker cautious run:
 
@@ -133,14 +135,13 @@ sqlite3 -cmd ".timeout 600000" data/transcripts.sqlite3 "
   FROM videos v JOIN channels c ON c.id = v.channel_id;
   PRAGMA wal_checkpoint(TRUNCATE);
 "
-/opt/homebrew/bin/php -r 'require "/Users/diego/Desktop/Read/YouTube Channel Transcripts/lib.php"; yt_refresh_channel_stats(yt_db());'
 ```
 
 `videos.transcript` remains the full concatenated clean transcript. `segments` remains the timestamp-to-character-index map used by snippets and YouTube timestamp links. Rows marked `no_subtitles` keep their existing transcript because `yt-dlp` did not return an English JSON3 subtitle for that video.
 
 ## Patch Censored Captions With Local STT
 
-Use this only for videos whose YouTube transcript contains `[ __ ]`. The patcher keeps the YouTube transcript as the source of truth, finds each censored marker, maps it to the exact subtitle cue through `segments.char_index`, cuts audio from that cue only, runs local Whisper, and replaces a marker only when the local STT aligns with the surrounding YouTube words inside that cue. By default it auto-applies one-token replacements only; use `--max-replacement-tokens` for phrase-level review.
+Use this only for videos whose YouTube transcript contains `[ __ ]`. The patcher keeps the YouTube transcript as the source of truth, finds each censored marker, maps it to the exact subtitle cue through `segments.char_index`, cuts audio from that cue only, runs local Whisper, and stages the proposed replacement in `uncensored`. It does not update `videos.transcript`, `segments`, or `videos_fts`.
 
 For Apple Silicon GPU notes and the faster MLX path, see `README-stt-gpu.md`.
 
@@ -150,9 +151,8 @@ Trial on one known short video:
 cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
 ./refresh/stt_patch_censored.py \
   --video-id M4d8jWOOaCI \
-  --apply \
   --model small.en \
-  --pad-seconds 0.2 \
+  --pad-seconds 0 \
   --keep-workdir \
   --cookies-from-browser ''
 ```
@@ -165,7 +165,6 @@ MLX/Metal test run:
   --backend mlx \
   --mlx-model mlx-community/whisper-tiny \
   --video-id M4d8jWOOaCI \
-  --apply \
   --cookies-from-browser ''
 ```
 
@@ -179,7 +178,6 @@ Bulk MLX pass over currently censored videos:
   --all-censored \
   --limit-videos 25 \
   --skip-successful \
-  --apply \
   --cookies-from-browser ''
 ```
 
@@ -187,30 +185,23 @@ Important behavior:
 
 - Each cut audio file is deleted in a `finally` block immediately after its Whisper pass finishes.
 - `--keep-workdir` keeps `summary.json` and Whisper JSON/report files, but not audio.
-- `--apply` updates `videos.transcript`, shifts later `segments.char_index` values when replacements change text length, and refreshes `videos_fts` for that video.
-- Without `--apply`, it records candidates for review but does not mutate transcript rows.
-- `--restore-run-id RUN_ID --delete-restored-run` reverses previously applied replacements from that audit run back to `[ __ ]`, then deletes the stale run.
+- `--apply` is intentionally ignored. No STT pass mutates transcript rows now.
 - `--all-censored` processes every video whose current transcript still contains `[ __ ]` in the same Python process, which lets the MLX backend keep the model warm across videos.
-- The audit tables are `stt_patch_runs` and `stt_patch_markers`.
-- The UI has an `STT Patches` tab backed by `api.php?action=patches`, showing timestamped YouTube links, original YouTube excerpts, local STT excerpts, candidates, confidence, and apply status.
+- `--skip-successful` now means "skip videos that already have at least one row in `uncensored`."
+- The UI has a `Patches` tab backed by `api.php?action=patches`, showing timestamped YouTube links and staged replacement candidates from `uncensored`.
 
-Inspect the latest run directly:
+Inspect staged candidates directly:
 
 ```bash
 sqlite3 -cmd ".timeout 5000" data/transcripts.sqlite3 "
-  SELECT id, video_id, status, markers, applied, audio_seconds, error
-  FROM stt_patch_runs
-  ORDER BY id DESC
-  LIMIT 5;
-
-  SELECT marker_index, marker_start_seconds, status, confidence, candidate_text, replacement_text, reason
-  FROM stt_patch_markers
-  WHERE run_id = (SELECT max(id) FROM stt_patch_runs)
-  ORDER BY marker_index;
+  SELECT video_id, start_char, end_char, replacement
+  FROM uncensored
+  ORDER BY video_id, start_char
+  LIMIT 50;
 "
 ```
 
-Default windowing is cue-bounded and intentionally strict: `--pad-seconds 0.2`, no cross-cue merging, and `--max-replacement-tokens 1`. This avoids long low-confidence candidates that merely duplicate surrounding transcript text. Raise `--max-replacement-tokens` only when you want to review possible multi-word censor spans.
+Default windowing is cue-bounded and intentionally strict: `--pad-seconds 0`, no cross-cue merging, and `--max-replacement-tokens 1`. If you pass padding manually, adjacent windows are clipped at their midpoint so they cannot overlap. This avoids long low-confidence candidates that merely duplicate surrounding transcript text. Raise `--max-replacement-tokens` only when you want to review possible multi-word censor spans.
 
 ## Dedupe Rolling Transcript Overlaps
 
@@ -227,10 +218,9 @@ The default run is a dry run. It writes a JSON report under `refresh/dedupe_repo
 python3 refresh/dedupe_transcript_overlaps.py --apply --commit-every 500
 ```
 
-The apply pass updates `videos.transcript`, rebuilds `segments.char_index`, collapses exact repeated phrases of 4 or more words, and rebuilds `videos_fts` in one bulk pass after the transcript rows are clean. After applying, refresh cached stats, checkpoint, optionally vacuum, and verify:
+The apply pass updates `videos.transcript`, rebuilds `segments.char_index`, collapses exact repeated phrases of 4 or more words, and rebuilds `videos_fts` in one bulk pass after the transcript rows are clean. After applying, checkpoint, optionally vacuum, and verify:
 
 ```bash
-/opt/homebrew/bin/php -r 'require "/Users/diego/Desktop/Read/YouTube Channel Transcripts/lib.php"; yt_refresh_channel_stats(yt_db());'
 sqlite3 -cmd ".timeout 60000" data/transcripts.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 sqlite3 -cmd ".timeout 60000" data/transcripts.sqlite3 "VACUUM; PRAGMA wal_checkpoint(TRUNCATE);"
 sqlite3 data/transcripts.sqlite3 "PRAGMA integrity_check;"

@@ -110,7 +110,6 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   --backend mlx \
   --mlx-model mlx-community/whisper-tiny \
   --video-id VIDEO_ID \
-  --apply \
   --cookies-from-browser ''
 ```
 
@@ -125,7 +124,6 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   --all-censored \
   --limit-videos 25 \
   --skip-successful \
-  --apply \
   --cookies-from-browser ''
 ```
 
@@ -136,8 +134,8 @@ Important:
 - Run this outside the Codex sandbox for Metal access.
 - Use the venv Python path above, not plain `./refresh/stt_patch_censored.py`, so `mlx_whisper` imports from `Whisper/.venv`.
 - Keep `--word-timestamps` off unless there is a specific reason to test it.
-- Keep `--max-replacement-tokens 1` for automatic application. Multi-word replacements should be review-only until proven safe.
-- Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos already completed with the selected backend/model label.
+- Keep `--max-replacement-tokens 1` for conservative candidate generation. Multi-word replacements should stay review-only until proven safe.
+- Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos that already have rows in `uncensored`.
 
 ## Scale Estimate
 
@@ -146,8 +144,8 @@ Current DB estimate for censored captions:
 - 6,712 videos contain `[ __ ]`
 - 675,418 censored markers
 - 643,818 unique cue windows
-- About 503 hours of cue-bounded audio with 0.2s padding
-- Average cue window: 2.81 seconds
+- About 431 hours of cue-bounded audio before optional padding
+- Average cue window: 2.41 seconds before optional padding
 
 At 40x realtime, the raw transcription work is still about 12.5 hours. The current CLI-per-cue architecture would be much slower because hundreds of thousands of separate model and process startups would dominate.
 
@@ -158,9 +156,9 @@ For fixing thousands of videos:
 1. Use MLX, not OpenAI Whisper MPS.
 2. Keep one Python worker process alive so the model stays loaded.
 3. Download audio once per video, not once per cue.
-4. Cut or pass all censored cue windows for that video through the loaded MLX model.
+4. Cut or pass all censored cue windows for that video through the loaded MLX model. Defaults use exact cue windows with no padding; if padding is enabled, adjacent windows are clipped so they do not overlap.
 5. Keep word timestamps disabled and align the returned cue text against the YouTube cue text.
 6. Delete downloaded audio immediately after the video's cues finish.
-7. Commit replacement rows in batches and keep `stt_patch_runs` / `stt_patch_markers` as the audit trail.
+7. Commit replacement rows in batches to `uncensored(video_id, start_char, end_char, replacement)`. Do not apply them to `videos.transcript` until the pipeline is trusted.
 
 The patcher supports a bulk MLX pass with `--all-censored`, so one Python process can keep MLX imported and reuse the model across videos. The next optimization beyond that is avoiding a separate `ffmpeg` cut per cue by cutting one per-video audio file and slicing in-process.

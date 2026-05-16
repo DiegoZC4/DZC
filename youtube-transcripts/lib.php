@@ -725,14 +725,15 @@ function yt_uncensored_candidates(PDO $db, int $limit = 200, string $videoId = '
         $startChar = (int)$row['start_char'];
         $endChar = (int)$row['end_char'];
         $transcript = (string)$row['transcript'];
-        $seconds = yt_seconds_for_char_index($db, $videoId, $startChar);
-        $beforeStart = max(0, $startChar - 180);
-        $afterEnd = min(strlen($transcript), $endChar + 220);
-        $before = substr($transcript, $beforeStart, $startChar - $beforeStart);
-        $after = substr($transcript, $endChar, $afterEnd - $endChar);
+        $cue = yt_cue_for_char_index($db, $videoId, $startChar, strlen($transcript));
+        $seconds = (int)$cue['start_seconds'];
+        $cueStart = (int)$cue['start_char'];
+        $cueEnd = (int)$cue['end_char'];
+        $before = substr($transcript, $cueStart, max(0, $startChar - $cueStart));
+        $after = substr($transcript, $endChar, max(0, $cueEnd - $endChar));
         $replacement = (string)$row['replacement'];
-        $candidateExcerpt = trim(preg_replace('/\s+/', ' ', $before . ' ' . $replacement . ' ' . $after) ?? '');
-        $youtubeExcerpt = trim(preg_replace('/\s+/', ' ', substr($transcript, $beforeStart, $afterEnd - $beforeStart)) ?? '');
+        $candidateExcerpt = trim(preg_replace('/\s+/', ' ', $before . "\u{E000}" . $replacement . "\u{E001}" . $after) ?? '');
+        $youtubeExcerpt = trim(preg_replace('/\s+/', ' ', substr($transcript, $cueStart, $cueEnd - $cueStart)) ?? '');
         $markers[] = [
             'id' => (int)$row['id'],
             'run_id' => 0,
@@ -746,13 +747,13 @@ function yt_uncensored_candidates(PDO $db, int $limit = 200, string $videoId = '
             'marker_char_start' => $startChar,
             'marker_char_end' => $endChar,
             'marker_start_seconds' => $seconds,
-            'marker_end_seconds' => $seconds,
+            'marker_end_seconds' => (float)$cue['end_seconds'],
             'marker_timestamp' => yt_format_timestamp($seconds),
-            'window_index' => $startChar,
+            'window_index' => $cueStart,
             'window_start_seconds' => $seconds,
-            'window_end_seconds' => $seconds,
+            'window_end_seconds' => (float)$cue['end_seconds'],
             'window_start_timestamp' => yt_format_timestamp($seconds),
-            'window_end_timestamp' => yt_format_timestamp($seconds),
+            'window_end_timestamp' => yt_format_timestamp(max($seconds, (int)ceil((float)$cue['end_seconds']))),
             'youtube_before' => $before,
             'youtube_after' => $after,
             'youtube_excerpt' => $youtubeExcerpt,
@@ -774,6 +775,53 @@ function yt_uncensored_candidates(PDO $db, int $limit = 200, string $videoId = '
     return [
         'runs' => [],
         'markers' => $markers,
+    ];
+}
+
+function yt_cue_for_char_index(PDO $db, string $youtubeId, int $charIndex, int $transcriptLength): array
+{
+    $fallback = [
+        'start_char' => max(0, $charIndex),
+        'end_char' => min($transcriptLength, max(0, $charIndex) + strlen('[ __ ]')),
+        'start_seconds' => yt_seconds_for_char_index($db, $youtubeId, $charIndex),
+        'end_seconds' => yt_seconds_for_char_index($db, $youtubeId, $charIndex) + 8,
+    ];
+    if (!yt_table_exists($db, 'segments')) {
+        return $fallback;
+    }
+
+    $previous = $db->prepare(
+        'SELECT char_index, start_seconds
+         FROM segments
+         WHERE video_id = ? AND char_index <= ?
+         ORDER BY char_index DESC, start_seconds DESC
+         LIMIT 1'
+    );
+    $previous->execute([$youtubeId, $charIndex]);
+    $start = $previous->fetch();
+    if (!$start) {
+        return $fallback;
+    }
+
+    $next = $db->prepare(
+        'SELECT char_index, start_seconds
+         FROM segments
+         WHERE video_id = ? AND char_index > ?
+         ORDER BY char_index ASC, start_seconds ASC
+         LIMIT 1'
+    );
+    $next->execute([$youtubeId, (int)$start['char_index']]);
+    $end = $next->fetch();
+
+    $startChar = max(0, min($transcriptLength, (int)$start['char_index']));
+    $endChar = $end ? max($startChar, min($transcriptLength, (int)$end['char_index'])) : $transcriptLength;
+    $startSeconds = max(0, (int)$start['start_seconds']);
+    $endSeconds = $end ? max($startSeconds, (int)$end['start_seconds']) : $startSeconds + 8;
+    return [
+        'start_char' => $startChar,
+        'end_char' => $endChar,
+        'start_seconds' => $startSeconds,
+        'end_seconds' => $endSeconds,
     ];
 }
 

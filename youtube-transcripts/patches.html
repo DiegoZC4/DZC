@@ -66,6 +66,8 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 const patchMeta = document.getElementById('patchMeta');
 const patchResults = document.getElementById('patchResults');
 const refreshPatches = document.getElementById('refreshPatches');
+const CANDIDATE_START = '\uE000';
+const CANDIDATE_END = '\uE001';
 let channelByName = new Map();
 
 const CATEGORY_STYLES = {
@@ -205,6 +207,10 @@ function groupPatchMarkers(markers) {
 
 function renderPatchWindowText(container, windowGroup) {
   const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
+  if (text.includes(CANDIDATE_START) && text.includes(CANDIDATE_END)) {
+    renderMarkedCandidateText(container, text);
+    return;
+  }
   const highlights = windowGroup.markers
     .map(marker => ({ marker, text: stripPatchMarkers(marker.replacement_text || marker.candidate_text || '') }))
     .filter(item => item.text);
@@ -233,6 +239,34 @@ function renderPatchWindowText(container, windowGroup) {
   }
   if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
   container.replaceChildren(matched ? fragment : document.createTextNode(text));
+}
+
+function renderMarkedCandidateText(container, text) {
+  const fragment = document.createDocumentFragment();
+  let cursor = 0;
+  let matched = 0;
+  while (cursor < text.length) {
+    const start = text.indexOf(CANDIDATE_START, cursor);
+    if (start < 0) {
+      fragment.appendChild(document.createTextNode(text.slice(cursor)));
+      break;
+    }
+    if (start > cursor) {
+      fragment.appendChild(document.createTextNode(text.slice(cursor, start)));
+    }
+    const end = text.indexOf(CANDIDATE_END, start + CANDIDATE_START.length);
+    if (end < 0) {
+      fragment.appendChild(document.createTextNode(text.slice(start).replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
+      break;
+    }
+    const mark = document.createElement('span');
+    mark.className = 'patch-word';
+    mark.textContent = text.slice(start + CANDIDATE_START.length, end);
+    fragment.appendChild(mark);
+    matched++;
+    cursor = end + CANDIDATE_END.length;
+  }
+  container.replaceChildren(matched ? fragment : document.createTextNode(text.replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
 }
 
 function renderPatchLinks(container, markers) {

@@ -41,6 +41,20 @@ main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .legend-name { font-size: 13px; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .legend-value { color: var(--muted); font-size: 12px; font-weight: 800; white-space: nowrap; }
 .note { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0 0 12px; }
+.resolution-section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin: 0 0 14px; padding: 12px; }
+.resolution-head { align-items: start; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; margin-bottom: 8px; }
+.resolution-head h2 { font-size: 15px; line-height: 1.2; margin: 0 0 4px; }
+.resolution-head p { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0; max-width: 820px; }
+.resolution-summary { display: grid; gap: 5px; grid-template-columns: repeat(3, max-content); }
+.resolution-summary div { border-left: 1px solid var(--line); padding-left: 10px; }
+.resolution-summary strong { display: block; font-size: 15px; line-height: 1.15; }
+.resolution-summary span { color: var(--muted); display: block; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; }
+.resolution-chart { display: block; height: 280px; width: 100%; }
+.resolution-chart .axis { stroke: var(--line); stroke-width: 1; }
+.resolution-chart .grid { stroke: #ecebe4; stroke-width: 1; }
+.resolution-chart .line { fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.resolution-chart .point { fill: var(--accent); stroke: white; stroke-width: 1.5; }
+.resolution-chart text { fill: var(--muted); font-size: 11px; font-weight: 800; }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border-bottom: 1px solid var(--line); padding: 8px 7px; text-align: right; white-space: nowrap; }
@@ -53,6 +67,9 @@ th:first-child, td:first-child { text-align: left; }
 @media (max-width: 780px) {
   .viz { grid-template-columns: 1fr; }
   .pie { height: min(86vw, 360px); width: min(86vw, 360px); }
+  .resolution-head { grid-template-columns: 1fr; }
+  .resolution-summary { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .resolution-summary div { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-top: 7px; }
 }
 </style>
 </head>
@@ -75,6 +92,16 @@ th:first-child, td:first-child { text-align: left; }
       <p class="note" id="note"></p>
       <div class="legend" id="legend"></div>
     </div>
+  </section>
+  <section class="resolution-section" aria-labelledby="resolutionTitle">
+    <div class="resolution-head">
+      <div>
+        <h2 id="resolutionTitle">Temporal Resolution</h2>
+        <p>Greedy per-video thinning: keep the first cue, then keep the next cue only when it is at least N seconds after the last kept cue. The curve shows segment rows eliminated, not total DB bytes.</p>
+      </div>
+      <div class="resolution-summary" id="resolutionSummary"></div>
+    </div>
+    <svg class="resolution-chart" id="resolutionChart" viewBox="0 0 760 280" role="img" aria-label="Percentage of segment cues eliminated by minimum cue spacing"></svg>
   </section>
   <section class="table-wrap">
     <table>
@@ -102,6 +129,39 @@ const METRICS = [
   { key: 'segment_count', label: 'Segments', format: formatCount, note: 'Segments are transcript timestamp anchors used for search result links.' }
 ];
 const COLORS = ['#cc241d', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#0d9488', '#4f46e5', '#c2410c', '#64748b', '#b91c1c', '#047857', '#9333ea', '#0369a1', '#be123c', '#854d0e', '#4338ca'];
+const SEGMENT_STORAGE_BYTES = 1030926336;
+const SEGMENT_THINNING = [
+  { seconds: 1, removed: 0, removed_percent: 0, kept: 19071333 },
+  { seconds: 2, removed: 2999310, removed_percent: 15.7268, kept: 16072023 },
+  { seconds: 3, removed: 7445720, removed_percent: 39.0414, kept: 11625613 },
+  { seconds: 4, removed: 9736129, removed_percent: 51.0511, kept: 9335204 },
+  { seconds: 5, removed: 11329029, removed_percent: 59.4034, kept: 7742304 },
+  { seconds: 6, removed: 12463613, removed_percent: 65.3526, kept: 6607720 },
+  { seconds: 7, removed: 13294334, removed_percent: 69.7085, kept: 5776999 },
+  { seconds: 8, removed: 13935574, removed_percent: 73.0708, kept: 5135759 },
+  { seconds: 9, removed: 14447291, removed_percent: 75.754, kept: 4624042 },
+  { seconds: 10, removed: 14864905, removed_percent: 77.9437, kept: 4206428 },
+  { seconds: 11, removed: 15214829, removed_percent: 79.7785, kept: 3856504 },
+  { seconds: 12, removed: 15511406, removed_percent: 81.3336, kept: 3559927 },
+  { seconds: 13, removed: 15765357, removed_percent: 82.6652, kept: 3305976 },
+  { seconds: 14, removed: 15984162, removed_percent: 83.8125, kept: 3087171 },
+  { seconds: 15, removed: 16176197, removed_percent: 84.8194, kept: 2895136 },
+  { seconds: 16, removed: 16345700, removed_percent: 85.7082, kept: 2725633 },
+  { seconds: 17, removed: 16496758, removed_percent: 86.5003, kept: 2574575 },
+  { seconds: 18, removed: 16631165, removed_percent: 87.205, kept: 2440168 },
+  { seconds: 19, removed: 16752596, removed_percent: 87.8418, kept: 2318737 },
+  { seconds: 20, removed: 16862300, removed_percent: 88.417, kept: 2209033 },
+  { seconds: 21, removed: 16961911, removed_percent: 88.9393, kept: 2109422 },
+  { seconds: 22, removed: 17053045, removed_percent: 89.4172, kept: 2018288 },
+  { seconds: 23, removed: 17136707, removed_percent: 89.8558, kept: 1934626 },
+  { seconds: 24, removed: 17213582, removed_percent: 90.2589, kept: 1857751 },
+  { seconds: 25, removed: 17284441, removed_percent: 90.6305, kept: 1786892 },
+  { seconds: 26, removed: 17350120, removed_percent: 90.9749, kept: 1721213 },
+  { seconds: 27, removed: 17411154, removed_percent: 91.2949, kept: 1660179 },
+  { seconds: 28, removed: 17467862, removed_percent: 91.5922, kept: 1603471 },
+  { seconds: 29, removed: 17521018, removed_percent: 91.871, kept: 1550315 },
+  { seconds: 30, removed: 17570680, removed_percent: 92.1314, kept: 1500653 }
+];
 const state = { metric: 'runtime_seconds', stats: null };
 const meta = document.getElementById('meta');
 const controls = document.getElementById('controls');
@@ -110,6 +170,8 @@ const pie = document.getElementById('pie');
 const legend = document.getElementById('legend');
 const rows = document.getElementById('rows');
 const note = document.getElementById('note');
+const resolutionChart = document.getElementById('resolutionChart');
+const resolutionSummary = document.getElementById('resolutionSummary');
 
 init();
 
@@ -153,6 +215,7 @@ function render() {
   renderPie(channels, metric, total);
   renderLegend(channels, metric, total);
   renderRows(channels);
+  renderResolutionChart();
 }
 
 function renderSummary(stats) {
@@ -257,6 +320,74 @@ function pieSlices(items, key, total) {
     angle += span;
     return slice;
   });
+}
+
+function renderResolutionChart() {
+  resolutionChart.replaceChildren();
+  const tenSecond = SEGMENT_THINNING.find(item => item.seconds === 10) || SEGMENT_THINNING[0];
+  const estimatedSaved = SEGMENT_STORAGE_BYTES * (tenSecond.removed / (tenSecond.removed + tenSecond.kept));
+  resolutionSummary.replaceChildren(
+    resolutionSummaryItem('10s removes', `${tenSecond.removed_percent.toFixed(2)}%`),
+    resolutionSummaryItem('Cues kept', formatCount(tenSecond.kept)),
+    resolutionSummaryItem('Segment storage est.', formatBytes(estimatedSaved))
+  );
+
+  const width = 760;
+  const height = 280;
+  const padding = { top: 18, right: 22, bottom: 42, left: 54 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const x = seconds => padding.left + ((seconds - 1) / 29) * plotWidth;
+  const y = percent => padding.top + (1 - percent / 100) * plotHeight;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  for (const tick of [0, 25, 50, 75, 100]) {
+    const line = svgEl('line', { class: 'grid', x1: padding.left, y1: y(tick), x2: width - padding.right, y2: y(tick) });
+    resolutionChart.appendChild(line);
+    const label = svgEl('text', { x: padding.left - 9, y: y(tick) + 4, 'text-anchor': 'end' });
+    label.textContent = `${tick}%`;
+    resolutionChart.appendChild(label);
+  }
+  resolutionChart.appendChild(svgEl('line', { class: 'axis', x1: padding.left, y1: height - padding.bottom, x2: width - padding.right, y2: height - padding.bottom }));
+  resolutionChart.appendChild(svgEl('line', { class: 'axis', x1: padding.left, y1: padding.top, x2: padding.left, y2: height - padding.bottom }));
+
+  for (const tick of [1, 5, 10, 15, 20, 25, 30]) {
+    const label = svgEl('text', { x: x(tick), y: height - 15, 'text-anchor': 'middle' });
+    label.textContent = `${tick}s`;
+    resolutionChart.appendChild(label);
+  }
+
+  const pathData = SEGMENT_THINNING.map((item, index) => `${index === 0 ? 'M' : 'L'} ${x(item.seconds).toFixed(2)} ${y(item.removed_percent).toFixed(2)}`).join(' ');
+  resolutionChart.appendChild(svgEl('path', { class: 'line', d: pathData }));
+  for (const item of SEGMENT_THINNING) {
+    const point = svgEl('circle', { class: 'point', cx: x(item.seconds), cy: y(item.removed_percent), r: item.seconds % 5 === 0 || item.seconds === 1 ? 4 : 2.5 });
+    point.appendChild(svgEl('title', {}, `${item.seconds}s spacing: ${item.removed_percent.toFixed(2)}% removed (${formatCount(item.removed)} rows), ${formatCount(item.kept)} kept`));
+    resolutionChart.appendChild(point);
+  }
+
+  const xLabel = svgEl('text', { x: padding.left + plotWidth / 2, y: height - 2, 'text-anchor': 'middle' });
+  xLabel.textContent = 'Minimum seconds between cue anchors';
+  resolutionChart.appendChild(xLabel);
+  const yLabel = svgEl('text', { x: 12, y: padding.top + plotHeight / 2, transform: `rotate(-90 12 ${padding.top + plotHeight / 2})`, 'text-anchor': 'middle' });
+  yLabel.textContent = 'Segment rows eliminated';
+  resolutionChart.appendChild(yLabel);
+
+  function svgEl(name, attrs = {}, text = '') {
+    const el = document.createElementNS(ns, name);
+    for (const [key, value] of Object.entries(attrs)) {
+      el.setAttribute(key, String(value));
+    }
+    if (text) el.textContent = text;
+    return el;
+  }
+}
+
+function resolutionSummaryItem(label, value) {
+  const div = document.createElement('div');
+  div.innerHTML = '<strong></strong><span></span>';
+  div.querySelector('strong').textContent = value;
+  div.querySelector('span').textContent = label;
+  return div;
 }
 
 function describeArc(cx, cy, r, startAngle, endAngle) {

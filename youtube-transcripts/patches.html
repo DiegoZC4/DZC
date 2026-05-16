@@ -31,13 +31,12 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 .patch-title { font-size: 14px; font-weight: 850; line-height: 1.22; overflow-wrap: anywhere; }
 .patch-meta { color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patch-status { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; white-space: nowrap; }
-.patch-body { display: grid; gap: 8px; }
-.patch-window { border-top: 1px solid var(--line); display: grid; gap: 6px; padding-top: 8px; }
-.patch-window-head { color: var(--muted); font-size: 12px; font-weight: 850; }
-.patch-window-text { color: #30302e; font-size: 13.5px; line-height: 1.36; }
-.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; }
-.patch-links { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
-.patch-chip { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; text-decoration: none; }
+.patch-body { display: grid; gap: 5px; }
+.patch-window { border-top: 1px solid var(--line); color: #30302e; font-size: 13.5px; line-height: 1.34; padding-top: 6px; }
+.patch-time { color: var(--muted); font-size: 12px; font-weight: 900; margin-right: 5px; white-space: nowrap; }
+.patch-window-text { display: inline; }
+.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; text-decoration: none; }
+.patch-word:hover { text-decoration: underline; }
 .empty { color: var(--muted); padding: 18px 0; }
 @media (max-width: 680px) {
   .topbar { align-items: flex-start; flex-direction: column; }
@@ -68,6 +67,7 @@ const patchResults = document.getElementById('patchResults');
 const refreshPatches = document.getElementById('refreshPatches');
 const CANDIDATE_START = '\uE000';
 const CANDIDATE_END = '\uE001';
+const CENSOR_RE = /\[\s*__\s*\]/;
 let channelByName = new Map();
 
 const CATEGORY_STYLES = {
@@ -153,14 +153,7 @@ function renderPatches(payload) {
     for (const windowGroup of group.windows) {
       const windowElement = document.createElement('section');
       windowElement.className = 'patch-window';
-      windowElement.innerHTML = `
-        <div class="patch-window-head"></div>
-        <div class="patch-window-text"></div>
-        <div class="patch-links"></div>
-      `;
-      windowElement.querySelector('.patch-window-head').textContent = `${windowGroup.start || '0:00'} · ${windowGroup.markers.length} candidate${windowGroup.markers.length === 1 ? '' : 's'}`;
-      renderPatchWindowText(windowElement.querySelector('.patch-window-text'), windowGroup);
-      renderPatchLinks(windowElement.querySelector('.patch-links'), windowGroup.markers);
+      renderPatchWindowLine(windowElement, windowGroup);
       body.appendChild(windowElement);
     }
     fragment.appendChild(article);
@@ -205,10 +198,27 @@ function groupPatchMarkers(markers) {
   }));
 }
 
+function renderPatchWindowLine(container, windowGroup) {
+  const time = document.createElement('span');
+  time.className = 'patch-time';
+  time.textContent = windowGroup.start || '0:00';
+  container.appendChild(time);
+  const text = document.createElement('span');
+  text.className = 'patch-window-text';
+  container.appendChild(text);
+  renderPatchWindowText(text, windowGroup);
+}
+
 function renderPatchWindowText(container, windowGroup) {
+  const candidateText = markedCueText(windowGroup.markers);
+  if (candidateText) {
+    renderMarkedCandidateText(container, candidateText, windowGroup.markers);
+    return;
+  }
+
   const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
   if (text.includes(CANDIDATE_START) && text.includes(CANDIDATE_END)) {
-    renderMarkedCandidateText(container, text);
+    renderMarkedCandidateText(container, text, windowGroup.markers);
     return;
   }
   const highlights = windowGroup.markers
@@ -229,9 +239,7 @@ function renderPatchWindowText(container, windowGroup) {
     const index = lowerText.indexOf(needle, cursor);
     if (index < 0) continue;
     if (index > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
-    const mark = document.createElement('span');
-    mark.className = 'patch-word';
-    mark.title = `${item.marker.marker_timestamp || '0:00'} · ${item.marker.status || 'candidate'}`;
+    const mark = patchWordLink(item.marker);
     mark.textContent = text.slice(index, index + item.text.length);
     fragment.appendChild(mark);
     cursor = index + item.text.length;
@@ -241,7 +249,20 @@ function renderPatchWindowText(container, windowGroup) {
   container.replaceChildren(matched ? fragment : document.createTextNode(text));
 }
 
-function renderMarkedCandidateText(container, text) {
+function markedCueText(markers) {
+  const sorted = [...markers]
+    .sort((a, b) => Number(a.marker_char_start) - Number(b.marker_char_start))
+    .filter(marker => stripPatchMarkers(marker.replacement_text || marker.candidate_text || ''));
+  if (!sorted.length) return '';
+  let text = `${sorted[0].youtube_before || ''}[ __ ]${sorted[0].youtube_after || ''}`;
+  for (const marker of sorted) {
+    const replacement = stripPatchMarkers(marker.replacement_text || marker.candidate_text || '');
+    text = text.replace(CENSOR_RE, () => `${CANDIDATE_START}${replacement}${CANDIDATE_END}`);
+  }
+  return stripPatchMarkers(text);
+}
+
+function renderMarkedCandidateText(container, text, markers) {
   const fragment = document.createDocumentFragment();
   let cursor = 0;
   let matched = 0;
@@ -259,8 +280,7 @@ function renderMarkedCandidateText(container, text) {
       fragment.appendChild(document.createTextNode(text.slice(start).replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
       break;
     }
-    const mark = document.createElement('span');
-    mark.className = 'patch-word';
+    const mark = patchWordLink(markers[matched] || markers[0] || {});
     mark.textContent = text.slice(start + CANDIDATE_START.length, end);
     fragment.appendChild(mark);
     matched++;
@@ -269,20 +289,14 @@ function renderMarkedCandidateText(container, text) {
   container.replaceChildren(matched ? fragment : document.createTextNode(text.replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
 }
 
-function renderPatchLinks(container, markers) {
-  const fragment = document.createDocumentFragment();
-  for (const marker of markers) {
-    const link = document.createElement('a');
-    link.className = 'patch-chip';
-    link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    const word = stripPatchMarkers(marker.replacement_text || marker.candidate_text || marker.status || '');
-    link.textContent = `${marker.marker_timestamp || '0:00'}${word ? ` ${word}` : ''}`;
-    link.title = `${marker.status || 'candidate'}${marker.reason ? ` · ${marker.reason}` : ''}`;
-    fragment.appendChild(link);
-  }
-  container.replaceChildren(fragment);
+function patchWordLink(marker) {
+  const link = document.createElement('a');
+  link.className = 'patch-word';
+  link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
+  link.target = '_blank';
+  link.rel = 'noreferrer';
+  link.title = `${marker.marker_timestamp || '0:00'} · ${marker.status || 'candidate'}${marker.reason ? ` · ${marker.reason}` : ''}`;
+  return link;
 }
 
 function fallbackPatchText(markers) {

@@ -24,6 +24,11 @@ main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .page-nav a { color: var(--accent); font-size: 14px; font-weight: 850; text-decoration: none; }
 .toolbar { align-items: center; display: flex; justify-content: flex-end; margin-bottom: 10px; }
 button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 11px; }
+.review-player { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: none; gap: 8px; margin: 0 0 10px; padding: 8px; position: sticky; top: 0; z-index: 4; }
+.review-player[data-open="true"] { display: grid; }
+.review-player-top { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+.review-player-title { font-size: 13px; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.review-player-frame { aspect-ratio: 16 / 9; background: #111; border: 0; border-radius: 6px; display: block; max-height: 42vh; width: 100%; }
 .patch-results { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
 .patch-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; padding: 9px 10px; }
 .patch-card-top { align-items: center; display: grid; gap: 8px; grid-template-columns: 24px minmax(0, 1fr) auto; }
@@ -59,12 +64,23 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
   <div class="toolbar">
     <button id="refreshPatches" type="button">Refresh</button>
   </div>
+  <section class="review-player" id="reviewPlayer" aria-label="YouTube review player">
+    <div class="review-player-top">
+      <div class="review-player-title" id="reviewPlayerTitle"></div>
+      <button id="closeReviewPlayer" type="button" aria-label="Close player">&times;</button>
+    </div>
+    <iframe class="review-player-frame" id="reviewPlayerFrame" title="YouTube video review player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </section>
   <section class="patch-results" id="patchResults"></section>
 </main>
 <script>
 const patchMeta = document.getElementById('patchMeta');
 const patchResults = document.getElementById('patchResults');
 const refreshPatches = document.getElementById('refreshPatches');
+const reviewPlayer = document.getElementById('reviewPlayer');
+const reviewPlayerFrame = document.getElementById('reviewPlayerFrame');
+const reviewPlayerTitle = document.getElementById('reviewPlayerTitle');
+const closeReviewPlayer = document.getElementById('closeReviewPlayer');
 const CANDIDATE_START = '\uE000';
 const CANDIDATE_END = '\uE001';
 const CENSOR_RE = /\[\s*__\s*\]/;
@@ -88,6 +104,10 @@ init();
 
 async function init() {
   refreshPatches.addEventListener('click', () => loadPatches());
+  closeReviewPlayer.addEventListener('click', () => {
+    reviewPlayer.dataset.open = 'false';
+    reviewPlayerFrame.src = 'about:blank';
+  });
   await loadChannels();
   await loadPatches();
 }
@@ -293,10 +313,36 @@ function patchWordLink(marker) {
   const link = document.createElement('a');
   link.className = 'patch-word';
   link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
-  link.target = '_blank';
   link.rel = 'noreferrer';
   link.title = `${marker.marker_timestamp || '0:00'} · ${marker.status || 'candidate'}${marker.reason ? ` · ${marker.reason}` : ''}`;
+  link.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    openReviewPlayer(marker);
+  });
   return link;
+}
+
+function openReviewPlayer(marker) {
+  const videoId = String(marker.video_id || marker.youtube_id || '').trim();
+  if (!videoId) return;
+  const seconds = Math.max(0, Math.floor(Number(marker.marker_start_seconds || marker.window_start_seconds || 0)));
+  const title = [marker.marker_timestamp || formatTimestamp(seconds), marker.channel, marker.title]
+    .filter(Boolean)
+    .join(' · ');
+  reviewPlayerTitle.textContent = title;
+  reviewPlayer.dataset.open = 'true';
+  reviewPlayerFrame.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?start=${seconds}&autoplay=1&rel=0`;
+}
+
+function formatTimestamp(seconds) {
+  const value = Math.max(0, Math.floor(Number(seconds || 0)));
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const secs = value % 60;
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
 function fallbackPatchText(markers) {

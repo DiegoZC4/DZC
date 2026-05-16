@@ -409,18 +409,62 @@ function readSearchCache() {
   try {
     const raw = localStorage.getItem(SEARCH_CACHE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter(isValidCachedSearch).slice(0, MAX_CACHED_SEARCHES) : [];
+    if (!Array.isArray(parsed)) return [];
+    const entries = parsed
+      .map(normalizeCachedSearch)
+      .filter(Boolean)
+      .slice(0, MAX_CACHED_SEARCHES);
+    const compact = JSON.stringify(entries);
+    if (raw !== compact) {
+      try {
+        localStorage.setItem(SEARCH_CACHE_KEY, compact);
+      } catch {
+        // Keep reading usable entries even if storage cleanup fails.
+      }
+    }
+    return entries;
   } catch {
     return [];
   }
 }
 
-function isValidCachedSearch(entry) {
-  return entry && typeof entry === 'object' && (entry.query || entry.titleFilter) && entry.payload;
+function normalizeCachedSearch(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const channels = Array.isArray(entry.filters)
+    ? entry.filters.map(filter => filter?.value || filter?.label || '')
+    : entry.channels;
+  const title = entry.title ?? entry.titleFilter ?? '';
+  const transcript = entry.transcript ?? entry.query ?? '';
+  const payloadResults = Array.isArray(entry.payload?.results) ? entry.payload.results : [];
+  const videos = Array.isArray(entry.videoIds)
+    ? entry.videoIds
+    : Array.isArray(entry.videos)
+      ? entry.videos
+      : payloadResults.map(item => item.youtube_id);
+  const normalized = {
+    channels: uniqueStrings(channels),
+    title: String(title || '').trim(),
+    transcript: String(transcript || '').trim(),
+    videos: uniqueStrings(videos)
+  };
+  return normalized.title || normalized.transcript ? normalized : null;
+}
+
+function uniqueStrings(values) {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const value of values) {
+    const text = String(value || '').trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    out.push(text);
+  }
+  return out;
 }
 
 function writeSearchCache(entries) {
-  const next = entries.slice(0, MAX_CACHED_SEARCHES);
+  const next = entries.map(normalizeCachedSearch).filter(Boolean).slice(0, MAX_CACHED_SEARCHES);
   while (next.length) {
     try {
       localStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(next));
@@ -438,41 +482,29 @@ function writeSearchCache(entries) {
 
 function currentSearchState() {
   return {
-    titleFilter: titleInput.value.trim(),
-    query: queryInput.value.trim(),
-    filters: selectedFilters.map(filter => ({
-      type: filter.type,
-      value: filter.value,
-      label: filter.label,
-      category: filter.category
-    }))
+    channels: selectedFilters.map(filter => filter.value),
+    title: titleInput.value.trim(),
+    transcript: queryInput.value.trim()
   };
 }
 
 function searchCacheKey(state) {
   return JSON.stringify({
-    titleFilter: state.titleFilter,
-    query: state.query,
-    filters: state.filters.map(filter => `${filter.type}:${filter.value}`)
+    channels: [...(state.channels || [])].sort(),
+    title: state.title || '',
+    transcript: state.transcript || ''
   });
 }
 
 function saveSearchCache(state, payload) {
   const results = Array.isArray(payload.results) ? payload.results : [];
   const entry = {
-    key: searchCacheKey(state),
-    createdAt: Date.now(),
-    titleFilter: state.titleFilter,
-    query: state.query,
-    filters: state.filters,
-    channels: selectedChannels(),
-    videoIds: [...new Set(results.map(item => item.youtube_id).filter(Boolean))],
-    payload: {
-      results,
-      timing: payload.timing || null
-    }
+    channels: uniqueStrings(state.channels || []),
+    title: state.title || '',
+    transcript: state.transcript || '',
+    videos: uniqueStrings(results.map(item => item.youtube_id))
   };
-  const entries = readSearchCache().filter(item => item.key !== entry.key);
+  const entries = readSearchCache().filter(item => searchCacheKey(item) !== searchCacheKey(entry));
   entries.unshift(entry);
   writeSearchCache(entries);
   renderRecentSearches();
@@ -486,7 +518,7 @@ function renderRecentSearches() {
     button.type = 'button';
     button.className = 'recent-search';
     button.textContent = cachedSearchLabel(entry);
-    button.title = `${entry.videoIds?.length || 0} cached video${entry.videoIds?.length === 1 ? '' : 's'}`;
+    button.title = `${entry.videos?.length || 0} cached video${entry.videos?.length === 1 ? '' : 's'}`;
     button.addEventListener('click', () => restoreCachedSearch(entry));
     return button;
   }));
@@ -494,9 +526,9 @@ function renderRecentSearches() {
 
 function cachedSearchLabel(entry) {
   const parts = [];
-  if (entry.titleFilter) parts.push(entry.titleFilter);
-  if (entry.query) parts.push(entry.query);
-  if (entry.filters?.length) parts.push(entry.filters.map(filter => filter.label || filter.value).join(', '));
+  if (entry.title) parts.push(entry.title);
+  if (entry.transcript) parts.push(entry.transcript);
+  if (entry.channels?.length) parts.push(entry.channels.join(', '));
   return parts.join(' · ') || 'Search';
 }
 
@@ -506,22 +538,35 @@ function restoreLatestSearch() {
 }
 
 function restoreCachedSearch(entry) {
-  activeCachedSearch = entry;
-  titleInput.value = entry.titleFilter || '';
-  queryInput.value = entry.query || '';
-  selectedFilters = cachedFiltersToOptions(entry.filters || []);
+  const normalized = normalizeCachedSearch(entry);
+  if (!normalized) return;
+  activeCachedSearch = normalized;
+  titleInput.value = normalized.title || '';
+  queryInput.value = normalized.transcript || '';
+  selectedFilters = cachedChannelsToOptions(normalized.channels || []);
   renderSelectedFilters();
   renderChannelOptions();
-  const timing = entry.payload?.timing ? { ...entry.payload.timing, cached: true } : { cached: true };
-  renderResults(entry.payload?.results || [], entry.query || '', entry.titleFilter || '', timing);
+  if (channelRows.length) {
+    search({ cachedVideos: normalized.videos || [], cacheResults: false });
+  } else {
+    meta.textContent = `Restored cached search${normalized.videos?.length ? ` with ${normalized.videos.length} video id${normalized.videos.length === 1 ? '' : 's'}` : ''}`;
+  }
 }
 
-function cachedFiltersToOptions(filters) {
+function cachedChannelsToOptions(channels) {
   const options = allFilterOptions();
-  return filters.map(filter => {
-    const option = options.find(item => item.type === filter.type && item.value === filter.value);
-    return option || filter;
-  }).filter(filter => filter.type && filter.value);
+  return uniqueStrings(channels).map(value => {
+    const option = options.find(item => item.value === value);
+    if (option) return option;
+    const type = CATEGORY_STYLES[value] ? 'category' : 'channel';
+    return {
+      type,
+      value,
+      label: value,
+      category: type === 'category' ? value : inferChannelCategory(value),
+      detail: type === 'category' ? 'Category' : 'Channel'
+    };
+  });
 }
 
 function inferChannelCategory(channel) {
@@ -576,11 +621,11 @@ function inferChannelCategory(channel) {
   return categories[channel] || 'Other';
 }
 
-async function search() {
+async function search(options = {}) {
   activeCachedSearch = null;
   const state = currentSearchState();
-  const titleFilter = state.titleFilter;
-  const query = state.query;
+  const titleFilter = state.title;
+  const query = state.transcript;
   if (!titleFilter && !query) {
     results.innerHTML = '<div class="empty">Type a video title or transcript substring.</div>';
     return;
@@ -600,9 +645,12 @@ async function search() {
         params.append('channels[]', channel);
       }
     }
+    for (const videoId of uniqueStrings(options.cachedVideos || [])) {
+      params.append('videos[]', videoId);
+    }
     const payload = await getJson(`api.php?${params}`);
     renderResults(payload.results || [], query, titleFilter, payload.timing || null);
-    saveSearchCache(state, payload);
+    if (options.cacheResults !== false) saveSearchCache(state, payload);
   } catch (error) {
     meta.textContent = error.message;
   }

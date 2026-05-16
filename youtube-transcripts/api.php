@@ -54,12 +54,13 @@ try {
         $query = (string)($_GET['q'] ?? '');
         $channels = yt_request_channels();
         $videoId = (string)($_GET['video_id'] ?? '');
+        $videoIds = yt_request_video_ids();
         $titleFilter = (string)($_GET['title_filter'] ?? ($_GET['title'] ?? ''));
         $limit = (int)($_GET['limit'] ?? 50);
         $timings = [];
         $results = trim($query) === ''
-            ? yt_title_search($db, $titleFilter, $channels, $limit, $timings)
-            : yt_search($db, $query, $channels, $limit, $videoId, $titleFilter, $timings);
+            ? yt_title_search($db, $titleFilter, $channels, $limit, $timings, $videoIds)
+            : yt_search($db, $query, $channels, $limit, $videoId, $titleFilter, $timings, $videoIds);
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
@@ -68,6 +69,7 @@ try {
             'channel' => count($channels) === 1 ? $channels[0] : '',
             'channels' => $channels,
             'video_id' => $videoId,
+            'videos' => $videoIds,
             'timing' => $timings,
             'results' => $results,
         ]);
@@ -91,6 +93,18 @@ function yt_request_channels(): array
         $channels[] = $legacy;
     }
     return yt_normalize_channels($channels);
+}
+
+function yt_request_video_ids(): array
+{
+    $videos = $_GET['videos'] ?? [];
+    if (is_string($videos)) {
+        $videos = $videos === '' ? [] : explode(',', $videos);
+    }
+    if (!is_array($videos)) {
+        $videos = [];
+    }
+    return yt_normalize_video_ids($videos);
 }
 
 function yt_json(array $payload, int $status = 200): void

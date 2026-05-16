@@ -533,7 +533,7 @@ function yt_channel_category(string $channel): string
     return $categories[$channel] ?? 'Other';
 }
 
-function yt_search(PDO $db, string $query, array|string $channel = '', int $limit = 50, string $videoId = '', string $titleFilter = '', ?array &$timings = null): array
+function yt_search(PDO $db, string $query, array|string $channel = '', int $limit = 50, string $videoId = '', string $titleFilter = '', ?array &$timings = null, array|string $videoIds = []): array
 {
     $started = microtime(true);
     $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
@@ -566,6 +566,17 @@ function yt_search(PDO $db, string $query, array|string $channel = '', int $limi
     if ($videoId !== '') {
         $sql .= ' AND v.youtube_id = :video_id';
         $params[':video_id'] = $videoId;
+    } else {
+        $videoIds = yt_normalize_video_ids($videoIds);
+        if ($videoIds) {
+            $placeholders = [];
+            foreach ($videoIds as $index => $id) {
+                $key = ':video_id_' . $index;
+                $placeholders[] = $key;
+                $params[$key] = $id;
+            }
+            $sql .= ' AND v.youtube_id IN (' . implode(', ', $placeholders) . ')';
+        }
     }
     $titleFilter = trim(preg_replace('/\s+/', ' ', $titleFilter) ?? '');
     if ($titleFilter !== '') {
@@ -613,7 +624,7 @@ function yt_search(PDO $db, string $query, array|string $channel = '', int $limi
     return $results;
 }
 
-function yt_title_search(PDO $db, string $titleFilter, array|string $channel = '', int $limit = 50, ?array &$timings = null): array
+function yt_title_search(PDO $db, string $titleFilter, array|string $channel = '', int $limit = 50, ?array &$timings = null, array|string $videoIds = []): array
 {
     $started = microtime(true);
     $titleFilter = trim(preg_replace('/\s+/', ' ', $titleFilter) ?? '');
@@ -647,6 +658,16 @@ function yt_title_search(PDO $db, string $titleFilter, array|string $channel = '
             $params[$key] = $channelName;
         }
         $sql .= ' AND c.name IN (' . implode(', ', $placeholders) . ')';
+    }
+    $videoIds = yt_normalize_video_ids($videoIds);
+    if ($videoIds) {
+        $placeholders = [];
+        foreach ($videoIds as $index => $id) {
+            $key = ':video_id_' . $index;
+            $placeholders[] = $key;
+            $params[$key] = $id;
+        }
+        $sql .= ' AND video_titles_fts.youtube_id IN (' . implode(', ', $placeholders) . ')';
     }
     $sql .= ' ORDER BY video_titles_fts.title COLLATE NOCASE LIMIT :limit';
     $stmt = $db->prepare($sql);
@@ -889,6 +910,21 @@ function yt_normalize_channels(array|string $channels): array
         }
     }
     return array_keys($clean);
+}
+
+function yt_normalize_video_ids(array|string $videoIds): array
+{
+    if (is_string($videoIds)) {
+        $videoIds = $videoIds === '' ? [] : [$videoIds];
+    }
+    $clean = [];
+    foreach ($videoIds as $videoId) {
+        $videoId = trim((string)$videoId);
+        if ($videoId !== '' && preg_match('/^[A-Za-z0-9_-]{6,32}$/', $videoId)) {
+            $clean[$videoId] = true;
+        }
+    }
+    return array_slice(array_keys($clean), 0, 200);
 }
 
 function yt_fts_query(string $query): string

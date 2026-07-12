@@ -1,0 +1,77 @@
+name: Harmonizer native builds
+
+on:
+  push:
+    paths:
+      - "harmonizer/native/**"
+      - ".github/workflows/harmonizer-native.yml"
+  pull_request:
+    paths:
+      - "harmonizer/native/**"
+      - ".github/workflows/harmonizer-native.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: harmonizer/native
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config curl portaudio19-dev libaubio-dev
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake pkg-config portaudio aubio
+      - name: Fetch Rubber Band 4
+        id: rubberband
+        run: echo "source=$(./scripts/fetch_rubberband.sh)" >> "$GITHUB_OUTPUT"
+      - name: Configure
+        run: cmake -S . -B build-ci -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND="${{ steps.rubberband.outputs.source }}"
+      - name: Build
+        run: cmake --build build-ci --parallel
+      - name: Smoke test
+        run: ./build-ci/harmonizer_web --help
+
+  windows:
+    name: windows-latest
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+        working-directory: harmonizer/native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            curl
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-portaudio
+            mingw-w64-ucrt-x86_64-aubio
+      - name: Fetch Rubber Band 4
+        id: rubberband
+        run: echo "source=$(./scripts/fetch_rubberband.sh)" >> "$GITHUB_OUTPUT"
+      - name: Configure
+        run: cmake -S . -B build-ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND="${{ steps.rubberband.outputs.source }}"
+      - name: Build
+        run: cmake --build build-ci
+      - name: Smoke test
+        run: ./build-ci/harmonizer_web.exe --help

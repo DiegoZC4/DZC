@@ -18,12 +18,19 @@ const ui = {
   pitchChip: $("#pitch-chip"),
   midiChip: $("#midi-chip"),
   engineChip: $("#engine-chip"),
+  downloadButton: $("#download-button"),
+  downloadOverlay: $("#download-overlay"),
+  downloadCloseButton: $("#download-close-button"),
   startButton: $("#start-button"),
   stopButton: $("#stop-button"),
   startOverlay: $("#start-overlay"),
   startOverlayButton: $("#start-overlay-button"),
+  startDownloadButton: $("#start-download-button"),
   inputDevice: $("#input-device"),
   inputStatus: $("#input-status"),
+  outputDevice: $("#output-device"),
+  outputStatus: $("#output-status"),
+  midiInput: $("#midi-input"),
   inputLevelFill: $("#input-level-fill"),
   outputLevelFill: $("#output-level-fill"),
   inputLevelText: $("#input-level-text"),
@@ -55,7 +62,7 @@ const heldNotes = new Set();
 const sustainedNotes = new Set();
 let sustainOn = false;
 let pitchBend = 0;
-let midiInitialized = false;
+let midiAccess = null;
 let audio = null;
 let voices = [];
 let lastPitchRun = 0;
@@ -77,6 +84,16 @@ const view = {
   centerMidi: Number(localStorage.getItem("harmonizer.public.centerMidi")) || 60,
 };
 
+function storedSetting(key, fallback = "") {
+  try { return localStorage.getItem(`harmonizer.public.v1.${key}`) ?? fallback; }
+  catch { return fallback; }
+}
+
+function storeSetting(key, value) {
+  try { localStorage.setItem(`harmonizer.public.v1.${key}`, String(value)); }
+  catch {}
+}
+
 function controlValue(name) {
   return controls[name].value;
 }
@@ -88,55 +105,50 @@ function formatControl(control) {
 
 function commitControl(name, rawValue, emit = true) {
   const control = controls[name];
-  const numeric = Number(String(rawValue).replace(/[^0-9.+-]/g, ""));
+  const numeric = Number(rawValue);
   if (!Number.isFinite(numeric)) {
-    control.input.value = formatControl(control);
+    control.input.textContent = formatControl(control);
     return;
   }
   const steps = Math.round((numeric - control.min) / control.step);
   control.value = clamp(control.min + steps * control.step, control.min, control.max);
-  control.input.value = formatControl(control);
+  control.input.dataset.value = String(control.value);
+  control.input.textContent = formatControl(control);
   control.input.setAttribute("aria-valuenow", String(control.value));
-  try { localStorage.setItem(`harmonizer.public.v1.${name}`, String(control.value)); } catch {}
+  storeSetting(name, control.value);
   if (emit) applyControls();
 }
 
 function bindDraggableNumber(name) {
   const control = controls[name];
-  const storedText = localStorage.getItem(`harmonizer.public.v1.${name}`);
-  const stored = storedText === null ? NaN : Number(storedText);
+  const storedText = storedSetting(name, "");
+  const stored = storedText === "" ? NaN : Number(storedText);
   if (Number.isFinite(stored)) control.value = clamp(stored, control.min, control.max);
   commitControl(name, control.value, false);
 
   let drag = null;
   control.input.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
-    drag = { x: event.clientX, start: control.value, moved: false };
+    event.preventDefault();
+    drag = { x: event.clientX, y: event.clientY, start: control.value };
     control.input.setPointerCapture(event.pointerId);
   });
   control.input.addEventListener("pointermove", (event) => {
     if (!drag || !control.input.hasPointerCapture(event.pointerId)) return;
-    const delta = event.clientX - drag.x;
-    if (Math.abs(delta) > 2) drag.moved = true;
-    if (!drag.moved) return;
+    const axisDelta = ((event.clientX - drag.x) - (event.clientY - drag.y)) / Math.SQRT2;
     const accelerated = event.shiftKey ? 5 : event.altKey ? 0.2 : 1;
-    commitControl(name, drag.start + Math.round(delta / 5) * control.step * accelerated);
+    commitControl(name, drag.start + Math.round(axisDelta / 5 * accelerated) * control.step);
   });
   control.input.addEventListener("pointerup", (event) => {
     if (control.input.hasPointerCapture(event.pointerId)) control.input.releasePointerCapture(event.pointerId);
-    if (drag?.moved) control.input.blur();
     drag = null;
   });
-  control.input.addEventListener("focus", () => control.input.select());
-  control.input.addEventListener("change", () => commitControl(name, control.input.value));
+  control.input.addEventListener("pointercancel", () => { drag = null; });
   control.input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      commitControl(name, control.input.value);
-      control.input.blur();
-    }
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+    if (["ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"].includes(event.key)) {
       event.preventDefault();
-      commitControl(name, control.value + (event.key === "ArrowUp" ? control.step : -control.step));
+      const direction = event.key === "ArrowUp" || event.key === "ArrowRight" ? 1 : -1;
+      commitControl(name, control.value + direction * control.step);
     }
   });
 }
@@ -183,17 +195,60 @@ async function buildVoice(index) {
   };
 }
 
-async function enumerateInputs(selectedId = "") {
-  const devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "audioinput");
+async function enumerateAudioDevices(
+  selectedInputId = storedSetting("audioInput"),
+  selectedOutputId = storedSetting("audioOutput"),
+) {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const inputs = devices.filter((device) => device.kind === "audioinput");
+  const outputs = devices.filter((device) => device.kind === "audiooutput");
   ui.inputDevice.replaceChildren();
-  devices.forEach((device, index) => {
+  inputs.forEach((device, index) => {
     const option = document.createElement("option");
     option.value = device.deviceId;
     option.textContent = device.label || `Microphone ${index + 1}`;
     ui.inputDevice.append(option);
   });
-  if (selectedId && devices.some((device) => device.deviceId === selectedId)) ui.inputDevice.value = selectedId;
-  ui.inputStatus.textContent = devices.length ? "ready" : "none";
+  if (selectedInputId && inputs.some((device) => device.deviceId === selectedInputId)) {
+    ui.inputDevice.value = selectedInputId;
+  }
+  if (!storedSetting("audioInput") && ui.inputDevice.value) storeSetting("audioInput", ui.inputDevice.value);
+  ui.inputStatus.textContent = inputs.length ? "ready" : "none";
+
+  ui.outputDevice.replaceChildren();
+  if (!outputs.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "System default";
+    ui.outputDevice.append(option);
+  }
+  outputs.forEach((device, index) => {
+    const option = document.createElement("option");
+    option.value = device.deviceId;
+    option.textContent = device.label || (device.deviceId === "default" ? "System default" : `Output ${index + 1}`);
+    ui.outputDevice.append(option);
+  });
+  if (outputs.some((device) => device.deviceId === selectedOutputId)) {
+    ui.outputDevice.value = selectedOutputId;
+  }
+  if (!storedSetting("audioOutput") && ui.outputDevice.value) storeSetting("audioOutput", ui.outputDevice.value);
+  ui.outputStatus.textContent = typeof AudioContext.prototype.setSinkId === "function" ? "ready" : "system default";
+}
+
+async function applyOutputDevice(deviceId = "") {
+  storeSetting("audioOutput", deviceId);
+  if (!audio) return;
+  if (typeof audio.context.setSinkId !== "function") {
+    ui.outputStatus.textContent = "system default";
+    return;
+  }
+  ui.outputStatus.textContent = "switching";
+  try {
+    await audio.context.setSinkId(deviceId);
+    ui.outputStatus.textContent = "ready";
+  } catch {
+    ui.outputStatus.textContent = "unavailable";
+  }
 }
 
 async function openMicrophone(deviceId = "") {
@@ -212,7 +267,9 @@ async function openMicrophone(deviceId = "") {
   source.connect(audio.inputGain);
   audio.stream = stream;
   audio.source = source;
-  await enumerateInputs(stream.getAudioTracks()[0]?.getSettings().deviceId || deviceId);
+  const activeDeviceId = stream.getAudioTracks()[0]?.getSettings().deviceId || deviceId;
+  storeSetting("audioInput", activeDeviceId);
+  await enumerateAudioDevices(activeDeviceId, ui.outputDevice.value);
 }
 
 async function startAudio() {
@@ -264,6 +321,7 @@ async function startAudio() {
       stream: null,
       source: null,
     };
+    await applyOutputDevice(ui.outputDevice.value);
     await openMicrophone(ui.inputDevice.value);
     voices = await Promise.all(Array.from({ length: MAX_VOICES }, (_, index) => buildVoice(index)));
     const latency = Math.max(...voices.map((voice) => voice.latency));
@@ -275,10 +333,6 @@ async function startAudio() {
     ui.startButton.hidden = true;
     ui.stopButton.hidden = false;
     await context.resume();
-    if (!midiInitialized) {
-      midiInitialized = true;
-      initMidi();
-    }
   } catch (error) {
     console.error(error);
     if (audio?.context) await audio.context.close().catch(() => {});
@@ -674,31 +728,56 @@ function isTypingTarget(target) {
   return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
 }
 
+function handleMidiMessage(event) {
+  const [status, data1, data2] = event.data;
+  const command = status & 0xf0;
+  if (command === 0x90 && data2 > 0) noteOn(data1, data2 / 127);
+  else if (command === 0x80 || (command === 0x90 && data2 === 0)) noteOff(data1);
+  else if (command === 0xb0 && data1 === 64) setSustain(data2 >= 64);
+  else if (command === 0xe0) pitchBend = ((((data2 << 7) | data1) - 8192) / 8192) * 2;
+  updateVoiceShifts(true);
+}
+
+function attachMidiInputs() {
+  if (!midiAccess) return;
+  const inputs = [...midiAccess.inputs.values()];
+  const savedId = storedSetting("midiInput", "all");
+  const savedName = storedSetting("midiInputName");
+  ui.midiInput.replaceChildren();
+  for (const [value, label] of [["all", "All MIDI devices"], ["none", "None"]]) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    ui.midiInput.append(option);
+  }
+  for (const input of inputs) {
+    const option = document.createElement("option");
+    option.value = input.id;
+    option.textContent = input.name || input.manufacturer || "MIDI input";
+    ui.midiInput.append(option);
+  }
+  const savedOption = [...ui.midiInput.options].find((option) => option.value === savedId)
+    || [...ui.midiInput.options].find((option) => option.textContent === savedName);
+  ui.midiInput.value = savedOption ? savedOption.value : "all";
+
+  let count = 0;
+  for (const input of inputs) {
+    const enabled = ui.midiInput.value === "all" || ui.midiInput.value === input.id;
+    input.onmidimessage = enabled ? handleMidiMessage : null;
+    if (enabled) count += 1;
+  }
+  ui.midiStatus.textContent = ui.midiInput.value === "none" ? "off" : count ? `${count} active` : "no devices";
+}
+
 async function initMidi() {
   if (!navigator.requestMIDIAccess) {
     ui.midiStatus.textContent = "unavailable";
     return;
   }
   try {
-    const access = await navigator.requestMIDIAccess({ sysex: false });
-    const attach = () => {
-      let count = 0;
-      for (const input of access.inputs.values()) {
-        input.onmidimessage = (event) => {
-          const [status, data1, data2] = event.data;
-          const command = status & 0xf0;
-          if (command === 0x90 && data2 > 0) noteOn(data1, data2 / 127);
-          else if (command === 0x80 || (command === 0x90 && data2 === 0)) noteOff(data1);
-          else if (command === 0xb0 && data1 === 64) setSustain(data2 >= 64);
-          else if (command === 0xe0) pitchBend = ((((data2 << 7) | data1) - 8192) / 8192) * 2;
-          updateVoiceShifts(true);
-        };
-        count += 1;
-      }
-      ui.midiStatus.textContent = count ? `${count} connected` : "no devices";
-    };
-    attach();
-    access.onstatechange = attach;
+    midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+    attachMidiInputs();
+    midiAccess.onstatechange = attachMidiInputs;
   } catch {
     ui.midiStatus.textContent = "permission denied";
   }
@@ -741,7 +820,26 @@ ui.canvas.addEventListener("pointerup", (event) => {
 ui.startOverlayButton.addEventListener("click", startAudio);
 ui.startButton.addEventListener("click", startAudio);
 ui.stopButton.addEventListener("click", stopAudio);
+let downloadOpener = ui.downloadButton;
+function openDownloadDialog(event) {
+  downloadOpener = event.currentTarget;
+  ui.downloadOverlay.hidden = false;
+  ui.downloadCloseButton.focus();
+}
+ui.downloadButton.addEventListener("click", openDownloadDialog);
+ui.startDownloadButton.addEventListener("click", openDownloadDialog);
+ui.downloadCloseButton.addEventListener("click", () => {
+  ui.downloadOverlay.hidden = true;
+  downloadOpener.focus();
+});
+ui.downloadOverlay.addEventListener("pointerdown", (event) => {
+  if (event.target === ui.downloadOverlay) ui.downloadCloseButton.click();
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !ui.downloadOverlay.hidden) ui.downloadCloseButton.click();
+});
 ui.inputDevice.addEventListener("change", async () => {
+  storeSetting("audioInput", ui.inputDevice.value);
   if (!audio) return;
   ui.inputDevice.disabled = true;
   ui.inputStatus.textContent = "switching";
@@ -749,7 +847,19 @@ ui.inputDevice.addEventListener("change", async () => {
   catch { ui.inputStatus.textContent = "error"; }
   finally { ui.inputDevice.disabled = false; }
 });
-ui.formants.addEventListener("change", () => updateVoiceShifts(true));
+ui.outputDevice.addEventListener("change", async () => {
+  await applyOutputDevice(ui.outputDevice.value);
+});
+ui.midiInput.addEventListener("change", () => {
+  storeSetting("midiInput", ui.midiInput.value);
+  if (ui.midiInput.selectedOptions[0]) storeSetting("midiInputName", ui.midiInput.selectedOptions[0].textContent);
+  attachMidiInputs();
+});
+ui.formants.checked = storedSetting("formants", "true") !== "false";
+ui.formants.addEventListener("change", () => {
+  storeSetting("formants", ui.formants.checked);
+  updateVoiceShifts(true);
+});
 ui.testToneButton.addEventListener("click", () => {
   if (!audio) return;
   const oscillator = audio.context.createOscillator();
@@ -764,7 +874,17 @@ ui.testToneButton.addEventListener("click", () => {
 
 Object.keys(controls).forEach(bindDraggableNumber);
 buildKeyboard();
-enumerateInputs().catch(() => { ui.inputStatus.textContent = "permission needed"; });
+const initialMidiInput = storedSetting("midiInput", "all");
+if ([...ui.midiInput.options].some((option) => option.value === initialMidiInput)) {
+  ui.midiInput.value = initialMidiInput;
+}
+enumerateAudioDevices().catch(() => { ui.inputStatus.textContent = "permission needed"; });
+initMidi();
+if (navigator.mediaDevices?.addEventListener) {
+  navigator.mediaDevices.addEventListener("devicechange", () => {
+    enumerateAudioDevices(ui.inputDevice.value, ui.outputDevice.value).catch(() => {});
+  });
+}
 frameHandle = requestAnimationFrame(draw);
 
 window.addEventListener("beforeunload", () => {

@@ -69,6 +69,10 @@ static constexpr float kPi              = 3.14159265358979323846f;
 // Pitch detection
 static constexpr int   kPitchWinSize    = 2048;
 static constexpr int   kPitchHopSize    = 512;
+static constexpr int   kMinDetectedMidi = 33;    // A1, 55 Hz
+static constexpr int   kMaxDetectedMidi = 84;    // C6
+static constexpr int   kLowPitchHandoffMidi = 37; // Primary must be below C#2.
+static constexpr float kLowPitchMinConfidence = 0.85f;
 
 // Voice
 static constexpr float kAttackSec       = 0.005f;
@@ -172,7 +176,9 @@ static inline float foldHighPitchCandidate(float hz, float anchorMidi) {
     float targetMidi = anchorMidi;
     float bestHz = hz;
     float bestDistance = std::fabs(freqToMidi(hz) - targetMidi);
-    for (float candidate = hz * 0.5f; candidate >= noteToFreq(36); candidate *= 0.5f) {
+    for (float candidate = hz * 0.5f;
+         candidate >= noteToFreq(kMinDetectedMidi);
+         candidate *= 0.5f) {
         float distance = std::fabs(freqToMidi(candidate) - targetMidi);
         if (distance < bestDistance) {
             bestDistance = distance;
@@ -184,24 +190,35 @@ static inline float foldHighPitchCandidate(float hz, float anchorMidi) {
 // ── Pitch Detector (aubio) ─────────────────────────────────────────────────
 
 struct PitchDetector {
-    aubio_pitch_t* au  = nullptr;
-    fvec_t*        in  = nullptr;
-    fvec_t*        out = nullptr;
+    aubio_pitch_t* au     = nullptr;
+    aubio_pitch_t* lowAu  = nullptr;
+    fvec_t*        in     = nullptr;
+    fvec_t*        out    = nullptr;
+    fvec_t*        lowOut = nullptr;
 
     PitchDetector() {
         au = new_aubio_pitch("yinfft", kPitchWinSize, kPitchHopSize, kSampleRate);
+        lowAu = new_aubio_pitch("yin", kPitchWinSize, kPitchHopSize, kSampleRate);
         aubio_pitch_set_unit(au, "Hz");
+        aubio_pitch_set_unit(lowAu, "Hz");
         aubio_pitch_set_silence(au, -50.0f);
+        aubio_pitch_set_silence(lowAu, -50.0f);
         // 0.40 measured best on the vocadito fixtures (make test-pitch):
         // looser values let yinfft return persistent sub-octave readings.
         aubio_pitch_set_tolerance(au, 0.40f);
+        // The low lane is only accepted at high confidence, so keep YIN's
+        // stricter threshold for clear fundamentals from A1 through B1.
+        aubio_pitch_set_tolerance(lowAu, 0.15f);
         in  = new_fvec(kPitchHopSize);
         out = new_fvec(1);
+        lowOut = new_fvec(1);
     }
     ~PitchDetector() {
         if (au) del_aubio_pitch(au);
+        if (lowAu) del_aubio_pitch(lowAu);
         if (in) del_fvec(in);
         if (out) del_fvec(out);
+        if (lowOut) del_fvec(lowOut);
     }
     float detect(const float* samples, float gateRms) {
         float rms = 0.0f;
@@ -211,11 +228,25 @@ struct PitchDetector {
         // call leaves stale audio spliced into the window, so the first frames
         // after the gate reopens read garbage.
         aubio_pitch_do(au, in, out);
+        aubio_pitch_do(lowAu, in, lowOut);
         if (std::sqrt(rms / kPitchHopSize) < gateRms) return -1.0f;
         float f = fvec_get_sample(out, 0);
+        float lowF = fvec_get_sample(lowOut, 0);
+        float lowConfidence = aubio_pitch_get_confidence(lowAu);
+
+        // YINFFT's 2048-sample lane bottoms out near C2 even for a clean A1.
+        // Time-domain YIN resolves that register accurately, but is more prone
+        // to sub-octave errors higher up. Only hand off when both detectors are
+        // near the floor and the low estimate itself is unambiguously clear.
+        bool primaryNearFloor = f <= 0.0f || f < noteToFreq(kLowPitchHandoffMidi);
+        bool clearLowPitch = lowF >= noteToFreq(kMinDetectedMidi) &&
+                             lowF < noteToFreq(36) &&
+                             lowConfidence >= kLowPitchMinConfidence;
+        if (primaryNearFloor && clearLowPitch) f = lowF;
+
         // No upper range check here: octave-up errors are folded back into
         // range by the caller (foldHighPitchCandidate), which needs to see them.
-        if (f <= 0.0f || f < noteToFreq(36)) return -1.0f;
+        if (f <= 0.0f || f < noteToFreq(kMinDetectedMidi)) return -1.0f;
         return f;
     }
 };
@@ -327,7 +358,11 @@ static inline void processSample(AudioEngine* eng, float s, float& outL, float& 
             float detectorGateRms = eng->pitchVoiced ? gateRms * AudioEngine::kPitchGateReleaseRatio : gateRms;
             float rawFreq = eng->detector.detect(eng->pitchBuf, detectorGateRms);
             float freq = foldHighPitchCandidate(rawFreq, eng->smoothedMidi);
-            if (freq > 0.0f && (freq < noteToFreq(36) || freq > noteToFreq(84))) freq = -1.0f;
+            if (freq > 0.0f &&
+                (freq < noteToFreq(kMinDetectedMidi) ||
+                 freq > noteToFreq(kMaxDetectedMidi))) {
+                freq = -1.0f;
+            }
             float midi = freq > 0.0f ? freqToMidi(freq) : -1.0f;
             eng->display.rawMidi.store(midi, std::memory_order_relaxed);
 

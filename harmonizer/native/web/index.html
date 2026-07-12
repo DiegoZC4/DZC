@@ -127,7 +127,7 @@
     aside {
       background: var(--panel);
       display: grid;
-      grid-template-rows: 54px repeat(6, auto) minmax(0, 1fr);
+      grid-template-rows: 54px repeat(7, auto) minmax(0, 1fr);
     }
     .side-title {
       display: flex;
@@ -154,6 +154,27 @@
       font-variant-numeric: tabular-nums;
     }
     .control.drag-number-control { display: flex; }
+    .orientation-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .orientation-control > span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .orientation-control .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .orientation-control .toggle input {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--cyan);
+    }
     select {
       width: 100%;
       min-width: 0;
@@ -231,7 +252,7 @@
         min-width: 0;
         overflow: hidden;
       }
-      aside { grid-template-rows: 44px repeat(7, auto); }
+      aside { grid-template-rows: 44px repeat(8, auto); }
     }
     @media (max-width: 520px) {
       .topbar {
@@ -269,7 +290,7 @@
         <div id="midiChip" class="chip">notes 0</div>
         <div id="linkChip" class="chip">connecting</div>
       </div>
-      <canvas id="roll" title="Drag the piano vertically to change the visible pitch range."></canvas>
+      <canvas id="roll" title="Drag the piano to change the visible pitch range."></canvas>
       <div class="statusbar">
         <span id="rmsText">rms 0.0000</span>
         <span id="stableText">unstable</span>
@@ -329,6 +350,10 @@
         <span>Stability</span>
         <button id="stable" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch stability window"></button>
       </label>
+      <div class="control orientation-control">
+        <span>Scroll direction</span>
+        <label class="toggle"><span>Horizontal</span><input id="verticalFlow" type="checkbox" aria-label="Use vertical scrolling"><span>Vertical</span></label>
+      </div>
       <div class="control">
         <label for="captureBtn">Capture <span id="captureValue" class="value"></span></label>
         <button id="captureBtn" type="button">record</button>
@@ -338,6 +363,7 @@
   </main>
   <script>
     const PIANO_WIDTH = 64;
+    const PIANO_HEIGHT = 72;
     const MIN_TIME_SPAN = 1;
     const MAX_TIME_SPAN = 60;
     const MIN_PITCH_SPAN = 6;
@@ -367,6 +393,7 @@
     const captureValue = document.getElementById('captureValue');
     const timeSpanInput = document.getElementById('timeSpan');
     const pitchSpanInput = document.getElementById('pitchSpan');
+    const verticalFlow = document.getElementById('verticalFlow');
     let lastCaptureDir = '';
     const controls = {
       mix: document.getElementById('mix'),
@@ -440,6 +467,7 @@
       seconds: clamp(storedNumber('harmonizer.view.seconds', 12), MIN_TIME_SPAN, MAX_TIME_SPAN),
       semitones: clamp(storedNumber('harmonizer.view.semitones', 48), MIN_PITCH_SPAN, MAX_PITCH_SPAN),
       centerMidi: storedNumber('harmonizer.view.centerMidi', 60),
+      orientation: storedSetting('orientation', 'horizontal') === 'vertical' ? 'vertical' : 'horizontal',
     };
 
     function clampViewCenter(center, semitones = view.semitones) {
@@ -464,6 +492,10 @@
 
     function noteY(note, height) {
       return (visiblePitchMax() - note) * height / view.semitones;
+    }
+
+    function noteX(note, width) {
+      return (note - visiblePitchMin()) * width / view.semitones;
     }
 
     function fitCanvas() {
@@ -492,69 +524,119 @@
     }
 
     function timeX(timestamp, now, width) {
-      const rollWidth = width - PIANO_WIDTH;
-      return PIANO_WIDTH + rollWidth * (timestamp - (now - view.seconds)) / view.seconds;
+      const rollWidth = Math.max(1, width - PIANO_WIDTH);
+      return rollWidth * (timestamp - (now - view.seconds)) / view.seconds;
+    }
+
+    function timeY(timestamp, now, height) {
+      const rollHeight = Math.max(1, height - PIANO_HEIGHT);
+      return rollHeight * (timestamp - (now - view.seconds)) / view.seconds;
     }
 
     function drawRollGrid(width, height) {
-      const rollWidth = width - PIANO_WIDTH;
+      const horizontal = view.orientation === 'horizontal';
+      const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+      const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
       const pitchMin = visiblePitchMin();
       const pitchMax = visiblePitchMax();
 
       for (let note = Math.ceil(pitchMin); note <= Math.floor(pitchMax); note += 1) {
         const octave = note % 12 === 0;
         if (!octave && view.semitones > 24) continue;
-        const y = noteY(note, height);
         ctx.strokeStyle = octave ? 'rgba(242,240,232,0.15)' : 'rgba(242,240,232,0.045)';
         ctx.beginPath();
-        ctx.moveTo(PIANO_WIDTH, y);
-        ctx.lineTo(width, y);
+        if (horizontal) {
+          const y = noteY(note, height);
+          ctx.moveTo(0, y);
+          ctx.lineTo(rollWidth, y);
+        } else {
+          const x = noteX(note, width);
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, rollHeight);
+        }
         ctx.stroke();
       }
 
-      const timeStep = niceTimeStep(view.seconds, rollWidth);
+      const timeStep = niceTimeStep(view.seconds, horizontal ? rollWidth : rollHeight);
       for (let age = 0; age <= view.seconds + timeStep * 0.25; age += timeStep) {
-        const x = width - rollWidth * age / view.seconds;
-        if (x < PIANO_WIDTH - 0.5) continue;
         ctx.strokeStyle = age === 0 ? 'rgba(242,240,232,0.13)' : 'rgba(242,240,232,0.07)';
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-
         const label = age === 0 ? 'now' : `-${formatTimeLabel(age)}s`;
         ctx.font = '10px ui-sans-serif, system-ui, sans-serif';
         const labelWidth = ctx.measureText(label).width;
-        const labelX = clamp(x, PIANO_WIDTH + labelWidth / 2 + 4, width - labelWidth / 2 - 4);
-        ctx.fillStyle = 'rgba(18,19,15,0.82)';
-        ctx.fillRect(labelX - labelWidth / 2 - 3, height - 17, labelWidth + 6, 14);
-        ctx.fillStyle = 'rgba(242,240,232,0.48)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(label, labelX, height - 6);
-      }
-    }
-
-    function drawMidiNotes(frames, now, width, height) {
-      const pitchMin = visiblePitchMin();
-      const pitchMax = visiblePitchMax();
-      for (let i = 0; i < frames.length; i += 1) {
-        const frame = frames[i];
-        const nextTime = i + 1 < frames.length ? frames[i + 1].receivedAt : now;
-        const x = clamp(timeX(frame.receivedAt, now, width), PIANO_WIDTH, width);
-        const x2 = clamp(timeX(nextTime, now, width), PIANO_WIDTH, width);
-        const segmentWidth = Math.max(1, x2 - x);
-        for (const note of frame.notes || []) {
-          if (note < pitchMin || note >= pitchMax) continue;
-          const y = noteY(note + 1, height);
-          const y2 = noteY(note, height);
-          ctx.fillStyle = '#77d36a';
-          ctx.fillRect(x, y, segmentWidth, Math.max(2, y2 - y));
+        if (horizontal) {
+          const x = rollWidth * (view.seconds - age) / view.seconds;
+          if (x < -0.5) continue;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, rollHeight);
+          ctx.stroke();
+          const labelX = clamp(x, labelWidth / 2 + 4, rollWidth - labelWidth / 2 - 4);
+          ctx.fillStyle = 'rgba(18,19,15,0.82)';
+          ctx.fillRect(labelX - labelWidth / 2 - 3, rollHeight - 17, labelWidth + 6, 14);
+          ctx.fillStyle = 'rgba(242,240,232,0.48)';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+          ctx.fillText(label, labelX, rollHeight - 6);
+        } else {
+          const y = rollHeight * (view.seconds - age) / view.seconds;
+          if (y < -0.5) continue;
+          ctx.moveTo(0, y);
+          ctx.lineTo(rollWidth, y);
+          ctx.stroke();
+          const labelY = clamp(y, 8, rollHeight - 8);
+          ctx.fillStyle = 'rgba(18,19,15,0.82)';
+          ctx.fillRect(width - labelWidth - 10, labelY - 7, labelWidth + 7, 14);
+          ctx.fillStyle = 'rgba(242,240,232,0.48)';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, width - 6, labelY);
         }
       }
     }
 
+    function drawMidiNotes(frames, now, width, height) {
+      const horizontal = view.orientation === 'horizontal';
+      const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+      const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
+      const pitchMin = visiblePitchMin();
+      const pitchMax = visiblePitchMax();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, rollWidth, rollHeight);
+      ctx.clip();
+      for (let i = 0; i < frames.length; i += 1) {
+        const frame = frames[i];
+        const nextTime = i + 1 < frames.length ? frames[i + 1].receivedAt : now;
+        for (const note of frame.notes || []) {
+          const bentNote = Number(note) + Number(frame.pitchBend || 0);
+          if (bentNote < pitchMin - 1 || bentNote >= pitchMax + 1) continue;
+          ctx.fillStyle = '#77d36a';
+          if (horizontal) {
+            const x = clamp(timeX(frame.receivedAt, now, width), 0, rollWidth);
+            const x2 = clamp(timeX(nextTime, now, width), 0, rollWidth);
+            const top = noteY(bentNote + 0.45, height);
+            const bottom = noteY(bentNote - 0.45, height);
+            ctx.fillRect(x, top, Math.max(1, x2 - x), Math.max(2, bottom - top));
+          } else {
+            const y = clamp(timeY(frame.receivedAt, now, height), 0, rollHeight);
+            const y2 = clamp(timeY(nextTime, now, height), 0, rollHeight);
+            const left = noteX(bentNote - 0.45, width);
+            const right = noteX(bentNote + 0.45, width);
+            ctx.fillRect(left, y, Math.max(2, right - left), Math.max(1, y2 - y));
+          }
+        }
+      }
+      ctx.restore();
+    }
+
     function drawContour(frames, now, width, height, valueForFrame, styleForFrame) {
+      const horizontal = view.orientation === 'horizontal';
+      const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+      const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, rollWidth, rollHeight);
+      ctx.clip();
       let previous = null;
       for (const frame of frames) {
         const midi = valueForFrame(frame);
@@ -564,12 +646,9 @@
           continue;
         }
 
-        const point = {
-          midi,
-          time: frame.receivedAt,
-          x: timeX(frame.receivedAt, now, width),
-          y: noteY(midi, height),
-        };
+        const point = horizontal
+          ? { midi, time: frame.receivedAt, x: timeX(frame.receivedAt, now, width), y: noteY(midi, height) }
+          : { midi, time: frame.receivedAt, x: noteX(midi, width), y: timeY(frame.receivedAt, now, height) };
         const style = styleForFrame(frame);
         if (previous && point.time - previous.time <= 0.16) {
           ctx.strokeStyle = style.color;
@@ -579,48 +658,72 @@
           ctx.lineTo(point.x, point.y);
           ctx.stroke();
         }
-        if (point.x >= PIANO_WIDTH && point.x <= width && point.y >= 0 && point.y <= height) {
+        if (point.x >= 0 && point.x <= rollWidth && point.y >= 0 && point.y <= rollHeight) {
           ctx.fillStyle = style.color;
           ctx.fillRect(point.x - style.width / 2, point.y - style.point / 2, style.width, style.point);
         }
         previous = point;
       }
       ctx.lineWidth = 1;
+      ctx.restore();
     }
 
-    function drawPiano(height) {
+    function drawPiano(width, height) {
+      const horizontal = view.orientation === 'horizontal';
+      const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+      const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
       const pitchMin = visiblePitchMin();
       const pitchMax = visiblePitchMax();
       const firstNote = Math.max(LOWEST_PITCH, Math.floor(pitchMin));
       const lastNote = Math.min(HIGHEST_PITCH, Math.ceil(pitchMax));
+      const bend = Number(state && state.pitchBend || 0);
+      const sounding = new Set(((state && state.notes) || []).map((note) => Math.round(Number(note) + bend)));
 
       ctx.fillStyle = '#d8d4c8';
-      ctx.fillRect(0, 0, PIANO_WIDTH, height);
+      if (horizontal) ctx.fillRect(rollWidth, 0, PIANO_WIDTH, height);
+      else ctx.fillRect(0, rollHeight, width, PIANO_HEIGHT);
       for (let note = firstNote; note < lastNote; note += 1) {
-        const y = noteY(note + 1, height);
-        const y2 = noteY(note, height);
-        const top = clamp(y, 0, height);
-        const bottom = clamp(y2, 0, height);
-        const black = [1, 3, 6, 8, 10].includes(note % 12);
-        ctx.fillStyle = black ? '#31332d' : '#d8d4c8';
-        ctx.fillRect(0, top, PIANO_WIDTH - 1, Math.max(1, bottom - top));
+        const pitchClass = ((note % 12) + 12) % 12;
+        const black = [1, 3, 6, 8, 10].includes(pitchClass);
+        ctx.fillStyle = sounding.has(note) ? '#76a7ff' : black ? '#31332d' : '#d8d4c8';
         ctx.strokeStyle = 'rgba(0,0,0,0.24)';
-        ctx.beginPath();
-        ctx.moveTo(0, top);
-        ctx.lineTo(PIANO_WIDTH, top);
-        ctx.stroke();
-
-        if (note % 12 === 0 && bottom - top >= 3) {
-          const labelY = clamp((y + y2) / 2, 7, height - 7);
-          ctx.fillStyle = '#151613';
-          ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
-          ctx.textAlign = 'right';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(`C${Math.floor(note / 12) - 1}`, PIANO_WIDTH - 7, labelY);
+        if (horizontal) {
+          const y = noteY(note + 1, height);
+          const y2 = noteY(note, height);
+          const top = clamp(y, 0, height);
+          const bottom = clamp(y2, 0, height);
+          ctx.fillRect(rollWidth + 1, top, PIANO_WIDTH - 1, Math.max(1, bottom - top));
+          ctx.beginPath();
+          ctx.moveTo(rollWidth, top);
+          ctx.lineTo(width, top);
+          ctx.stroke();
+          if (pitchClass === 0 && bottom - top >= 3) {
+            ctx.fillStyle = '#151613';
+            ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`C${Math.floor(note / 12) - 1}`, rollWidth + 7, clamp((y + y2) / 2, 7, height - 7));
+          }
+        } else {
+          const left = clamp(noteX(note, width), 0, width);
+          const right = clamp(noteX(note + 1, width), 0, width);
+          ctx.fillRect(left, rollHeight + 1, Math.max(1, right - left), PIANO_HEIGHT - 1);
+          ctx.beginPath();
+          ctx.moveTo(left, rollHeight);
+          ctx.lineTo(left, height);
+          ctx.stroke();
+          if (pitchClass === 0 && right - left >= 13) {
+            ctx.fillStyle = '#151613';
+            ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(`C${Math.floor(note / 12) - 1}`, (left + right) / 2, height - 6);
+          }
         }
       }
       ctx.fillStyle = 'rgba(0,0,0,0.48)';
-      ctx.fillRect(PIANO_WIDTH - 1, 0, 1, height);
+      if (horizontal) ctx.fillRect(rollWidth, 0, 1, height);
+      else ctx.fillRect(0, rollHeight, width, 1);
     }
 
     function draw() {
@@ -660,7 +763,7 @@
           point: 5,
         }),
       );
-      drawPiano(h);
+      drawPiano(w, h);
 
       const oldestAllowed = now - MAX_TIME_SPAN - 2;
       let pruneCount = 0;
@@ -745,31 +848,45 @@
       });
     }
 
-    function canvasX(event) {
-      return event.clientX - canvas.getBoundingClientRect().left;
+    function pointerInPiano(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      return view.orientation === 'horizontal' ? x >= rect.width - PIANO_WIDTH : y >= rect.height - PIANO_HEIGHT;
+    }
+
+    function updatePianoCursor(event) {
+      canvas.style.cursor = pointerInPiano(event)
+        ? view.orientation === 'horizontal' ? 'ns-resize' : 'ew-resize'
+        : 'default';
     }
 
     canvas.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || canvasX(event) > PIANO_WIDTH) return;
+      if (event.button !== 0 || !pointerInPiano(event)) return;
       event.preventDefault();
       pianoDrag = {
         pointerId: event.pointerId,
+        startX: event.clientX,
         startY: event.clientY,
         startCenter: view.centerMidi,
         semitones: view.semitones,
+        orientation: view.orientation,
       };
       canvas.setPointerCapture(event.pointerId);
       canvas.classList.add('panning');
+      canvas.style.cursor = view.orientation === 'horizontal' ? 'ns-resize' : 'ew-resize';
     });
 
     canvas.addEventListener('pointermove', (event) => {
       if (!pianoDrag || event.pointerId !== pianoDrag.pointerId) {
-        canvas.style.cursor = canvasX(event) <= PIANO_WIDTH ? 'ns-resize' : 'default';
+        updatePianoCursor(event);
         return;
       }
       event.preventDefault();
-      const height = Math.max(1, canvas.getBoundingClientRect().height);
-      const semitoneDelta = (event.clientY - pianoDrag.startY) * pianoDrag.semitones / height;
+      const rect = canvas.getBoundingClientRect();
+      const semitoneDelta = pianoDrag.orientation === 'horizontal'
+        ? (event.clientY - pianoDrag.startY) * pianoDrag.semitones / Math.max(1, rect.height)
+        : -(event.clientX - pianoDrag.startX) * pianoDrag.semitones / Math.max(1, rect.width);
       setPitchCenter(pianoDrag.startCenter + semitoneDelta, false);
     });
 
@@ -779,7 +896,7 @@
       pianoDrag = null;
       canvas.classList.remove('panning');
       storeNumber('harmonizer.view.centerMidi', view.centerMidi);
-      canvas.style.cursor = canvasX(event) <= PIANO_WIDTH ? 'ns-resize' : 'default';
+      updatePianoCursor(event);
     }
 
     canvas.addEventListener('pointerup', finishPianoDrag);
@@ -1177,6 +1294,17 @@
       value: () => view.semitones,
       onChange: setPitchSpan,
     });
+    verticalFlow.checked = view.orientation === 'vertical';
+    function syncOrientation() {
+      view.orientation = verticalFlow.checked ? 'vertical' : 'horizontal';
+      storeSetting('orientation', view.orientation);
+      canvas.title = view.orientation === 'horizontal'
+        ? 'Drag the right piano vertically to change the visible pitch range.'
+        : 'Drag the bottom piano horizontally to change the visible pitch range.';
+      canvas.style.cursor = 'default';
+    }
+    verticalFlow.addEventListener('change', syncOrientation);
+    syncOrientation();
     syncViewInputs();
     window.addEventListener('resize', fitCanvas);
 

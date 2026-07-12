@@ -1066,6 +1066,7 @@ static std::string stateJson(AudioEngine* eng) {
         << ",\"pitchStable\":" << (eng->display.pitchStable.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"pitchVoiced\":" << (eng->display.pitchVoiced.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"pitchRms\":" << eng->display.pitchRms.load(std::memory_order_relaxed)
+        << ",\"pitchBend\":" << eng->pitchBend.load(std::memory_order_relaxed)
         << ",\"capturing\":" << (eng->capture.active.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"captureSeconds\":" << (double)eng->capture.audioLen.load(std::memory_order_relaxed) / kSampleRate
         << ",\"notes\":" << notes.str()

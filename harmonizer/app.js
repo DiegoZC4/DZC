@@ -9,6 +9,7 @@ import {
 
 const MAX_VOICES = 8;
 const PIANO_WIDTH = 64;
+const PIANO_HEIGHT = 72;
 const HISTORY_SECONDS = 62;
 const NOTE_RELEASE_SECONDS = 0.09;
 const $ = (selector) => document.querySelector(selector);
@@ -39,9 +40,9 @@ const ui = {
   rmsText: $("#rms-text"),
   stableText: $("#stable-text"),
   meter: $("#meter"),
-  keyboard: $("#keyboard"),
   midiStatus: $("#midi-status"),
   formants: $("#formants"),
+  verticalFlow: $("#vertical-flow"),
 };
 
 const controls = {
@@ -82,6 +83,7 @@ const pitchState = {
 
 const view = {
   centerMidi: Number(localStorage.getItem("harmonizer.public.centerMidi")) || 60,
+  orientation: storedSetting("orientation", "horizontal") === "vertical" ? "vertical" : "horizontal",
 };
 
 function storedSetting(key, fallback = "") {
@@ -361,7 +363,6 @@ async function stopAudio() {
   ui.startButton.hidden = false;
   ui.stopButton.hidden = true;
   ui.startOverlay.hidden = false;
-  refreshKeyboard();
 }
 
 function activeVoices() {
@@ -400,7 +401,6 @@ function noteOn(note, velocity = 1) {
     voice.panner.pan.setTargetAtTime(side * spread, audio.context.currentTime, 0.02);
     updateVoiceShifts(true);
   }
-  refreshKeyboard();
 }
 
 function releaseVoiceNote(note) {
@@ -423,7 +423,6 @@ function noteOff(note) {
     releaseVoiceNote(note);
   }
   updateVoiceLevels();
-  refreshKeyboard();
 }
 
 function setSustain(enabled) {
@@ -434,7 +433,6 @@ function setSustain(enabled) {
     }
     sustainedNotes.clear();
   }
-  refreshKeyboard();
 }
 
 function updateVoiceShifts(force = false) {
@@ -503,6 +501,7 @@ function updatePitch(now) {
     detectedMidi: pitchState.detectedMidi,
     stable: pitchState.stable,
     voiced: pitchState.voiced,
+    pitchBend,
     notes: [...heldNotes, ...sustainedNotes],
   });
   const oldest = now / 1000 - HISTORY_SECONDS;
@@ -547,6 +546,10 @@ function noteY(note, height) {
   return (visiblePitchMax() - note) * height / controlValue("pitchSpan");
 }
 
+function noteX(note, width) {
+  return (note - visiblePitchMin()) * width / controlValue("pitchSpan");
+}
+
 function fitCanvas() {
   const rect = ui.canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -560,53 +563,100 @@ function fitCanvas() {
 }
 
 function timeX(timestamp, now, width) {
-  const rollWidth = width - PIANO_WIDTH;
-  return PIANO_WIDTH + rollWidth * (timestamp - (now - controlValue("timeSpan"))) / controlValue("timeSpan");
+  const rollWidth = Math.max(1, width - PIANO_WIDTH);
+  return rollWidth * (timestamp - (now - controlValue("timeSpan"))) / controlValue("timeSpan");
+}
+
+function timeY(timestamp, now, height) {
+  const rollHeight = Math.max(1, height - PIANO_HEIGHT);
+  return rollHeight * (timestamp - (now - controlValue("timeSpan"))) / controlValue("timeSpan");
 }
 
 function drawGrid(width, height, now) {
+  const horizontal = view.orientation === "horizontal";
+  const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+  const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
   const pitchMin = visiblePitchMin();
   const pitchMax = visiblePitchMax();
   for (let note = Math.ceil(pitchMin); note <= Math.floor(pitchMax); note += 1) {
     const octave = note % 12 === 0;
     if (!octave && controlValue("pitchSpan") > 24) continue;
-    const y = noteY(note, height);
     canvasContext.strokeStyle = octave ? "rgba(242,240,232,0.15)" : "rgba(242,240,232,0.045)";
     canvasContext.beginPath();
-    canvasContext.moveTo(PIANO_WIDTH, y);
-    canvasContext.lineTo(width, y);
+    if (horizontal) {
+      const y = noteY(note, height);
+      canvasContext.moveTo(0, y);
+      canvasContext.lineTo(rollWidth, y);
+    } else {
+      const x = noteX(note, width);
+      canvasContext.moveTo(x, 0);
+      canvasContext.lineTo(x, rollHeight);
+    }
     canvasContext.stroke();
   }
   const seconds = controlValue("timeSpan");
-  const roughStep = seconds / Math.max(2, Math.floor((width - PIANO_WIDTH) / 90));
+  const timePixels = horizontal ? rollWidth : rollHeight;
+  const roughStep = seconds / Math.max(2, Math.floor(timePixels / 90));
   const power = 10 ** Math.floor(Math.log10(roughStep));
   const normalized = roughStep / power;
   const step = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power;
   for (let age = 0; age <= seconds + step * 0.25; age += step) {
-    const x = timeX(now - age, now, width);
     canvasContext.strokeStyle = age === 0 ? "rgba(242,240,232,0.14)" : "rgba(242,240,232,0.07)";
     canvasContext.beginPath();
-    canvasContext.moveTo(x, 0);
-    canvasContext.lineTo(x, height);
+    if (horizontal) {
+      const x = timeX(now - age, now, width);
+      canvasContext.moveTo(x, 0);
+      canvasContext.lineTo(x, rollHeight);
+    } else {
+      const y = timeY(now - age, now, height);
+      canvasContext.moveTo(0, y);
+      canvasContext.lineTo(rollWidth, y);
+    }
     canvasContext.stroke();
   }
 }
 
 function drawMidi(frames, now, width, height) {
+  const horizontal = view.orientation === "horizontal";
+  const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+  const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
+  canvasContext.save();
+  canvasContext.beginPath();
+  canvasContext.rect(0, 0, rollWidth, rollHeight);
+  canvasContext.clip();
   for (let index = 0; index < frames.length; index += 1) {
     const frame = frames[index];
     const nextTime = index + 1 < frames.length ? frames[index + 1].receivedAt : now;
-    const x = clamp(timeX(frame.receivedAt, now, width), PIANO_WIDTH, width);
-    const x2 = clamp(timeX(nextTime, now, width), PIANO_WIDTH, width);
-    for (const note of frame.notes) {
-      if (note < visiblePitchMin() || note >= visiblePitchMax()) continue;
+    for (const note of frame.notes || []) {
+      const bentNote = Number(note) + Number(frame.pitchBend || 0);
+      if (bentNote < visiblePitchMin() - 1 || bentNote >= visiblePitchMax() + 1) continue;
       canvasContext.fillStyle = "#77d36a";
-      canvasContext.fillRect(x, noteY(note + 1, height), Math.max(1, x2 - x), Math.max(2, noteY(note, height) - noteY(note + 1, height)));
+      if (horizontal) {
+        const x = clamp(timeX(frame.receivedAt, now, width), 0, rollWidth);
+        const x2 = clamp(timeX(nextTime, now, width), 0, rollWidth);
+        const top = noteY(bentNote + 0.45, height);
+        const bottom = noteY(bentNote - 0.45, height);
+        canvasContext.fillRect(x, top, Math.max(1, x2 - x), Math.max(2, bottom - top));
+      } else {
+        const y = clamp(timeY(frame.receivedAt, now, height), 0, rollHeight);
+        const y2 = clamp(timeY(nextTime, now, height), 0, rollHeight);
+        const left = noteX(bentNote - 0.45, width);
+        const right = noteX(bentNote + 0.45, width);
+        canvasContext.fillRect(left, y, Math.max(2, right - left), Math.max(1, y2 - y));
+      }
     }
   }
+  canvasContext.restore();
 }
 
 function drawContour(frames, now, width, height, value, style) {
+  const horizontal = view.orientation === "horizontal";
+  const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+  const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
+  canvasContext.save();
+  canvasContext.beginPath();
+  canvasContext.rect(0, 0, rollWidth, rollHeight);
+  canvasContext.clip();
   let previous = null;
   for (const frame of frames) {
     const midi = value(frame);
@@ -614,7 +664,9 @@ function drawContour(frames, now, width, height, value, style) {
       previous = null;
       continue;
     }
-    const point = { x: timeX(frame.receivedAt, now, width), y: noteY(midi, height), time: frame.receivedAt };
+    const point = horizontal
+      ? { x: timeX(frame.receivedAt, now, width), y: noteY(midi, height), time: frame.receivedAt }
+      : { x: noteX(midi, width), y: timeY(frame.receivedAt, now, height), time: frame.receivedAt };
     const currentStyle = style(frame);
     if (previous && point.time - previous.time < 0.16) {
       canvasContext.strokeStyle = currentStyle.color;
@@ -627,30 +679,56 @@ function drawContour(frames, now, width, height, value, style) {
     previous = point;
   }
   canvasContext.lineWidth = 1;
+  canvasContext.restore();
 }
 
-function drawPiano(height) {
+function drawPiano(width, height) {
+  const horizontal = view.orientation === "horizontal";
+  const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
+  const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
+  const sounding = new Set([...heldNotes, ...sustainedNotes].map((note) => Math.round(note + pitchBend)));
   canvasContext.fillStyle = "#d8d4c8";
-  canvasContext.fillRect(0, 0, PIANO_WIDTH, height);
+  if (horizontal) canvasContext.fillRect(rollWidth, 0, PIANO_WIDTH, height);
+  else canvasContext.fillRect(0, rollHeight, width, PIANO_HEIGHT);
   for (let note = Math.floor(visiblePitchMin()); note < Math.ceil(visiblePitchMax()); note += 1) {
-    const top = clamp(noteY(note + 1, height), 0, height);
-    const bottom = clamp(noteY(note, height), 0, height);
     const black = [1, 3, 6, 8, 10].includes(((note % 12) + 12) % 12);
-    canvasContext.fillStyle = black ? "#31332d" : "#d8d4c8";
-    canvasContext.fillRect(0, top, PIANO_WIDTH - 1, Math.max(1, bottom - top));
+    canvasContext.fillStyle = sounding.has(note) ? "#76a7ff" : black ? "#31332d" : "#d8d4c8";
     canvasContext.strokeStyle = "rgba(0,0,0,0.24)";
-    canvasContext.beginPath();
-    canvasContext.moveTo(0, top);
-    canvasContext.lineTo(PIANO_WIDTH, top);
-    canvasContext.stroke();
-    if (note % 12 === 0 && bottom - top >= 4) {
-      canvasContext.fillStyle = "#151613";
-      canvasContext.font = "600 10px ui-sans-serif, system-ui, sans-serif";
-      canvasContext.textAlign = "right";
-      canvasContext.textBaseline = "middle";
-      canvasContext.fillText(midiName(note), PIANO_WIDTH - 7, clamp((top + bottom) / 2, 7, height - 7));
+    if (horizontal) {
+      const top = clamp(noteY(note + 1, height), 0, height);
+      const bottom = clamp(noteY(note, height), 0, height);
+      canvasContext.fillRect(rollWidth + 1, top, PIANO_WIDTH - 1, Math.max(1, bottom - top));
+      canvasContext.beginPath();
+      canvasContext.moveTo(rollWidth, top);
+      canvasContext.lineTo(width, top);
+      canvasContext.stroke();
+      if (note % 12 === 0 && bottom - top >= 4) {
+        canvasContext.fillStyle = "#151613";
+        canvasContext.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+        canvasContext.textAlign = "left";
+        canvasContext.textBaseline = "middle";
+        canvasContext.fillText(midiName(note), rollWidth + 7, clamp((top + bottom) / 2, 7, height - 7));
+      }
+    } else {
+      const left = clamp(noteX(note, width), 0, width);
+      const right = clamp(noteX(note + 1, width), 0, width);
+      canvasContext.fillRect(left, rollHeight + 1, Math.max(1, right - left), PIANO_HEIGHT - 1);
+      canvasContext.beginPath();
+      canvasContext.moveTo(left, rollHeight);
+      canvasContext.lineTo(left, height);
+      canvasContext.stroke();
+      if (note % 12 === 0 && right - left >= 13) {
+        canvasContext.fillStyle = "#151613";
+        canvasContext.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+        canvasContext.textAlign = "center";
+        canvasContext.textBaseline = "bottom";
+        canvasContext.fillText(midiName(note), (left + right) / 2, height - 6);
+      }
     }
   }
+  canvasContext.fillStyle = "rgba(0,0,0,0.48)";
+  if (horizontal) canvasContext.fillRect(rollWidth, 0, 1, height);
+  else canvasContext.fillRect(0, rollHeight, width, 1);
 }
 
 function draw(nowMilliseconds) {
@@ -676,7 +754,7 @@ function draw(nowMilliseconds) {
     (frame) => frame.voiced ? frame.detectedMidi : NaN,
     (frame) => ({ color: frame.stable ? "#22d3c5" : "rgba(34,211,197,0.55)", width: frame.stable ? 2 : 1 }),
   );
-  drawPiano(rect.height);
+  drawPiano(rect.width, rect.height);
   ui.pitchChip.textContent = pitchState.voiced ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(1)}` : "pitch --";
   ui.pitchChip.classList.toggle("good", pitchState.voiced);
   ui.midiChip.textContent = `notes ${new Set([...heldNotes, ...sustainedNotes]).size}`;
@@ -689,34 +767,6 @@ function draw(nowMilliseconds) {
     `clarity ${Math.round(pitchState.clarity * 100)}%`,
     `voices ${activeVoices().length}/${MAX_VOICES}`,
   ].join("\n");
-}
-
-function buildKeyboard() {
-  for (let note = 48; note <= 72; note += 1) {
-    const black = [1, 3, 6, 8, 10].includes(note % 12);
-    const key = document.createElement("button");
-    key.type = "button";
-    key.className = `piano-key ${black ? "black" : "white"}`;
-    key.dataset.note = String(note);
-    key.setAttribute("aria-label", midiName(note));
-    key.title = midiName(note);
-    key.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      key.setPointerCapture(event.pointerId);
-      noteOn(note);
-    });
-    const release = () => noteOff(note);
-    key.addEventListener("pointerup", release);
-    key.addEventListener("pointercancel", release);
-    ui.keyboard.append(key);
-  }
-}
-
-function refreshKeyboard() {
-  const sounding = new Set([...heldNotes, ...sustainedNotes]);
-  ui.keyboard.querySelectorAll(".piano-key").forEach((key) => {
-    key.classList.toggle("active", sounding.has(Number(key.dataset.note)));
-  });
 }
 
 const computerKeyNotes = new Map([
@@ -799,23 +849,54 @@ window.addEventListener("keyup", (event) => {
   noteOff(note);
 });
 
+function pointerInPiano(event) {
+  const rect = ui.canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  return view.orientation === "horizontal" ? x >= rect.width - PIANO_WIDTH : y >= rect.height - PIANO_HEIGHT;
+}
+
+function updatePianoCursor(event) {
+  ui.canvas.style.cursor = pointerInPiano(event)
+    ? view.orientation === "horizontal" ? "ns-resize" : "ew-resize"
+    : "default";
+}
+
 ui.canvas.addEventListener("pointerdown", (event) => {
-  if (event.clientX - ui.canvas.getBoundingClientRect().left <= PIANO_WIDTH) return;
+  if (event.button !== 0 || !pointerInPiano(event)) return;
+  event.preventDefault();
   pianoDrag = { y: event.clientY, center: view.centerMidi };
+  pianoDrag.x = event.clientX;
   ui.canvas.setPointerCapture(event.pointerId);
   ui.canvas.classList.add("panning");
+  ui.canvas.style.cursor = view.orientation === "horizontal" ? "ns-resize" : "ew-resize";
 });
 ui.canvas.addEventListener("pointermove", (event) => {
-  if (!pianoDrag || !ui.canvas.hasPointerCapture(event.pointerId)) return;
-  const semitonePixels = ui.canvas.getBoundingClientRect().height / controlValue("pitchSpan");
-  view.centerMidi = clamp(pianoDrag.center + (event.clientY - pianoDrag.y) / semitonePixels, 24, 108);
+  if (!pianoDrag || !ui.canvas.hasPointerCapture(event.pointerId)) {
+    updatePianoCursor(event);
+    return;
+  }
+  const rect = ui.canvas.getBoundingClientRect();
+  const semitonePixels = (view.orientation === "horizontal" ? rect.height : rect.width) / controlValue("pitchSpan");
+  const delta = view.orientation === "horizontal"
+    ? (event.clientY - pianoDrag.y) / semitonePixels
+    : -(event.clientX - pianoDrag.x) / semitonePixels;
+  const halfSpan = controlValue("pitchSpan") / 2;
+  view.centerMidi = clamp(pianoDrag.center + delta, 12 + halfSpan, 120 - halfSpan);
   localStorage.setItem("harmonizer.public.centerMidi", String(view.centerMidi));
 });
 ui.canvas.addEventListener("pointerup", (event) => {
   if (ui.canvas.hasPointerCapture(event.pointerId)) ui.canvas.releasePointerCapture(event.pointerId);
   pianoDrag = null;
   ui.canvas.classList.remove("panning");
+  updatePianoCursor(event);
 });
+ui.canvas.addEventListener("pointercancel", () => {
+  pianoDrag = null;
+  ui.canvas.classList.remove("panning");
+  ui.canvas.style.cursor = "default";
+});
+ui.canvas.addEventListener("pointerleave", () => { if (!pianoDrag) ui.canvas.style.cursor = "default"; });
 
 ui.startOverlayButton.addEventListener("click", startAudio);
 ui.startButton.addEventListener("click", startAudio);
@@ -860,6 +941,17 @@ ui.formants.addEventListener("change", () => {
   storeSetting("formants", ui.formants.checked);
   updateVoiceShifts(true);
 });
+ui.verticalFlow.checked = view.orientation === "vertical";
+function syncOrientation() {
+  view.orientation = ui.verticalFlow.checked ? "vertical" : "horizontal";
+  storeSetting("orientation", view.orientation);
+  ui.canvas.title = view.orientation === "horizontal"
+    ? "Drag the right piano vertically to change the visible pitch range."
+    : "Drag the bottom piano horizontally to change the visible pitch range.";
+  ui.canvas.style.cursor = "default";
+}
+ui.verticalFlow.addEventListener("change", syncOrientation);
+syncOrientation();
 ui.testToneButton.addEventListener("click", () => {
   if (!audio) return;
   const oscillator = audio.context.createOscillator();
@@ -873,7 +965,6 @@ ui.testToneButton.addEventListener("click", () => {
 });
 
 Object.keys(controls).forEach(bindDraggableNumber);
-buildKeyboard();
 const initialMidiInput = storedSetting("midiInput", "all");
 if ([...ui.midiInput.options].some((option) => option.value === initialMidiInput)) {
   ui.midiInput.value = initialMidiInput;

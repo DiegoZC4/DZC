@@ -1,11 +1,11 @@
-import SignalsmithStretch from "./vendor/SignalsmithStretch.mjs?v=20260712-1";
+import SignalsmithStretch from "./vendor/SignalsmithStretch.js?v=20260712-2";
 import {
   clamp,
   detectPitch,
   frequencyToMidi,
   median,
   midiName,
-} from "./pitch.js?v=20260712-1";
+} from "./pitch.js?v=20260712-2";
 
 const MAX_VOICES = 8;
 const PIANO_WIDTH = 64;

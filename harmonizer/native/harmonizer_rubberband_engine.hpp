@@ -102,13 +102,13 @@ struct AudioEngine {
     int   pitchHoldFrames = 0;
 
     static constexpr int   kPitchHistLen = 9;
-    static constexpr int   kCorrectionHistLen = 3;
     static constexpr int   kCorrectionControlHistoryLen = 16;
     static constexpr int   kCorrectionLagHops = 1;
-    static constexpr float kCorrectionDepth = 1.25f;
-    static constexpr float kFlutterCompensation = -1.0f;
+    static constexpr float kFlutterDerivativeCompensation = 5.3f;
+    static constexpr float kFlutterEnergyCompensation = -1.6f;
+    static constexpr float kFlutterEnergyMeanAlpha = 0.05f;
     static constexpr float kFlutterCompensationRange = 0.75f;
-    static constexpr float kFlutterCompensationMax = 0.08f;
+    static constexpr float kFlutterCompensationMax = 0.20f;
     static constexpr int   kMinPitchValidFrames = 3;
     static constexpr int   kPitchReleaseFrames = 10;
     static constexpr float kPitchSmoothingAlpha = 0.30f;
@@ -118,14 +118,14 @@ struct AudioEngine {
     float pitchHist[kPitchHistLen] = {};
     int   pitchHistIdx = 0;
     float smoothedMidi = -1.0f;
-    float correctionHist[kCorrectionHistLen] = {};
-    int   correctionHistIdx = 0;
     float fastCorrectionMidi = -1.0f;
     float correctionMidi = -1.0f;
     int   correctionHoldFrames = 0;
     float correctionControlHistory[kCorrectionControlHistoryLen] = {};
     int   correctionControlHistoryIdx = 0;
     float previousCorrectionDelta = 0.0f;
+    float correctionDeltaEnergyMean = 0.0f;
+    bool  correctionFlutterReady = false;
 
     float voicingEnv          = 0.0f;
     float voicingAttackCoeff  = 0.0f;
@@ -226,23 +226,26 @@ struct AudioEngine {
             int note = current.midiNote.load(std::memory_order_relaxed);
             if (note <= 0 || !current.isAudible()) continue;
 
-            // Recompute the ratio from the stabilized detected input pitch on
-            // every block. This intentionally locks the output to flat MIDI.
+            // correctionMidi tracks the source F0 independently of the slow
+            // display contour. The target is the exact held MIDI pitch.
             if (correctionMidi > 0.0f && pitchVoiced) {
                 float targetMidi = (float)note + bend;
                 float correctionControl = correctionMidi;
                 if (detectedMidi > 0.0f) {
                     float correctionDelta = correctionMidi - detectedMidi;
-                    correctionControl = detectedMidi + kCorrectionDepth * correctionDelta;
 
-                    // Counter the LiveShifter window's doubled-rate flutter
-                    // during vibrato. Keep it local and clamped so a genuine
-                    // sung note change cannot create a correction spike.
+                    // Counter LiveShifter's doubled-rate flutter during slow
+                    // vibrato. This stays local to a stable sung note and is
+                    // clamped so note changes cannot create correction spikes.
                     if (std::fabs(correctionDelta) <= kFlutterCompensationRange &&
-                        std::fabs(previousCorrectionDelta) <= kFlutterCompensationRange) {
-                        float flutterCompensation = kFlutterCompensation *
+                        std::fabs(previousCorrectionDelta) <= kFlutterCompensationRange &&
+                        correctionFlutterReady) {
+                        float flutterCompensation = kFlutterDerivativeCompensation *
                             (correctionDelta * correctionDelta -
                              previousCorrectionDelta * previousCorrectionDelta);
+                        flutterCompensation += kFlutterEnergyCompensation *
+                            (correctionDelta * correctionDelta -
+                             correctionDeltaEnergyMean);
                         correctionControl += clampf(flutterCompensation,
                                                      -kFlutterCompensationMax,
                                                      kFlutterCompensationMax);
@@ -265,10 +268,25 @@ struct AudioEngine {
         }
         if (correctionMidi > 0.0f && detectedMidi > 0.0f) {
             float correctionDelta = correctionMidi - detectedMidi;
-            previousCorrectionDelta = std::fabs(correctionDelta) <=
-                kFlutterCompensationRange ? correctionDelta : 0.0f;
+            if (std::fabs(correctionDelta) <= kFlutterCompensationRange) {
+                previousCorrectionDelta = correctionDelta;
+                float correctionEnergy = correctionDelta * correctionDelta;
+                if (correctionFlutterReady) {
+                    correctionDeltaEnergyMean += kFlutterEnergyMeanAlpha *
+                        (correctionEnergy - correctionDeltaEnergyMean);
+                } else {
+                    correctionDeltaEnergyMean = correctionEnergy;
+                    correctionFlutterReady = true;
+                }
+            } else {
+                previousCorrectionDelta = 0.0f;
+                correctionDeltaEnergyMean = 0.0f;
+                correctionFlutterReady = false;
+            }
         } else {
             previousCorrectionDelta = 0.0f;
+            correctionDeltaEnergyMean = 0.0f;
+            correctionFlutterReady = false;
         }
 
         for (size_t sample = 0; sample < blockSize; sample++) {

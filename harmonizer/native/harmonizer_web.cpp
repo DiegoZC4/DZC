@@ -390,31 +390,12 @@ static inline void processSample(AudioEngine* eng, float s, float& outL, float& 
             float stableWindow = eng->display.stableSemitoneWindow.load(std::memory_order_relaxed);
 
             // The long history above is intentionally calm enough to draw and
-            // gate. Rubber Band needs a much faster estimate so its inverse
-            // ratio cancels vibrato instead of following it late. Three frames
-            // reject a one-frame octave glitch with only 11.6 ms median delay.
-            eng->correctionHist[eng->correctionHistIdx] = freq;
-            eng->correctionHistIdx =
-                (eng->correctionHistIdx + 1) % AudioEngine::kCorrectionHistLen;
+            // gate. The inverse shift instead uses the raw detector estimate
+            // from the previous 512-sample hop. That 11.6 ms alignment matches
+            // LiveShifter's buffered analysis without passing slow vibrato.
             if (freq > 0.0f &&
                 eng->recentPitchRms >= gateRms * AudioEngine::kPitchGateReleaseRatio) {
-                float correctionSorted[AudioEngine::kCorrectionHistLen];
-                int correctionN = 0;
-                for (int k = 0; k < AudioEngine::kCorrectionHistLen; k++) {
-                    if (eng->correctionHist[k] > 0.0f)
-                        correctionSorted[correctionN++] = eng->correctionHist[k];
-                }
-                for (int a = 1; a < correctionN; a++) {
-                    float v = correctionSorted[a];
-                    int b = a - 1;
-                    while (b >= 0 && correctionSorted[b] > v) {
-                        correctionSorted[b + 1] = correctionSorted[b];
-                        b--;
-                    }
-                    correctionSorted[b + 1] = v;
-                }
-                eng->fastCorrectionMidi =
-                    freqToMidi(correctionSorted[correctionN / 2]);
+                eng->fastCorrectionMidi = freqToMidi(freq);
                 eng->correctionHoldFrames = AudioEngine::kPitchReleaseFrames;
             } else if (eng->correctionHoldFrames > 0) {
                 eng->correctionHoldFrames--;

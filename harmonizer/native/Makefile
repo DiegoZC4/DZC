@@ -24,7 +24,7 @@ PORTABLE_FRAMEWORKS := \
 	-framework CoreServices \
 	-framework Accelerate
 
-.PHONY: all clean dev-world dev-midi dev-web test-pitch app-macos
+.PHONY: all clean dev-world dev-midi dev-web test-pitch test-vibrato-lock app-macos package-source release
 
 all: harmonizer_world harmonizer harmonizer_web
 
@@ -43,6 +43,11 @@ harmonizer_web_portable: harmonizer_web.cpp harmonizer_rubberband_engine.hpp web
 app-macos: harmonizer_web_portable
 	./scripts/build_macos_app.sh
 
+package-source:
+	./scripts/package_source.sh
+
+release: app-macos package-source
+
 pitch_analyzer: pitch_analyzer.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< $(LDFLAGS) -laubio -o $@
 
@@ -60,6 +65,9 @@ dev-web: harmonizer_web
 
 test-pitch: pitch_analyzer
 	./scripts/test_pitch_fixtures.sh
+
+test-vibrato-lock: harmonizer_web pitch_analyzer
+	./scripts/test_vibrato_lock.sh
 
 clean:
 	rm -f harmonizer harmonizer_world harmonizer_web harmonizer_web_portable pitch_analyzer watch_files_macos

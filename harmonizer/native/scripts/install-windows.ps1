@@ -36,8 +36,12 @@ $Packages = @(
     "mingw-w64-ucrt-x86_64-portaudio",
     "mingw-w64-ucrt-x86_64-aubio"
 ) -join " "
+$UpdateCommand = "pacman -Syu --noconfirm"
+& "$Msys\msys2_shell.cmd" -defterm -no-start -ucrt64 -c $UpdateCommand
+if ($LASTEXITCODE -ne 0) { throw "MSYS2 update failed" }
+
 $BuildCommand = @"
-pacman -Sy --noconfirm --needed $Packages &&
+pacman -Syu --noconfirm --needed $Packages &&
 cmake -S '$PosixRoot' -B '$PosixRoot/build-windows' -G Ninja -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND='$PosixRubberBand' &&
 cmake --build '$PosixRoot/build-windows' &&
 cmake --install '$PosixRoot/build-windows' --prefix '$PosixRoot/dist/Harmonizer-Windows-x64'

@@ -253,7 +253,10 @@
       })
       .then((manifest) => {
         if (!Array.isArray(manifest.slides) || !manifest.slides.length) throw new Error("empty manifest");
-        slides = manifest.slides;
+        const cacheSuffix = manifest.cache_version
+          ? `?v=${encodeURIComponent(manifest.cache_version)}`
+          : "";
+        slides = manifest.slides.map((path) => `${path}${cacheSuffix}`);
         render(indexFromLocation(), false);
         viewer.focus({ preventScroll: true });
         showControls();

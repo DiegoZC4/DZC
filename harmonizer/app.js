@@ -1,11 +1,11 @@
-import SignalsmithStretch from "./vendor/SignalsmithStretch.mjs";
+import SignalsmithStretch from "./vendor/SignalsmithStretch.mjs?v=20260712-1";
 import {
   clamp,
   detectPitch,
   frequencyToMidi,
   median,
   midiName,
-} from "./pitch.js";
+} from "./pitch.js?v=20260712-1";
 
 const MAX_VOICES = 8;
 const PIANO_WIDTH = 64;
@@ -55,6 +55,7 @@ const heldNotes = new Set();
 const sustainedNotes = new Set();
 let sustainOn = false;
 let pitchBend = 0;
+let midiInitialized = false;
 let audio = null;
 let voices = [];
 let lastPitchRun = 0;
@@ -274,6 +275,10 @@ async function startAudio() {
     ui.startButton.hidden = true;
     ui.stopButton.hidden = false;
     await context.resume();
+    if (!midiInitialized) {
+      midiInitialized = true;
+      initMidi();
+    }
   } catch (error) {
     console.error(error);
     if (audio?.context) await audio.context.close().catch(() => {});
@@ -759,7 +764,6 @@ ui.testToneButton.addEventListener("click", () => {
 
 Object.keys(controls).forEach(bindDraggableNumber);
 buildKeyboard();
-initMidi();
 enumerateInputs().catch(() => { ui.inputStatus.textContent = "permission needed"; });
 frameHandle = requestAnimationFrame(draw);
 

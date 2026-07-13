@@ -31,7 +31,7 @@ export function rmsOf(samples) {
 // YIN's cumulative mean normalized difference function is robust enough for
 // live monophonic voice tracking without adding another runtime dependency.
 export function detectPitch(samples, sampleRate, options = {}) {
-  const minHz = options.minHz ?? midiToFrequency(36);
+  const minHz = options.minHz ?? midiToFrequency(33);
   const maxHz = options.maxHz ?? midiToFrequency(84);
   const threshold = options.threshold ?? 0.13;
   const rms = rmsOf(samples);

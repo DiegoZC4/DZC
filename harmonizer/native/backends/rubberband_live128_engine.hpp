@@ -103,7 +103,7 @@ struct AudioEngine {
 
     static constexpr int   kPitchHistLen = 9;
     static constexpr int   kCorrectionControlHistoryLen = 16;
-    static constexpr int   kCorrectionLagHops = 1;
+    static constexpr int   kCorrectionLagHops = 0;
     static constexpr float kFlutterDerivativeCompensation = 5.3f;
     static constexpr float kFlutterEnergyCompensation = -1.6f;
     static constexpr float kFlutterEnergyMeanAlpha = 0.05f;
@@ -160,7 +160,7 @@ struct AudioEngine {
         voicingAttackCoeff = 1.0f - std::exp(-1.0f / (kVoicingAttackSec * kSampleRate));
         voicingReleaseCoeff = 1.0f - std::exp(-1.0f / (kVoicingReleaseSec * kSampleRate));
 
-        std::cerr << "Rubber Band LiveShifter: block " << blockSize
+        std::cerr << "Rubber Band LiveShifter 128: block " << blockSize
                   << " samples, start delay " << shifterDelaySamples
                   << " samples, DSP path " << dspLatencyMs() << " ms\n";
     }

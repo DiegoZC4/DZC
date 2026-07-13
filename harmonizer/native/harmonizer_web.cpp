@@ -44,6 +44,7 @@
 
 #if defined(_WIN32)
 #define NOMINMAX
+#include <process.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
@@ -69,6 +70,10 @@ static constexpr float kPi              = 3.14159265358979323846f;
 // Pitch detection
 static constexpr int   kPitchWinSize    = 2048;
 static constexpr int   kPitchHopSize    = 512;
+static constexpr int   kMinDetectedMidi = 33;    // A1, 55 Hz
+static constexpr int   kMaxDetectedMidi = 84;    // C6
+static constexpr int   kLowPitchHandoffMidi = 37; // Primary must be below C#2.
+static constexpr float kLowPitchMinConfidence = 0.85f;
 
 // Voice
 static constexpr float kAttackSec       = 0.005f;
@@ -83,7 +88,7 @@ static constexpr float kVoicingReleaseSec = 0.120f;
 static constexpr float kBendRange       = 2.0f;
 
 // Constant-amplitude wet/dry crossfade.
-static constexpr float kDefaultWetDryBalance = 0.56f; // 0 = dry, 1 = wet
+static constexpr float kDefaultWetDryBalance = 1.0f; // 0 = dry, 1 = wet
 static constexpr float kDefaultMonitorGainDb = 18.0f;
 static constexpr float kDefaultVoicedGateRms = 0.0100f;
 static constexpr float kDefaultStableSemitoneWindow = 1.0f;
@@ -172,7 +177,9 @@ static inline float foldHighPitchCandidate(float hz, float anchorMidi) {
     float targetMidi = anchorMidi;
     float bestHz = hz;
     float bestDistance = std::fabs(freqToMidi(hz) - targetMidi);
-    for (float candidate = hz * 0.5f; candidate >= noteToFreq(36); candidate *= 0.5f) {
+    for (float candidate = hz * 0.5f;
+         candidate >= noteToFreq(kMinDetectedMidi);
+         candidate *= 0.5f) {
         float distance = std::fabs(freqToMidi(candidate) - targetMidi);
         if (distance < bestDistance) {
             bestDistance = distance;
@@ -184,24 +191,35 @@ static inline float foldHighPitchCandidate(float hz, float anchorMidi) {
 // ── Pitch Detector (aubio) ─────────────────────────────────────────────────
 
 struct PitchDetector {
-    aubio_pitch_t* au  = nullptr;
-    fvec_t*        in  = nullptr;
-    fvec_t*        out = nullptr;
+    aubio_pitch_t* au     = nullptr;
+    aubio_pitch_t* lowAu  = nullptr;
+    fvec_t*        in     = nullptr;
+    fvec_t*        out    = nullptr;
+    fvec_t*        lowOut = nullptr;
 
     PitchDetector() {
         au = new_aubio_pitch("yinfft", kPitchWinSize, kPitchHopSize, kSampleRate);
+        lowAu = new_aubio_pitch("yin", kPitchWinSize, kPitchHopSize, kSampleRate);
         aubio_pitch_set_unit(au, "Hz");
+        aubio_pitch_set_unit(lowAu, "Hz");
         aubio_pitch_set_silence(au, -50.0f);
+        aubio_pitch_set_silence(lowAu, -50.0f);
         // 0.40 measured best on the vocadito fixtures (make test-pitch):
         // looser values let yinfft return persistent sub-octave readings.
         aubio_pitch_set_tolerance(au, 0.40f);
+        // The low lane is only accepted at high confidence, so keep YIN's
+        // stricter threshold for clear fundamentals from A1 through B1.
+        aubio_pitch_set_tolerance(lowAu, 0.15f);
         in  = new_fvec(kPitchHopSize);
         out = new_fvec(1);
+        lowOut = new_fvec(1);
     }
     ~PitchDetector() {
         if (au) del_aubio_pitch(au);
+        if (lowAu) del_aubio_pitch(lowAu);
         if (in) del_fvec(in);
         if (out) del_fvec(out);
+        if (lowOut) del_fvec(lowOut);
     }
     float detect(const float* samples, float gateRms) {
         float rms = 0.0f;
@@ -211,11 +229,25 @@ struct PitchDetector {
         // call leaves stale audio spliced into the window, so the first frames
         // after the gate reopens read garbage.
         aubio_pitch_do(au, in, out);
+        aubio_pitch_do(lowAu, in, lowOut);
         if (std::sqrt(rms / kPitchHopSize) < gateRms) return -1.0f;
         float f = fvec_get_sample(out, 0);
+        float lowF = fvec_get_sample(lowOut, 0);
+        float lowConfidence = aubio_pitch_get_confidence(lowAu);
+
+        // YINFFT's 2048-sample lane bottoms out near C2 even for a clean A1.
+        // Time-domain YIN resolves that register accurately, but is more prone
+        // to sub-octave errors higher up. Only hand off when both detectors are
+        // near the floor and the low estimate itself is unambiguously clear.
+        bool primaryNearFloor = f <= 0.0f || f < noteToFreq(kLowPitchHandoffMidi);
+        bool clearLowPitch = lowF >= noteToFreq(kMinDetectedMidi) &&
+                             lowF < noteToFreq(36) &&
+                             lowConfidence >= kLowPitchMinConfidence;
+        if (primaryNearFloor && clearLowPitch) f = lowF;
+
         // No upper range check here: octave-up errors are folded back into
         // range by the caller (foldHighPitchCandidate), which needs to see them.
-        if (f <= 0.0f || f < noteToFreq(36)) return -1.0f;
+        if (f <= 0.0f || f < noteToFreq(kMinDetectedMidi)) return -1.0f;
         return f;
     }
 };
@@ -309,8 +341,39 @@ struct Capture {
 };
 
 // The server and capture plumbing stay in this translation unit; the native
-// DSP backend is isolated here so the browser remains only a GUI.
-#include "harmonizer_rubberband_engine.hpp"
+// DSP backend is isolated here so the browser remains only a GUI. Backend-lab
+// wrappers override these macros without changing the production build.
+#ifndef HARMONIZER_ENGINE_HEADER
+#define HARMONIZER_ENGINE_HEADER "harmonizer_rubberband_engine.hpp"
+#endif
+#ifndef HARMONIZER_DSP_BACKEND
+#define HARMONIZER_DSP_BACKEND "rubberband-formant-preserved"
+#endif
+#ifndef HARMONIZER_DSP_TITLE
+#define HARMONIZER_DSP_TITLE "Rubber Band LiveShifter, formant preserved"
+#endif
+#ifndef HARMONIZER_BACKEND_KEY
+#define HARMONIZER_BACKEND_KEY "live512"
+#endif
+#include HARMONIZER_ENGINE_HEADER
+
+struct BackendSpec {
+    const char* key;
+    const char* name;
+    const char* executable;
+};
+
+static constexpr BackendSpec kBackendSpecs[] = {
+    {"live512", "Rubber Band Live 512", "harmonizer_web"},
+    {"live128", "Rubber Band Live 128", "harmonizer_web_rubberband_live128"},
+    {"r2", "Rubber Band R2 Short", "harmonizer_web_rubberband_r2"},
+    {"signalsmith", "Signalsmith Low Latency", "harmonizer_web_signalsmith"},
+};
+
+static std::filesystem::path gExecutablePath;
+static std::mutex gBackendMutex;
+static std::string gRequestedBackend;
+static std::string gServerInstance;
 
 // ── Per-sample engine step (shared by live callback and --render) ──────────
 
@@ -327,7 +390,11 @@ static inline void processSample(AudioEngine* eng, float s, float& outL, float& 
             float detectorGateRms = eng->pitchVoiced ? gateRms * AudioEngine::kPitchGateReleaseRatio : gateRms;
             float rawFreq = eng->detector.detect(eng->pitchBuf, detectorGateRms);
             float freq = foldHighPitchCandidate(rawFreq, eng->smoothedMidi);
-            if (freq > 0.0f && (freq < noteToFreq(36) || freq > noteToFreq(84))) freq = -1.0f;
+            if (freq > 0.0f &&
+                (freq < noteToFreq(kMinDetectedMidi) ||
+                 freq > noteToFreq(kMaxDetectedMidi))) {
+                freq = -1.0f;
+            }
             float midi = freq > 0.0f ? freqToMidi(freq) : -1.0f;
             eng->display.rawMidi.store(midi, std::memory_order_relaxed);
 
@@ -355,31 +422,12 @@ static inline void processSample(AudioEngine* eng, float s, float& outL, float& 
             float stableWindow = eng->display.stableSemitoneWindow.load(std::memory_order_relaxed);
 
             // The long history above is intentionally calm enough to draw and
-            // gate. Rubber Band needs a much faster estimate so its inverse
-            // ratio cancels vibrato instead of following it late. Three frames
-            // reject a one-frame octave glitch with only 11.6 ms median delay.
-            eng->correctionHist[eng->correctionHistIdx] = freq;
-            eng->correctionHistIdx =
-                (eng->correctionHistIdx + 1) % AudioEngine::kCorrectionHistLen;
+            // gate. The inverse shift instead uses the raw detector estimate
+            // from the previous 512-sample hop. That 11.6 ms alignment matches
+            // LiveShifter's buffered analysis without passing slow vibrato.
             if (freq > 0.0f &&
                 eng->recentPitchRms >= gateRms * AudioEngine::kPitchGateReleaseRatio) {
-                float correctionSorted[AudioEngine::kCorrectionHistLen];
-                int correctionN = 0;
-                for (int k = 0; k < AudioEngine::kCorrectionHistLen; k++) {
-                    if (eng->correctionHist[k] > 0.0f)
-                        correctionSorted[correctionN++] = eng->correctionHist[k];
-                }
-                for (int a = 1; a < correctionN; a++) {
-                    float v = correctionSorted[a];
-                    int b = a - 1;
-                    while (b >= 0 && correctionSorted[b] > v) {
-                        correctionSorted[b + 1] = correctionSorted[b];
-                        b--;
-                    }
-                    correctionSorted[b + 1] = v;
-                }
-                eng->fastCorrectionMidi =
-                    freqToMidi(correctionSorted[correctionN / 2]);
+                eng->fastCorrectionMidi = freqToMidi(freq);
                 eng->correctionHoldFrames = AudioEngine::kPitchReleaseFrames;
             } else if (eng->correctionHoldFrames > 0) {
                 eng->correctionHoldFrames--;
@@ -481,7 +529,7 @@ static inline void processSample(AudioEngine* eng, float s, float& outL, float& 
             eng->pitchPos = 0;
         }
 
-        // Accumulate the next native Rubber Band block while returning the
+        // Accumulate the next native shifter block while returning the
         // preceding processed block to PortAudio.
         if (eng->bufPos == 0) {
             float gainDb = eng->display.monitorGainDb.load(std::memory_order_relaxed);
@@ -983,6 +1031,105 @@ static std::string jsonString(const std::string& text) {
     return out.str();
 }
 
+static const BackendSpec* findBackend(const std::string& key) {
+    for (const auto& backend : kBackendSpecs) {
+        if (key == backend.key) return &backend;
+    }
+    return nullptr;
+}
+
+static std::string platformExecutableName(const char* base) {
+#if defined(_WIN32)
+    return std::string(base) + ".exe";
+#else
+    return base;
+#endif
+}
+
+static std::filesystem::path resolveBackendExecutable(const BackendSpec& backend) {
+    if (std::string(backend.key) == HARMONIZER_BACKEND_KEY &&
+        !gExecutablePath.empty()) {
+        return gExecutablePath;
+    }
+
+    const std::string filename = platformExecutableName(backend.executable);
+    std::vector<std::filesystem::path> candidates;
+    if (!gExecutablePath.empty()) {
+        const auto executableDir = gExecutablePath.parent_path();
+        candidates.push_back(executableDir / filename);
+        candidates.push_back(executableDir / "build-backend-lab" / filename);
+    }
+
+    std::error_code error;
+    const auto cwd = std::filesystem::current_path(error);
+    if (!error) {
+        candidates.push_back(cwd / "build-backend-lab" / filename);
+        candidates.push_back(cwd / filename);
+    }
+
+    for (const auto& candidate : candidates) {
+        error.clear();
+        if (!std::filesystem::is_regular_file(candidate, error)) continue;
+        auto canonical = std::filesystem::weakly_canonical(candidate, error);
+        return error ? candidate : canonical;
+    }
+    return {};
+}
+
+static std::string backendsJson() {
+    std::ostringstream out;
+    out << "{\"selected\":\"" HARMONIZER_BACKEND_KEY "\",\"backends\":[";
+    bool first = true;
+    for (const auto& backend : kBackendSpecs) {
+        if (!first) out << ",";
+        first = false;
+        out << "{\"id\":" << jsonString(backend.key)
+            << ",\"name\":" << jsonString(backend.name)
+            << ",\"available\":"
+            << (!resolveBackendExecutable(backend).empty() ? "true" : "false")
+            << "}";
+    }
+    out << "]}";
+    return out.str();
+}
+
+static int relaunchBackend(int webPort) {
+    std::string requested;
+    {
+        std::lock_guard<std::mutex> lock(gBackendMutex);
+        requested = gRequestedBackend;
+    }
+    if (requested.empty()) return 0;
+
+    const BackendSpec* backend = findBackend(requested);
+    const auto executable = backend ? resolveBackendExecutable(*backend)
+                                    : std::filesystem::path{};
+    if (!backend || executable.empty()) {
+        std::cerr << "Backend handoff failed: " << requested << " is unavailable\n";
+        return 1;
+    }
+
+    const std::string executableText = executable.string();
+    const std::string portText = std::to_string(webPort);
+    std::cerr << "Switching backend to " << backend->name << " at "
+              << executableText << "\n";
+#if defined(_WIN32)
+    intptr_t child = _spawnl(_P_NOWAIT, executableText.c_str(),
+                             executableText.c_str(), "--port", portText.c_str(),
+                             nullptr);
+    if (child == -1) {
+        std::cerr << "Backend handoff failed: " << std::strerror(errno) << "\n";
+        return 1;
+    }
+    return 0;
+#else
+    execl(executableText.c_str(), executableText.c_str(),
+          "--port", portText.c_str(), static_cast<char*>(nullptr));
+    std::cerr << "Backend handoff failed: " << std::strerror(errno) << "\n";
+    return 1;
+#endif
+}
+
 static std::string audioOutputsJson() {
     std::lock_guard<std::mutex> lock(gAudioMutex);
     std::ostringstream out;
@@ -1042,7 +1189,8 @@ static std::string stateJson(AudioEngine* eng) {
 
     std::ostringstream out;
     out << "{"
-        << "\"audioReady\":" << (gAudioReady.load(std::memory_order_relaxed) ? "true" : "false")
+        << "\"serverInstance\":" << jsonString(gServerInstance)
+        << ",\"audioReady\":" << (gAudioReady.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"audioError\":" << jsonString(audioError)
         << ",\"audioInput\":" << jsonString(audioInput)
         << ",\"audioOutput\":" << jsonString(audioOutput)
@@ -1056,7 +1204,8 @@ static std::string stateJson(AudioEngine* eng) {
         << ",\"testTone\":"
         << (eng->sampleClock.load(std::memory_order_relaxed) <
             eng->testToneEndClock.load(std::memory_order_relaxed) ? "true" : "false")
-        << ",\"dspBackend\":\"rubberband-formant-preserved\""
+        << ",\"backendKey\":\"" HARMONIZER_BACKEND_KEY "\""
+        << ",\"dspBackend\":\"" HARMONIZER_DSP_BACKEND "\""
         << ",\"dspLatencyMs\":" << eng->dspLatencyMs()
         << ",\"midiReady\":" << (gMidiReady.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"midiError\":" << jsonString(gMidiError)
@@ -1066,6 +1215,7 @@ static std::string stateJson(AudioEngine* eng) {
         << ",\"pitchStable\":" << (eng->display.pitchStable.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"pitchVoiced\":" << (eng->display.pitchVoiced.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"pitchRms\":" << eng->display.pitchRms.load(std::memory_order_relaxed)
+        << ",\"pitchBend\":" << eng->pitchBend.load(std::memory_order_relaxed)
         << ",\"capturing\":" << (eng->capture.active.load(std::memory_order_relaxed) ? "true" : "false")
         << ",\"captureSeconds\":" << (double)eng->capture.audioLen.load(std::memory_order_relaxed) / kSampleRate
         << ",\"notes\":" << notes.str()
@@ -1409,6 +1559,34 @@ private:
                 ",\"midiError\":" + jsonString(gMidiError) + "}\n"));
         } else if (path == "/api/state") {
             sendAll(client, response("200 OK", "application/json", stateJson(engine_) + "\n"));
+        } else if (path == "/api/backends") {
+            sendAll(client, response("200 OK", "application/json", backendsJson() + "\n"));
+        } else if (path == "/api/backend") {
+            std::string key = queryString(query, "name");
+            const BackendSpec* backend = findBackend(key);
+            if (!backend) {
+                sendAll(client, response("400 Bad Request", "application/json",
+                                         "{\"error\":\"unknown-backend\"}\n"));
+            } else if (key == HARMONIZER_BACKEND_KEY) {
+                sendAll(client, response("200 OK", "application/json",
+                    std::string("{\"ok\":true,\"switching\":false,\"backend\":") +
+                    jsonString(key) + "}\n"));
+            } else if (engine_->capture.active.load(std::memory_order_relaxed)) {
+                sendAll(client, response("409 Conflict", "application/json",
+                                         "{\"error\":\"capture-active\"}\n"));
+            } else if (resolveBackendExecutable(*backend).empty()) {
+                sendAll(client, response("409 Conflict", "application/json",
+                                         "{\"error\":\"backend-unavailable\"}\n"));
+            } else {
+                {
+                    std::lock_guard<std::mutex> lock(gBackendMutex);
+                    gRequestedBackend = key;
+                }
+                sendAll(client, response("200 OK", "application/json",
+                    std::string("{\"ok\":true,\"switching\":true,\"backend\":") +
+                    jsonString(key) + "}\n"));
+                gRunning.store(false);
+            }
         } else if (path == "/api/audio-inputs") {
             sendAll(client, response("200 OK", "application/json", audioInputsJson() + "\n"));
         } else if (path == "/api/audio-input") {
@@ -1562,6 +1740,13 @@ int main(int argc, char** argv) {
     std::signal(SIGPIPE, SIG_IGN);
 #endif
 
+    std::error_code executableError;
+    gExecutablePath = std::filesystem::weakly_canonical(
+        std::filesystem::absolute(argv[0], executableError), executableError);
+    if (executableError) gExecutablePath = argv[0];
+    gServerInstance = std::to_string(
+        std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
     int webPort = kDefaultWebPort;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -1593,7 +1778,7 @@ int main(int argc, char** argv) {
 
     std::cerr << "\n"
         "=============================================\n"
-        "  Harmonizer Web (Rubber Band, formant preserved)\n"
+        "  Harmonizer Web (" HARMONIZER_DSP_TITLE ")\n"
         "  http://127.0.0.1:" << webPort << "/\n"
         "  Sing into mic + use Web MIDI in the browser\n"
         "  Browser controls: blend | gate | stability\n"
@@ -1605,5 +1790,5 @@ int main(int argc, char** argv) {
     server.stop();
     shutdownAudio();
     delete engine;
-    return 0;
+    return relaunchBackend(webPort);
 }

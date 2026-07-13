@@ -1,20 +1,81 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <mutex>
 #include <vector>
 
-#include <rubberband/RubberBandLiveShifter.h>
+#include <rubberband/RubberBandStretcher.h>
 
 // Included by harmonizer_web.cpp after PitchDetector, SharedDisplay, and
 // Capture are defined. The browser is only a controller; this native engine
 // owns every sample of the live audio path.
 
+class RubberBandR2Shifter {
+    static constexpr size_t kBlockSize = 128;
+    static constexpr size_t kFifoSize = 16384;
+    static constexpr size_t kFifoMask = kFifoSize - 1;
+    static_assert((kFifoSize & kFifoMask) == 0,
+                  "R2 output FIFO size must be a power of two");
+
+    RubberBand::RubberBandStretcher stretcher;
+    std::array<float, kFifoSize> fifo{};
+    std::array<float, kBlockSize * 4> retrieveBuffer{};
+    uint64_t fifoWrite = 0;
+    uint64_t fifoRead = 0;
+    size_t startDelay = 0;
+
+public:
+    RubberBandR2Shifter()
+        : stretcher(kSampleRate, 1,
+              RubberBand::RubberBandStretcher::OptionProcessRealTime |
+              RubberBand::RubberBandStretcher::OptionEngineFaster |
+              RubberBand::RubberBandStretcher::OptionWindowShort |
+              RubberBand::RubberBandStretcher::OptionFormantPreserved |
+              RubberBand::RubberBandStretcher::OptionPitchHighConsistency |
+              RubberBand::RubberBandStretcher::OptionTransientsSmooth |
+              RubberBand::RubberBandStretcher::OptionDetectorSoft |
+              RubberBand::RubberBandStretcher::OptionThreadingNever)
+    {
+        stretcher.setTimeRatio(1.0);
+        stretcher.setPitchScale(1.0);
+        stretcher.setMaxProcessSize(kBlockSize);
+        startDelay = stretcher.getStartDelay();
+    }
+
+    size_t getBlockSize() const { return kBlockSize; }
+    size_t getStartDelay() const { return startDelay; }
+    void setPitchScale(double scale) { stretcher.setPitchScale(scale); }
+
+    void shift(const float *const *input, float *const *output) {
+        stretcher.process(input, kBlockSize, false);
+
+        int available = stretcher.available();
+        while (available > 0) {
+            size_t request = std::min((size_t)available, retrieveBuffer.size());
+            float *channels[] = { retrieveBuffer.data() };
+            size_t retrieved = stretcher.retrieve(channels, request);
+            for (size_t i = 0; i < retrieved; i++) {
+                if (fifoWrite - fifoRead >= kFifoSize) fifoRead++;
+                fifo[fifoWrite++ & kFifoMask] = retrieveBuffer[i];
+            }
+            available = stretcher.available();
+        }
+
+        for (size_t i = 0; i < kBlockSize; i++) {
+            output[0][i] = fifoRead < fifoWrite
+                ? fifo[fifoRead++ & kFifoMask]
+                : 0.0f;
+        }
+    }
+};
+
 struct Voice {
-    RubberBand::RubberBandLiveShifter shifter;
+    RubberBandR2Shifter shifter;
 
     std::atomic<bool>     gateOn{false};
     std::atomic<int>      midiNote{-1};
@@ -28,11 +89,7 @@ struct Voice {
     float attackCoeff  = 0.0f;
     float releaseCoeff = 0.0f;
 
-    Voice()
-        : shifter(kSampleRate, 1,
-                  RubberBand::RubberBandLiveShifter::OptionFormantPreserved |
-                  RubberBand::RubberBandLiveShifter::OptionWindowShort)
-    {}
+    Voice() = default;
 
     void init() {
         attackCoeff  = 1.0f - std::exp(-1.0f / (kAttackSec * kSampleRate));
@@ -103,9 +160,9 @@ struct AudioEngine {
 
     static constexpr int   kPitchHistLen = 9;
     static constexpr int   kCorrectionControlHistoryLen = 16;
-    static constexpr int   kCorrectionLagHops = 1;
-    static constexpr float kFlutterDerivativeCompensation = 5.3f;
-    static constexpr float kFlutterEnergyCompensation = -1.6f;
+    static constexpr int   kCorrectionLagHops = 0;
+    static constexpr float kFlutterDerivativeCompensation = 0.0f;
+    static constexpr float kFlutterEnergyCompensation = 0.0f;
     static constexpr float kFlutterEnergyMeanAlpha = 0.05f;
     static constexpr float kFlutterCompensationRange = 0.75f;
     static constexpr float kFlutterCompensationMax = 0.20f;
@@ -160,7 +217,7 @@ struct AudioEngine {
         voicingAttackCoeff = 1.0f - std::exp(-1.0f / (kVoicingAttackSec * kSampleRate));
         voicingReleaseCoeff = 1.0f - std::exp(-1.0f / (kVoicingReleaseSec * kSampleRate));
 
-        std::cerr << "Rubber Band LiveShifter: block " << blockSize
+        std::cerr << "Rubber Band R2 Short: block " << blockSize
                   << " samples, start delay " << shifterDelaySamples
                   << " samples, DSP path " << dspLatencyMs() << " ms\n";
     }
@@ -194,7 +251,7 @@ struct AudioEngine {
         wetDryFromBalance(display.wetDryBalance.load(std::memory_order_relaxed),
                           wetGain, dryGain);
 
-        // Rubber Band reports its algorithmic start delay. Delay the dry path
+        // The backend reports its algorithmic start delay. Delay the dry path
         // by the same amount whenever wet audio is present, otherwise the
         // Blend control creates comb filtering instead of a coherent mix.
         for (size_t sample = 0; sample < blockSize; sample++) {
@@ -234,7 +291,7 @@ struct AudioEngine {
                 if (detectedMidi > 0.0f) {
                     float correctionDelta = correctionMidi - detectedMidi;
 
-                    // Counter LiveShifter's doubled-rate flutter during slow
+                    // Optional backend-specific flutter correction during slow
                     // vibrato. This stays local to a stable sung note and is
                     // clamped so note changes cannot create correction spikes.
                     if (std::fabs(correctionDelta) <= kFlutterCompensationRange &&

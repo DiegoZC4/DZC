@@ -130,7 +130,7 @@
     aside {
       min-width: 0;
       display: grid;
-      grid-template-rows: 54px repeat(7, auto) minmax(0, 1fr);
+      grid-template-rows: 54px repeat(8, auto) minmax(0, 1fr);
       background: var(--panel);
     }
     .side-title {
@@ -182,7 +182,42 @@
     .toggle input { width: 17px; height: 17px; accent-color: var(--cyan); }
     .orientation-control { display: flex; align-items: center; justify-content: space-between; }
     .orientation-control > span { color: var(--muted); font-size: 13px; }
-    .orientation-control .toggle { color: var(--ink); }
+    .pill-toggle { display: grid; gap: 6px; }
+    .pill-toggle-group {
+      position: relative;
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(118, 167, 255, 0.42);
+      border-radius: 999px;
+      background: #151613;
+    }
+    .pill-thumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: calc(50% - 6px);
+      height: calc(100% - 8px);
+      border-radius: 999px;
+      background: var(--ink);
+      pointer-events: none;
+    }
+    .pill-option {
+      position: relative;
+      z-index: 1;
+      min-height: 28px;
+      padding: 5px 9px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 11px;
+    }
+    .pill-toggle-group.is-animating .pill-thumb { transition: transform 180ms ease, width 180ms ease; }
+    .pill-toggle-group.is-animating .pill-option { transition: color 180ms ease; }
+    .pill-option.is-active { color: #151613; }
     .meter {
       align-self: end;
       padding: 14px;
@@ -282,7 +317,7 @@
       body { overflow: auto; }
       .app { height: auto; min-height: 100%; grid-template-columns: 1fr; grid-template-rows: 620px auto; }
       .stage { border-right: 0; }
-      aside { grid-template-rows: 48px repeat(7, auto) 120px; }
+      aside { grid-template-rows: 48px repeat(8, auto) 120px; }
     }
     @media (max-width: 560px) {
       .app { grid-template-rows: 560px auto; }
@@ -339,12 +374,19 @@
       <label class="control drag-number-control"><span>Monitor gain</span><button id="gain" class="drag-number-value" type="button" role="spinbutton" aria-label="Monitor gain"></button></label>
       <label class="control drag-number-control"><span>Gate</span><button id="gate" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch gate"></button></label>
       <label class="control drag-number-control"><span>Stability</span><button id="stability" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch stability window"></button></label>
+      <label class="control drag-number-control"><span>Keyboard octave</span><button id="keyboard-octave" class="drag-number-value" type="button" role="spinbutton" aria-label="Computer keyboard start octave"></button></label>
       <section class="control stacked">
         <label class="toggle"><input id="formants" type="checkbox" checked>Preserve formants</label>
       </section>
       <section class="control orientation-control">
         <span>Scroll direction</span>
-        <label class="toggle"><span>Horizontal</span><input id="vertical-flow" type="checkbox" aria-label="Use vertical scrolling"><span>Vertical</span></label>
+        <div class="pill-toggle">
+          <div id="orientation-group" class="pill-toggle-group" role="tablist" aria-label="Scroll direction">
+            <span class="pill-thumb" aria-hidden="true"></span>
+            <button id="horizontal-flow" class="pill-option" type="button" role="tab">Horizontal</button>
+            <button id="vertical-flow" class="pill-option" type="button" role="tab">Vertical</button>
+          </div>
+        </div>
       </section>
       <div id="meter" class="meter">engine stopped</div>
     </aside>
@@ -366,23 +408,23 @@
         <button id="download-close-button" class="close-button" type="button" aria-label="Close download dialog">&#215;</button>
       </header>
       <div class="download-body">
-        <p>The browser edition above works without installation on macOS, Windows, Linux, and ChromeOS. Native builds keep the same browser controls while running the audio engine locally.</p>
+        <p>The browser edition works everywhere, but Rubber Band Live 512 requires the native edition. Apple Silicon macOS is prebuilt; Windows, Linux, and Intel macOS perform a one-time source build with internet access.</p>
         <div class="download-list">
           <a class="download-link" href="./downloads/Harmonizer-macOS-arm64.zip" download>
             <strong>macOS, Apple Silicon</strong>
-            <span>Prebuilt app for M1 and newer Macs</span>
+            <span>Prebuilt Live 512 app. Unzip, then right-click Open on first launch.</span>
           </a>
           <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
             <strong>Windows 10 or 11</strong>
-            <span>Source bundle with one-command PowerShell setup</span>
+            <span>Live 512 PowerShell setup. Requires internet, WinGet, and administrator access.</span>
           </a>
           <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
             <strong>Ubuntu or Debian Linux</strong>
-            <span>Source bundle with one-command apt setup</span>
+            <span>Live 512 apt setup. Requires internet and sudo access.</span>
           </a>
           <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
             <strong>macOS, Intel or source build</strong>
-            <span>Source bundle with one-command Homebrew setup</span>
+            <span>Live 512 Homebrew setup. Requires internet and Homebrew.</span>
           </a>
         </div>
         <div class="download-meta">
@@ -392,6 +434,6 @@
       </div>
     </section>
   </div>
-  <script type="module" src="./app.js?v=20260712-5"></script>
+  <script type="module" src="./app.js?v=20260712-7"></script>
 </body>
 </html>

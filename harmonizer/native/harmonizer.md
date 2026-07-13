@@ -41,12 +41,11 @@ http://127.0.0.1:8794/
 
 The active DSP lives in `harmonizer_rubberband_engine.hpp`. It uses
 `RubberBandLiveShifter` with `OptionFormantPreserved | OptionWindowShort` and
-locks each shifted voice to its held MIDI pitch. A fast three-frame median drives
-the inverse correction ratio every 512 samples so input vibrato is removed;
-one additional hop aligns that control with Rubber Band's buffered audio, and
-1.25x deviation compensation offsets the shifter's internal ratio smoothing.
-A small, clamped one-block flutter compensator suppresses the doubled-rate
-ripple created by fast ratio changes without reacting to genuine note jumps.
+locks each shifted voice to its held MIDI pitch. The raw detector estimate from
+the previous 512-sample hop (11.6 ms) drives the inverse correction ratio, which
+removes slow input vibrato without the phase error of a 50 ms-old estimate.
+A paired, clamped flutter compensator suppresses the doubled-rate ripple created
+inside Rubber Band by fast ratio changes without reacting to genuine note jumps.
 The slower nine-frame median remains separate for the displayed contour and
 voiced-state gate. The server reports the active
 backend and measured DSP latency through `/api/state`; the browser diagnostics
@@ -209,6 +208,10 @@ path) after changing the DSP — no re-singing needed:
 
 It restores the mix/gate/stability settings from `meta.json`; edit that file
 (e.g. `"mix":1.0` for wet-only) to render variants.
+
+`make test-vibrato-lock` generates a one-semitone, 2 Hz synthetic vibrato,
+renders it through the exact native engine against a held C4, and fails if the
+output pitch starts oscillating again.
 
 ## Features (v2 rewrite)
 - [x] 16-voice polyphonic harmonizer (up from 4)

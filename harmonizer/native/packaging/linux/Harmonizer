@@ -2,7 +2,11 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-support="${XDG_DATA_HOME:-$HOME/.local/share}/Harmonizer"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  support="$HOME/Library/Application Support/Harmonizer"
+else
+  support="${XDG_DATA_HOME:-$HOME/.local/share}/Harmonizer"
+fi
 port="${HARMONIZER_WEB_PORT:-8794}"
 url="http://127.0.0.1:$port/"
 

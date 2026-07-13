@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$BuildBackends = if ($args -contains "--all-backends") { "ON" } else { "OFF" }
 $Msys = "C:\msys64"
 $Version = "4.0.0"
 $ExpectedHash = "24300f48a8014b7c863b573a9647e61b1b19b37875e2cdd92005e64c6424d266"
@@ -36,9 +37,13 @@ $Packages = @(
     "mingw-w64-ucrt-x86_64-portaudio",
     "mingw-w64-ucrt-x86_64-aubio"
 ) -join " "
+$UpdateCommand = "pacman -Syu --noconfirm"
+& "$Msys\msys2_shell.cmd" -defterm -no-start -ucrt64 -c $UpdateCommand
+if ($LASTEXITCODE -ne 0) { throw "MSYS2 update failed" }
+
 $BuildCommand = @"
-pacman -Sy --noconfirm --needed $Packages &&
-cmake -S '$PosixRoot' -B '$PosixRoot/build-windows' -G Ninja -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND='$PosixRubberBand' &&
+pacman -Syu --noconfirm --needed $Packages &&
+cmake -S '$PosixRoot' -B '$PosixRoot/build-windows' -G Ninja -DCMAKE_BUILD_TYPE=Release -DHARMONIZER_BUILD_BACKEND_LAB=$BuildBackends -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND='$PosixRubberBand' &&
 cmake --build '$PosixRoot/build-windows' &&
 cmake --install '$PosixRoot/build-windows' --prefix '$PosixRoot/dist/Harmonizer-Windows-x64'
 "@

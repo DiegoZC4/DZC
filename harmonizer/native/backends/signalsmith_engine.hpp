@@ -7,14 +7,44 @@
 #include <mutex>
 #include <vector>
 
-#include <rubberband/RubberBandLiveShifter.h>
+#include <signalsmith-stretch/signalsmith-stretch.h>
 
 // Included by harmonizer_web.cpp after PitchDetector, SharedDisplay, and
 // Capture are defined. The browser is only a controller; this native engine
 // owns every sample of the live audio path.
 
+class SignalsmithLowLatencyShifter {
+    static constexpr size_t kBlockSize = 128;
+    static constexpr int kAnalysisWindow = 1024;
+    static constexpr int kAnalysisInterval = 128;
+
+    signalsmith::stretch::SignalsmithStretch<float> stretcher;
+    size_t startDelay = 0;
+
+public:
+    SignalsmithLowLatencyShifter() {
+        stretcher.configure(1, kAnalysisWindow, kAnalysisInterval, false);
+        stretcher.setTransposeFactor(1.0f);
+        stretcher.setFormantFactor(1.0f, true);
+        stretcher.setFormantBase(110.0f / kSampleRate);
+        startDelay = (size_t)(stretcher.inputLatency() + stretcher.outputLatency());
+    }
+
+    size_t getBlockSize() const { return kBlockSize; }
+    size_t getStartDelay() const { return startDelay; }
+    void setPitchScale(double scale) {
+        stretcher.setTransposeFactor((float)scale);
+    }
+    void setSourcePitch(float hz) {
+        if (hz > 0.0f) stretcher.setFormantBase(hz / kSampleRate);
+    }
+    void shift(const float *const *input, float *const *output) {
+        stretcher.process(input, (int)kBlockSize, output, (int)kBlockSize);
+    }
+};
+
 struct Voice {
-    RubberBand::RubberBandLiveShifter shifter;
+    SignalsmithLowLatencyShifter shifter;
 
     std::atomic<bool>     gateOn{false};
     std::atomic<int>      midiNote{-1};
@@ -28,11 +58,7 @@ struct Voice {
     float attackCoeff  = 0.0f;
     float releaseCoeff = 0.0f;
 
-    Voice()
-        : shifter(kSampleRate, 1,
-                  RubberBand::RubberBandLiveShifter::OptionFormantPreserved |
-                  RubberBand::RubberBandLiveShifter::OptionWindowShort)
-    {}
+    Voice() = default;
 
     void init() {
         attackCoeff  = 1.0f - std::exp(-1.0f / (kAttackSec * kSampleRate));
@@ -103,9 +129,10 @@ struct AudioEngine {
 
     static constexpr int   kPitchHistLen = 9;
     static constexpr int   kCorrectionControlHistoryLen = 16;
-    static constexpr int   kCorrectionLagHops = 1;
-    static constexpr float kFlutterDerivativeCompensation = 5.3f;
-    static constexpr float kFlutterEnergyCompensation = -1.6f;
+    static constexpr int   kCorrectionLagHops = 0;
+    static constexpr float kCorrectionDepth = 1.0f;
+    static constexpr float kFlutterDerivativeCompensation = 0.0f;
+    static constexpr float kFlutterEnergyCompensation = 0.0f;
     static constexpr float kFlutterEnergyMeanAlpha = 0.05f;
     static constexpr float kFlutterCompensationRange = 0.75f;
     static constexpr float kFlutterCompensationMax = 0.20f;
@@ -160,7 +187,7 @@ struct AudioEngine {
         voicingAttackCoeff = 1.0f - std::exp(-1.0f / (kVoicingAttackSec * kSampleRate));
         voicingReleaseCoeff = 1.0f - std::exp(-1.0f / (kVoicingReleaseSec * kSampleRate));
 
-        std::cerr << "Rubber Band LiveShifter: block " << blockSize
+        std::cerr << "Signalsmith Stretch: block " << blockSize
                   << " samples, start delay " << shifterDelaySamples
                   << " samples, DSP path " << dspLatencyMs() << " ms\n";
     }
@@ -194,7 +221,7 @@ struct AudioEngine {
         wetDryFromBalance(display.wetDryBalance.load(std::memory_order_relaxed),
                           wetGain, dryGain);
 
-        // Rubber Band reports its algorithmic start delay. Delay the dry path
+        // The backend reports its algorithmic start delay. Delay the dry path
         // by the same amount whenever wet audio is present, otherwise the
         // Blend control creates comb filtering instead of a coherent mix.
         for (size_t sample = 0; sample < blockSize; sample++) {
@@ -233,8 +260,9 @@ struct AudioEngine {
                 float correctionControl = correctionMidi;
                 if (detectedMidi > 0.0f) {
                     float correctionDelta = correctionMidi - detectedMidi;
+                    correctionControl = detectedMidi + kCorrectionDepth * correctionDelta;
 
-                    // Counter LiveShifter's doubled-rate flutter during slow
+                    // Optional backend-specific flutter correction during slow
                     // vibrato. This stays local to a stable sung note and is
                     // clamped so note changes cannot create correction spikes.
                     if (std::fabs(correctionDelta) <= kFlutterCompensationRange &&
@@ -256,6 +284,9 @@ struct AudioEngine {
                     0.25f, 4.0f);
             }
             current.shifter.setPitchScale(current.pitchRatio);
+            current.shifter.setSourcePitch(correctionMidi > 0.0f
+                ? noteToFreq(correctionMidi)
+                : 110.0f);
             current.shifter.shift(inputChannels, outputChannels);
             current.updatePan();
 

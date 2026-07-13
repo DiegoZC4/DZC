@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Jacob Collier JC note mark</title>
+  <metadata>Vector reconstruction based on the Jacob Collier Official Store faviconV2.png.</metadata>
+  <rect width="64" height="64" fill="#d58e62"/>
+  <g fill="#704b35">
+    <path d="M12 4h24v8H12z"/>
+    <path d="M40 4h16v8H44v32h-4z"/>
+    <path d="M30 22h-8c-1 0-2 1-2 2C12 26 6 32 6 40c0 9 7 16 18 16 8.8 0 16-5.6 18-13.5" fill="none" stroke="#704b35" stroke-width="4" stroke-linecap="butt"/>
+  </g>
+</svg>

@@ -42,14 +42,18 @@ const ui = {
   meter: $("#meter"),
   midiStatus: $("#midi-status"),
   formants: $("#formants"),
+  keyboardOctave: $("#keyboard-octave"),
+  orientationGroup: $("#orientation-group"),
+  horizontalFlow: $("#horizontal-flow"),
   verticalFlow: $("#vertical-flow"),
 };
 
 const controls = {
-  blend: { input: $("#blend"), min: 0, max: 100, step: 1, value: 56, suffix: "%" },
+  blend: { input: $("#blend"), min: 0, max: 100, step: 1, value: 100, suffix: "%" },
   gain: { input: $("#gain"), min: 0, max: 24, step: 1, value: 6, suffix: " dB" },
   gate: { input: $("#gate"), min: 0.001, max: 0.04, step: 0.0005, value: 0.01, digits: 4 },
   stability: { input: $("#stability"), min: 0.2, max: 2, step: 0.05, value: 1, suffix: " st", digits: 2 },
+  keyboardOctave: { input: $("#keyboard-octave"), min: 0, max: 5, step: 1, value: 3 },
   timeSpan: { input: $("#time-span"), min: 1, max: 60, step: 0.5, value: 12, suffix: " s", digits: 1 },
   pitchSpan: { input: $("#pitch-span"), min: 12, max: 96, step: 1, value: 48, suffix: " st" },
 };
@@ -96,6 +100,18 @@ function storeSetting(key, value) {
   catch {}
 }
 
+function migrateStoredSettings() {
+  try {
+    const migrationKey = "harmonizer.public.v2.fullWetDefault";
+    if (localStorage.getItem(migrationKey)) return;
+    const blendKey = "harmonizer.public.v1.blend";
+    if (localStorage.getItem(blendKey) === "56") localStorage.setItem(blendKey, "100");
+    localStorage.setItem(migrationKey, "1");
+  } catch {}
+}
+
+migrateStoredSettings();
+
 function controlValue(name) {
   return controls[name].value;
 }
@@ -117,6 +133,7 @@ function commitControl(name, rawValue, emit = true) {
   control.input.dataset.value = String(control.value);
   control.input.textContent = formatControl(control);
   control.input.setAttribute("aria-valuenow", String(control.value));
+  if (name === "keyboardOctave") rebuildComputerKeyboardMap(control.value);
   storeSetting(name, control.value);
   if (emit) applyControls();
 }
@@ -692,7 +709,9 @@ function drawPiano(width, height) {
   else canvasContext.fillRect(0, rollHeight, width, PIANO_HEIGHT);
   for (let note = Math.floor(visiblePitchMin()); note < Math.ceil(visiblePitchMax()); note += 1) {
     const black = [1, 3, 6, 8, 10].includes(((note % 12) + 12) % 12);
-    canvasContext.fillStyle = sounding.has(note) ? "#76a7ff" : black ? "#31332d" : "#d8d4c8";
+    const active = sounding.has(note);
+    const keyLabel = computerKeyboardLabels.get(note);
+    canvasContext.fillStyle = active ? "#76a7ff" : black ? "#31332d" : "#d8d4c8";
     canvasContext.strokeStyle = "rgba(0,0,0,0.24)";
     if (horizontal) {
       const top = clamp(noteY(note + 1, height), 0, height);
@@ -709,6 +728,13 @@ function drawPiano(width, height) {
         canvasContext.textBaseline = "middle";
         canvasContext.fillText(midiName(note), rollWidth + 7, clamp((top + bottom) / 2, 7, height - 7));
       }
+      if (keyLabel && bottom - top >= 6) {
+        canvasContext.fillStyle = active || black ? "#f2f0e8" : "#151613";
+        canvasContext.font = `700 ${clamp(Math.floor((bottom - top) * 0.62), 6, 10)}px ui-sans-serif, system-ui, sans-serif`;
+        canvasContext.textAlign = "right";
+        canvasContext.textBaseline = "middle";
+        canvasContext.fillText(keyLabel, width - 5, clamp((top + bottom) / 2, 5, height - 5));
+      }
     } else {
       const left = clamp(noteX(note, width), 0, width);
       const right = clamp(noteX(note + 1, width), 0, width);
@@ -723,6 +749,13 @@ function drawPiano(width, height) {
         canvasContext.textAlign = "center";
         canvasContext.textBaseline = "bottom";
         canvasContext.fillText(midiName(note), (left + right) / 2, height - 6);
+      }
+      if (keyLabel && right - left >= 4) {
+        canvasContext.fillStyle = active || black ? "#f2f0e8" : "#151613";
+        canvasContext.font = `700 ${clamp(Math.floor((right - left) * 0.58), 5, 10)}px ui-sans-serif, system-ui, sans-serif`;
+        canvasContext.textAlign = "center";
+        canvasContext.textBaseline = "top";
+        canvasContext.fillText(keyLabel, clamp((left + right) / 2, 3, width - 3), rollHeight + 6);
       }
     }
   }
@@ -769,13 +802,42 @@ function draw(nowMilliseconds) {
   ].join("\n");
 }
 
-const computerKeyNotes = new Map([
-  ["a", 60], ["w", 61], ["s", 62], ["e", 63], ["d", 64], ["f", 65],
-  ["t", 66], ["g", 67], ["y", 68], ["h", 69], ["u", 70], ["j", 71], ["k", 72],
-]);
+const computerKeyboardLayout = [
+  ["ShiftLeft", 0, "\u21e7"],
+  ["KeyA", 1, "A"], ["KeyZ", 2, "Z"], ["KeyS", 3, "S"], ["KeyX", 4, "X"], ["KeyD", 5, "D"],
+  ["KeyC", 6, "C"], ["KeyV", 7, "V"], ["KeyG", 8, "G"], ["KeyB", 9, "B"], ["KeyH", 10, "H"],
+  ["KeyN", 11, "N"], ["KeyM", 12, "M"], ["KeyK", 13, "K"], ["Comma", 14, ","], ["KeyL", 15, "L"],
+  ["Period", 16, "."], ["Semicolon", 17, ";"], ["Slash", 18, "/"],
+  ["Tab", 19, "\u21b9"],
+  ["Digit1", 20, "1"], ["KeyQ", 21, "Q"], ["Digit2", 22, "2"], ["KeyW", 23, "W"], ["KeyE", 24, "E"],
+  ["Digit4", 25, "4"], ["KeyR", 26, "R"], ["Digit5", 27, "5"], ["KeyT", 28, "T"], ["Digit6", 29, "6"],
+  ["KeyY", 30, "Y"], ["KeyU", 31, "U"], ["Digit8", 32, "8"], ["KeyI", 33, "I"], ["Digit9", 34, "9"],
+  ["KeyO", 35, "O"], ["KeyP", 36, "P"], ["Minus", 37, "-"], ["BracketLeft", 38, "["],
+  ["Equal", 39, "="], ["BracketRight", 40, "]"], ["Backspace", 41, "\u232b"], ["Backslash", 42, "\\"],
+];
+let computerKeyNotes = new Map();
+let computerKeyboardLabels = new Map();
+
+function releaseComputerKeys() {
+  for (const note of pressedComputerKeys.values()) noteOff(note);
+  pressedComputerKeys.clear();
+}
+
+function rebuildComputerKeyboardMap(octave = 3) {
+  if (computerKeyNotes.size > 0) releaseComputerKeys();
+  const startNote = (Math.round(octave) + 1) * 12 + 5;
+  computerKeyNotes = new Map();
+  computerKeyboardLabels = new Map();
+  for (const [code, semitone, label] of computerKeyboardLayout) {
+    const note = startNote + semitone;
+    if (note < 0 || note > 127) continue;
+    computerKeyNotes.set(code, note);
+    computerKeyboardLabels.set(note, label);
+  }
+}
 
 function isTypingTarget(target) {
-  return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
+  return target instanceof Element && Boolean(target.closest("input, select, button, textarea, [contenteditable='true']"));
 }
 
 function handleMidiMessage(event) {
@@ -835,7 +897,7 @@ async function initMidi() {
 
 window.addEventListener("keydown", (event) => {
   if (event.repeat || isTypingTarget(event.target)) return;
-  const note = computerKeyNotes.get(event.key.toLowerCase());
+  const note = computerKeyNotes.get(event.code);
   if (note === undefined) return;
   event.preventDefault();
   pressedComputerKeys.set(event.code, note);
@@ -847,6 +909,11 @@ window.addEventListener("keyup", (event) => {
   if (note === undefined) return;
   pressedComputerKeys.delete(event.code);
   noteOff(note);
+});
+window.addEventListener("blur", releaseComputerKeys);
+window.addEventListener("pagehide", releaseComputerKeys);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) releaseComputerKeys();
 });
 
 function pointerInPiano(event) {
@@ -941,17 +1008,51 @@ ui.formants.addEventListener("change", () => {
   storeSetting("formants", ui.formants.checked);
   updateVoiceShifts(true);
 });
-ui.verticalFlow.checked = view.orientation === "vertical";
-function syncOrientation() {
-  view.orientation = ui.verticalFlow.checked ? "vertical" : "horizontal";
-  storeSetting("orientation", view.orientation);
+function syncPillThumb(groupEl, activeButton) {
+  if (!groupEl || !activeButton) return;
+  const thumb = groupEl.querySelector(".pill-thumb");
+  if (!thumb) return;
+  const inset = 4;
+  const left = activeButton.offsetLeft - inset;
+  const top = activeButton.offsetTop - inset;
+  const thumbRadius = activeButton.offsetHeight / 2;
+  thumb.style.width = `${activeButton.offsetWidth}px`;
+  thumb.style.height = `${activeButton.offsetHeight}px`;
+  thumb.style.borderRadius = `${thumbRadius}px`;
+  thumb.style.transform = `translate(${left}px, ${top}px)`;
+  groupEl.style.borderRadius = `${thumbRadius + inset}px`;
+}
+
+function animatePillGroup(groupEl, updateFn) {
+  groupEl.classList.add("is-animating");
+  updateFn();
+  window.setTimeout(() => groupEl.classList.remove("is-animating"), 220);
+}
+
+function setOrientation(orientation, persist = true, animate = true) {
+  const update = () => {
+    view.orientation = orientation === "vertical" ? "vertical" : "horizontal";
+    const vertical = view.orientation === "vertical";
+    ui.horizontalFlow.classList.toggle("is-active", !vertical);
+    ui.verticalFlow.classList.toggle("is-active", vertical);
+    ui.horizontalFlow.setAttribute("aria-selected", String(!vertical));
+    ui.verticalFlow.setAttribute("aria-selected", String(vertical));
+    syncPillThumb(ui.orientationGroup, vertical ? ui.verticalFlow : ui.horizontalFlow);
+  };
+  if (animate) animatePillGroup(ui.orientationGroup, update);
+  else update();
+  if (persist) storeSetting("orientation", view.orientation);
   ui.canvas.title = view.orientation === "horizontal"
     ? "Drag the right piano vertically to change the visible pitch range."
     : "Drag the bottom piano horizontally to change the visible pitch range.";
   ui.canvas.style.cursor = "default";
 }
-ui.verticalFlow.addEventListener("change", syncOrientation);
-syncOrientation();
+ui.horizontalFlow.addEventListener("click", () => setOrientation("horizontal"));
+ui.verticalFlow.addEventListener("click", () => setOrientation("vertical"));
+setOrientation(view.orientation, false, false);
+window.addEventListener("resize", () => {
+  syncPillThumb(ui.orientationGroup, view.orientation === "vertical" ? ui.verticalFlow : ui.horizontalFlow);
+});
 ui.testToneButton.addEventListener("click", () => {
   if (!audio) return;
   const oscillator = audio.context.createOscillator();

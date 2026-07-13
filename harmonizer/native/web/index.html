@@ -125,9 +125,11 @@
       padding: 0 6px;
     }
     aside {
+      min-height: 0;
+      overflow-y: auto;
       background: var(--panel);
       display: grid;
-      grid-template-rows: 54px repeat(7, auto) minmax(0, 1fr);
+      grid-template-rows: 54px repeat(9, auto) minmax(0, 1fr);
     }
     .side-title {
       display: flex;
@@ -163,17 +165,50 @@
       color: var(--muted);
       font-size: 13px;
     }
-    .orientation-control .toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--ink);
-      font-size: 13px;
+    .pill-toggle {
+      display: grid;
+      gap: 6px;
     }
-    .orientation-control .toggle input {
-      width: 17px;
-      height: 17px;
-      accent-color: var(--cyan);
+    .pill-toggle-group {
+      position: relative;
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(118, 167, 255, 0.42);
+      border-radius: 999px;
+      background: #151613;
+    }
+    .pill-thumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: calc(50% - 6px);
+      height: calc(100% - 8px);
+      border-radius: 999px;
+      background: var(--ink);
+      pointer-events: none;
+    }
+    .pill-option {
+      position: relative;
+      z-index: 1;
+      min-height: 28px;
+      padding: 5px 9px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 11px;
+    }
+    .pill-toggle-group.is-animating .pill-thumb {
+      transition: transform 180ms ease, width 180ms ease;
+    }
+    .pill-toggle-group.is-animating .pill-option {
+      transition: color 180ms ease;
+    }
+    .pill-option.is-active {
+      color: #151613;
     }
     select {
       width: 100%;
@@ -228,7 +263,9 @@
       color: var(--gold);
     }
     .meter {
-      align-self: end;
+      min-height: 0;
+      align-self: stretch;
+      overflow-y: auto;
       padding: 16px;
       color: var(--muted);
       font-size: 12px;
@@ -252,7 +289,10 @@
         min-width: 0;
         overflow: hidden;
       }
-      aside { grid-template-rows: 44px repeat(8, auto); }
+      aside {
+        overflow-y: visible;
+        grid-template-rows: 44px repeat(10, auto);
+      }
     }
     @media (max-width: 520px) {
       .topbar {
@@ -311,6 +351,10 @@
     <aside>
       <div class="side-title">Controls</div>
       <div class="control">
+        <label for="backend">Pitch shifter <span id="backendValue" class="value">loading</span></label>
+        <select id="backend" aria-label="Pitch shifting backend"></select>
+      </div>
+      <div class="control">
         <label for="audioInput">Input <span id="audioInputValue" class="value">loading</span></label>
         <select id="audioInput" aria-label="Audio input device"></select>
         <label for="audioOutput">Output <span id="audioOutputValue" class="value">loading</span></label>
@@ -350,9 +394,19 @@
         <span>Stability</span>
         <button id="stable" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch stability window"></button>
       </label>
+      <label class="control drag-number-control">
+        <span>Keyboard octave</span>
+        <button id="keyboardOctave" class="drag-number-value" type="button" role="spinbutton" aria-label="Computer keyboard start octave"></button>
+      </label>
       <div class="control orientation-control">
         <span>Scroll direction</span>
-        <label class="toggle"><span>Horizontal</span><input id="verticalFlow" type="checkbox" aria-label="Use vertical scrolling"><span>Vertical</span></label>
+        <div class="pill-toggle">
+          <div id="orientationGroup" class="pill-toggle-group" role="tablist" aria-label="Scroll direction">
+            <span class="pill-thumb" aria-hidden="true"></span>
+            <button id="horizontalFlow" class="pill-option" type="button" role="tab">Horizontal</button>
+            <button id="verticalFlow" class="pill-option" type="button" role="tab">Vertical</button>
+          </div>
+        </div>
       </div>
       <div class="control">
         <label for="captureBtn">Capture <span id="captureValue" class="value"></span></label>
@@ -378,6 +432,8 @@
     const rmsText = document.getElementById('rmsText');
     const stableText = document.getElementById('stableText');
     const meter = document.getElementById('meter');
+    const backend = document.getElementById('backend');
+    const backendValue = document.getElementById('backendValue');
     const audioInput = document.getElementById('audioInput');
     const audioInputValue = document.getElementById('audioInputValue');
     const audioOutput = document.getElementById('audioOutput');
@@ -393,6 +449,8 @@
     const captureValue = document.getElementById('captureValue');
     const timeSpanInput = document.getElementById('timeSpan');
     const pitchSpanInput = document.getElementById('pitchSpan');
+    const orientationGroup = document.getElementById('orientationGroup');
+    const horizontalFlow = document.getElementById('horizontalFlow');
     const verticalFlow = document.getElementById('verticalFlow');
     let lastCaptureDir = '';
     const controls = {
@@ -400,33 +458,53 @@
       gain: document.getElementById('gain'),
       gate: document.getElementById('gate'),
       stable: document.getElementById('stable'),
+      keyboardOctave: document.getElementById('keyboardOctave'),
     };
     const controlConfigs = {
-      mix: { min: 0, max: 1, step: 0.01, start: 0.56, format: (value) => `${Math.round(value * 100)}% wet` },
+      mix: { min: 0, max: 1, step: 0.01, start: 1, format: (value) => `${Math.round(value * 100)}% wet` },
       gain: { min: 0, max: 30, step: 1, start: 6, format: (value) => `+${Math.round(value)} dB` },
       gate: { min: 0.0001, max: 0.03, step: 0.0001, start: 0.01, format: (value) => value.toFixed(4) },
       stable: { min: 0.2, max: 2, step: 0.01, start: 1, format: (value) => `${value.toFixed(2)} st` },
+      keyboardOctave: { min: 0, max: 5, step: 1, start: 3, server: false, format: (value) => String(Math.round(value)) },
     };
+    const savedControlValues = {};
     const history = [];
     let state = null;
     let applyingRemote = false;
+    let controlsInitialized = false;
+    let pendingBackend = '';
+    let backendSwitchTimer = 0;
     let browserMidiStatus = 'keys ready';
     let midiAccess = null;
     let pianoDrag = null;
     const heldComputerKeys = new Map();
-    const computerKeyboardNotes = new Map([
-      ['ShiftLeft', 53],
-      ['KeyA', 54], ['KeyZ', 55], ['KeyS', 56], ['KeyX', 57], ['KeyD', 58],
-      ['KeyC', 59], ['KeyV', 60], ['KeyG', 61], ['KeyB', 62], ['KeyH', 63],
-      ['KeyN', 64], ['KeyM', 65], ['KeyK', 66], ['Comma', 67], ['KeyL', 68],
-      ['Period', 69], ['Semicolon', 70], ['Slash', 71],
-      ['Tab', 72],
-      ['Digit1', 73], ['KeyQ', 74], ['Digit2', 75], ['KeyW', 76], ['KeyE', 77],
-      ['Digit4', 78], ['KeyR', 79], ['Digit5', 80], ['KeyT', 81], ['Digit6', 82],
-      ['KeyY', 83], ['KeyU', 84], ['Digit8', 85], ['KeyI', 86], ['Digit9', 87],
-      ['KeyO', 88], ['KeyP', 89], ['Minus', 90], ['BracketLeft', 91],
-      ['Equal', 92], ['BracketRight', 93], ['Backspace', 94], ['Backslash', 95],
-    ]);
+    const computerKeyboardLayout = [
+      ['ShiftLeft', 0, '\u21e7'],
+      ['KeyA', 1, 'A'], ['KeyZ', 2, 'Z'], ['KeyS', 3, 'S'], ['KeyX', 4, 'X'], ['KeyD', 5, 'D'],
+      ['KeyC', 6, 'C'], ['KeyV', 7, 'V'], ['KeyG', 8, 'G'], ['KeyB', 9, 'B'], ['KeyH', 10, 'H'],
+      ['KeyN', 11, 'N'], ['KeyM', 12, 'M'], ['KeyK', 13, 'K'], ['Comma', 14, ','], ['KeyL', 15, 'L'],
+      ['Period', 16, '.'], ['Semicolon', 17, ';'], ['Slash', 18, '/'],
+      ['Tab', 19, '\u21b9'],
+      ['Digit1', 20, '1'], ['KeyQ', 21, 'Q'], ['Digit2', 22, '2'], ['KeyW', 23, 'W'], ['KeyE', 24, 'E'],
+      ['Digit4', 25, '4'], ['KeyR', 26, 'R'], ['Digit5', 27, '5'], ['KeyT', 28, 'T'], ['Digit6', 29, '6'],
+      ['KeyY', 30, 'Y'], ['KeyU', 31, 'U'], ['Digit8', 32, '8'], ['KeyI', 33, 'I'], ['Digit9', 34, '9'],
+      ['KeyO', 35, 'O'], ['KeyP', 36, 'P'], ['Minus', 37, '-'], ['BracketLeft', 38, '['],
+      ['Equal', 39, '='], ['BracketRight', 40, ']'], ['Backspace', 41, '\u232b'], ['Backslash', 42, '\\'],
+    ];
+    let computerKeyboardNotes = new Map();
+    let computerKeyboardLabels = new Map();
+
+    function rebuildComputerKeyboardMap(octave = 3) {
+      const startNote = (Math.round(octave) + 1) * 12 + 5;
+      computerKeyboardNotes = new Map();
+      computerKeyboardLabels = new Map();
+      for (const [code, semitone, label] of computerKeyboardLayout) {
+        const note = startNote + semitone;
+        if (note < 0 || note > 127) continue;
+        computerKeyboardNotes.set(code, note);
+        computerKeyboardLabels.set(note, label);
+      }
+    }
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -462,6 +540,20 @@
         localStorage.setItem(`harmonizer.native.v1.${key}`, String(value));
       } catch {}
     }
+
+    function migrateStoredSettings() {
+      try {
+        const migrationKey = 'harmonizer.native.v2.fullWetDefault';
+        if (localStorage.getItem(migrationKey)) return;
+        const mixKey = 'harmonizer.native.v1.mix';
+        if (localStorage.getItem(mixKey) === '0.56') {
+          localStorage.setItem(mixKey, '1');
+        }
+        localStorage.setItem(migrationKey, '1');
+      } catch {}
+    }
+
+    migrateStoredSettings();
 
     const view = {
       seconds: clamp(storedNumber('harmonizer.view.seconds', 12), MIN_TIME_SPAN, MAX_TIME_SPAN),
@@ -685,7 +777,9 @@
       for (let note = firstNote; note < lastNote; note += 1) {
         const pitchClass = ((note % 12) + 12) % 12;
         const black = [1, 3, 6, 8, 10].includes(pitchClass);
-        ctx.fillStyle = sounding.has(note) ? '#76a7ff' : black ? '#31332d' : '#d8d4c8';
+        const active = sounding.has(note);
+        const keyLabel = computerKeyboardLabels.get(note);
+        ctx.fillStyle = active ? '#76a7ff' : black ? '#31332d' : '#d8d4c8';
         ctx.strokeStyle = 'rgba(0,0,0,0.24)';
         if (horizontal) {
           const y = noteY(note + 1, height);
@@ -704,6 +798,13 @@
             ctx.textBaseline = 'middle';
             ctx.fillText(`C${Math.floor(note / 12) - 1}`, rollWidth + 7, clamp((y + y2) / 2, 7, height - 7));
           }
+          if (keyLabel && bottom - top >= 6) {
+            ctx.fillStyle = active || black ? '#f2f0e8' : '#151613';
+            ctx.font = `700 ${clamp(Math.floor((bottom - top) * 0.62), 6, 10)}px ui-sans-serif, system-ui, sans-serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(keyLabel, width - 5, clamp((top + bottom) / 2, 5, height - 5));
+          }
         } else {
           const left = clamp(noteX(note, width), 0, width);
           const right = clamp(noteX(note + 1, width), 0, width);
@@ -718,6 +819,13 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.fillText(`C${Math.floor(note / 12) - 1}`, (left + right) / 2, height - 6);
+          }
+          if (keyLabel && right - left >= 4) {
+            ctx.fillStyle = active || black ? '#f2f0e8' : '#151613';
+            ctx.font = `700 ${clamp(Math.floor((right - left) * 0.58), 5, 10)}px ui-sans-serif, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText(keyLabel, clamp((left + right) / 2, 3, width - 3), rollHeight + 6);
           }
         }
       }
@@ -918,7 +1026,17 @@
       controls[id].dataset.value = String(value);
       controls[id].textContent = config.format(value);
       controls[id].setAttribute('aria-valuenow', String(value));
-      if (persist) storeSetting(id, value);
+      if (id === 'keyboardOctave') rebuildComputerKeyboardMap(value);
+      if (persist) {
+        savedControlValues[id] = value;
+        storeSetting(id, value);
+      }
+    }
+
+    function restoreSavedControlValues() {
+      for (const [id, value] of Object.entries(savedControlValues)) {
+        if (value != null) setControl(id, value, false);
+      }
     }
 
     function setAudioLevel(fill, label, linear) {
@@ -930,6 +1048,18 @@
     }
 
     function applyState(next) {
+      const previousBackend = state && state.backendKey;
+      const previousServerInstance = state && state.serverInstance;
+      const serverRestarted = Boolean(
+        previousServerInstance && next.serverInstance &&
+        previousServerInstance !== next.serverInstance
+      );
+      let shouldRestoreControls = serverRestarted;
+      let shouldReloadAudioMenus = false;
+      let backendToRestore = '';
+      if (previousBackend && next.backendKey && previousBackend !== next.backendKey) {
+        history.length = 0;
+      }
       state = next;
       history.push({ ...next, receivedAt: performance.now() / 1000 });
       if (history.length > 6000) history.splice(0, history.length - 6000);
@@ -952,6 +1082,30 @@
       audioInputValue.textContent = next.audioReady ? 'ready' : 'error';
       audioOutputValue.textContent = next.audioReady ? 'ready' : 'error';
       testToneBtn.textContent = next.testTone ? 'playing' : 'test output';
+      if (next.backendKey && backend.querySelector(`option[value="${next.backendKey}"]`)) {
+        backend.value = next.backendKey;
+      }
+      if (pendingBackend && next.backendKey === pendingBackend) {
+        pendingBackend = '';
+        window.clearTimeout(backendSwitchTimer);
+        backend.disabled = false;
+        backendValue.textContent = 'active';
+        storeSetting('backend', next.backendKey);
+        shouldRestoreControls = true;
+        shouldReloadAudioMenus = true;
+      } else if (!pendingBackend) {
+        backend.disabled = false;
+        backendValue.textContent = 'active';
+        if (serverRestarted) {
+          const savedBackend = storedSetting('backend', '');
+          const savedOption = [...backend.options].find(
+            (option) => option.value === savedBackend && !option.disabled
+          );
+          if (savedOption && savedBackend !== next.backendKey) {
+            backendToRestore = savedBackend;
+          }
+        }
+      }
       if (next.audioInputDevice != null && audioInput.options.length > 0) {
         audioInput.value = String(next.audioInputDevice);
         if (audioInput.selectedOptions[0]) storeSetting('audioInputName', audioInput.selectedOptions[0].textContent);
@@ -980,12 +1134,29 @@
         `window ${Number(next.stableWindow).toFixed(2)} st`,
       ].join('\n');
 
-      applyingRemote = true;
-      setControl('mix', next.mix);
-      setControl('gain', next.gainDb);
-      setControl('gate', next.gate);
-      setControl('stable', next.stableWindow);
-      applyingRemote = false;
+      if (!controlsInitialized) {
+        applyingRemote = true;
+        setControl('mix', next.mix, false);
+        setControl('gain', next.gainDb, false);
+        setControl('gate', next.gate, false);
+        setControl('stable', next.stableWindow, false);
+        applyingRemote = false;
+      }
+
+      if (controlsInitialized && shouldRestoreControls) {
+        restoreSavedControlValues();
+        queueMicrotask(() => {
+          pushControls().catch(() => {});
+          if (shouldReloadAudioMenus) {
+            loadAudioInputs().catch(() => { audioInputValue.textContent = 'error'; });
+            loadAudioOutputs().catch(() => { audioOutputValue.textContent = 'error'; });
+          }
+          if (backendToRestore) {
+            backend.value = backendToRestore;
+            switchBackend(backendToRestore, false).catch(() => {});
+          }
+        });
+      }
 
       const capturing = Boolean(next.capturing);
       captureBtn.textContent = capturing
@@ -1017,7 +1188,6 @@
       applyState(await response.json());
     }
 
-    const savedControlValues = {};
     for (const [id, input] of Object.entries(controls)) {
       const config = controlConfigs[id];
       const stored = Number(storedSetting(id, ''));
@@ -1029,8 +1199,9 @@
         value: () => controlValue(id),
         onChange: (value) => {
           if (applyingRemote) return;
+          if (id === 'keyboardOctave') releaseComputerKeys();
           setControl(id, value);
-          pushControls().catch(() => {});
+          if (config.server !== false) pushControls().catch(() => {});
         },
       });
     }
@@ -1107,6 +1278,60 @@
 
     audioOutput.addEventListener('change', async () => {
       await switchAudioOutput(audioOutput.value);
+    });
+
+    async function loadBackends() {
+      const response = await fetch('/api/backends');
+      const info = await response.json();
+      backend.replaceChildren();
+      for (const item of info.backends || []) {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.available ? item.name : `${item.name} (not built)`;
+        option.disabled = !item.available;
+        backend.append(option);
+      }
+      backend.value = info.selected;
+      backendValue.textContent = 'active';
+      return info;
+    }
+
+    async function switchBackend(key, persist = true) {
+      if (!key || key === (state && state.backendKey)) {
+        backendValue.textContent = 'active';
+        return;
+      }
+      const previous = state && state.backendKey;
+      for (const id of Object.keys(savedControlValues)) {
+        savedControlValues[id] = controlValue(id);
+      }
+      pendingBackend = key;
+      backend.disabled = true;
+      backendValue.textContent = 'switching';
+      linkChip.textContent = 'switching';
+      linkChip.classList.remove('good');
+      if (persist) storeSetting('backend', key);
+      try {
+        const params = new URLSearchParams({ name: key });
+        const response = await fetch(`/api/backend?${params.toString()}`);
+        const info = await response.json();
+        if (!response.ok || !info.ok) throw new Error(info.error || 'switch-failed');
+        backendSwitchTimer = window.setTimeout(() => {
+          if (!pendingBackend) return;
+          pendingBackend = '';
+          backend.disabled = false;
+          backendValue.textContent = 'failed';
+        }, 15000);
+      } catch {
+        pendingBackend = '';
+        backend.disabled = false;
+        backendValue.textContent = 'error';
+        if (previous) backend.value = previous;
+      }
+    }
+
+    backend.addEventListener('change', async () => {
+      await switchBackend(backend.value);
     });
 
     testToneBtn.addEventListener('click', async () => {
@@ -1270,7 +1495,7 @@
         linkChip.classList.add('good');
       });
       source.addEventListener('error', () => {
-        linkChip.textContent = 'reconnecting';
+        linkChip.textContent = pendingBackend ? 'switching' : 'reconnecting';
         linkChip.classList.remove('good');
       });
       source.addEventListener('state', (event) => {
@@ -1294,40 +1519,78 @@
       value: () => view.semitones,
       onChange: setPitchSpan,
     });
-    verticalFlow.checked = view.orientation === 'vertical';
-    function syncOrientation() {
-      view.orientation = verticalFlow.checked ? 'vertical' : 'horizontal';
-      storeSetting('orientation', view.orientation);
+    function syncPillThumb(groupEl, activeButton) {
+      if (!groupEl || !activeButton) return;
+      const thumb = groupEl.querySelector('.pill-thumb');
+      if (!thumb) return;
+      const inset = 4;
+      const left = activeButton.offsetLeft - inset;
+      const top = activeButton.offsetTop - inset;
+      const thumbRadius = activeButton.offsetHeight / 2;
+      thumb.style.width = `${activeButton.offsetWidth}px`;
+      thumb.style.height = `${activeButton.offsetHeight}px`;
+      thumb.style.borderRadius = `${thumbRadius}px`;
+      thumb.style.transform = `translate(${left}px, ${top}px)`;
+      groupEl.style.borderRadius = `${thumbRadius + inset}px`;
+    }
+
+    function animatePillGroup(groupEl, updateFn) {
+      groupEl.classList.add('is-animating');
+      updateFn();
+      window.setTimeout(() => groupEl.classList.remove('is-animating'), 220);
+    }
+
+    function setOrientation(orientation, persist = true, animate = true) {
+      const update = () => {
+        view.orientation = orientation === 'vertical' ? 'vertical' : 'horizontal';
+        const vertical = view.orientation === 'vertical';
+        horizontalFlow.classList.toggle('is-active', !vertical);
+        verticalFlow.classList.toggle('is-active', vertical);
+        horizontalFlow.setAttribute('aria-selected', String(!vertical));
+        verticalFlow.setAttribute('aria-selected', String(vertical));
+        syncPillThumb(orientationGroup, vertical ? verticalFlow : horizontalFlow);
+      };
+      if (animate) animatePillGroup(orientationGroup, update);
+      else update();
+      if (persist) storeSetting('orientation', view.orientation);
       canvas.title = view.orientation === 'horizontal'
         ? 'Drag the right piano vertically to change the visible pitch range.'
         : 'Drag the bottom piano horizontally to change the visible pitch range.';
       canvas.style.cursor = 'default';
     }
-    verticalFlow.addEventListener('change', syncOrientation);
-    syncOrientation();
+    horizontalFlow.addEventListener('click', () => setOrientation('horizontal'));
+    verticalFlow.addEventListener('click', () => setOrientation('vertical'));
+    setOrientation(view.orientation, false, false);
     syncViewInputs();
-    window.addEventListener('resize', fitCanvas);
+    window.addEventListener('resize', () => {
+      fitCanvas();
+      syncPillThumb(orientationGroup, view.orientation === 'vertical' ? verticalFlow : horizontalFlow);
+    });
 
     async function initializeApp() {
       try {
         const response = await fetch('/api/state');
         applyState(await response.json());
-        const hasSavedControls = Object.values(savedControlValues).some((value) => value != null);
-        if (hasSavedControls) {
-          applyingRemote = true;
-          for (const [id, value] of Object.entries(savedControlValues)) {
-            if (value != null) setControl(id, value);
-          }
-          applyingRemote = false;
-          await pushControls();
-        }
       } catch {
-        await pushControls().catch(() => {});
+        linkChip.textContent = 'reconnecting';
+      }
+      restoreSavedControlValues();
+      controlsInitialized = true;
+      await pushControls().catch(() => {});
+      const backendInfo = await loadBackends().catch(() => null);
+      connectEvents();
+      initBrowserMidi();
+      const savedBackend = storedSetting('backend', backendInfo ? backendInfo.selected : '');
+      const savedBackendOption = [...backend.options].find(
+        (option) => option.value === savedBackend && !option.disabled
+      );
+      if (savedBackendOption && savedBackend !== (state && state.backendKey)) {
+        backend.value = savedBackend;
+        await switchBackend(savedBackend, false);
+        return;
       }
       await loadAudioInputs().catch(() => { audioInputValue.textContent = 'error'; });
       await loadAudioOutputs().catch(() => { audioOutputValue.textContent = 'error'; });
-      connectEvents();
-      initBrowserMidi();
     }
 
     initializeApp();

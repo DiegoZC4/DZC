@@ -63,6 +63,24 @@ static inline float foldHighPitchCandidate(float hz, float anchorMidi) {
     return bestHz;
 }
 
+static inline float alignOctaveToExpected(float hz, float expectedMidi) {
+    if (hz <= 0.0f || expectedMidi <= 0.0f) return hz;
+
+    float bestHz = hz;
+    float bestDistance = std::fabs(freqToMidi(hz) - expectedMidi);
+    for (int octave = -4; octave <= 4; octave++) {
+        float candidate = std::ldexp(hz, octave);
+        float candidateMidi = freqToMidi(candidate);
+        if (candidateMidi < kMinMidi || candidateMidi > kMaxMidi) continue;
+        float distance = std::fabs(candidateMidi - expectedMidi);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestHz = candidate;
+        }
+    }
+    return bestHz;
+}
+
 static uint16_t u16le(const unsigned char* p) {
     return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
 }
@@ -90,6 +108,7 @@ struct Options {
     float minConfidence = -std::numeric_limits<float>::infinity();
     float minVoicedRecall = -1.0f;
     float maxMedianCents = -1.0f;
+    float expectedMidi = -1.0f;
 };
 
 static void usage(const char* argv0) {
@@ -102,7 +121,8 @@ static void usage(const char* argv0) {
         << "  --stable-window <semitones>  median stability window\n"
         << "  --min-confidence <0..1>      reject aubio frames below this confidence\n"
         << "  --min-voiced-recall <0..1>   fail if recall is lower\n"
-        << "  --max-median-cents <cents>   fail if median absolute error is higher\n";
+        << "  --max-median-cents <cents>   fail if median absolute error is higher\n"
+        << "  --expected-midi <note>       octave-align analysis near this MIDI note\n";
 }
 
 static Options parseOptions(int argc, char** argv) {
@@ -124,6 +144,7 @@ static Options parseOptions(int argc, char** argv) {
         else if (arg == "--min-confidence") opt.minConfidence = std::stof(needValue("--min-confidence"));
         else if (arg == "--min-voiced-recall") opt.minVoicedRecall = std::stof(needValue("--min-voiced-recall"));
         else if (arg == "--max-median-cents") opt.maxMedianCents = std::stof(needValue("--max-median-cents"));
+        else if (arg == "--expected-midi") opt.expectedMidi = std::stof(needValue("--expected-midi"));
         else if (arg == "--help" || arg == "-h") {
             usage(argv[0]);
             std::exit(0);
@@ -467,6 +488,7 @@ static std::vector<FrameResult> analyze(
 {
     AubioPitchDetector detector(opt.gateRms, opt.minConfidence);
     PitchStabilizer stabilizer;
+    if (opt.expectedMidi > 0.0f) stabilizer.smoothedMidi = opt.expectedMidi;
     std::vector<FrameResult> frames;
     size_t refCursor = 0;
 
@@ -477,7 +499,9 @@ static std::vector<FrameResult> analyze(
             ? opt.gateRms * kPitchGateReleaseRatio
             : opt.gateRms;
         float rawHz = detector.detect(audio.mono.data() + start, detectorGate, f.rms, f.confidence);
-        f.rawHz = foldHighPitchCandidate(rawHz, stabilizer.smoothedMidi);
+        f.rawHz = opt.expectedMidi > 0.0f
+            ? alignOctaveToExpected(rawHz, opt.expectedMidi)
+            : foldHighPitchCandidate(rawHz, stabilizer.smoothedMidi);
         if (f.rawHz > 0.0f &&
             (f.rawHz < noteToFreq((float)kMinMidi) || f.rawHz > noteToFreq((float)kMaxMidi))) {
             f.rawHz = -1.0f;

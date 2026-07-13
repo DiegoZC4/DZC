@@ -28,7 +28,9 @@ For Intel Macs or a local rebuild:
 ```
 
 The source installer requires [Homebrew](https://brew.sh/) and installs the
-remaining build dependencies automatically.
+remaining build dependencies automatically. Installers build only the tested
+Rubber Band Live 512 backend by default; pass `--all-backends` to include the
+comparison engines.
 
 ### Ubuntu or Debian Linux
 
@@ -53,6 +55,9 @@ The script installs MSYS2 with WinGet when needed, installs the UCRT64 build
 dependencies, compiles the app, and starts it. Later launches use
 `dist\Harmonizer-Windows-x64\Harmonizer.cmd`.
 
+See `QUICKSTART.md` for the shortest rehearsal setup and realistic platform
+limitations.
+
 ## Manual build
 
 Install PortAudio, aubio, CMake, a C++17 compiler, and pkg-config. Then:
@@ -60,6 +65,7 @@ Install PortAudio, aubio, CMake, a C++17 compiler, and pkg-config. Then:
 ```bash
 rubberband_source="$(./scripts/fetch_rubberband.sh)"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+  -DHARMONIZER_BUILD_BACKEND_LAB=ON \
   -DFETCHCONTENT_SOURCE_DIR_RUBBERBAND="$rubberband_source"
 cmake --build build --parallel
 ```
@@ -68,11 +74,31 @@ Rubber Band 4.0.0 is fetched from its official repository and verified by
 SHA-256 because older operating-system packages do not include the
 `RubberBandLiveShifter` API used here.
 
+## Pitch-shifter backends
+
+The native GUI has a **Pitch shifter** menu for Rubber Band Live 512, the
+128-sample LiveShifter fork, Rubber Band R2 Short, and Signalsmith Stretch.
+Changing it briefly restarts the native audio engine on the same URL; only one
+backend runs at a time, and the saved audio route and controls are restored.
+
+Build every backend and start the single-port development server with:
+
+```bash
+./scripts/build_backend_lab.sh
+./scripts/run_harmonizer_web.sh
+```
+
+The standalone backend commands remain available for offline benchmarking.
+See `backend_lab/README.md` for pinned dependencies, rejected candidates,
+latency accounting, and listenable benchmark renders.
+
 ## Keyboard layout
 
-The physical computer-keyboard map begins at F3 on Left Shift, reaches B4 on
-Slash, continues at C5 on Tab, and reaches B6 on Backslash. Web MIDI devices
-can be selected independently from the MIDI input menu.
+By default, the physical computer-keyboard map begins at F3 on Left Shift,
+reaches B4 on Slash, continues at C5 on Tab, and reaches B6 on Backslash. The
+**Keyboard octave** draggable number transposes the whole map by octaves, and
+the corresponding physical keys are labeled on the piano display. Web MIDI
+devices can be selected independently from the MIDI input menu.
 
 ## Testing
 

@@ -115,6 +115,9 @@ struct AudioEngine {
     static constexpr float kPitchMaxStepSemitones = 2.0f;
     static constexpr float kPitchSnapSemitones = 1.5f;
     static constexpr float kPitchGateReleaseRatio = 0.55f;
+    static constexpr float kUnvoicedGateRatio = 0.20f;
+    static constexpr float kUnvoicedGateFloorRms = 0.0005f;
+    static constexpr float kHeldPitchForgetSec = 0.80f;
     float pitchHist[kPitchHistLen] = {};
     int   pitchHistIdx = 0;
     float smoothedMidi = -1.0f;
@@ -131,6 +134,8 @@ struct AudioEngine {
     float voicingAttackCoeff  = 0.0f;
     float voicingReleaseCoeff = 0.0f;
     int   voicedGraceBlocks   = 0;
+    float heldSourceMidi      = -1.0f;
+    size_t heldPitchSilenceSamples = 0;
 
     std::mutex         midiMutex;
     bool               sustainOn = false;
@@ -175,9 +180,34 @@ struct AudioEngine {
         float gateRms = display.voicedGateRms.load(std::memory_order_relaxed);
         bool voicedInput = pitchVoiced && detectedMidi > 0.0f &&
                            recentPitchRms >= gateRms * kPitchGateReleaseRatio;
-        if (voicedInput) voicedGraceBlocks = kVoicingGraceHops;
+        float unvoicedGateRms = std::max(kUnvoicedGateFloorRms,
+                                         gateRms * kUnvoicedGateRatio);
+        bool energeticInput = recentPitchRms >= unvoicedGateRms;
+
+        // A fricative has no F0 to detect. Latch only a stable voiced estimate,
+        // then keep that source pitch through energetic unvoiced articulation.
+        // This preserves the last transposition ratio without inventing a
+        // pitch from sibilant noise. A real pause closes and eventually clears
+        // the latch so background noise cannot revive an old sung note.
+        if (pitchStable && correctionMidi > 0.0f && voicedInput) {
+            heldSourceMidi = correctionMidi;
+            heldPitchSilenceSamples = 0;
+        } else if (energeticInput) {
+            heldPitchSilenceSamples = 0;
+        } else if (heldSourceMidi > 0.0f) {
+            heldPitchSilenceSamples += blockSize;
+            if (heldPitchSilenceSamples >=
+                (size_t)(kHeldPitchForgetSec * kSampleRate)) {
+                heldSourceMidi = -1.0f;
+                heldPitchSilenceSamples = 0;
+            }
+        }
+
+        bool unvoicedInput = !pitchStable && energeticInput &&
+                             heldSourceMidi > 0.0f;
+        if (voicedInput || unvoicedInput) voicedGraceBlocks = kVoicingGraceHops;
         else if (voicedGraceBlocks > 0) voicedGraceBlocks--;
-        bool voicingOn = voicedInput || voicedGraceBlocks > 0;
+        bool voicingOn = voicedInput || unvoicedInput || voicedGraceBlocks > 0;
 
         float voicingTarget = voicingOn ? 1.0f : 0.0f;
         for (size_t sample = 0; sample < blockSize; sample++) {
@@ -228,10 +258,12 @@ struct AudioEngine {
 
             // correctionMidi tracks the source F0 independently of the slow
             // display contour. The target is the exact held MIDI pitch.
-            if (correctionMidi > 0.0f && pitchVoiced) {
+            bool liveCorrection = correctionMidi > 0.0f && pitchVoiced;
+            float sourceMidi = liveCorrection ? correctionMidi : heldSourceMidi;
+            if (sourceMidi > 0.0f) {
                 float targetMidi = (float)note + bend;
-                float correctionControl = correctionMidi;
-                if (detectedMidi > 0.0f) {
+                float correctionControl = sourceMidi;
+                if (liveCorrection && detectedMidi > 0.0f) {
                     float correctionDelta = correctionMidi - detectedMidi;
 
                     // Counter LiveShifter's doubled-rate flutter during slow

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>Lighthaven Sequences Reading Group Audio</title>
+    <link>https://diegozc.com/sequences-audio.html</link>
+    <description>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Audio remains hosted by and credited to its original publishers.</description>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 15 Jul 2026 00:05:00 +0000</lastBuildDate>
+    <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
+    <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
+    <itunes:summary>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Audio remains hosted by and credited to its original publishers.</itunes:summary>
+    <itunes:type>episodic</itunes:type>
+    <itunes:explicit>false</itunes:explicit>
+    <itunes:image href="https://diegozc.com/sequences-audio-cover.png" />
+    <image>
+      <url>https://diegozc.com/sequences-audio-cover.png</url>
+      <title>Lighthaven Sequences Reading Group Audio</title>
+      <link>https://diegozc.com/sequences-audio.html</link>
+    </image>
+    <item>
+      <title>LSRG 90.1 - Guardians of the Truth</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90-1</link>
+      <guid isPermaLink="false">urn:lsrg:90:1</guid>
+      <pubDate>Wed, 15 Jul 2026 00:05:00 +0000</pubDate>
+      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4.</p><p>Human narration via <a href="https://intelligence.org/razfeed-Updated.rss">MIRI official R:AZ audiobook</a>. <a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth">Read the text</a>.</p>]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>901</itunes:episode>
+      <itunes:season>2026</itunes:season>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>9:04</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <enclosure url="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/113+Guardians+of+the+Truth.mp3" length="13057717" type="audio/mpeg" />
+    </item>
+    <item>
+      <title>LSRG 90.2 - Guardians of the Gene Pool</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90-2</link>
+      <guid isPermaLink="false">urn:lsrg:90:2</guid>
+      <pubDate>Wed, 15 Jul 2026 00:04:00 +0000</pubDate>
+      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4.</p><p>Human narration via <a href="https://intelligence.org/razfeed-Updated.rss">MIRI official R:AZ audiobook</a>. <a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool">Read the text</a>.</p>]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>902</itunes:episode>
+      <itunes:season>2026</itunes:season>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2:01</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <enclosure url="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/114+Guardians+of+the+Gene+Pool.mp3" length="2917609" type="audio/mpeg" />
+    </item>
+    <item>
+      <title>LSRG 90.3 - Guardians of Ayn Rand</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90-3</link>
+      <guid isPermaLink="false">urn:lsrg:90:3</guid>
+      <pubDate>Wed, 15 Jul 2026 00:03:00 +0000</pubDate>
+      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4.</p><p>Human narration via <a href="https://intelligence.org/razfeed-Updated.rss">MIRI official R:AZ audiobook</a>. <a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand">Read the text</a>.</p>]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>903</itunes:episode>
+      <itunes:season>2026</itunes:season>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>11:19</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <enclosure url="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/115+Guardians+of+Ayn+Rand.mp3" length="16303379" type="audio/mpeg" />
+    </item>
+    <item>
+      <title>LSRG 90.4 - Two Cult Koans</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90-4</link>
+      <guid isPermaLink="false">urn:lsrg:90:4</guid>
+      <pubDate>Wed, 15 Jul 2026 00:02:00 +0000</pubDate>
+      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4.</p><p>Human narration via <a href="https://intelligence.org/razfeed-Updated.rss">MIRI official R:AZ audiobook</a>. <a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans">Read the text</a>.</p>]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>904</itunes:episode>
+      <itunes:season>2026</itunes:season>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4:07</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <enclosure url="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/116+Two+Cult+Koans.mp3" length="5929423" type="audio/mpeg" />
+    </item>
+    <item>
+      <title>LSRG 90.5 - What You Can't Say</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90-5</link>
+      <guid isPermaLink="false">urn:lsrg:90:5</guid>
+      <pubDate>Wed, 15 Jul 2026 00:01:00 +0000</pubDate>
+      <description><![CDATA[<p>Optional reading. Week 90 (2026-07-21), packet J-4.</p><p>AI narration via <a href="https://www.audiowaveai.com/playlists/paul-graham/what-you-cant-say">AudiowaveAI</a>. <a href="https://www.paulgraham.com/say.html">Read the text</a>.</p>]]></description>
+      <itunes:author>Paul Graham</itunes:author>
+      <itunes:episode>905</itunes:episode>
+      <itunes:season>2026</itunes:season>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>32:20</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <enclosure url="https://hispp5xuhwtenshp.public.blob.vercel-storage.com/users/1/chapters/3378/mprwwr-LV1GlcBd7W08ut2wqsZB92S9cZf74J.mp3" length="7761165" type="audio/mpeg" />
+    </item>
+  </channel>
+</rss>

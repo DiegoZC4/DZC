@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102821">
+  <title>Lighthaven Sequences Reading Group Audio</title>
+  <link rel="alternate" type="application/rss+xml" title="Lighthaven Sequences Reading Group Audio" href="https://diegozc.com/sequences-audio.xml">
+  <link rel="icon" href="sequences-audio-cover.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17231f;
+      --muted: #68736d;
+      --paper: #f3efe4;
+      --panel: #fffdf6;
+      --line: #c9c4b7;
+      --green: #174f3d;
+      --green-2: #0f392d;
+      --red: #b74932;
+      --yellow: #dfb84d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(23, 79, 61, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 79, 61, .055) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    }
+    a { color: inherit; }
+    .shell { width: min(1120px, calc(100% - 32px)); margin: 16px auto 48px; }
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+      overflow: hidden;
+      border: 1px solid var(--green-2);
+      border-radius: 18px;
+      color: #f7f1df;
+      background: var(--green);
+      box-shadow: 0 16px 40px rgba(15, 57, 45, .2);
+    }
+    .mast-copy { padding: clamp(24px, 5vw, 58px); }
+    .mast-copy .kicker { color: #c6d7cf; }
+    .mast-copy h1 { max-width: 700px; margin: 8px 0 14px; font-size: clamp(38px, 7vw, 76px); line-height: .94; letter-spacing: -.045em; }
+    .mast-copy > p:last-of-type { max-width: 620px; margin: 0; color: #dce6df; font-size: 18px; line-height: 1.5; }
+    .cover { width: 100%; height: 100%; min-height: 320px; object-fit: cover; border-left: 1px solid rgba(255,255,255,.18); }
+    .kicker, .track-flags, .track-links, .byline, .week-total, button, .button, .feed-field {
+      font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    }
+    .kicker { margin: 0; text-transform: uppercase; letter-spacing: .16em; font-weight: 700; font-size: 12px; }
+    .subscribe { display: grid; grid-template-columns: repeat(3, max-content) minmax(220px, 1fr); gap: 8px; align-items: center; margin: 12px 0 28px; }
+    button, .button {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--green-2);
+      border-radius: 9px;
+      color: #fff;
+      background: var(--green);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover, .button:hover { background: var(--green-2); }
+    .button.secondary { color: var(--green-2); background: var(--panel); }
+    .button.secondary:hover { background: #e8e3d6; }
+    .feed-field {
+      width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px;
+      color: var(--muted); background: rgba(255,255,255,.65); font-size: 13px;
+    }
+    .week { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,246,.94); box-shadow: 0 8px 24px rgba(29, 42, 36, .08); }
+    .week-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 24px 26px 20px; border-bottom: 1px solid var(--line); }
+    .week-head h1 { margin: 5px 0 0; font-size: clamp(25px, 4vw, 40px); line-height: 1; letter-spacing: -.025em; }
+    .week-total { margin: 0; color: var(--muted); text-align: right; font-weight: 600; }
+    .track { display: grid; grid-template-columns: 74px minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+    .track:last-child { border-bottom: 0; }
+    .track-index { display: grid; place-items: start center; padding-top: 24px; color: var(--green); font-size: 18px; font-weight: 700; border-right: 1px solid var(--line); }
+    .track-main { padding: 21px 24px 22px; }
+    .track-flags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; font-size: 11px; font-weight: 700; }
+    .badge { padding: 3px 7px; border-radius: 999px; }
+    .badge.human { color: #174f3d; background: #dcebe3; }
+    .badge.ai { color: #70461a; background: #f3e1b0; }
+    .track h2 { margin: 8px 0 2px; font-size: clamp(23px, 3vw, 32px); line-height: 1.05; letter-spacing: -.02em; }
+    .track h2 a { text-decoration-thickness: 1px; text-decoration-color: transparent; text-underline-offset: 4px; }
+    .track h2 a:hover { text-decoration-color: var(--red); }
+    .byline { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+    audio { display: block; width: 100%; height: 38px; }
+    .track-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+    .track-links a { color: var(--green); font-weight: 700; text-underline-offset: 3px; }
+    .dot { color: var(--line); }
+    details { margin-top: 14px; color: var(--muted); font-size: 14px; }
+    details summary { cursor: pointer; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-weight: 700; color: var(--green); }
+    details p { margin: 8px 0 0; line-height: 1.45; }
+    .fine-print { margin: 18px 4px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 16px, 1120px); margin-top: 8px; }
+      .masthead { grid-template-columns: 1fr; }
+      .cover { display: none; }
+      .subscribe { grid-template-columns: 1fr 1fr; }
+      .feed-field { grid-column: 1 / -1; }
+      .week-head { align-items: start; flex-direction: column; gap: 9px; padding: 20px 16px 16px; }
+      .week-total { text-align: left; }
+      .track { grid-template-columns: 52px minmax(0, 1fr); }
+      .track-main { padding: 18px 14px 20px; }
+      .track-index { padding-top: 20px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="mast-copy">
+        <p class="kicker">One feed / one weekly packet</p>
+        <h1>Sequences Reading Group Audio</h1>
+        <p>Subscribe once. Each week, the assigned readings appear in order, using human narration when available and labeling generated audio explicitly.</p>
+      </div>
+      <img class="cover" src="sequences-audio-cover.png" alt="Sequences Reading Group Audio cover">
+    </header>
+
+    <nav class="subscribe" aria-label="Subscribe to the audio feed">
+      <a class="button" href="https://music.youtube.com/library/podcasts?addrssfeed=https%3A%2F%2Fdiegozc.com%2Fsequences-audio.xml">YouTube Music</a>
+      <a class="button" href="podcast://diegozc.com/sequences-audio.xml">Apple Podcasts</a>
+      <button type="button" id="copy-feed">Copy RSS</button>
+      <input class="feed-field" id="feed-url" value="https://diegozc.com/sequences-audio.xml" readonly aria-label="RSS feed URL">
+    </nav>
+
+    <section class="week">
+  <header class="week-head">
+    <div>
+      <p class="kicker">LSRG #90 / J-4</p>
+      <h1>Tuesday, July 21, 2026</h1>
+    </div>
+    <p class="week-total">26:31 required audio + 32:20 optional</p>
+  </header>
+  <div class="tracks"><article class="track" id="lsrg-90-1">
+  <div class="track-index">90.1</div>
+  <div class="track-main">
+    <div class="track-flags">
+      <span>Required</span>
+      <span class="badge human">Human narration</span>
+      <span>9:04</span>
+    </div>
+    <h2><a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth" target="_blank" rel="noreferrer">Guardians of the Truth</a></h2>
+    <p class="byline">Eliezer Yudkowsky</p>
+    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/113+Guardians+of+the+Truth.mp3"></audio>
+    <div class="track-links">
+      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
+      <span class="dot">/</span>
+      <span>No audio embedded on LessWrong</span>
+      
+    </div>
+  </div>
+</article>
+<article class="track" id="lsrg-90-2">
+  <div class="track-index">90.2</div>
+  <div class="track-main">
+    <div class="track-flags">
+      <span>Required</span>
+      <span class="badge human">Human narration</span>
+      <span>2:01</span>
+    </div>
+    <h2><a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool" target="_blank" rel="noreferrer">Guardians of the Gene Pool</a></h2>
+    <p class="byline">Eliezer Yudkowsky</p>
+    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/114+Guardians+of+the+Gene+Pool.mp3"></audio>
+    <div class="track-links">
+      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
+      <span class="dot">/</span>
+      <span>No audio embedded on LessWrong</span>
+      
+    </div>
+  </div>
+</article>
+<article class="track" id="lsrg-90-3">
+  <div class="track-index">90.3</div>
+  <div class="track-main">
+    <div class="track-flags">
+      <span>Required</span>
+      <span class="badge human">Human narration</span>
+      <span>11:19</span>
+    </div>
+    <h2><a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand" target="_blank" rel="noreferrer">Guardians of Ayn Rand</a></h2>
+    <p class="byline">Eliezer Yudkowsky</p>
+    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/115+Guardians+of+Ayn+Rand.mp3"></audio>
+    <div class="track-links">
+      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
+      <span class="dot">/</span>
+      <span>TYPE III AI audio also available on LessWrong</span>
+      
+    </div>
+  </div>
+</article>
+<article class="track" id="lsrg-90-4">
+  <div class="track-index">90.4</div>
+  <div class="track-main">
+    <div class="track-flags">
+      <span>Required</span>
+      <span class="badge human">Human narration</span>
+      <span>4:07</span>
+    </div>
+    <h2><a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans" target="_blank" rel="noreferrer">Two Cult Koans</a></h2>
+    <p class="byline">Eliezer Yudkowsky</p>
+    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/116+Two+Cult+Koans.mp3"></audio>
+    <div class="track-links">
+      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
+      <span class="dot">/</span>
+      <span>Official audiobook embedded on LessWrong</span>
+      
+    </div>
+  </div>
+</article>
+<article class="track" id="lsrg-90-5">
+  <div class="track-index">90.5</div>
+  <div class="track-main">
+    <div class="track-flags">
+      <span>Optional</span>
+      <span class="badge ai">AI narration</span>
+      <span>32:20</span>
+    </div>
+    <h2><a href="https://www.paulgraham.com/say.html" target="_blank" rel="noreferrer">What You Can't Say</a></h2>
+    <p class="byline">Paul Graham</p>
+    <audio controls preload="none" src="https://hispp5xuhwtenshp.public.blob.vercel-storage.com/users/1/chapters/3378/mprwwr-LV1GlcBd7W08ut2wqsZB92S9cZf74J.mp3"></audio>
+    <div class="track-links">
+      <a href="https://www.audiowaveai.com/playlists/paul-graham/what-you-cant-say" target="_blank" rel="noreferrer">AudiowaveAI</a>
+      <span class="dot">/</span>
+      <span>Not a LessWrong post</span>
+      <span class="dot">/</span><a href="https://podcasts.apple.com/us/podcast/418-wmtbg-what-you-cant-say-by-paul-graham/id566908883?i=1000473582947" target="_blank" rel="noreferrer">Human reading and discussion (1h 24m)</a>
+    </div>
+  </div>
+</article></div>
+</section>
+
+    <details>
+      <summary>Manual subscription instructions</summary>
+      <p><strong>Apple Podcasts:</strong> Library, More, Follow a Show by URL. <strong>YouTube Music:</strong> Library, Podcasts, Add podcast, Add by RSS feed. Pocket Casts, Overcast, Podcast Addict, Castbox, and AntennaPod also accept the same URL.</p>
+    </details>
+    <p class="fine-print">No new hosting or podcast account is required. This is an unlisted, static RSS feed on diegozc.com. It links to audio hosted by the original publishers and does not mirror their media files.</p>
+  </main>
+  <script>
+    const button = document.querySelector('#copy-feed');
+    const field = document.querySelector('#feed-url');
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(field.value);
+      } catch {
+        field.select();
+        document.execCommand('copy');
+      }
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = 'Copy RSS', 1400);
+    });
+  </script>
+</body>
+</html>

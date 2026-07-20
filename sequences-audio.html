@@ -22,6 +22,8 @@
       --link: #245d4c;
       --optional: #f7eed2;
       --optional-ink: #6c4b13;
+      --highlight: #f4d35e;
+      --highlight-ink: #171918;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -36,6 +38,8 @@
         --link: #8dcbb8;
         --optional: #352f20;
         --optional-ink: #e6cc87;
+        --highlight: #d8b94d;
+        --highlight-ink: #111311;
       }
     }
     * { box-sizing: border-box; }
@@ -88,10 +92,12 @@
     .badge.human { color: var(--link); background: var(--soft); }
     .track h3 { margin: 7px 0 2px; font-size: clamp(22px, 3vw, 28px); line-height: 1.05; letter-spacing: -.02em; }
     .byline { margin: 0 0 11px; color: var(--muted); font-size: 13px; }
+    .player-dock { position: sticky; top: 0; z-index: 10; margin-inline: -4px; padding: 5px 4px; background: var(--panel); }
     audio { display: block; width: 100%; height: 38px; }
     .chapters { margin: 14px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; list-style: none; }
     .chapter { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: start; gap: 12px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
     .chapter:last-child { border-bottom: 0; }
+    .chapter-main { min-width: 0; }
     .chapter.optional { background: var(--optional); }
     .chapter-time { min-height: 30px; padding: 0 8px; border-color: var(--line); color: var(--ink); background: var(--panel); font-variant-numeric: tabular-nums; }
     .chapter-time:hover { color: var(--paper); background: var(--button); }
@@ -101,12 +107,27 @@
     .optional-label { padding: 2px 6px; border-radius: 999px; color: var(--optional-ink); background: var(--panel); font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .chapter-meta { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
     .chapter-meta a { color: var(--link); text-underline-offset: 2px; }
+    .reader { grid-column: 1 / -1; margin: 0; border-top: 1px solid var(--line); color: var(--ink); font-size: 14px; }
+    .reader summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px 0; color: var(--link); cursor: pointer; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-weight: 700; }
+    .reader-summary-state { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+    .reader-toolbar { position: sticky; top: 48px; z-index: 8; display: flex; align-items: center; gap: 9px; margin: 9px -2px 0; padding: 7px 8px; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); backdrop-filter: blur(8px); }
+    .follow-toggle { min-height: 29px; padding: 0 9px; border-radius: 5px; font-size: 12px; }
+    .reader-status { color: var(--muted); font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-size: 11px; }
+    .reader-body { max-width: 72ch; margin: 0 auto; padding: 13px 10px 4px; color: var(--ink); font-size: 17px; line-height: 1.62; }
+    .reader-body p { margin: 0 0 .9em; line-height: inherit; }
+    .reader-body blockquote { margin: 1em 1.2em; padding-left: 1em; border-left: 3px solid var(--line); }
+    .reader-body li { margin-block: .35em; }
+    .reader-body a { color: var(--link); text-underline-offset: 3px; }
+    .reader-body [data-w] { border-radius: 2px; scroll-margin-block: 42vh; }
+    .reader-body .synced-word { cursor: pointer; }
+    .reader-body .synced-word:hover { background: var(--soft); }
+    .reader-body .current-word { color: var(--highlight-ink); background: var(--highlight); box-shadow: 0 0 0 2px var(--highlight); }
     .track-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; color: var(--muted); font-size: 12px; }
     .track-links a { color: var(--link); font-weight: 700; text-underline-offset: 3px; }
     .dot { color: var(--line); }
-    details { margin-top: 14px; color: var(--muted); font-size: 14px; }
-    details summary { cursor: pointer; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-weight: 700; color: var(--link); }
-    details p { margin: 8px 0 0; line-height: 1.45; }
+    .manual-help { margin-top: 14px; color: var(--muted); font-size: 14px; }
+    .manual-help summary { cursor: pointer; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-weight: 700; color: var(--link); }
+    .manual-help p { margin: 8px 0 0; line-height: 1.45; }
     .fine-print { margin: 18px 4px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
     @media (max-width: 760px) {
       .shell { width: calc(100% - 12px); margin-top: 6px; }
@@ -124,6 +145,8 @@
       .track-main { padding: 14px 11px 16px; }
       .chapter { grid-template-columns: 58px minmax(0, 1fr); gap: 8px; padding: 10px 8px; }
       .chapter-time { padding-inline: 5px; }
+      .reader-toolbar { top: 48px; }
+      .reader-body { padding-inline: 2px; font-size: 17px; line-height: 1.58; }
     }
   </style>
 </head>
@@ -165,13 +188,21 @@
     </div>
     <h3>J-4 Weekly Reading</h3>
     <p class="byline">Eliezer Yudkowsky and Richard Feynman</p>
-    <audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+    <div class="player-dock"><audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio></div>
     <ol class="chapters" aria-label="Episode chapters"><li class="chapter">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="0">0:00</button>
   <div class="chapter-main">
     <div class="chapter-title"><a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth" target="_blank" rel="noreferrer">Guardians of the Truth</a></div>
     <p class="chapter-meta">Eliezer Yudkowsky / 9:04 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
+  <details class="reader" data-reader-url="/audio/lsrg-90-j4-reader.json" data-reading-order="1" data-audio="audio-lsrg-90" data-start="0" data-end="543.901">
+      <summary><span>Read / follow text</span><span class="reader-summary-state">Load text</span></summary>
+      <div class="reader-toolbar">
+        <button class="follow-toggle" type="button" aria-pressed="true">Follow audio: On</button>
+        <span class="reader-status" role="status">Loading text...</span>
+      </div>
+      <div class="reader-body"></div>
+    </details>
 </li>
 <li class="chapter">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="543.901">9:04</button>
@@ -179,6 +210,14 @@
     <div class="chapter-title"><a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool" target="_blank" rel="noreferrer">Guardians of the Gene Pool</a></div>
     <p class="chapter-meta">Eliezer Yudkowsky / 2:01 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
+  <details class="reader" data-reader-url="/audio/lsrg-90-j4-reader.json" data-reading-order="2" data-audio="audio-lsrg-90" data-start="543.901" data-end="665.297">
+      <summary><span>Read / follow text</span><span class="reader-summary-state">Load text</span></summary>
+      <div class="reader-toolbar">
+        <button class="follow-toggle" type="button" aria-pressed="true">Follow audio: On</button>
+        <span class="reader-status" role="status">Loading text...</span>
+      </div>
+      <div class="reader-body"></div>
+    </details>
 </li>
 <li class="chapter">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="665.297">11:05</button>
@@ -186,6 +225,14 @@
     <div class="chapter-title"><a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand" target="_blank" rel="noreferrer">Guardians of Ayn Rand</a></div>
     <p class="chapter-meta">Eliezer Yudkowsky / 11:19 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
+  <details class="reader" data-reader-url="/audio/lsrg-90-j4-reader.json" data-reading-order="3" data-audio="audio-lsrg-90" data-start="665.297" data-end="1344.434">
+      <summary><span>Read / follow text</span><span class="reader-summary-state">Load text</span></summary>
+      <div class="reader-toolbar">
+        <button class="follow-toggle" type="button" aria-pressed="true">Follow audio: On</button>
+        <span class="reader-status" role="status">Loading text...</span>
+      </div>
+      <div class="reader-body"></div>
+    </details>
 </li>
 <li class="chapter">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="1344.434">22:24</button>
@@ -193,6 +240,14 @@
     <div class="chapter-title"><a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans" target="_blank" rel="noreferrer">Two Cult Koans</a></div>
     <p class="chapter-meta">Eliezer Yudkowsky / 4:07 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
+  <details class="reader" data-reader-url="/audio/lsrg-90-j4-reader.json" data-reading-order="4" data-audio="audio-lsrg-90" data-start="1344.434" data-end="1591.323">
+      <summary><span>Read / follow text</span><span class="reader-summary-state">Load text</span></summary>
+      <div class="reader-toolbar">
+        <button class="follow-toggle" type="button" aria-pressed="true">Follow audio: On</button>
+        <span class="reader-status" role="status">Loading text...</span>
+      </div>
+      <div class="reader-body"></div>
+    </details>
 </li>
 <li class="chapter optional">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="1591.323">26:31</button>
@@ -200,6 +255,14 @@
     <div class="chapter-title"><span class="optional-label">Optional</span><a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm" target="_blank" rel="noreferrer">Cargo Cult Science</a></div>
     <p class="chapter-meta">Richard Feynman / 20:33 / <a href="https://www.youtube.com/watch?v=yvfAtIJbatg" target="_blank" rel="noreferrer">C0nc0rdance on YouTube</a></p>
   </div>
+  <details class="reader" data-reader-url="/audio/lsrg-90-j4-reader.json" data-reading-order="5" data-audio="audio-lsrg-90" data-start="1591.323" data-end="2824.165">
+      <summary><span>Read / follow text</span><span class="reader-summary-state">Load text</span></summary>
+      <div class="reader-toolbar">
+        <button class="follow-toggle" type="button" aria-pressed="true">Follow audio: On</button>
+        <span class="reader-status" role="status">Loading text...</span>
+      </div>
+      <div class="reader-body"></div>
+    </details>
 </li></ol>
     <div class="track-links">
       <a href="https://diegozc.com/audio/lsrg-90-j4.mp3">Download MP3</a>
@@ -210,7 +273,7 @@
 </article></div>
 </section>
 
-    <details>
+    <details class="manual-help">
       <summary>Manual subscription instructions</summary>
       <p><strong>Apple Podcasts:</strong> Library, More, Follow a Show by URL. <strong>YouTube Music:</strong> Library, Podcasts, Add podcast, Add by RSS feed. Pocket Casts, Overcast, Podcast Addict, Castbox, and AntennaPod also accept the same URL. To minimize storage, keep only the latest episode or enable removal after playback.</p>
     </details>
@@ -234,6 +297,176 @@
       button.textContent = 'Copied';
       setTimeout(() => button.textContent = 'Other app: Copy RSS', 1400);
     });
+
+    const readerCache = new Map();
+    const syncTimers = new Map();
+
+    function fetchReaderData(url) {
+      if (!readerCache.has(url)) {
+        readerCache.set(url, fetch(url).then((response) => {
+          if (!response.ok) throw new Error(`Reader data returned ${response.status}`);
+          return response.json();
+        }));
+      }
+      return readerCache.get(url);
+    }
+
+    function setFollowState(reader, enabled) {
+      reader._followAudio = enabled;
+      const toggle = reader.querySelector('.follow-toggle');
+      toggle.setAttribute('aria-pressed', String(enabled));
+      toggle.textContent = `Follow audio: ${enabled ? 'On' : 'Off'}`;
+    }
+
+    async function loadReader(reader) {
+      if (reader._loadPromise) return reader._loadPromise;
+      const status = reader.querySelector('.reader-status');
+      const summaryState = reader.querySelector('.reader-summary-state');
+      const body = reader.querySelector('.reader-body');
+      summaryState.textContent = 'Loading';
+      reader._loadPromise = fetchReaderData(reader.dataset.readerUrl).then((payload) => {
+        const order = Number(reader.dataset.readingOrder);
+        const reading = payload.readings.find((item) => item.order === order);
+        if (!reading) throw new Error(`Reader data lacks chapter ${order}`);
+        body.innerHTML = reading.html;
+        const entries = [];
+        for (let index = 0; index < reading.timings.length; index += 3) {
+          const wordIndex = reading.timings[index];
+          const startMs = reading.timings[index + 1];
+          const endMs = reading.timings[index + 2];
+          const word = body.querySelector(`[data-w="${wordIndex}"]`);
+          if (!word) continue;
+          word.classList.add('synced-word');
+          word.dataset.startMs = String(startMs);
+          entries.push({ word, startMs, endMs });
+          word.addEventListener('click', (event) => {
+            if (event.target.closest('a')) return;
+            const audio = document.getElementById(reader.dataset.audio);
+            if (!audio) return;
+            audio.currentTime = startMs / 1000;
+            audio.play().catch(() => {});
+          });
+        }
+        reader._timingEntries = entries;
+        const coverage = Math.round(Number(reading.quality?.timedCoverage || 0) * 100);
+        status.textContent = `${coverage}% audio-linked. Tap text to seek.`;
+        summaryState.textContent = 'Synced';
+        return reading;
+      }).catch((error) => {
+        status.textContent = 'Text could not be loaded.';
+        summaryState.textContent = 'Error';
+        reader._loadPromise = null;
+        throw error;
+      });
+      return reader._loadPromise;
+    }
+
+    function currentEntry(entries, currentMs) {
+      let low = 0;
+      let high = entries.length - 1;
+      let result = -1;
+      while (low <= high) {
+        const middle = (low + high) >> 1;
+        if (entries[middle].startMs <= currentMs) {
+          result = middle;
+          low = middle + 1;
+        } else {
+          high = middle - 1;
+        }
+      }
+      return result >= 0 ? entries[result] : null;
+    }
+
+    function syncReader(reader, audio, forceScroll = false) {
+      const entries = reader._timingEntries;
+      if (!entries?.length) return;
+      const entry = currentEntry(entries, audio.currentTime * 1000);
+      if (!entry || entry.word === reader._currentWord) return;
+      if (reader._currentWord) {
+        reader._currentWord.classList.remove('current-word');
+        reader._currentWord.removeAttribute('aria-current');
+      }
+      reader._currentWord = entry.word;
+      entry.word.classList.add('current-word');
+      entry.word.setAttribute('aria-current', 'true');
+      if (!reader._followAudio || document.visibilityState === 'hidden') return;
+      const bounds = entry.word.getBoundingClientRect();
+      const outsideReadingBand = bounds.top < window.innerHeight * .28 || bounds.bottom > window.innerHeight * .74;
+      if (forceScroll || outsideReadingBand) {
+        entry.word.scrollIntoView({ block: 'center', behavior: 'auto' });
+      }
+    }
+
+    function chapterAtTime(readers, currentTime) {
+      return readers.find((reader) => (
+        currentTime >= Number(reader.dataset.start) && currentTime < Number(reader.dataset.end)
+      ));
+    }
+
+    function syncAudio(audio, forceScroll = false) {
+      const track = audio.closest('.track');
+      const readers = [...track.querySelectorAll('.reader')];
+      const openReader = readers.find((reader) => reader.open);
+      if (!openReader) return;
+      if (openReader._followAudio) {
+        const timedReader = chapterAtTime(readers, audio.currentTime);
+        if (timedReader && timedReader !== openReader) {
+          openReader.open = false;
+          setFollowState(timedReader, true);
+          timedReader.open = true;
+          loadReader(timedReader).then(() => syncReader(timedReader, audio, true)).catch(console.error);
+          return;
+        }
+      }
+      syncReader(openReader, audio, forceScroll);
+    }
+
+    function startSyncTimer(audio) {
+      clearInterval(syncTimers.get(audio));
+      syncAudio(audio, true);
+      syncTimers.set(audio, setInterval(() => syncAudio(audio), 125));
+    }
+
+    document.querySelectorAll('.reader').forEach((reader) => {
+      setFollowState(reader, true);
+      reader.querySelector('.follow-toggle').addEventListener('click', () => {
+        setFollowState(reader, !reader._followAudio);
+        if (reader._followAudio) {
+          const audio = document.getElementById(reader.dataset.audio);
+          if (audio) syncReader(reader, audio, true);
+        }
+      });
+      reader.addEventListener('toggle', () => {
+        if (!reader.open) return;
+        document.querySelectorAll(`.reader[data-audio="${reader.dataset.audio}"]`).forEach((other) => {
+          if (other !== reader) other.open = false;
+        });
+        loadReader(reader).then(() => {
+          const audio = document.getElementById(reader.dataset.audio);
+          if (audio) syncReader(reader, audio, true);
+        }).catch(console.error);
+      });
+    });
+
+    document.querySelectorAll('audio').forEach((audio) => {
+      audio.addEventListener('play', () => startSyncTimer(audio));
+      audio.addEventListener('pause', () => {
+        clearInterval(syncTimers.get(audio));
+        syncAudio(audio, true);
+      });
+      audio.addEventListener('ended', () => clearInterval(syncTimers.get(audio)));
+      audio.addEventListener('seeking', () => syncAudio(audio, true));
+      audio.addEventListener('timeupdate', () => syncAudio(audio));
+    });
+
+    function resyncVisibleReaders() {
+      if (document.visibilityState === 'hidden') return;
+      document.querySelectorAll('audio').forEach((audio) => syncAudio(audio, true));
+    }
+    document.addEventListener('visibilitychange', resyncVisibleReaders);
+    window.addEventListener('pageshow', resyncVisibleReaders);
+    window.addEventListener('focus', resyncVisibleReaders);
+
     document.querySelectorAll('.chapter-time').forEach((chapter) => {
       chapter.addEventListener('click', () => {
         const audio = document.getElementById(chapter.dataset.audio);

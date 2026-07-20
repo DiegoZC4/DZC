@@ -9,8 +9,8 @@
     <link>https://diegozc.com/sequences-audio.html</link>
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
-    <copyright>2026 Lighthaven Sequences Reading Group. Source audio used under Creative Commons licenses.</copyright>
-    <lastBuildDate>Mon, 20 Jul 2026 01:00:57 +0000</lastBuildDate>
+    <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
+    <lastBuildDate>Mon, 20 Jul 2026 14:57:08 +0000</lastBuildDate>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
     <itunes:summary>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</itunes:summary>
@@ -27,7 +27,7 @@
     </itunes:category>
     <podcast:guid>4228f871-823a-5d5f-99c0-1adbc4bf37fa</podcast:guid>
     <podcast:medium>podcast</podcast:medium>
-    <podcast:license url="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0</podcast:license>
+    <podcast:license url="https://diegozc.com/sequences-audio.html">All Rights Reserved</podcast:license>
     <image>
       <url>https://diegozc.com/sequences-audio-cover.png</url>
       <title>Lighthaven Sequences Reading Group Audio</title>
@@ -38,15 +38,15 @@
       <link>https://diegozc.com/sequences-audio.html#lsrg-90</link>
       <guid isPermaLink="false">urn:lsrg:90:j4</guid>
       <pubDate>Mon, 20 Jul 2026 01:00:57 +0000</pubDate>
-      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4. One audio file with 5 chapters.</p><ol><li><strong>0:00</strong> <a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth">Guardians of the Truth</a> by Eliezer Yudkowsky</li><li><strong>9:04</strong> <a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool">Guardians of the Gene Pool</a> by Eliezer Yudkowsky</li><li><strong>11:05</strong> <a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand">Guardians of Ayn Rand</a> by Eliezer Yudkowsky</li><li><strong>22:24</strong> <a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans">Two Cult Koans</a> by Eliezer Yudkowsky</li><li><strong>26:31</strong> (Optional) <a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm">Cargo Cult Science</a> by Richard Feynman</li></ol><p>Audio sources: <a href="https://intelligence.org/razfeed-Updated.rss">MIRI official R:AZ audiobook</a>; <a href="https://www.youtube.com/watch?v=yvfAtIJbatg">C0nc0rdance on YouTube</a>.</p><p>Audio licensing: <a href="https://intelligence.org/razfeed-Updated.rss">Rationality: From AI to Zombies audiobook</a> by Machine Intelligence Research Institute, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0</a>; <a href="https://www.youtube.com/watch?v=yvfAtIJbatg">Cargo Cult Science narration</a> by C0nc0rdance, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>]]></description>
+      <description><![CDATA[<p>Week 90 (2026-07-21), packet J-4. One audio file with 5 chapters.</p><ol><li><strong>0:00</strong> <a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth">Guardians of the Truth</a> by Eliezer Yudkowsky</li><li><strong>9:04</strong> <a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool">Guardians of the Gene Pool</a> by Eliezer Yudkowsky</li><li><strong>11:05</strong> <a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand">Guardians of Ayn Rand</a> by Eliezer Yudkowsky</li><li><strong>22:24</strong> <a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans">Two Cult Koans</a> by Eliezer Yudkowsky</li><li><strong>26:31</strong> (Optional) <a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm">Cargo Cult Science</a> by Richard Feynman</li></ol><p>Audio sources: <a href="https://intelligence.org/razfeed-Updated.rss">Rationality: From AI to Zombies, by Eliezer Yudkowsky</a>; <a href="https://nulliusinverba.podbean.com/e/cargo-cult-science/">Nullius in Verba podcast</a>.</p><p>Audio sources and rights: <a href="https://intelligence.org/razfeed-Updated.rss">Rationality: From AI to Zombies audiobook</a> by Machine Intelligence Research Institute, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0</a>; <a href="https://nulliusinverba.podbean.com/e/cargo-cult-science/">Cargo Cult Science narration</a> by Nullius in Verba (Smriti Mehta and Daniël Lakens), <a href="https://nulliusinverba.podbean.com/e/cargo-cult-science/">All Rights Reserved</a>.</p>]]></description>
       <itunes:author>Eliezer Yudkowsky and Richard Feynman</itunes:author>
       <itunes:episode>90</itunes:episode>
       <itunes:season>2026</itunes:season>
       <itunes:episodeType>full</itunes:episodeType>
-      <itunes:duration>47:04</itunes:duration>
+      <itunes:duration>49:06</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-90-j4-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-90-j4.mp3" length="45188250" type="audio/mpeg" />
+      <enclosure url="https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
     </item>
   </channel>
 </rss>

@@ -5,12 +5,12 @@
   <channel>
     <title>Lighthaven Sequences Reading Group Audio</title>
     <link>https://diegozc.com/sequences-audio.html</link>
-    <description>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Audio remains hosted by and credited to its original publishers.</description>
+    <description>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 15 Jul 2026 00:05:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 20 Jul 2026 00:45:43 +0000</lastBuildDate>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
-    <itunes:summary>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Audio remains hosted by and credited to its original publishers.</itunes:summary>
+    <itunes:summary>A manually curated audio companion for the weekly Lighthaven Sequences Reading Group. Every narration is credited and linked to its source.</itunes:summary>
     <itunes:type>episodic</itunes:type>
     <itunes:explicit>false</itunes:explicit>
     <itunes:image href="https://diegozc.com/sequences-audio-cover.png" />
@@ -76,18 +76,18 @@
       <enclosure url="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/116+Two+Cult+Koans.mp3" length="5929423" type="audio/mpeg" />
     </item>
     <item>
-      <title>LSRG 90.5 - What You Can't Say</title>
+      <title>LSRG 90.5 - Cargo Cult Science</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-90-5</link>
-      <guid isPermaLink="false">urn:lsrg:90:5</guid>
+      <guid isPermaLink="false">urn:lsrg:90:5:cargo-cult-science</guid>
       <pubDate>Wed, 15 Jul 2026 00:01:00 +0000</pubDate>
-      <description><![CDATA[<p>Optional reading. Week 90 (2026-07-21), packet J-4.</p><p>AI narration via <a href="https://www.audiowaveai.com/playlists/paul-graham/what-you-cant-say">AudiowaveAI</a>. <a href="https://www.paulgraham.com/say.html">Read the text</a>.</p>]]></description>
-      <itunes:author>Paul Graham</itunes:author>
+      <description><![CDATA[<p>Optional reading. Week 90 (2026-07-21), packet J-4.</p><p>Human narration via <a href="https://www.youtube.com/watch?v=yvfAtIJbatg">C0nc0rdance on YouTube</a>. <a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm">Read the text</a>.</p>]]></description>
+      <itunes:author>Richard Feynman</itunes:author>
       <itunes:episode>905</itunes:episode>
       <itunes:season>2026</itunes:season>
       <itunes:episodeType>full</itunes:episodeType>
-      <itunes:duration>32:20</itunes:duration>
+      <itunes:duration>20:33</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
-      <enclosure url="https://hispp5xuhwtenshp.public.blob.vercel-storage.com/users/1/chapters/3378/mprwwr-LV1GlcBd7W08ut2wqsZB92S9cZf74J.mp3" length="7761165" type="audio/mpeg" />
+      <enclosure url="https://diegozc.com/audio/cargo-cult-science-richard-feynman.mp3" length="19727873" type="audio/mpeg" />
     </item>
   </channel>
 </rss>

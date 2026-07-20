@@ -98,8 +98,13 @@
     .week-total { margin: 0; color: var(--muted); text-align: right; font-weight: 600; }
     .track-main { padding: 16px 18px 18px; }
     .track-flags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; font-size: 11px; font-weight: 700; }
-    .player-dock { position: sticky; top: 0; z-index: 20; margin: 9px -4px 0; padding: 5px 4px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .player-dock { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; margin: 9px -4px 0; padding: 5px 4px; border-bottom: 1px solid var(--line); background: var(--panel); }
     audio { display: block; width: 100%; height: 38px; }
+    .playback-tools { display: flex; align-items: center; gap: 4px; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; }
+    .skip-button { min-width: 50px; min-height: 34px; padding: 0 7px; border-color: var(--line); color: var(--ink); background: var(--soft); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .skip-button:hover { color: var(--paper); background: var(--button); }
+    .rate-select { height: 34px; min-width: 58px; padding: 0 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--soft); font: 700 12px "Avenir Next Condensed", "Arial Narrow", sans-serif; cursor: pointer; }
+    .rate-select:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
     .chapters { margin: 14px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; list-style: none; }
     .chapter { display: grid; grid-template-columns: 68px minmax(0, 1fr) 38px; align-items: start; gap: 12px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
     .chapter:last-child { border-bottom: 0; }
@@ -180,9 +185,11 @@
       .week-head { align-items: start; flex-direction: column; gap: 6px; padding: 13px 12px 11px; }
       .week-total { text-align: left; }
       .track-main { padding: 14px 11px 16px; }
+      .player-dock { grid-template-columns: 1fr; gap: 4px; }
+      .playback-tools { justify-content: flex-end; }
       .chapter { grid-template-columns: 58px minmax(0, 1fr) 38px; gap: 8px; padding: 10px 8px; }
       .chapter-time { padding-inline: 5px; }
-      .reader-toolbar { top: 48px; }
+      .reader-toolbar { top: 88px; }
       .reader-body { padding-inline: 2px; font-size: 17px; line-height: 1.58; }
     }
   </style>
@@ -220,7 +227,14 @@
       <span>5 chapters</span>
       <span>47:04</span>
     </div>
-    <div class="player-dock"><audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio></div>
+    <div class="player-dock">
+      <audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+      <div class="playback-tools" role="group" aria-label="Playback speed and skipping">
+        <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="-1" aria-label="Skip backward 10 seconds" title="Skip backward 10 seconds"><span>-10s</span></button>
+        <select class="rate-select" data-audio="audio-lsrg-90" aria-label="Playback speed"><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option><option value="2.25">2.25x</option><option value="2.5">2.5x</option><option value="2.75">2.75x</option><option value="3">3x</option></select>
+        <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><span>+10s</span></button>
+      </div>
+    </div>
     <ol class="chapters" aria-label="Episode chapters"><li class="chapter">
   <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="0">0:00</button>
   <div class="chapter-main">
@@ -834,10 +848,58 @@
 
     const syncTimers = new Map();
     const narrationReturnButton = document.querySelector('#narration-return');
+    const playbackRateKey = 'sequencesAudio.playbackRate';
     let activeReturnReader = null;
     let activeAudio = null;
     let automaticScrollUntil = 0;
     let scrollFrame = 0;
+
+    function normalizedPlaybackRate(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return 1;
+      return Math.min(3, Math.max(1, Math.round(number * 4) / 4));
+    }
+
+    function savedPlaybackRate() {
+      try {
+        return normalizedPlaybackRate(localStorage.getItem(playbackRateKey));
+      } catch {
+        return 1;
+      }
+    }
+
+    function formatSkipSeconds(seconds) {
+      return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
+    }
+
+    function updatePlaybackTools(audio) {
+      const dock = audio.closest('.player-dock');
+      const seconds = 10 * audio.playbackRate;
+      const secondsLabel = formatSkipSeconds(seconds);
+      const select = dock.querySelector('.rate-select');
+      select.value = String(audio.playbackRate);
+      dock.querySelectorAll('.skip-button').forEach((skip) => {
+        const backward = Number(skip.dataset.direction) < 0;
+        const signedLabel = `${backward ? '-' : '+'}${secondsLabel}s`;
+        const action = backward ? 'backward' : 'forward';
+        skip.querySelector('span').textContent = signedLabel;
+        skip.setAttribute('aria-label', `Skip ${action} ${secondsLabel} seconds`);
+        skip.title = `Skip ${action} ${secondsLabel} seconds`;
+      });
+    }
+
+    function setPlaybackRate(rate, persist = true) {
+      const normalized = normalizedPlaybackRate(rate);
+      document.querySelectorAll('audio').forEach((audio) => {
+        audio.playbackRate = normalized;
+        updatePlaybackTools(audio);
+      });
+      if (persist) {
+        try {
+          localStorage.setItem(playbackRateKey, String(normalized));
+        } catch {}
+      }
+    }
 
     function setFollowState(reader, enabled) {
       reader._followAudio = enabled;
@@ -1096,6 +1158,9 @@
     document.querySelectorAll('audio').forEach((audio) => {
       audio._isSeeking = false;
       audio._followScrollBlocked = false;
+      audio.playbackRate = savedPlaybackRate();
+      updatePlaybackTools(audio);
+      audio.addEventListener('ratechange', () => updatePlaybackTools(audio));
       audio.addEventListener('play', () => {
         activeAudio = audio;
         clearTimeout(audio._seekFollowTimer);
@@ -1130,6 +1195,20 @@
       audio.addEventListener('timeupdate', () => (
         syncAudio(audio, false, !audio._isSeeking && !audio._followScrollBlocked)
       ));
+    });
+
+    document.querySelectorAll('.rate-select').forEach((select) => {
+      select.addEventListener('change', () => setPlaybackRate(select.value));
+    });
+
+    document.querySelectorAll('.skip-button').forEach((skip) => {
+      skip.addEventListener('click', () => {
+        const audio = document.getElementById(skip.dataset.audio);
+        if (!audio) return;
+        const target = audio.currentTime + Number(skip.dataset.direction) * 10 * audio.playbackRate;
+        const maximum = Number.isFinite(audio.duration) ? audio.duration : target;
+        audio.currentTime = Math.max(0, Math.min(maximum, target));
+      });
     });
 
     function resyncVisibleReaders() {

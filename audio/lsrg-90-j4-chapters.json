@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Richard Feynman",
+  "title": "LSRG #90 - J-4",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for July 21, 2026.",
+  "fileName": "lsrg-90-j4.mp3",
+  "chapters": [
+    {
+      "startTime": 0,
+      "endTime": 543.901,
+      "title": "Guardians of the Truth",
+      "url": "https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth"
+    },
+    {
+      "startTime": 543.901,
+      "endTime": 665.297,
+      "title": "Guardians of the Gene Pool",
+      "url": "https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool"
+    },
+    {
+      "startTime": 665.297,
+      "endTime": 1344.434,
+      "title": "Guardians of Ayn Rand",
+      "url": "https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand"
+    },
+    {
+      "startTime": 1344.434,
+      "endTime": 1591.323,
+      "title": "Two Cult Koans",
+      "url": "https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans"
+    },
+    {
+      "startTime": 1591.323,
+      "endTime": 2824.165,
+      "title": "(Optional) Cargo Cult Science",
+      "url": "https://calteches.library.caltech.edu/51/2/CargoCult.htm"
+    }
+  ]
+}

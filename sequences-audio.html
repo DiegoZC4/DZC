@@ -48,7 +48,7 @@
     .mast-copy h1 { max-width: 700px; margin: 8px 0 14px; font-size: clamp(38px, 7vw, 76px); line-height: .94; letter-spacing: -.045em; }
     .mast-copy > p:last-of-type { max-width: 620px; margin: 0; color: #dce6df; font-size: 18px; line-height: 1.5; }
     .cover { width: 100%; height: 100%; min-height: 320px; object-fit: cover; border-left: 1px solid rgba(255,255,255,.18); }
-    .kicker, .track-flags, .track-links, .byline, .week-total, button, .button, .feed-field {
+    .kicker, .track-flags, .track-links, .byline, .chapter-meta, .week-total, button, .button, .feed-field {
       font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
     }
     .kicker { margin: 0; text-transform: uppercase; letter-spacing: .16em; font-weight: 700; font-size: 12px; }
@@ -93,6 +93,18 @@
     .track h2 a:hover { text-decoration-color: var(--red); }
     .byline { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
     audio { display: block; width: 100%; height: 38px; }
+    .chapters { margin: 18px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; list-style: none; }
+    .chapter { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: start; gap: 12px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+    .chapter:last-child { border-bottom: 0; }
+    .chapter.optional { background: rgba(223, 184, 77, .11); }
+    .chapter-time { min-height: 30px; padding: 0 8px; border-color: var(--line); color: var(--green-2); background: var(--panel); font-variant-numeric: tabular-nums; }
+    .chapter-time:hover { color: #fff; background: var(--green); }
+    .chapter-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; font-weight: 700; line-height: 1.3; }
+    .chapter-title a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .chapter-title a:hover { color: var(--red); }
+    .optional-label { padding: 2px 6px; border-radius: 999px; color: #70461a; background: #f3e1b0; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .chapter-meta { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .chapter-meta a { color: var(--green); text-underline-offset: 2px; }
     .track-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; color: var(--muted); font-size: 12px; }
     .track-links a { color: var(--green); font-weight: 700; text-underline-offset: 3px; }
     .dot { color: var(--line); }
@@ -111,6 +123,8 @@
       .track { grid-template-columns: 52px minmax(0, 1fr); }
       .track-main { padding: 18px 14px 20px; }
       .track-index { padding-top: 20px; font-size: 15px; }
+      .chapter { grid-template-columns: 58px minmax(0, 1fr); gap: 8px; padding: 10px 8px; }
+      .chapter-time { padding-inline: 5px; }
     }
   </style>
 </head>
@@ -120,7 +134,7 @@
       <div class="mast-copy">
         <p class="kicker">One feed / one weekly packet</p>
         <h1>Sequences Reading Group Audio</h1>
-        <p>Subscribe once. Each week, the assigned readings appear in order, using human narration when available and labeling generated audio explicitly.</p>
+        <p>Subscribe once. Each week arrives as one compact episode with chapter markers for every assigned reading.</p>
       </div>
       <img class="cover" src="sequences-audio-cover.png" alt="Sequences Reading Group Audio cover">
     </header>
@@ -140,98 +154,57 @@
     </div>
     <p class="week-total">26:31 required audio + 20:33 optional</p>
   </header>
-  <div class="tracks"><article class="track" id="lsrg-90-1">
-  <div class="track-index">90.1</div>
+  <div class="tracks"><article class="track" id="lsrg-90">
+  <div class="track-index">#90</div>
   <div class="track-main">
     <div class="track-flags">
-      <span>Required</span>
+      <span>Weekly packet</span>
       <span class="badge human">Human narration</span>
-      <span>9:04</span>
+      <span>5 chapters</span>
+      <span>47:04</span>
     </div>
-    <h2><a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth" target="_blank" rel="noreferrer">Guardians of the Truth</a></h2>
-    <p class="byline">Eliezer Yudkowsky</p>
-    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/113+Guardians+of+the+Truth.mp3"></audio>
-    <div class="track-links">
-      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
-      <span class="dot">/</span>
-      <span>No audio embedded on LessWrong</span>
-      
-    </div>
+    <h2>J-4 Weekly Reading</h2>
+    <p class="byline">Eliezer Yudkowsky and Richard Feynman</p>
+    <audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+    <ol class="chapters" aria-label="Episode chapters"><li class="chapter">
+  <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="0">0:00</button>
+  <div class="chapter-main">
+    <div class="chapter-title"><a href="https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth" target="_blank" rel="noreferrer">Guardians of the Truth</a></div>
+    <p class="chapter-meta">Eliezer Yudkowsky / 9:04 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
-</article>
-<article class="track" id="lsrg-90-2">
-  <div class="track-index">90.2</div>
-  <div class="track-main">
-    <div class="track-flags">
-      <span>Required</span>
-      <span class="badge human">Human narration</span>
-      <span>2:01</span>
-    </div>
-    <h2><a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool" target="_blank" rel="noreferrer">Guardians of the Gene Pool</a></h2>
-    <p class="byline">Eliezer Yudkowsky</p>
-    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/114+Guardians+of+the+Gene+Pool.mp3"></audio>
-    <div class="track-links">
-      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
-      <span class="dot">/</span>
-      <span>No audio embedded on LessWrong</span>
-      
-    </div>
+</li>
+<li class="chapter">
+  <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="543.901">9:04</button>
+  <div class="chapter-main">
+    <div class="chapter-title"><a href="https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool" target="_blank" rel="noreferrer">Guardians of the Gene Pool</a></div>
+    <p class="chapter-meta">Eliezer Yudkowsky / 2:01 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
-</article>
-<article class="track" id="lsrg-90-3">
-  <div class="track-index">90.3</div>
-  <div class="track-main">
-    <div class="track-flags">
-      <span>Required</span>
-      <span class="badge human">Human narration</span>
-      <span>11:19</span>
-    </div>
-    <h2><a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand" target="_blank" rel="noreferrer">Guardians of Ayn Rand</a></h2>
-    <p class="byline">Eliezer Yudkowsky</p>
-    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/115+Guardians+of+Ayn+Rand.mp3"></audio>
-    <div class="track-links">
-      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
-      <span class="dot">/</span>
-      <span>TYPE III AI audio also available on LessWrong</span>
-      
-    </div>
+</li>
+<li class="chapter">
+  <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="665.297">11:05</button>
+  <div class="chapter-main">
+    <div class="chapter-title"><a href="https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand" target="_blank" rel="noreferrer">Guardians of Ayn Rand</a></div>
+    <p class="chapter-meta">Eliezer Yudkowsky / 11:19 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
-</article>
-<article class="track" id="lsrg-90-4">
-  <div class="track-index">90.4</div>
-  <div class="track-main">
-    <div class="track-flags">
-      <span>Required</span>
-      <span class="badge human">Human narration</span>
-      <span>4:07</span>
-    </div>
-    <h2><a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans" target="_blank" rel="noreferrer">Two Cult Koans</a></h2>
-    <p class="byline">Eliezer Yudkowsky</p>
-    <audio controls preload="none" src="https://s3.us-east-2.amazonaws.com/podcast.intelligence.org/razmedia/116+Two+Cult+Koans.mp3"></audio>
-    <div class="track-links">
-      <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a>
-      <span class="dot">/</span>
-      <span>Official audiobook embedded on LessWrong</span>
-      
-    </div>
+</li>
+<li class="chapter">
+  <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="1344.434">22:24</button>
+  <div class="chapter-main">
+    <div class="chapter-title"><a href="https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans" target="_blank" rel="noreferrer">Two Cult Koans</a></div>
+    <p class="chapter-meta">Eliezer Yudkowsky / 4:07 / <a href="https://intelligence.org/razfeed-Updated.rss" target="_blank" rel="noreferrer">MIRI official R:AZ audiobook</a></p>
   </div>
-</article>
-<article class="track" id="lsrg-90-5">
-  <div class="track-index">90.5</div>
-  <div class="track-main">
-    <div class="track-flags">
-      <span>Optional</span>
-      <span class="badge human">Human narration</span>
-      <span>20:33</span>
-    </div>
-    <h2><a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm" target="_blank" rel="noreferrer">Cargo Cult Science</a></h2>
-    <p class="byline">Richard Feynman</p>
-    <audio controls preload="none" src="https://diegozc.com/audio/cargo-cult-science-richard-feynman.mp3"></audio>
+</li>
+<li class="chapter optional">
+  <button class="chapter-time" type="button" data-audio="audio-lsrg-90" data-seek="1591.323">26:31</button>
+  <div class="chapter-main">
+    <div class="chapter-title"><span class="optional-label">Optional</span><a href="https://calteches.library.caltech.edu/51/2/CargoCult.htm" target="_blank" rel="noreferrer">Cargo Cult Science</a></div>
+    <p class="chapter-meta">Richard Feynman / 20:33 / <a href="https://www.youtube.com/watch?v=yvfAtIJbatg" target="_blank" rel="noreferrer">C0nc0rdance on YouTube</a></p>
+  </div>
+</li></ol>
     <div class="track-links">
-      <a href="https://www.youtube.com/watch?v=yvfAtIJbatg" target="_blank" rel="noreferrer">C0nc0rdance on YouTube</a>
+      <a href="https://diegozc.com/audio/lsrg-90-j4.mp3">Download MP3</a>
       <span class="dot">/</span>
-      <span>Not a LessWrong post</span>
-      
+      <a href="https://diegozc.com/audio/lsrg-90-j4-chapters.json">Chapter data</a>
     </div>
   </div>
 </article></div>
@@ -239,9 +212,9 @@
 
     <details>
       <summary>Manual subscription instructions</summary>
-      <p><strong>Apple Podcasts:</strong> Library, More, Follow a Show by URL. <strong>YouTube Music:</strong> Library, Podcasts, Add podcast, Add by RSS feed. Pocket Casts, Overcast, Podcast Addict, Castbox, and AntennaPod also accept the same URL.</p>
+      <p><strong>Apple Podcasts:</strong> Library, More, Follow a Show by URL. <strong>YouTube Music:</strong> Library, Podcasts, Add podcast, Add by RSS feed. Pocket Casts, Overcast, Podcast Addict, Castbox, and AntennaPod also accept the same URL. To minimize storage, keep only the latest episode or enable removal after playback.</p>
     </details>
-    <p class="fine-print">No new hosting or podcast account is required. This is an unlisted, static RSS feed on diegozc.com. Narrations are credited and linked to their sources; selected tracks are mirrored when a stable podcast enclosure is unavailable.</p>
+    <p class="fine-print">Each weekly packet is one downloadable MP3 with embedded and feed-level chapter markers. Podcast apps control automatic downloads and deletion. Narrations are credited and linked to their sources.</p>
   </main>
   <script>
     const button = document.querySelector('#copy-feed');
@@ -255,6 +228,14 @@
       }
       button.textContent = 'Copied';
       setTimeout(() => button.textContent = 'Copy RSS', 1400);
+    });
+    document.querySelectorAll('.chapter-time').forEach((chapter) => {
+      chapter.addEventListener('click', () => {
+        const audio = document.getElementById(chapter.dataset.audio);
+        if (!audio) return;
+        audio.currentTime = Number(chapter.dataset.seek);
+        audio.play().catch(() => {});
+      });
     });
   </script>
 </body>

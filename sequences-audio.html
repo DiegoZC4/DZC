@@ -99,12 +99,23 @@
     .track-main { padding: 16px 18px 18px; }
     .track-flags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; font-size: 11px; font-weight: 700; }
     .player-dock { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; margin: 9px -4px 0; padding: 5px 4px; border-bottom: 1px solid var(--line); background: var(--panel); }
-    audio { display: block; width: 100%; height: 38px; }
+    audio { display: none; }
+    .custom-player { display: grid; grid-template-columns: 34px auto minmax(80px, 1fr) auto 34px 64px; align-items: center; gap: 6px; min-width: 0; }
+    .player-button { width: 34px; min-width: 34px; min-height: 34px; padding: 0; border-color: var(--line); color: var(--ink); background: var(--soft); }
+    .player-button:hover { color: var(--paper); background: var(--button); }
+    .player-icon { width: 19px; height: 19px; fill: currentColor; }
+    .pause-glyph, .muted-glyph { display: none; }
+    .play-toggle.is-playing .play-glyph, .mute-toggle.is-muted .volume-glyph { display: none; }
+    .play-toggle.is-playing .pause-glyph, .mute-toggle.is-muted .muted-glyph { display: block; }
+    .player-time { min-width: 35px; color: var(--muted); font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
+    .seek-slider, .volume-slider { min-width: 0; margin: 0; accent-color: var(--link); cursor: pointer; }
+    .seek-slider { width: 100%; }
+    .volume-slider { width: 64px; }
     .playback-tools { display: flex; align-items: center; gap: 4px; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; }
     .skip-button { min-width: 50px; min-height: 34px; padding: 0 7px; border-color: var(--line); color: var(--ink); background: var(--soft); font-size: 12px; font-variant-numeric: tabular-nums; }
     .skip-button:hover { color: var(--paper); background: var(--button); }
-    .rate-select { height: 34px; min-width: 58px; padding: 0 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--soft); font: 700 12px "Avenir Next Condensed", "Arial Narrow", sans-serif; cursor: pointer; }
-    .rate-select:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+    .drag-number-value { min-width: 52px; min-height: 34px; padding: 0 7px; border-color: var(--line); color: var(--ink); background: var(--soft); cursor: nesw-resize; touch-action: none; user-select: none; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .drag-number-value:hover, .drag-number-value.is-dragging { color: var(--paper); background: var(--button); }
     .chapters { margin: 14px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; list-style: none; }
     .chapter { display: grid; grid-template-columns: 68px minmax(0, 1fr) 38px; align-items: start; gap: 12px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
     .chapter:last-child { border-bottom: 0; }
@@ -184,6 +195,8 @@
       .week-total { text-align: left; }
       .track-main { padding: 14px 11px 16px; }
       .player-dock { grid-template-columns: 1fr; gap: 4px; }
+      .custom-player { grid-template-columns: 34px auto minmax(72px, 1fr) auto 34px; }
+      .volume-slider { display: none; }
       .playback-tools { justify-content: flex-end; }
       .chapter { grid-template-columns: 58px minmax(0, 1fr) 38px; gap: 8px; padding: 10px 8px; }
       .chapter-time { padding-inline: 5px; }
@@ -225,10 +238,22 @@
       <span>47:04</span>
     </div>
     <div class="player-dock">
-      <audio id="audio-lsrg-90" controls preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+      <audio id="audio-lsrg-90" preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+      <div class="custom-player" data-audio="audio-lsrg-90" data-duration="2824" role="group" aria-label="Audio player">
+        <button class="play-toggle player-button" type="button" data-audio="audio-lsrg-90" aria-label="Play" title="Play">
+          <svg class="player-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="play-glyph" d="M8 5v14l11-7z"/><path class="pause-glyph" d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>
+        </button>
+        <span class="player-time current-time">0:00</span>
+        <input class="seek-slider" type="range" min="0" max="2824" step="0.1" value="0" data-audio="audio-lsrg-90" aria-label="Playback position" aria-valuetext="0:00 of 47:04">
+        <span class="player-time duration-time">47:04</span>
+        <button class="mute-toggle player-button" type="button" data-audio="audio-lsrg-90" aria-label="Mute" title="Mute">
+          <svg class="player-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="volume-glyph" d="M16 9c1.35 1.67 1.35 4.33 0 6m2.5-8.5c3 3 3 8 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="muted-glyph" d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <input class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" data-audio="audio-lsrg-90" aria-label="Volume">
+      </div>
       <div class="playback-tools" role="group" aria-label="Playback speed and skipping">
         <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="-1" aria-label="Skip backward 10 seconds" title="Skip backward 10 seconds"><span>-10s</span></button>
-        <select class="rate-select" data-audio="audio-lsrg-90" aria-label="Playback speed"><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option><option value="2.25">2.25x</option><option value="2.5">2.5x</option><option value="2.75">2.75x</option><option value="3">3x</option></select>
+        <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up or right to increase playback speed; down or left to decrease">1x</button>
         <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><span>+10s</span></button>
       </div>
     </div>
@@ -854,12 +879,30 @@
       return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
     }
 
+    function formatPlaybackRate(rate) {
+      return `${Number(rate).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')}x`;
+    }
+
+    function formatPlayerTime(seconds) {
+      const total = Math.max(0, Math.floor(Number(seconds) || 0));
+      const hours = Math.floor(total / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      const secs = total % 60;
+      return hours
+        ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+        : `${minutes}:${String(secs).padStart(2, '0')}`;
+    }
+
     function updatePlaybackTools(audio) {
       const dock = audio.closest('.player-dock');
       const seconds = 10 * audio.playbackRate;
       const secondsLabel = formatSkipSeconds(seconds);
-      const select = dock.querySelector('.rate-select');
-      select.value = String(audio.playbackRate);
+      const rate = dock.querySelector('.rate-drag');
+      const rateLabel = formatPlaybackRate(audio.playbackRate);
+      rate.dataset.value = String(audio.playbackRate);
+      rate.textContent = rateLabel;
+      rate.setAttribute('aria-valuenow', String(audio.playbackRate));
+      rate.setAttribute('aria-valuetext', rateLabel);
       dock.querySelectorAll('.skip-button').forEach((skip) => {
         const backward = Number(skip.dataset.direction) < 0;
         const signedLabel = `${backward ? '-' : '+'}${secondsLabel}s`;
@@ -868,6 +911,33 @@
         skip.setAttribute('aria-label', `Skip ${action} ${secondsLabel} seconds`);
         skip.title = `Skip ${action} ${secondsLabel} seconds`;
       });
+    }
+
+    function updateCustomPlayer(audio) {
+      const player = audio.closest('.player-dock').querySelector('.custom-player');
+      const fallbackDuration = Number(player.dataset.duration);
+      const duration = Number.isFinite(audio.duration) ? audio.duration : fallbackDuration;
+      const current = Math.min(Number(audio.currentTime) || 0, duration);
+      const seek = player.querySelector('.seek-slider');
+      const play = player.querySelector('.play-toggle');
+      const mute = player.querySelector('.mute-toggle');
+      const muted = audio.muted || audio.volume === 0;
+      player.querySelector('.current-time').textContent = formatPlayerTime(current);
+      player.querySelector('.duration-time').textContent = formatPlayerTime(duration);
+      seek.max = String(duration);
+      seek.value = String(current);
+      seek.setAttribute(
+        'aria-valuetext',
+        `${formatPlayerTime(current)} of ${formatPlayerTime(duration)}`
+      );
+      const playing = !audio.paused && !audio.ended;
+      play.classList.toggle('is-playing', playing);
+      play.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+      play.title = playing ? 'Pause' : 'Play';
+      mute.classList.toggle('is-muted', muted);
+      mute.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+      mute.title = muted ? 'Unmute' : 'Mute';
+      player.querySelector('.volume-slider').value = String(audio.volume);
     }
 
     function setPlaybackRate(rate, persist = true) {
@@ -881,6 +951,55 @@
           localStorage.setItem(playbackRateKey, String(normalized));
         } catch {}
       }
+    }
+
+    function enablePlaybackRateDrag(control) {
+      let startX = 0;
+      let startY = 0;
+      let startValue = 1;
+      let dragging = false;
+      let moved = false;
+      const pixelsPerStep = 32;
+
+      control.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        dragging = true;
+        moved = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        startValue = Number(control.dataset.value);
+        control.classList.add('is-dragging');
+        control.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      control.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        const axisDelta = ((event.clientX - startX) - (event.clientY - startY)) / Math.SQRT2;
+        const steps = Math.round(axisDelta / pixelsPerStep);
+        if (steps === 0) return;
+        moved = true;
+        setPlaybackRate(startValue + steps * .25);
+      });
+      const finishDrag = (event) => {
+        if (!dragging) return;
+        dragging = false;
+        control.classList.remove('is-dragging');
+        if (control.hasPointerCapture(event.pointerId)) control.releasePointerCapture(event.pointerId);
+        if (!moved) control.focus();
+      };
+      control.addEventListener('pointerup', finishDrag);
+      control.addEventListener('pointercancel', finishDrag);
+      control.addEventListener('keydown', (event) => {
+        const current = Number(control.dataset.value);
+        let next = null;
+        if (event.key === 'ArrowUp' || event.key === 'ArrowRight') next = current + .25;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') next = current - .25;
+        if (event.key === 'Home') next = 1;
+        if (event.key === 'End') next = 3;
+        if (next === null) return;
+        event.preventDefault();
+        setPlaybackRate(next);
+      });
     }
 
     async function loadReader(reader) {
@@ -1120,30 +1239,60 @@
       audio._followScrollBlocked = false;
       audio.playbackRate = savedPlaybackRate();
       updatePlaybackTools(audio);
+      updateCustomPlayer(audio);
       audio.addEventListener('ratechange', () => updatePlaybackTools(audio));
+      const player = audio.closest('.player-dock').querySelector('.custom-player');
+      player.querySelector('.play-toggle').addEventListener('click', () => {
+        if (audio.paused || audio.ended) audio.play().catch(() => {});
+        else audio.pause();
+      });
+      player.querySelector('.seek-slider').addEventListener('input', (event) => {
+        audio.currentTime = Number(event.currentTarget.value);
+        updateCustomPlayer(audio);
+      });
+      player.querySelector('.mute-toggle').addEventListener('click', () => {
+        if (audio.muted || audio.volume === 0) {
+          audio.muted = false;
+          if (audio.volume === 0) audio.volume = 1;
+        } else {
+          audio.muted = true;
+        }
+      });
+      player.querySelector('.volume-slider').addEventListener('input', (event) => {
+        audio.volume = Number(event.currentTarget.value);
+        if (audio.volume > 0) audio.muted = false;
+      });
+      audio.addEventListener('loadedmetadata', () => updateCustomPlayer(audio));
+      audio.addEventListener('durationchange', () => updateCustomPlayer(audio));
+      audio.addEventListener('volumechange', () => updateCustomPlayer(audio));
       audio.addEventListener('play', () => {
         activeAudio = audio;
         clearTimeout(audio._seekFollowTimer);
         audio._followScrollBlocked = false;
+        updateCustomPlayer(audio);
         startSyncTimer(audio);
       });
       audio.addEventListener('pause', () => {
         clearInterval(syncTimers.get(audio));
+        updateCustomPlayer(audio);
         syncAudio(audio, false, !audio._followScrollBlocked);
       });
       audio.addEventListener('ended', () => {
         clearInterval(syncTimers.get(audio));
         if (activeAudio === audio) activeAudio = null;
+        updateCustomPlayer(audio);
         hideNarrationReturn();
       });
       audio.addEventListener('seeking', () => {
         audio._isSeeking = true;
         audio._followScrollBlocked = true;
         clearTimeout(audio._seekFollowTimer);
+        updateCustomPlayer(audio);
         syncAudio(audio, false, false);
       });
       audio.addEventListener('seeked', () => {
         audio._isSeeking = false;
+        updateCustomPlayer(audio);
         syncAudio(audio, false, false);
         if (!audio.paused) {
           audio._seekFollowTimer = setTimeout(() => {
@@ -1152,14 +1301,13 @@
           }, 700);
         }
       });
-      audio.addEventListener('timeupdate', () => (
-        syncAudio(audio, false, !audio._isSeeking && !audio._followScrollBlocked)
-      ));
+      audio.addEventListener('timeupdate', () => {
+        updateCustomPlayer(audio);
+        syncAudio(audio, false, !audio._isSeeking && !audio._followScrollBlocked);
+      });
     });
 
-    document.querySelectorAll('.rate-select').forEach((select) => {
-      select.addEventListener('change', () => setPlaybackRate(select.value));
-    });
+    document.querySelectorAll('.rate-drag').forEach(enablePlaybackRateDrag);
 
     document.querySelectorAll('.skip-button').forEach((skip) => {
       skip.addEventListener('click', () => {
@@ -1168,6 +1316,7 @@
         const target = audio.currentTime + Number(skip.dataset.direction) * 10 * audio.playbackRate;
         const maximum = Number.isFinite(audio.duration) ? audio.duration : target;
         audio.currentTime = Math.max(0, Math.min(maximum, target));
+        updateCustomPlayer(audio);
       });
     });
 

@@ -130,13 +130,38 @@
     .reader-body .synced-word { cursor: pointer; }
     .reader-body .synced-word:hover { background: var(--soft); }
     .reader-body .current-word { color: var(--highlight-ink); background: var(--highlight); box-shadow: 0 0 0 2px var(--highlight); }
+    .narration-return {
+      position: fixed;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      z-index: 40;
+      display: grid;
+      width: 42px;
+      height: 42px;
+      min-height: 0;
+      padding: 0;
+      place-items: center;
+      border-color: var(--line);
+      border-radius: 50%;
+      color: var(--ink);
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      box-shadow: 0 5px 18px rgb(0 0 0 / .24);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 10px) scale(.94);
+      transition: opacity 160ms ease, transform 160ms ease, background 120ms ease;
+      backdrop-filter: blur(9px);
+    }
+    .narration-return.visible { opacity: 1; pointer-events: auto; transform: translate(-50%, 0) scale(1); }
+    .narration-return svg { width: 20px; height: 20px; transition: transform 160ms ease; }
+    .narration-return[data-direction="down"] svg { transform: rotate(180deg); }
+    .narration-return:hover { color: var(--paper); background: var(--button); }
     .track-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; color: var(--muted); font-size: 12px; }
     .track-links a { color: var(--link); font-weight: 700; text-underline-offset: 3px; }
     .dot { color: var(--line); }
-    .manual-help { margin-top: 14px; color: var(--muted); font-size: 14px; }
-    .manual-help summary { cursor: pointer; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; font-weight: 700; color: var(--link); }
-    .manual-help p { margin: 8px 0 0; line-height: 1.45; }
-    .fine-print { margin: 18px 4px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    @media (prefers-reduced-motion: reduce) {
+      .narration-return, .narration-return svg { transition: none; }
+    }
     @media (max-width: 760px) {
       .shell { width: calc(100% - 12px); margin-top: 6px; }
       .intro { margin: 0 4px 9px; }
@@ -273,13 +298,10 @@
   </div>
 </article></div>
 </section>
-
-    <details class="manual-help">
-      <summary>Manual subscription instructions</summary>
-      <p><strong>Apple Podcasts:</strong> Library, More, Follow a Show by URL. <strong>YouTube Music:</strong> Library, Podcasts, Add podcast, Add by RSS feed. Pocket Casts, Overcast, Podcast Addict, Castbox, AntennaPod, Podcast Republic, and other RSS-native apps accept the same URL. To minimize storage, keep only the latest episode or enable removal after playback.</p>
-    </details>
-    <p class="fine-print">Each weekly packet is one downloadable MP3 with embedded and feed-level chapter markers. Podcast apps control automatic downloads and deletion. Narrations are credited and linked to their sources.</p>
   </main>
+  <button class="narration-return" id="narration-return" type="button" aria-hidden="true" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </button>
   <script>
     const button = document.querySelector('#copy-feed');
     const buttonLabel = button.querySelector('.subscribe-label');
@@ -302,6 +324,11 @@
 
     const readerCache = new Map();
     const syncTimers = new Map();
+    const narrationReturnButton = document.querySelector('#narration-return');
+    let activeReturnReader = null;
+    let activeAudio = null;
+    let automaticScrollUntil = 0;
+    let scrollFrame = 0;
 
     function fetchReaderData(url) {
       if (!readerCache.has(url)) {
@@ -318,6 +345,7 @@
       const toggle = reader.querySelector('.follow-toggle');
       toggle.setAttribute('aria-pressed', String(enabled));
       toggle.textContent = `Follow audio: ${enabled ? 'On' : 'Off'}`;
+      if (!enabled && activeReturnReader === reader) hideNarrationReturn();
     }
 
     async function loadReader(reader) {
@@ -379,23 +407,80 @@
       return result >= 0 ? entries[result] : null;
     }
 
+    function viewportDirection(element) {
+      if (!element) return null;
+      const bounds = element.getBoundingClientRect();
+      const topEdge = 92;
+      const bottomEdge = window.innerHeight - 20;
+      if (bounds.bottom < topEdge) return 'up';
+      if (bounds.top > bottomEdge) return 'down';
+      return null;
+    }
+
+    function outsideReadingBand(element) {
+      if (!element) return false;
+      const bounds = element.getBoundingClientRect();
+      return bounds.top < window.innerHeight * .28 || bounds.bottom > window.innerHeight * .74;
+    }
+
+    function hideNarrationReturn() {
+      activeReturnReader = null;
+      narrationReturnButton.classList.remove('visible');
+      narrationReturnButton.setAttribute('aria-hidden', 'true');
+      narrationReturnButton.tabIndex = -1;
+    }
+
+    function updateNarrationReturn(reader) {
+      if (!reader?._followAudio || !reader._userDetached || !reader._currentWord) {
+        if (!activeReturnReader || activeReturnReader === reader) hideNarrationReturn();
+        return;
+      }
+      const target = reader.open ? reader._currentWord : reader;
+      const direction = viewportDirection(target);
+      if (!direction) {
+        if (!activeReturnReader || activeReturnReader === reader) hideNarrationReturn();
+        return;
+      }
+      activeReturnReader = reader;
+      narrationReturnButton.dataset.direction = direction;
+      const location = direction === 'up' ? 'above' : 'below';
+      narrationReturnButton.setAttribute('aria-label', `Current narration is ${location}. Return to it.`);
+      narrationReturnButton.title = `Return to narration ${location}`;
+      narrationReturnButton.setAttribute('aria-hidden', 'false');
+      narrationReturnButton.tabIndex = 0;
+      narrationReturnButton.classList.add('visible');
+    }
+
+    function scrollToNarration(reader, behavior = 'smooth') {
+      if (!reader?._currentWord) return false;
+      reader._userDetached = false;
+      automaticScrollUntil = Date.now() + (behavior === 'smooth' ? 800 : 300);
+      hideNarrationReturn();
+      reader._currentWord.scrollIntoView({ block: 'center', behavior });
+      return true;
+    }
+
     function syncReader(reader, audio, forceScroll = false, allowScroll = true) {
       const entries = reader._timingEntries;
       if (!entries?.length) return;
       const entry = currentEntry(entries, audio.currentTime * 1000);
-      if (!entry || entry.word === reader._currentWord) return;
-      if (reader._currentWord) {
-        reader._currentWord.classList.remove('current-word');
-        reader._currentWord.removeAttribute('aria-current');
+      if (!entry) return;
+      if (entry.word !== reader._currentWord) {
+        if (reader._currentWord) {
+          reader._currentWord.classList.remove('current-word');
+          reader._currentWord.removeAttribute('aria-current');
+        }
+        reader._currentWord = entry.word;
+        entry.word.classList.add('current-word');
+        entry.word.setAttribute('aria-current', 'true');
       }
-      reader._currentWord = entry.word;
-      entry.word.classList.add('current-word');
-      entry.word.setAttribute('aria-current', 'true');
+      if (reader._userDetached) {
+        updateNarrationReturn(reader);
+        return;
+      }
       if (!allowScroll || !reader._followAudio || document.visibilityState === 'hidden') return;
-      const bounds = entry.word.getBoundingClientRect();
-      const outsideReadingBand = bounds.top < window.innerHeight * .28 || bounds.bottom > window.innerHeight * .74;
-      if (forceScroll || outsideReadingBand) {
-        entry.word.scrollIntoView({ block: 'center', behavior: 'auto' });
+      if (forceScroll || outsideReadingBand(entry.word)) {
+        scrollToNarration(reader, 'auto');
       }
     }
 
@@ -413,8 +498,18 @@
       if (openReader._followAudio) {
         const timedReader = chapterAtTime(readers, audio.currentTime);
         if (timedReader && timedReader !== openReader) {
+          if (openReader._userDetached) {
+            setFollowState(timedReader, true);
+            timedReader._userDetached = true;
+            loadReader(timedReader).then(() => {
+              syncReader(timedReader, audio, false, false);
+              updateNarrationReturn(timedReader);
+            }).catch(console.error);
+            return;
+          }
           openReader.open = false;
           setFollowState(timedReader, true);
+          timedReader._userDetached = false;
           timedReader.open = true;
           loadReader(timedReader).then(() => syncReader(timedReader, audio, true, allowScroll)).catch(console.error);
           return;
@@ -432,16 +527,22 @@
     }
 
     document.querySelectorAll('.reader').forEach((reader) => {
+      reader._userDetached = false;
       setFollowState(reader, true);
       reader.querySelector('.follow-toggle').addEventListener('click', () => {
         setFollowState(reader, !reader._followAudio);
         if (reader._followAudio) {
+          reader._userDetached = false;
           const audio = document.getElementById(reader.dataset.audio);
           if (audio) syncReader(reader, audio, true, !audio._followScrollBlocked);
         }
       });
       reader.addEventListener('toggle', () => {
-        if (!reader.open) return;
+        if (!reader.open) {
+          if (activeReturnReader === reader) hideNarrationReturn();
+          return;
+        }
+        reader._userDetached = false;
         document.querySelectorAll(`.reader[data-audio="${reader.dataset.audio}"]`).forEach((other) => {
           if (other !== reader) other.open = false;
         });
@@ -452,10 +553,58 @@
       });
     });
 
+    function activeSyncedReader() {
+      const audio = [...document.querySelectorAll('audio')].find((candidate) => (
+        !candidate.paused && !candidate.ended
+      )) || (activeAudio && !activeAudio.ended ? activeAudio : null);
+      if (!audio) return null;
+      const readers = [...audio.closest('.track').querySelectorAll('.reader')];
+      const timedReader = chapterAtTime(readers, audio.currentTime);
+      if (timedReader?._currentWord) return timedReader;
+      return readers.find((reader) => reader.open && reader._currentWord) || null;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (Date.now() < automaticScrollUntil) return;
+        const reader = activeSyncedReader();
+        if (!reader?._followAudio || !reader._currentWord) {
+          hideNarrationReturn();
+          return;
+        }
+        if (reader.open) reader._userDetached = outsideReadingBand(reader._currentWord);
+        updateNarrationReturn(reader);
+      });
+    }, { passive: true });
+
+    narrationReturnButton.addEventListener('click', () => {
+      const reader = activeReturnReader;
+      if (!reader) return;
+      const audio = document.getElementById(reader.dataset.audio);
+      if (!audio) return;
+      const readers = [...audio.closest('.track').querySelectorAll('.reader')];
+      const timedReader = chapterAtTime(readers, audio.currentTime) || reader;
+      setFollowState(timedReader, true);
+      timedReader._userDetached = false;
+      if (!timedReader.open) {
+        readers.forEach((other) => {
+          if (other !== timedReader) other.open = false;
+        });
+        timedReader.open = true;
+      }
+      loadReader(timedReader).then(() => {
+        syncReader(timedReader, audio, false, false);
+        scrollToNarration(timedReader);
+      }).catch(console.error);
+    });
+
     document.querySelectorAll('audio').forEach((audio) => {
       audio._isSeeking = false;
       audio._followScrollBlocked = false;
       audio.addEventListener('play', () => {
+        activeAudio = audio;
         clearTimeout(audio._seekFollowTimer);
         audio._followScrollBlocked = false;
         startSyncTimer(audio);
@@ -464,7 +613,11 @@
         clearInterval(syncTimers.get(audio));
         syncAudio(audio, false, !audio._followScrollBlocked);
       });
-      audio.addEventListener('ended', () => clearInterval(syncTimers.get(audio)));
+      audio.addEventListener('ended', () => {
+        clearInterval(syncTimers.get(audio));
+        if (activeAudio === audio) activeAudio = null;
+        hideNarrationReturn();
+      });
       audio.addEventListener('seeking', () => {
         audio._isSeeking = true;
         audio._followScrollBlocked = true;

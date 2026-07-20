@@ -60,7 +60,7 @@
     .kicker { margin: 0; text-transform: uppercase; letter-spacing: .16em; font-weight: 700; font-size: 12px; }
     .subscribe-panel { display: flex; align-items: center; gap: 14px; padding: 10px; border: 1px solid var(--line); background: var(--panel); }
     .subscribe-panel h2 { flex: 0 0 auto; margin: 0 4px 0 2px; font-size: 18px; }
-    .subscribe { display: grid; grid-template-columns: repeat(3, max-content); gap: 7px; align-items: center; }
+    .subscribe { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
     button, .button {
       appearance: none;
       display: inline-flex;
@@ -162,6 +162,8 @@
       <nav class="subscribe" aria-label="Subscribe to the audio feed">
         <a class="button" href="podcast://diegozc.com/sequences-audio.xml">Apple Podcasts</a>
         <a class="button" href="https://music.youtube.com/library/podcasts?addrssfeed=https%3A%2F%2Fdiegozc.com%2Fsequences-audio.xml">YouTube Music</a>
+        <a class="button" href="https://pca.st/bgllq6uw">Pocket Casts</a>
+        <a class="button" href="https://podcastaddict.com/podcast/lighthaven-sequences-reading-group-audio/7158630">Podcast Addict</a>
         <button type="button" id="copy-feed" data-feed="https://diegozc.com/sequences-audio.xml">Other app: Copy RSS</button>
       </nav>
     </section>

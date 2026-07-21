@@ -115,8 +115,16 @@
     .subscribe-logo svg { width: 19px; height: 19px; fill: var(--brand); }
     .week { overflow: visible; margin-top: 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
     .week + .week { margin-top: 12px; }
-    .week-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 15px 18px 13px; border-bottom: 1px solid var(--line); }
-    .week-head h2 { margin: 4px 0 0; font-size: clamp(22px, 3.5vw, 30px); line-height: 1; letter-spacing: -.025em; }
+    .week-head { display: flex; align-items: center; gap: 12px; padding: 15px 18px 13px; cursor: default; list-style: none; }
+    .current-week > .week-head, .week[open] > .week-head { border-bottom: 1px solid var(--line); }
+    details.week > .week-head { cursor: pointer; }
+    details.week > .week-head::-webkit-details-marker { display: none; }
+    .week-head h2 { flex: 1; min-width: 0; margin: 0; font-size: clamp(22px, 3.5vw, 30px); line-height: 1; letter-spacing: -.025em; }
+    .week-chevron { flex: 0 0 9px; width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 140ms ease; }
+    .week[open] > .week-head .week-chevron { transform: rotate(45deg); }
+    .week-link { display: grid; flex: 0 0 34px; width: 34px; min-height: 34px; padding: 0; place-items: center; border: 0; border-radius: 50%; color: var(--muted); background: transparent; }
+    .week-link:hover, .week-link.is-copied { color: var(--link); background: var(--soft); }
+    .week-link svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .track-main { padding: 16px 18px 18px; }
     .player-dock { position: sticky; top: 0; z-index: 20; margin: 9px -4px 0; padding: 5px 4px; border-bottom: 1px solid var(--line); background: var(--panel); }
     audio { display: none; }
@@ -142,7 +150,9 @@
     .seek-slider::-moz-range-track { height: 8px; border: 0; background: transparent; }
     .seek-slider::-moz-range-progress { background: transparent; }
     .seek-slider::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--panel); border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 1px rgb(0 0 0 / .25); }
-    .seek-slider:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 999px; }
+    .seek-slider:focus { outline: none; }
+    .seek-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1px rgb(0 0 0 / .25), 0 0 0 3px var(--link); }
+    .seek-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 1px rgb(0 0 0 / .25), 0 0 0 3px var(--link); }
     .playback-controls { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: 4px 0 6px; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; }
     .skip-button { position: relative; width: 54px; min-width: 54px; min-height: 52px; padding: 0; border-color: var(--line); color: var(--ink); background: var(--soft); font-size: 12px; font-variant-numeric: tabular-nums; }
     .skip-button:hover { color: var(--paper); background: var(--button); }
@@ -150,7 +160,7 @@
     .skip-arrow { transform-box: view-box; transform-origin: center; }
     .skip-button[data-direction="1"] .skip-arrow { transform: scaleX(-1); }
     .skip-value { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 1px; font-family: inherit; font-size: 14px; font-weight: 700; }
-    .drag-number-value { min-width: 66px; min-height: 52px; padding: 0 8px; border-color: var(--line); color: var(--ink); background: var(--soft); cursor: nesw-resize; touch-action: none; user-select: none; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .drag-number-value { min-width: 66px; min-height: 52px; padding: 0 8px; border-color: var(--line); color: var(--ink); background: var(--soft); cursor: ns-resize; touch-action: none; user-select: none; font-size: 14px; font-variant-numeric: tabular-nums; }
     .drag-number-value:hover, .drag-number-value.is-dragging { color: var(--paper); background: var(--button); }
     .chapters { margin: 14px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; list-style: none; }
     .chapter { border-bottom: 1px solid var(--line); }
@@ -211,7 +221,6 @@
       display: block;
       border-radius: 3px;
       background: color-mix(in srgb, var(--link) 14%, transparent);
-      box-shadow: inset 2px 0 0 color-mix(in srgb, var(--link) 70%, transparent);
       opacity: 0;
       pointer-events: none;
     }
@@ -255,7 +264,7 @@
       .subscribe > .button, .subscribe > button, .subscribe-more > summary { width: 100%; justify-content: flex-start; font-size: 13px; }
       .subscribe .subscribe-more > summary { width: 100%; justify-content: center; }
       .subscribe-menu { width: min(260px, calc(100vw - 28px)); }
-      .week-head { align-items: start; flex-direction: column; gap: 6px; padding: 13px 12px 11px; }
+      .week-head { gap: 10px; padding: 13px 12px 11px; }
       .track-main { padding: 14px 11px 16px; }
       .playback-controls { gap: 4px; }
       .play-toggle { width: 58px; min-width: 58px; min-height: 58px; }
@@ -297,16 +306,15 @@
       </nav>
     </section>
 
-    <section class="week">
+    <section class="week current-week">
   <header class="week-head">
-    <div>
-      <h2>Tuesday, July 21, 2026</h2>
-    </div>
+    <h2>July 21, 2026</h2>
+    <button class="week-link" type="button" data-week="lsrg-90" aria-label="Copy link to July 21, 2026" title="Copy link to July 21, 2026"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </header>
   <div class="tracks"><article class="track" id="lsrg-90">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-90" data-date="2026-07-21" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="https://diegozc.com/audio/lsrg-90-j4.mp3"></audio>
+      <audio id="audio-lsrg-90" data-date="2026-07-21" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-90-j4.mp3"></audio>
       <div class="custom-player" data-audio="audio-lsrg-90" data-duration="2946" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:543.901" data-start="0" data-end="543.901" data-title="Guardians of the Truth" title="Guardians of the Truth"><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:121.396" data-start="543.901" data-end="665.297" data-title="Guardians of the Gene Pool" title="Guardians of the Gene Pool"><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:679.137" data-start="665.297" data-end="1344.434" data-title="Guardians of Ayn Rand" title="Guardians of Ayn Rand"><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:246.889" data-start="1344.434" data-end="1591.323" data-title="Two Cult Koans" title="Two Cult Koans"><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:1354.634" data-start="1591.323" data-end="2945.957" data-title="Cargo Cult Science" title="Cargo Cult Science"><span class="seek-segment-progress"></span></span></div>
@@ -884,26 +892,72 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
   </button>
   <script>
-    const button = document.querySelector('#copy-feed');
-    const buttonLabel = button.querySelector('.subscribe-label');
-    const moreMenu = document.querySelector('.subscribe-more');
-    button.addEventListener('click', async () => {
+    async function copyText(value) {
       try {
-        await navigator.clipboard.writeText(button.dataset.feed);
+        await navigator.clipboard.writeText(value);
+        return true;
       } catch {
         const field = document.createElement('textarea');
-        field.value = button.dataset.feed;
+        field.value = value;
         field.style.position = 'fixed';
         field.style.opacity = '0';
         document.body.appendChild(field);
         field.select();
-        document.execCommand('copy');
+        const copied = document.execCommand('copy');
         field.remove();
+        return copied;
       }
+    }
+
+    const copyFeedButton = document.querySelector('#copy-feed');
+    const buttonLabel = copyFeedButton.querySelector('.subscribe-label');
+    const moreMenu = document.querySelector('.subscribe-more');
+    copyFeedButton.addEventListener('click', async () => {
+      await copyText(copyFeedButton.dataset.feed);
       buttonLabel.textContent = 'Copied';
       setTimeout(() => buttonLabel.textContent = 'Copy RSS', 1400);
       moreMenu.open = false;
     });
+
+    document.querySelectorAll('.week-link').forEach((weekLink) => {
+      weekLink.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.hash = weekLink.dataset.week;
+        window.history.replaceState(null, '', url);
+        const copied = await copyText(url.href);
+        if (!copied) return;
+        const label = weekLink.getAttribute('aria-label');
+        weekLink.classList.add('is-copied');
+        weekLink.setAttribute('aria-label', 'Link copied');
+        weekLink.title = 'Link copied';
+        setTimeout(() => {
+          weekLink.classList.remove('is-copied');
+          weekLink.setAttribute('aria-label', label);
+          weekLink.title = label;
+        }, 1400);
+      });
+    });
+
+    function openLinkedWeek(scroll = false) {
+      let id = '';
+      try {
+        id = decodeURIComponent(window.location.hash.slice(1));
+      } catch {
+        return;
+      }
+      if (!id) return;
+      const target = document.getElementById(id);
+      const week = target?.closest('.week');
+      if (!week) return;
+      if (week.matches('details')) week.open = true;
+      if (scroll) requestAnimationFrame(() => week.scrollIntoView({ block: 'start' }));
+    }
+
+    openLinkedWeek(Boolean(window.location.hash));
+    window.addEventListener('hashchange', () => openLinkedWeek(true));
 
     document.addEventListener('click', (event) => {
       if (moreMenu.open && !moreMenu.contains(event.target)) moreMenu.open = false;
@@ -976,7 +1030,11 @@
     }
 
     function formatSkipSeconds(seconds) {
-      return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
+      return String(Math.floor(seconds));
+    }
+
+    function scaledSkipSeconds(audio, seconds = 10) {
+      return Math.floor(seconds * audio.playbackRate);
     }
 
     function formatPlaybackRate(rate) {
@@ -1036,7 +1094,7 @@
 
     function updatePlaybackTools(audio) {
       const dock = audio.closest('.player-dock');
-      const seconds = 10 * audio.playbackRate;
+      const seconds = scaledSkipSeconds(audio);
       const secondsLabel = formatSkipSeconds(seconds);
       const rate = dock.querySelector('.rate-drag');
       const rateLabel = formatPlaybackRate(audio.playbackRate);
@@ -1144,7 +1202,7 @@
     }
 
     function skipAudio(audio, direction, seconds = 10) {
-      seekAudioTo(audio, audio.currentTime + direction * seconds * audio.playbackRate);
+      seekAudioTo(audio, audio.currentTime + direction * scaledSkipSeconds(audio, seconds));
     }
 
     function setPlaybackRate(rate, persist = true) {
@@ -1165,12 +1223,14 @@
       let startValue = 1;
       let dragging = false;
       let moved = false;
+      let lastSteps = 0;
       const pixelsPerStep = 32;
 
       control.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
         dragging = true;
         moved = false;
+        lastSteps = 0;
         startY = event.clientY;
         startValue = Number(control.dataset.value);
         control.classList.add('is-dragging');
@@ -1180,7 +1240,8 @@
       control.addEventListener('pointermove', (event) => {
         if (!dragging) return;
         const steps = Math.round((startY - event.clientY) / pixelsPerStep);
-        if (steps === 0) return;
+        if (steps === lastSteps) return;
+        lastSteps = steps;
         moved = true;
         setPlaybackRate(startValue + steps * .25);
       });
@@ -1241,12 +1302,14 @@
       let startValue = 100;
       let dragging = false;
       let moved = false;
-      const pixelsPerStep = 8;
+      let lastSteps = 0;
+      const pixelsPerStep = 16;
 
       control.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
         dragging = true;
         moved = false;
+        lastSteps = 0;
         startY = event.clientY;
         startValue = Number(control.dataset.value);
         control.classList.add('is-dragging');
@@ -1256,7 +1319,8 @@
       control.addEventListener('pointermove', (event) => {
         if (!dragging) return;
         const steps = Math.round((startY - event.clientY) / pixelsPerStep);
-        if (steps === 0) return;
+        if (steps === lastSteps) return;
+        lastSteps = steps;
         moved = true;
         const audio = document.getElementById(control.dataset.audio);
         if (audio) setVolumePercent(audio, startValue + steps * 5);
@@ -1811,6 +1875,9 @@
       audio.addEventListener('durationchange', () => updateCustomPlayer(audio));
       audio.addEventListener('volumechange', () => updateCustomPlayer(audio));
       audio.addEventListener('play', () => {
+        document.querySelectorAll('audio').forEach((otherAudio) => {
+          if (otherAudio !== audio && !otherAudio.paused) otherAudio.pause();
+        });
         activeAudio = audio;
         setMediaPlaybackState('playing');
         clearTimeout(audio._seekFollowTimer);

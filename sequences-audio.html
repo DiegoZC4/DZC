@@ -317,13 +317,13 @@
           <span class="player-time duration-time">49:06</span>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
-          <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up or right to increase playback speed; down or left to decrease">1x</button>
+          <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
           <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="-1" aria-label="Skip backward 10 seconds" title="Skip backward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="play-toggle player-button" type="button" data-audio="audio-lsrg-90" aria-label="Play" title="Play">
             <svg class="player-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="play-glyph" d="M8 5v14l11-7z"/><path class="pause-glyph" d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>
           </button>
           <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
-          <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up or right to increase volume; down or left to decrease">100%</button>
+          <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
         </div>
       </div>
     </div>
@@ -926,6 +926,7 @@
     let scrollFrame = 0;
 
     function normalizedPlaybackRate(value) {
+      if (value === null || value === undefined || value === '') return 1;
       const number = Number(value);
       if (!Number.isFinite(number)) return 1;
       return Math.min(3, Math.max(.75, Math.round(number * 4) / 4));
@@ -1160,7 +1161,6 @@
     }
 
     function enablePlaybackRateDrag(control) {
-      let startX = 0;
       let startY = 0;
       let startValue = 1;
       let dragging = false;
@@ -1171,7 +1171,6 @@
         if (event.button !== 0) return;
         dragging = true;
         moved = false;
-        startX = event.clientX;
         startY = event.clientY;
         startValue = Number(control.dataset.value);
         control.classList.add('is-dragging');
@@ -1180,8 +1179,7 @@
       });
       control.addEventListener('pointermove', (event) => {
         if (!dragging) return;
-        const axisDelta = ((event.clientX - startX) - (event.clientY - startY)) / Math.SQRT2;
-        const steps = Math.round(axisDelta / pixelsPerStep);
+        const steps = Math.round((startY - event.clientY) / pixelsPerStep);
         if (steps === 0) return;
         moved = true;
         setPlaybackRate(startValue + steps * .25);
@@ -1239,7 +1237,6 @@
     }
 
     function enableVolumeDrag(control) {
-      let startX = 0;
       let startY = 0;
       let startValue = 100;
       let dragging = false;
@@ -1250,7 +1247,6 @@
         if (event.button !== 0) return;
         dragging = true;
         moved = false;
-        startX = event.clientX;
         startY = event.clientY;
         startValue = Number(control.dataset.value);
         control.classList.add('is-dragging');
@@ -1259,8 +1255,7 @@
       });
       control.addEventListener('pointermove', (event) => {
         if (!dragging) return;
-        const axisDelta = ((event.clientX - startX) - (event.clientY - startY)) / Math.SQRT2;
-        const steps = Math.round(axisDelta / pixelsPerStep);
+        const steps = Math.round((startY - event.clientY) / pixelsPerStep);
         if (steps === 0) return;
         moved = true;
         const audio = document.getElementById(control.dataset.audio);

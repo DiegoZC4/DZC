@@ -10,9 +10,10 @@ Additional local topic branches preserve the remaining projects without mixing t
 
 - `wip/periodic-table`
 - `wip/youtube-transcripts`
-- `wip/harmonizer`
-- `wip/solstice`
+- `wip/sequences-audio-next`
 - `wip/page-polish`
+
+`archive/harmonizer-pre-cleanup` preserves the original five local Harmonizer commits. The current Harmonizer and Solstice files already match `main`, so they do not need redundant WIP snapshot branches.
 
 ## Publishing
 

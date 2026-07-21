@@ -1,0 +1,14 @@
+{
+  "image": "inline",
+  "span": 60.0,
+  "step": 0.1,
+  "mode": "endpoints",
+  "width": 1201,
+  "height": 1201,
+  "lonA": -30.0,
+  "lonB": 30.0,
+  "sampleKm": 1.0,
+  "samplesPerRoute": 40031,
+  "lowKm": 6716.87060546875,
+  "highKm": 17658.66015625
+}

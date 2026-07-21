@@ -14,10 +14,26 @@
       </filter>
     </defs>
   </svg>
-  <br>
-  <button onclick="downloadSVG()">Download</button>
 <style>
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    overflow: hidden;
+  }
+
   svg {
+    display: block;
+    width: min(100vw, 1000px);
+    max-height: 100vh;
+    height: auto;
     fill: none;
     stroke: black;
     stroke-width: 0.1;
@@ -127,11 +143,4 @@ const razorThick = 0.2
 canvas.append(svg('rect',{x:razorX, y:h/2, width:razorW, height:shaveLength, fill:'white', stroke:'white'}))
 canvas.append(svg('rect',{x:razorX-razorW/2, y:razorY, width:razorW*2, height:razorThick, stroke:'white', 'stroke-width':h/200}))
 canvas.append(svg('rect',{x:razorX+razorW/2-razorThick/2, y:razorY+razorThick/2, width:razorThick, height:0.8, stroke:'white', 'stroke-width':h/200, fill:'black'}))
-
-function downloadSVG() {
-  var svgEl = document.querySelector('svg');var serializer = new XMLSerializer();var source = serializer.serializeToString(svgEl);
-  if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-  if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-  source = '<?xml version="1.0" standalone="no"?>\r\n' + source; var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source); var downloadLink = document.createElement("a");downloadLink.href = url; downloadLink.download = "shave.svg";document.body.append(downloadLink);downloadLink.click();document.body.removeChild(downloadLink);
-}
 </script></body></html>

@@ -128,10 +128,8 @@ const SPK_BY_ID=Object.fromEntries(RAW.map(s=>[s.id,s]));
 let usePhonation=true;
 function val(x){return usePhonation?x.p:x.d;}
 
-// ── Y-axis pan / zoom ─────────────────────────────────────────────────────────
+// ── Y-axis bounds ────────────────────────────────────────────────────────────
 const Y_MIN_BOUND=0, Y_MAX_BOUND=500;
-let yView=null;           // {min,max} | null = auto-fit to visible data
-let currentYMIN=0, currentYMAX=360;  // last rendered range; seeds yView on first scroll
 
 // ── Visibility ────────────────────────────────────────────────────────────────
 function loadVis(){
@@ -273,17 +271,10 @@ function render(){
     }
   }
   if(!isFinite(rawMaxV)){rawMinV=0;rawMaxV=360;}
-  let YMIN,YMAX;
-  if(yView){
-    YMIN=Math.max(yView.min,Y_MIN_BOUND);
-    YMAX=Math.min(yView.max,Y_MAX_BOUND);
-  }else{
-    const range=rawMaxV-rawMinV;
-    const pad=Math.max(range*0.08,10);
-    YMIN=Math.max(Y_MIN_BOUND,Math.floor((rawMinV-pad)/10)*10);
-    YMAX=Math.min(Y_MAX_BOUND,Math.ceil((rawMaxV+pad)/10)*10);
-  }
-  currentYMIN=YMIN;currentYMAX=YMAX;
+  const range=rawMaxV-rawMinV;
+  const pad=Math.max(range*0.08,10);
+  const YMIN=Math.max(Y_MIN_BOUND,Math.floor((rawMinV-pad)/10)*10);
+  const YMAX=Math.min(Y_MAX_BOUND,Math.ceil((rawMaxV+pad)/10)*10);
   const step=(YMAX-YMIN)>390?60:30;
   const yp=v=>MT+PH-((v-YMIN)/(YMAX-YMIN))*PH;
 
@@ -357,32 +348,7 @@ function render(){
 }
 
 // ── Full refresh ──────────────────────────────────────────────────────────────
-function fullRefresh(){yView=null;computeStats();renderStats();render();}
-
-// ── Scroll pan / zoom ─────────────────────────────────────────────────────────
-function initWheel(){
-  const chartEl=document.getElementById('chart');
-  chartEl.addEventListener('wheel',e=>{
-    e.preventDefault();
-    if(!yView)yView={min:currentYMIN,max:currentYMAX};
-    const range=yView.max-yView.min;
-    if(e.ctrlKey){
-      const center=(yView.min+yView.max)/2;
-      const factor=e.deltaY>0?1.12:1/1.12;
-      const newHalf=Math.max(15,range/2*factor);
-      yView={min:center-newHalf,max:center+newHalf};
-    }else{
-      const delta=(e.deltaY/300)*range;
-      yView={min:yView.min-delta,max:yView.max-delta};
-    }
-    // Clamp to bounds
-    const r=yView.max-yView.min;
-    if(yView.min<Y_MIN_BOUND){yView={min:Y_MIN_BOUND,max:Y_MIN_BOUND+r};}
-    if(yView.max>Y_MAX_BOUND){yView={min:Y_MAX_BOUND-r,max:Y_MAX_BOUND};}
-    render();
-  },{passive:false});
-  chartEl.addEventListener('dblclick',()=>{yView=null;render();});
-}
+function fullRefresh(){computeStats();renderStats();render();}
 
 // ── Mode toggle ───────────────────────────────────────────────────────────────
 document.getElementById('btn-phonation').addEventListener('click',()=>{
@@ -409,7 +375,7 @@ function toggleGroup(group){
   else group.forEach(l=>vis.delete(l));
   saveVis();refreshGrpBtns();
   document.querySelectorAll('.lc').forEach(d=>d.classList.toggle('on',vis.has(d.dataset.lang)));
-  yView=null;render();
+  render();
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
@@ -425,7 +391,7 @@ function buildLegend(){
     d.addEventListener('click',()=>{
       vis.has(lang)?vis.delete(lang):vis.add(lang);
       d.classList.toggle('on',vis.has(lang));
-      saveVis();refreshGrpBtns();yView=null;render();
+      saveVis();refreshGrpBtns();render();
     });
     d.addEventListener('mouseenter',e=>{const h=langTipHtml(lang);if(h)showTip(h,e);});
     d.addEventListener('mousemove',moveTip);
@@ -443,7 +409,6 @@ function buildLegend(){
 
 buildLegend();
 fullRefresh();
-initWheel();
 </script>
 </body>
 </html>

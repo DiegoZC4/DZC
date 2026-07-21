@@ -1,1 +1,12 @@
 .DS_Store
+
+# Credentials and mutable server/runtime state.
+.htpasswd
+weightup/log/data/*.sqlite3
+
+# Generated local caches and unpublished audio build previews.
+**/__pycache__/
+*.py[cod]
+sequences-audio-preview.html
+sequences-audio-candidate.xml
+audio/*-reader.json

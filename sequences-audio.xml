@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 20 Jul 2026 20:28:42 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 23 Jul 2026 17:41:26 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,51 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#92 - Lonely Dissent</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-92</link>
+      <guid isPermaLink="false">urn:lsrg:92:j5</guid>
+      <pubDate>Thu, 23 Jul 2026 17:41:26 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Asch’s Conformity Experiment by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/m9/aschs_conformity_experiment/
+
+7:47 - On Expressing Your Concerns by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/ma/on_expressing_your_concerns/
+
+13:38 - Lonely Dissent by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/mb/lonely_dissent/
+
+22:10 - Cultish Countercultishness by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/mc/cultish_countercultishness/
+
+41:42 - (Optional) Asches to Asches by Scott Alexander
+https://www.lesswrong.com/s/B384FrQNrxSq4hZoS/p/pfmZ5cYQCahABGZzi
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://www.readthesequences.com/Aschs-Conformity-Experiment
+
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://www.readthesequences.com/On-Expressing-Your-Concerns
+
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://www.readthesequences.com/Lonely-Dissent
+
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://www.readthesequences.com/Cultish-Countercultishness
+
+UNSONG Audiobook Version, narrated by Matt Arnold
+https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>92</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3700</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-92-j5-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
+    </item>
     <item>
       <title>#91 - Guardians</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-90</link>

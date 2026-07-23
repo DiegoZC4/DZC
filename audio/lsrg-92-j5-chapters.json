@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#92 - Lonely Dissent",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for July 28, 2026.",
+  "fileName": "lsrg-92-j5.mp3",
+  "chapters": [
+    {
+      "startTime": 0,
+      "endTime": 466.892,
+      "title": "Asch’s Conformity Experiment",
+      "url": "https://www.lesswrong.com/lw/m9/aschs_conformity_experiment/"
+    },
+    {
+      "startTime": 466.892,
+      "endTime": 818.5,
+      "title": "On Expressing Your Concerns",
+      "url": "https://www.lesswrong.com/lw/ma/on_expressing_your_concerns/"
+    },
+    {
+      "startTime": 818.5,
+      "endTime": 1330.427,
+      "title": "Lonely Dissent",
+      "url": "https://www.lesswrong.com/lw/mb/lonely_dissent/"
+    },
+    {
+      "startTime": 1330.427,
+      "endTime": 2502.155,
+      "title": "Cultish Countercultishness",
+      "url": "https://www.lesswrong.com/lw/mc/cultish_countercultishness/"
+    },
+    {
+      "startTime": 2502.155,
+      "endTime": 3700.428,
+      "title": "(Optional) Asches to Asches",
+      "url": "https://www.lesswrong.com/s/B384FrQNrxSq4hZoS/p/pfmZ5cYQCahABGZzi"
+    }
+  ]
+}

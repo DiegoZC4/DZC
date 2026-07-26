@@ -1,17 +1,19 @@
 import SignalsmithStretch from "./vendor/SignalsmithStretch.js?v=20260712-2";
 import {
   clamp,
-  detectPitch,
-  frequencyToMidi,
-  median,
   midiName,
-} from "./pitch.js?v=20260712-2";
+} from "./pitch.js?v=20260726-2";
 
-const MAX_VOICES = 8;
+const SIGNALSMITH_VOICES = 8;
+const RUBBERBAND_VOICES = 4;
 const PIANO_WIDTH = 64;
 const PIANO_HEIGHT = 72;
 const HISTORY_SECONDS = 62;
 const NOTE_RELEASE_SECONDS = 0.09;
+const testParameters = new URLSearchParams(window.location.search);
+const SYNTHETIC_INPUT = testParameters.get("testInput") === "sine";
+const SYNTHETIC_NOTE = Number(testParameters.get("testNote"));
+const embeddedWorkletUrls = globalThis.__HARMONIZER_WORKLET_URLS__ || {};
 const $ = (selector) => document.querySelector(selector);
 
 const ui = {
@@ -31,6 +33,8 @@ const ui = {
   inputStatus: $("#input-status"),
   outputDevice: $("#output-device"),
   outputStatus: $("#output-status"),
+  engineSelect: $("#engine-select"),
+  engineStatus: $("#engine-status"),
   midiInput: $("#midi-input"),
   inputLevelFill: $("#input-level-fill"),
   outputLevelFill: $("#output-level-fill"),
@@ -60,8 +64,7 @@ const controls = {
 
 const canvasContext = ui.canvas.getContext("2d");
 const history = [];
-const detectorHistory = [];
-const correctionHistory = [];
+const renderDurations = [];
 const pressedComputerKeys = new Map();
 const heldNotes = new Set();
 const sustainedNotes = new Set();
@@ -70,9 +73,9 @@ let pitchBend = 0;
 let midiAccess = null;
 let audio = null;
 let voices = [];
-let lastPitchRun = 0;
 let frameHandle = 0;
 let pianoDrag = null;
+let engineRestarting = false;
 
 const pitchState = {
   rawMidi: -1,
@@ -82,7 +85,13 @@ const pitchState = {
   clarity: 0,
   stable: false,
   voiced: false,
-  holdFrames: 0,
+  energetic: false,
+  unvoiced: false,
+  sibilance: 0,
+  renderAverageMs: 0,
+  renderMaxMs: 0,
+  overruns: 0,
+  quantumMs: 0,
 };
 
 const view = {
@@ -184,6 +193,7 @@ function applyControls() {
   setAudioParam(audio.dryGain.gain, 1 - blend);
   setAudioParam(audio.wetGain.gain, blend);
   setAudioParam(audio.inputGain.gain, 10 ** (controlValue("gain") / 20));
+  syncEngineControls();
 }
 
 async function buildVoice(index) {
@@ -195,13 +205,11 @@ async function buildVoice(index) {
     channelCountMode: "explicit",
   });
   await stretch.configure({ blockMs: 48, intervalMs: 12, splitComputation: true });
-  await stretch.start();
   const latency = await stretch.latency();
   const gain = audio.context.createGain();
   gain.gain.value = 0;
   const panner = audio.context.createStereoPanner();
-  stretch.connect(gain).connect(panner).connect(audio.wetBus);
-  audio.inputGain.connect(stretch);
+  stretch.connect(gain).connect(panner);
   return {
     index,
     stretch,
@@ -211,6 +219,162 @@ async function buildVoice(index) {
     note: null,
     stamp: 0,
     lastShift: NaN,
+    connected: false,
+    velocity: 1,
+  };
+}
+
+function currentEngineKey() {
+  return ui.engineSelect?.value === "signalsmith" ? "signalsmith" : "rubberband";
+}
+
+function voiceCapacity() {
+  return audio?.engine?.maxVoices
+    ?? (currentEngineKey() === "signalsmith" ? SIGNALSMITH_VOICES : RUBBERBAND_VOICES);
+}
+
+function syncEngineControls() {
+  if (!audio?.engine) return;
+  const message = {
+    type: "controls",
+    gate: controlValue("gate"),
+    stability: controlValue("stability"),
+    pitchBend,
+    formants: ui.formants.checked,
+  };
+  audio.engine.controlNode?.port.postMessage(message);
+}
+
+function recordRenderDuration(value) {
+  if (!Number.isFinite(value)) return;
+  renderDurations.push(value);
+  if (renderDurations.length > 256) renderDurations.shift();
+}
+
+function renderPercentile(percentile) {
+  if (!renderDurations.length) return 0;
+  const sorted = [...renderDurations].sort((left, right) => left - right);
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * percentile))];
+}
+
+function handlePitchTelemetry(message) {
+  if (!message || message.type !== "pitch") return;
+  pitchState.rawMidi = Number.isFinite(message.rawMidi) ? message.rawMidi : -1;
+  pitchState.detectedMidi = Number.isFinite(message.detectedMidi) ? message.detectedMidi : -1;
+  pitchState.correctionMidi = Number.isFinite(message.correctionMidi)
+    ? message.correctionMidi
+    : -1;
+  pitchState.rms = Number(message.rms) || 0;
+  pitchState.clarity = Number(message.clarity) || 0;
+  pitchState.stable = Boolean(message.stable);
+  pitchState.voiced = Boolean(message.voiced);
+  pitchState.energetic = Boolean(message.energetic);
+  pitchState.unvoiced = Boolean(message.unvoiced);
+  pitchState.sibilance = Number(message.sibilance) || 0;
+  pitchState.renderAverageMs = Number(message.renderAverageMs) || 0;
+  pitchState.renderMaxMs = Number(message.renderMaxMs) || 0;
+  pitchState.overruns = Number(message.overruns) || 0;
+  pitchState.quantumMs = Number(message.quantumMs) || 0;
+  recordRenderDuration(message.renderMaxMs);
+
+  const receivedNow = performance.now() / 1000;
+  const receivedAt = audio && Number.isFinite(message.audioTime)
+    ? receivedNow + message.audioTime - audio.context.currentTime
+    : receivedNow;
+  history.push({
+    receivedAt,
+    rawMidi: pitchState.rawMidi,
+    detectedMidi: pitchState.detectedMidi,
+    correctionMidi: pitchState.correctionMidi,
+    stable: pitchState.stable,
+    voiced: pitchState.voiced,
+    pitchBend,
+    notes: [...heldNotes, ...sustainedNotes],
+  });
+  const oldest = receivedNow - HISTORY_SECONDS;
+  while (history.length && history[0].receivedAt < oldest) history.shift();
+  if (audio?.engine?.key === "signalsmith") updateVoiceShifts();
+  else updateVoiceLevels();
+}
+
+async function buildSignalsmithEngine() {
+  await audio.context.audioWorklet.addModule(
+    embeddedWorkletUrls.pitch || "./pitch-worklet.js?v=20260726-2",
+  );
+  const pitchNode = new AudioWorkletNode(audio.context, "harmonizer-pitch-control", {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    outputChannelCount: [1],
+    channelCount: 1,
+    channelCountMode: "explicit",
+    processorOptions: {
+      gate: controlValue("gate"),
+      stability: controlValue("stability"),
+    },
+  });
+  pitchNode.port.onmessage = (event) => handlePitchTelemetry(event.data);
+  audio.inputGain.connect(pitchNode);
+  pitchNode.connect(audio.dryDelay);
+  audio.pitchNode = pitchNode;
+  voices = await Promise.all(
+    Array.from({ length: SIGNALSMITH_VOICES }, (_, index) => buildVoice(index)),
+  );
+  const latency = Math.max(...voices.map((voice) => voice.latency));
+  return {
+    key: "signalsmith",
+    name: "Signalsmith",
+    latency,
+    maxVoices: SIGNALSMITH_VOICES,
+    controlNode: pitchNode,
+  };
+}
+
+async function buildRubberBandEngine() {
+  await audio.context.audioWorklet.addModule(
+    embeddedWorkletUrls.rubberband || "./rubberband-worklet.js?v=20260726-2",
+  );
+  const node = new AudioWorkletNode(audio.context, "rubberband-harmonizer", {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    outputChannelCount: [2],
+    channelCount: 1,
+    channelCountMode: "explicit",
+  });
+  const ready = new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("Rubber Band worklet timed out")),
+      12000,
+    );
+    node.port.onmessage = (event) => {
+      if (event.data?.type === "ready") {
+        window.clearTimeout(timeout);
+        resolve(event.data);
+      } else if (event.data?.type === "error") {
+        window.clearTimeout(timeout);
+        reject(new Error(event.data.message));
+      } else {
+        handlePitchTelemetry(event.data);
+      }
+    };
+  });
+  audio.inputGain.connect(audio.dryDelay);
+  audio.inputGain.connect(node);
+  node.connect(audio.wetBus);
+  const details = await ready;
+  voices = Array.from({ length: details.maxVoices }, (_, index) => ({
+    index,
+    note: null,
+    stamp: 0,
+    velocity: 1,
+  }));
+  return {
+    key: "rubberband",
+    name: "Rubber Band Live",
+    latency: details.latencySamples / details.sampleRate,
+    maxVoices: details.maxVoices,
+    blockSize: details.blockSize,
+    startDelay: details.startDelay,
+    controlNode: node,
   };
 }
 
@@ -272,6 +436,22 @@ async function applyOutputDevice(deviceId = "") {
 
 async function openMicrophone(deviceId = "") {
   if (audio?.stream) audio.stream.getTracks().forEach((track) => track.stop());
+  if (SYNTHETIC_INPUT) {
+    audio.syntheticOscillator?.stop();
+    const oscillator = audio.context.createOscillator();
+    const gain = audio.context.createGain();
+    oscillator.frequency.value = 220;
+    gain.gain.value = 0.08;
+    oscillator.connect(gain);
+    gain.connect(audio.inputMeter);
+    gain.connect(audio.inputGain);
+    oscillator.start();
+    audio.syntheticOscillator = oscillator;
+    audio.source = gain;
+    audio.stream = null;
+    ui.inputStatus.textContent = "test 220 Hz";
+    return;
+  }
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -300,8 +480,15 @@ async function startAudio() {
   ui.startOverlayButton.disabled = true;
   ui.startOverlayButton.textContent = "Starting...";
   ui.engineChip.textContent = "loading DSP";
+  renderDurations.length = 0;
+  pitchState.renderAverageMs = 0;
+  pitchState.renderMaxMs = 0;
+  pitchState.overruns = 0;
+  pitchState.quantumMs = 0;
   try {
-    const context = new AudioContext({ latencyHint: "interactive" });
+    const contextOptions = { latencyHint: "interactive" };
+    if (currentEngineKey() === "rubberband") contextOptions.sampleRate = 44100;
+    const context = new AudioContext(contextOptions);
     const inputGain = context.createGain();
     const inputMeter = context.createAnalyser();
     inputMeter.fftSize = 2048;
@@ -320,14 +507,13 @@ async function startAudio() {
     limiter.release.value = 0.08;
     const outputMeter = context.createAnalyser();
     outputMeter.fftSize = 512;
-    inputGain.connect(dryDelay).connect(dryGain).connect(master);
+    dryDelay.connect(dryGain).connect(master);
     wetBus.connect(wetGain).connect(master);
     master.connect(limiter).connect(outputMeter).connect(context.destination);
     audio = {
       context,
       inputGain,
       inputMeter,
-      inputSamples: new Float32Array(inputMeter.fftSize),
       inputMeterSamples: new Float32Array(inputMeter.fftSize),
       dryDelay,
       dryGain,
@@ -339,15 +525,35 @@ async function startAudio() {
       outputSamples: new Float32Array(outputMeter.fftSize),
       stream: null,
       source: null,
+      syntheticOscillator: null,
+      pitchNode: null,
+      engine: null,
     };
     await applyOutputDevice(ui.outputDevice.value);
     await openMicrophone(ui.inputDevice.value);
-    voices = await Promise.all(Array.from({ length: MAX_VOICES }, (_, index) => buildVoice(index)));
-    const latency = Math.max(...voices.map((voice) => voice.latency));
-    audio.dryDelay.delayTime.value = latency;
+    let engine;
+    if (currentEngineKey() === "rubberband") {
+      try {
+        engine = await buildRubberBandEngine();
+      } catch (error) {
+        console.warn("Rubber Band WASM unavailable; using Signalsmith", error);
+        ui.engineSelect.value = "signalsmith";
+        storeSetting("engine", "signalsmith");
+        ui.engineStatus.textContent = "fallback";
+        engine = await buildSignalsmithEngine();
+      }
+    } else {
+      engine = await buildSignalsmithEngine();
+    }
+    audio.engine = engine;
+    audio.dryDelay.delayTime.value = engine.latency;
     applyControls();
-    ui.engineChip.textContent = `Signalsmith ${Math.round(latency * 1000)} ms`;
+    if (SYNTHETIC_INPUT && Number.isFinite(SYNTHETIC_NOTE)) {
+      noteOn(clamp(Math.round(SYNTHETIC_NOTE), 0, 127));
+    }
+    ui.engineChip.textContent = `${engine.name} ${Math.round(engine.latency * 1000)} ms`;
     ui.engineChip.classList.add("good");
+    ui.engineStatus.textContent = `${engine.maxVoices} voices`;
     ui.startOverlay.hidden = true;
     ui.startButton.hidden = true;
     ui.stopButton.hidden = false;
@@ -367,19 +573,22 @@ async function startAudio() {
   ui.startOverlayButton.disabled = false;
 }
 
-async function stopAudio() {
+async function stopAudio({ showOverlay = true } = {}) {
   if (!audio) return;
   heldNotes.clear();
   sustainedNotes.clear();
   audio.stream?.getTracks().forEach((track) => track.stop());
+  try { audio.syntheticOscillator?.stop(); } catch {}
+  audio.engine?.controlNode?.port.postMessage({ type: "destroy" });
   await audio.context.close();
   audio = null;
   voices = [];
   ui.engineChip.textContent = "stopped";
   ui.engineChip.classList.remove("good");
+  ui.engineStatus.textContent = "stopped";
   ui.startButton.hidden = false;
   ui.stopButton.hidden = true;
-  ui.startOverlay.hidden = false;
+  ui.startOverlay.hidden = !showOverlay;
 }
 
 function activeVoices() {
@@ -394,8 +603,44 @@ function voiceForNote(note) {
   return voices.reduce((oldest, voice) => voice.stamp < oldest.stamp ? voice : oldest, voices[0]);
 }
 
+function isRubberBandEngine() {
+  return audio?.engine?.key === "rubberband";
+}
+
+function sendRubberBandVoice(voice, gate = true) {
+  if (!isRubberBandEngine() || !voice) return;
+  audio.engine.controlNode.port.postMessage({
+    type: "voice",
+    index: voice.index,
+    note: voice.note ?? -1,
+    gate,
+    velocity: voice.velocity ?? 1,
+  });
+}
+
+function connectSignalsmithVoice(voice) {
+  if (!audio?.pitchNode || !voice?.stretch || voice.connected) return;
+  audio.pitchNode.connect(voice.stretch);
+  voice.panner.connect(audio.wetBus);
+  voice.connected = true;
+  voice.stretch.start({
+    output: audio.context.currentTime + voice.latency,
+    semitones: Number.isFinite(voice.lastShift) ? voice.lastShift : 0,
+    formantCompensation: ui.formants.checked,
+    formantBaseHz: 0,
+  }).catch(() => {});
+}
+
+function disconnectSignalsmithVoice(voice) {
+  if (!audio?.pitchNode || !voice?.stretch || !voice.connected) return;
+  try { audio.pitchNode.disconnect(voice.stretch); } catch {}
+  try { voice.panner.disconnect(audio.wetBus); } catch {}
+  voice.connected = false;
+}
+
 function updateVoiceLevels() {
   if (!audio) return;
+  if (isRubberBandEngine()) return;
   const active = activeVoices();
   const level = pitchState.voiced && active.length ? 1 / Math.sqrt(active.length) : 0;
   for (const voice of voices) {
@@ -411,11 +656,17 @@ function noteOn(note, velocity = 1) {
   if (audio && voices.length) {
     const voice = voiceForNote(note);
     voice.note = note;
+    voice.velocity = velocity;
     voice.stamp = performance.now();
-    voice.gain.gain.value = Math.max(voice.gain.gain.value, 0.001 * velocity);
-    const spread = clamp((note - 48) / 24, 0, 1);
-    const side = note % 2 === 0 ? -1 : 1;
-    voice.panner.pan.setTargetAtTime(side * spread, audio.context.currentTime, 0.02);
+    if (isRubberBandEngine()) {
+      sendRubberBandVoice(voice, true);
+    } else {
+      connectSignalsmithVoice(voice);
+      voice.gain.gain.value = Math.max(voice.gain.gain.value, 0.001 * velocity);
+      const spread = clamp((note - 48) / 24, 0, 1);
+      const side = note % 2 === 0 ? -1 : 1;
+      voice.panner.pan.setTargetAtTime(side * spread, audio.context.currentTime, 0.02);
+    }
     updateVoiceShifts(true);
   }
 }
@@ -423,11 +674,17 @@ function noteOn(note, velocity = 1) {
 function releaseVoiceNote(note) {
   const voice = voices.find((candidate) => candidate.note === note);
   if (!voice || !audio) return;
-  setAudioParam(voice.gain.gain, 0, NOTE_RELEASE_SECONDS / 3);
+  if (isRubberBandEngine()) sendRubberBandVoice(voice, false);
+  else {
+    setAudioParam(voice.gain.gain, 0, NOTE_RELEASE_SECONDS / 3);
+    voice.stretch.stop(audio.context.currentTime + NOTE_RELEASE_SECONDS).catch(() => {});
+  }
   window.setTimeout(() => {
     if (voice.note === note && !heldNotes.has(note) && !sustainedNotes.has(note)) {
       voice.note = null;
       voice.lastShift = NaN;
+      if (isRubberBandEngine()) sendRubberBandVoice(voice, false);
+      else disconnectSignalsmithVoice(voice);
     }
   }, NOTE_RELEASE_SECONDS * 1200);
 }
@@ -453,6 +710,10 @@ function setSustain(enabled) {
 }
 
 function updateVoiceShifts(force = false) {
+  if (isRubberBandEngine()) {
+    syncEngineControls();
+    return;
+  }
   if (!audio || !pitchState.voiced || !Number.isFinite(pitchState.correctionMidi)) {
     updateVoiceLevels();
     return;
@@ -470,60 +731,6 @@ function updateVoiceShifts(force = false) {
     });
   }
   updateVoiceLevels();
-}
-
-function updatePitch(now) {
-  if (!audio || now - lastPitchRun < 38) return;
-  lastPitchRun = now;
-  audio.inputMeter.getFloatTimeDomainData(audio.inputSamples);
-  const result = detectPitch(audio.inputSamples, audio.context.sampleRate, {
-    gate: controlValue("gate") * (pitchState.voiced ? 0.55 : 1),
-  });
-  pitchState.rms = result.rms;
-  pitchState.clarity = result.clarity;
-  const rawMidi = result.frequency > 0 ? frequencyToMidi(result.frequency) : NaN;
-  pitchState.rawMidi = Number.isFinite(rawMidi) ? rawMidi : -1;
-
-  correctionHistory.push(rawMidi);
-  if (correctionHistory.length > 3) correctionHistory.shift();
-  const correction = median(correctionHistory);
-  pitchState.correctionMidi = Number.isFinite(correction) ? correction : -1;
-
-  detectorHistory.push(rawMidi);
-  if (detectorHistory.length > 9) detectorHistory.shift();
-  const detected = median(detectorHistory);
-  const valid = detectorHistory.filter(Number.isFinite);
-  const agree = Number.isFinite(detected)
-    ? valid.filter((value) => Math.abs(value - detected) < controlValue("stability")).length
-    : 0;
-  const stable = valid.length >= 3 && agree * 2 > valid.length && result.rms >= controlValue("gate") * 0.55;
-  if (stable) {
-    pitchState.detectedMidi = detected;
-    pitchState.stable = true;
-    pitchState.voiced = true;
-    pitchState.holdFrames = 8;
-  } else if (pitchState.voiced && pitchState.holdFrames > 0 && result.rms >= controlValue("gate") * 0.55) {
-    pitchState.stable = false;
-    pitchState.holdFrames -= 1;
-  } else {
-    pitchState.detectedMidi = -1;
-    pitchState.stable = false;
-    pitchState.voiced = false;
-    pitchState.holdFrames = 0;
-  }
-
-  history.push({
-    receivedAt: now / 1000,
-    rawMidi: pitchState.rawMidi,
-    detectedMidi: pitchState.detectedMidi,
-    stable: pitchState.stable,
-    voiced: pitchState.voiced,
-    pitchBend,
-    notes: [...heldNotes, ...sustainedNotes],
-  });
-  const oldest = now / 1000 - HISTORY_SECONDS;
-  while (history.length && history[0].receivedAt < oldest) history.shift();
-  updateVoiceShifts();
 }
 
 function meterDb(samples) {
@@ -766,7 +973,6 @@ function drawPiano(width, height) {
 
 function draw(nowMilliseconds) {
   frameHandle = requestAnimationFrame(draw);
-  updatePitch(nowMilliseconds);
   updateMeters();
   fitCanvas();
   const rect = ui.canvas.getBoundingClientRect();
@@ -792,13 +998,31 @@ function draw(nowMilliseconds) {
   ui.pitchChip.classList.toggle("good", pitchState.voiced);
   ui.midiChip.textContent = `notes ${new Set([...heldNotes, ...sustainedNotes]).size}`;
   ui.rmsText.textContent = `rms ${pitchState.rms.toFixed(4)}`;
-  ui.stableText.textContent = pitchState.stable ? "stable" : pitchState.voiced ? "held" : "unvoiced";
+  ui.stableText.textContent = pitchState.stable
+    ? "stable"
+    : pitchState.unvoiced
+      ? "unvoiced hold"
+      : pitchState.voiced
+        ? "held"
+        : "unvoiced";
+  const baseLatencyMs = audio ? Number(audio.context.baseLatency || 0) * 1000 : 0;
+  const outputLatencyMs = audio ? Number(audio.context.outputLatency || 0) * 1000 : 0;
+  const renderP99 = renderPercentile(0.99);
+  const renderHeadroom = pitchState.quantumMs > 0
+    ? Math.max(0, 100 * (1 - renderP99 / pitchState.quantumMs))
+    : 0;
   ui.meter.textContent = [
-    `engine ${audio ? "browser WASM" : "stopped"}`,
+    `engine ${audio?.engine?.name ?? "stopped"}`,
+    `DSP path ${audio?.engine ? `${(audio.engine.latency * 1000).toFixed(1)} ms` : "--"}`,
+    `browser I/O ${baseLatencyMs.toFixed(1)} + ${outputLatencyMs.toFixed(1)} ms`,
     `pitch ${pitchState.voiced ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(2)}` : "--"}`,
     `raw ${pitchState.rawMidi > 0 ? `${midiName(pitchState.rawMidi)} ${pitchState.rawMidi.toFixed(2)}` : "--"}`,
     `clarity ${Math.round(pitchState.clarity * 100)}%`,
-    `voices ${activeVoices().length}/${MAX_VOICES}`,
+    `voices ${activeVoices().length}/${voiceCapacity()}`,
+    `render avg ${pitchState.renderAverageMs.toFixed(2)} ms max ${pitchState.renderMaxMs.toFixed(2)} ms`,
+    `render p99 ${renderP99.toFixed(2)} / ${pitchState.quantumMs.toFixed(2)} ms`,
+    `headroom ${renderHeadroom.toFixed(0)}% overruns ${pitchState.overruns}`,
+    `unvoiced ${pitchState.unvoiced ? "hold" : "off"} sibilance ${pitchState.sibilance.toFixed(2)}`,
   ].join("\n");
 }
 
@@ -997,6 +1221,24 @@ ui.inputDevice.addEventListener("change", async () => {
 });
 ui.outputDevice.addEventListener("change", async () => {
   await applyOutputDevice(ui.outputDevice.value);
+});
+const savedEngine = storedSetting("engine", "rubberband");
+ui.engineSelect.value = [...ui.engineSelect.options].some(
+  (option) => option.value === savedEngine,
+) ? savedEngine : "rubberband";
+ui.engineSelect.addEventListener("change", async () => {
+  storeSetting("engine", ui.engineSelect.value);
+  if (!audio || engineRestarting) return;
+  engineRestarting = true;
+  ui.engineSelect.disabled = true;
+  ui.engineStatus.textContent = "switching";
+  try {
+    await stopAudio({ showOverlay: false });
+    await startAudio();
+  } finally {
+    ui.engineSelect.disabled = false;
+    engineRestarting = false;
+  }
 });
 ui.midiInput.addEventListener("change", () => {
   storeSetting("midiInput", ui.midiInput.value);

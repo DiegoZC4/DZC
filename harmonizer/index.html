@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#151613">
-  <link rel="icon" type="image/svg+xml" href="./jacob-collier-jc-note.svg">
+  <link rel="icon" type="image/svg+xml" href="./harmonizer.svg">
   <title>Harmonizer</title>
   <style>
     :root {
@@ -130,7 +130,9 @@
     aside {
       min-width: 0;
       display: grid;
-      grid-template-rows: 54px repeat(8, auto) minmax(0, 1fr);
+      grid-template-rows: 54px repeat(9, auto) auto;
+      align-content: start;
+      overflow-y: auto;
       background: var(--panel);
     }
     .side-title {
@@ -219,7 +221,8 @@
     .pill-toggle-group.is-animating .pill-option { transition: color 180ms ease; }
     .pill-option.is-active { color: #151613; }
     .meter {
-      align-self: end;
+      align-self: stretch;
+      min-height: 190px;
       padding: 14px;
       color: var(--muted);
       font-size: 12px;
@@ -317,7 +320,7 @@
       body { overflow: auto; }
       .app { height: auto; min-height: 100%; grid-template-columns: 1fr; grid-template-rows: 620px auto; }
       .stage { border-right: 0; }
-      aside { grid-template-rows: 48px repeat(8, auto) 120px; }
+      aside { grid-template-rows: 48px repeat(9, auto) auto; }
     }
     @media (max-width: 560px) {
       .app { grid-template-rows: 560px auto; }
@@ -370,6 +373,13 @@
         </div>
         <button id="test-tone-button" class="command" type="button">Test output</button>
       </section>
+      <section class="control stacked">
+        <div class="row"><label for="engine-select">Pitch shifter</label><span id="engine-status" class="value">stopped</span></div>
+        <select id="engine-select" aria-label="Browser pitch shifter">
+          <option value="rubberband">Rubber Band Live (4 voices)</option>
+          <option value="signalsmith">Signalsmith (8 voices)</option>
+        </select>
+      </section>
       <label class="control drag-number-control"><span>Blend</span><button id="blend" class="drag-number-value" type="button" role="spinbutton" aria-label="Wet dry blend"></button></label>
       <label class="control drag-number-control"><span>Monitor gain</span><button id="gain" class="drag-number-value" type="button" role="spinbutton" aria-label="Monitor gain"></button></label>
       <label class="control drag-number-control"><span>Gate</span><button id="gate" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch gate"></button></label>
@@ -408,32 +418,36 @@
         <button id="download-close-button" class="close-button" type="button" aria-label="Close download dialog">&#215;</button>
       </header>
       <div class="download-body">
-        <p>The browser edition works everywhere, but Rubber Band Live 512 requires the native edition. Apple Silicon macOS is prebuilt; Windows, Linux, and Intel macOS perform a one-time source build with internet access.</p>
+        <p>Keep the complete browser edition as one offline HTML file, or download the native edition for expanded routing, effects, captures, and the full backend lab.</p>
         <div class="download-list">
-          <a class="download-link" href="./downloads/Harmonizer-macOS-arm64.zip" download>
-            <strong>macOS, Apple Silicon</strong>
-            <span>Prebuilt Live 512 app. Unzip, then right-click Open on first launch.</span>
+          <a id="offline-download-link" class="download-link" href="./downloads/Harmonizer-Web-Offline.html" download="Harmonizer-Web-Offline.html">
+            <strong>Browser, offline</strong>
+            <span>One portable HTML file for current desktop Chrome or Edge.</span>
           </a>
-          <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
+          <a class="download-link" href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/Harmonizer-macOS-universal.dmg">
+            <strong>macOS</strong>
+            <span>Universal app for Apple Silicon and Intel.</span>
+          </a>
+          <a class="download-link" href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/Harmonizer-Windows-x64-Setup.exe">
             <strong>Windows 10 or 11</strong>
-            <span>Live 512 PowerShell setup. Requires internet, WinGet, and administrator access.</span>
+            <span>x64 installer with the Live 512 engine.</span>
           </a>
-          <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
-            <strong>Ubuntu or Debian Linux</strong>
-            <span>Live 512 apt setup. Requires internet and sudo access.</span>
+          <a class="download-link" href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/Harmonizer-Linux-x86_64.AppImage">
+            <strong>Linux x86_64</strong>
+            <span>Portable AppImage for common desktop distributions.</span>
           </a>
-          <a class="download-link" href="./downloads/Harmonizer-source.zip" download>
-            <strong>macOS, Intel or source build</strong>
-            <span>Live 512 Homebrew setup. Requires internet and Homebrew.</span>
+          <a class="download-link" href="https://github.com/DiegoZC4/harmonizer/releases/latest">
+            <strong>Source and other formats</strong>
+            <span>Portable ZIPs, checksums, source, and release notes.</span>
           </a>
         </div>
         <div class="download-meta">
-          <span>Version 0.1.0</span>
-          <a href="./downloads/SHA256SUMS.txt">SHA-256 checksums</a>
+          <span>Latest release</span>
+          <a href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/SHA256SUMS.txt">SHA-256 checksums</a>
         </div>
       </div>
     </section>
   </div>
-  <script type="module" src="./app.js?v=20260712-7"></script>
+  <script type="module" src="./app.js?v=20260726-2"></script>
 </body>
 </html>

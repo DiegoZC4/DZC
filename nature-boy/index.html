@@ -442,8 +442,8 @@ button:disabled {
 
 .part-row {
   --part-color: var(--track-1);
-  min-height: 3.25rem;
-  padding: 0.48rem 0.5rem 0.48rem 0.7rem;
+  min-height: 5.25rem;
+  padding: 0.58rem 0.55rem 0.55rem 0.7rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
   display: grid;
@@ -505,6 +505,33 @@ button:disabled {
   border-color: var(--part-color);
   color: var(--paper);
   background: var(--part-color);
+}
+
+.part-volume {
+  min-width: 0;
+  margin-top: 0.15rem;
+  grid-column: 1 / -1;
+}
+
+.part-volume-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.part-volume-value {
+  color: var(--part-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.part-volume-range {
+  height: 1rem;
+  display: block;
+  accent-color: var(--part-color);
 }
 
 .legend {
@@ -814,7 +841,7 @@ footer a {
   }
 
   .mixer {
-    grid-template-columns: repeat(5, minmax(150px, 1fr));
+    grid-template-columns: repeat(5, minmax(175px, 1fr));
     margin-right: -1.35rem;
     margin-left: -1.35rem;
     padding: 0 1.35rem 0.45rem;
@@ -823,7 +850,7 @@ footer a {
   }
 
   .part-row {
-    min-width: 150px;
+    min-width: 175px;
     scroll-snap-align: start;
   }
 
@@ -23824,6 +23851,7 @@ footer a {
     let renderTimer = 0;
     const mutedTracks = new Set();
     const soloedTracks = new Set();
+    let trackVolumes = Array(PART_NAMES.length).fill(100);
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -23838,12 +23866,21 @@ footer a {
     function readPreferences() {
       try {
         const parsed = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+        const volumes = PART_NAMES.map((_, index) => {
+          const value = Number(parsed.volumes?.[index]);
+          return Number.isFinite(value) ? clamp(value, 0, 100) : 100;
+        });
         return {
           tempo: clamp(Number(parsed.tempo) || 100, 50, 150),
           scoreSize: clamp(Number(parsed.scoreSize) || defaultScoreSize(), 65, 155),
+          volumes,
         };
       } catch {
-        return { tempo: 100, scoreSize: defaultScoreSize() };
+        return {
+          tempo: 100,
+          scoreSize: defaultScoreSize(),
+          volumes: Array(PART_NAMES.length).fill(100),
+        };
       }
     }
 
@@ -23854,6 +23891,7 @@ footer a {
           JSON.stringify({
             tempo: Number(tempo.value),
             scoreSize: Number(scoreSize.value),
+            volumes: trackVolumes,
           }),
         );
       } catch {
@@ -23924,7 +23962,7 @@ footer a {
           mutedTracks.has(index) || (hasSolo && !soloedTracks.has(index)),
         );
       });
-      audioEngine?.updateMix(mutedTracks, soloedTracks);
+      audioEngine?.updateMix(mutedTracks, soloedTracks, trackVolumes);
     }
 
     function setMute(index, next) {
@@ -23981,6 +24019,16 @@ footer a {
       mixer.querySelectorAll(".mix-button").forEach((button) => {
         button.setAttribute("aria-pressed", "false");
       });
+      trackVolumes = Array(PART_NAMES.length).fill(100);
+      mixer.querySelectorAll(".part-volume-range").forEach((input) => {
+        input.value = "100";
+        input.setAttribute("aria-valuetext", "100 percent");
+      });
+      mixer.querySelectorAll(".part-volume-value").forEach((output) => {
+        output.value = "100%";
+        output.textContent = "100%";
+      });
+      savePreferences();
       updateMixerAppearance();
     }
 
@@ -24031,11 +24079,55 @@ footer a {
           setSolo(index, soloButton.getAttribute("aria-pressed") !== "true");
         });
 
-        row.append(name, muteButton, soloButton);
+        const volumeControl = document.createElement("div");
+        volumeControl.className = "part-volume";
+
+        const volumeHeading = document.createElement("div");
+        volumeHeading.className = "part-volume-heading";
+        const volumeLabel = document.createElement("label");
+        volumeLabel.htmlFor = `part-volume-${index}`;
+        volumeLabel.textContent = "Level";
+        const volumeValue = document.createElement("output");
+        volumeValue.className = "part-volume-value";
+        volumeValue.htmlFor = `part-volume-${index}`;
+        volumeValue.value = `${trackVolumes[index]}%`;
+        volumeValue.textContent = `${trackVolumes[index]}%`;
+        volumeHeading.append(volumeLabel, volumeValue);
+
+        const volumeSlider = document.createElement("input");
+        volumeSlider.id = `part-volume-${index}`;
+        volumeSlider.className = "range part-volume-range";
+        volumeSlider.type = "range";
+        volumeSlider.min = "0";
+        volumeSlider.max = "100";
+        volumeSlider.step = "5";
+        volumeSlider.value = String(trackVolumes[index]);
+        volumeSlider.dataset.volumeIndex = String(index);
+        volumeSlider.setAttribute(
+          "aria-label",
+          `${nameText.textContent} playback level`,
+        );
+        volumeSlider.setAttribute(
+          "aria-valuetext",
+          `${trackVolumes[index]} percent`,
+        );
+        volumeSlider.addEventListener("input", () => {
+          const next = clamp(Number(volumeSlider.value), 0, 100);
+          trackVolumes[index] = next;
+          volumeValue.value = `${next}%`;
+          volumeValue.textContent = `${next}%`;
+          volumeSlider.setAttribute("aria-valuetext", `${next} percent`);
+          savePreferences();
+          updateMixerAppearance();
+        });
+
+        volumeControl.append(volumeHeading, volumeSlider);
+        row.append(name, muteButton, soloButton, volumeControl);
         mixer.append(row);
       });
 
       resetMix.disabled = false;
+      updateMixerAppearance();
     }
 
     function updateReflowLabel() {
@@ -24073,6 +24165,7 @@ footer a {
         this.scheduledVoices = new Set();
         this.muted = new Set();
         this.soloed = new Set();
+        this.levels = Array(PART_NAMES.length).fill(1);
         this.output = null;
         this.api = null;
       }
@@ -24198,7 +24291,7 @@ footer a {
         this.saxWave = this.context.createPeriodicWave(real, imaginary, {
           disableNormalization: false,
         });
-        this.updateMix(this.muted, this.soloed, true);
+        this.updateMix(this.muted, this.soloed, null, true);
       }
 
       currentBaseSeconds() {
@@ -24271,17 +24364,23 @@ footer a {
         );
       }
 
-      updateMix(muted, soloed, immediate = false) {
+      updateMix(muted, soloed, volumes = null, immediate = false) {
         this.muted = new Set(muted);
         this.soloed = new Set(soloed);
+        if (Array.isArray(volumes)) {
+          this.levels = PART_NAMES.map((_, index) =>
+            clamp(Number(volumes[index]) / 100 || 0, 0, 1),
+          );
+        }
         if (!this.context || !this.trackGains.length) return;
         const hasSolo = this.soloed.size > 0;
         this.trackGains.forEach((gain, index) => {
           const audible =
             !this.muted.has(index) && (!hasSolo || this.soloed.has(index));
+          const target = audible ? this.levels[index] : 0;
           gain.gain.cancelScheduledValues(this.context.currentTime);
-          if (immediate) gain.gain.setValueAtTime(audible ? 1 : 0, this.context.currentTime);
-          else gain.gain.setTargetAtTime(audible ? 1 : 0, this.context.currentTime, 0.012);
+          if (immediate) gain.gain.setValueAtTime(target, this.context.currentTime);
+          else gain.gain.setTargetAtTime(target, this.context.currentTime, 0.012);
         });
       }
 
@@ -24422,6 +24521,7 @@ footer a {
     }
 
     const preferences = readPreferences();
+    trackVolumes = preferences.volumes.slice();
     tempo.value = String(preferences.tempo);
     scoreSize.value = String(preferences.scoreSize);
     tempoValue.value = `${preferences.tempo}%`;
@@ -24727,6 +24827,7 @@ footer a {
             <div class="legend" aria-label="Mixer help">
               <p><strong>Mute</strong> removes a voice.</p>
               <p><strong>Solo</strong> keeps one or more selected voices.</p>
+              <p><strong>Level</strong> keeps quieter voices present while you practice.</p>
             </div>
 
             <div class="display-controls">

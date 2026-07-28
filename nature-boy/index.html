@@ -315,8 +315,55 @@ button:disabled {
   font-size: 0.7rem;
 }
 
+.drag-number-control {
+  min-height: 2.65rem;
+  margin: 0;
+  padding: 0 0.55rem 0 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: var(--paper);
+  font-size: 0.78rem;
+  font-weight: 750;
+  user-select: none;
+}
+
+.drag-number-control > span {
+  min-width: 0;
+}
+
+.drag-number-value {
+  flex: 0 0 auto;
+  min-width: 4.8rem;
+  min-height: 2rem;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line-dark);
+  border-radius: 0.42rem;
+  color: var(--rust);
+  background: #fff;
+  cursor: nesw-resize;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.drag-number-value:hover,
+.drag-number-value.is-dragging {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 7%, white);
+}
+
 .range {
   width: 100%;
+  min-width: 0;
   height: 1.1rem;
   margin: 0;
   accent-color: var(--rust);
@@ -430,14 +477,14 @@ button:disabled {
 
 .part-row {
   --part-color: var(--track-1);
-  min-height: 5.25rem;
-  padding: 0.58rem 0.55rem 0.55rem 0.7rem;
+  min-height: 3.1rem;
+  padding: 0.42rem 0.45rem 0.42rem 0.55rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.3rem;
   background: rgba(255, 253, 248, 0.83);
   transition:
     opacity 140ms ease,
@@ -458,8 +505,8 @@ button:disabled {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.84rem;
+  gap: 0.45rem;
+  font-size: 0.78rem;
   font-weight: 750;
 }
 
@@ -470,16 +517,16 @@ button:disabled {
 }
 
 .part-swatch {
-  width: 0.62rem;
-  height: 1.65rem;
+  width: 0.5rem;
+  height: 1.35rem;
   flex: 0 0 auto;
   border-radius: 999px;
   background: var(--part-color);
 }
 
 .mix-button {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.9rem;
+  height: 1.9rem;
   border: 1px solid var(--line);
   border-radius: 50%;
   color: var(--muted);
@@ -496,30 +543,22 @@ button:disabled {
 }
 
 .part-volume {
-  min-width: 0;
-  margin-top: 0.15rem;
-  grid-column: 1 / -1;
-}
-
-.part-volume-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 700;
+  min-width: 3rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .part-volume-value {
+  width: 3rem;
+  min-width: 3rem;
+  min-height: 1.9rem;
+  padding: 0.25rem 0.3rem;
+  border-color: color-mix(in srgb, var(--part-color) 38%, var(--line));
   color: var(--part-color);
-  font-variant-numeric: tabular-nums;
-}
-
-.part-volume-range {
-  height: 1rem;
-  display: block;
-  accent-color: var(--part-color);
+  font-size: 0.72rem;
 }
 
 .legend {
@@ -717,14 +756,33 @@ button:disabled {
 }
 
 @media (max-width: 820px) {
-  main,
   .site-header {
     width: min(100% - 1rem, 1460px);
   }
 
+  main {
+    width: 100%;
+  }
+
+  .player-shell {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
   .transport {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
+    position: sticky;
+    top: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    min-height: 0;
+    padding:
+      max(0.6rem, env(safe-area-inset-top))
+      max(0.7rem, env(safe-area-inset-right))
+      0.6rem
+      max(0.7rem, env(safe-area-inset-left));
+    border-radius: 0;
+    gap: 0.55rem;
+    box-shadow: 0 8px 22px rgba(58, 43, 24, 0.12);
   }
 
   .transport-main {
@@ -732,7 +790,36 @@ button:disabled {
   }
 
   .timeline {
-    grid-template-columns: 4.8rem 1fr;
+    grid-template-columns: 4.6rem minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  .tempo-control .drag-number-control {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .tempo-control .drag-number-control > span,
+  .tempo-control .control-hint {
+    display: none;
+  }
+
+  .player-status {
+    grid-column: auto;
+    min-width: 0;
+    gap: 0;
+  }
+
+  #playerStatusText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .workbench {
@@ -745,17 +832,11 @@ button:disabled {
   }
 
   .mixer {
-    grid-template-columns: repeat(5, minmax(175px, 1fr));
-    margin-right: -1.35rem;
-    margin-left: -1.35rem;
-    padding: 0 1.35rem 0.45rem;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
 
   .part-row {
-    min-width: 175px;
-    scroll-snap-align: start;
+    min-width: 0;
   }
 
   .legend {
@@ -782,27 +863,61 @@ button:disabled {
   }
 
   .transport {
-    padding: 0.85rem;
+    grid-template-columns: auto minmax(3.75rem, 1fr) auto auto;
+    padding:
+      max(0.5rem, env(safe-area-inset-top))
+      max(0.55rem, env(safe-area-inset-right))
+      0.5rem
+      max(0.55rem, env(safe-area-inset-left));
+    gap: 0.35rem;
   }
 
   .transport-main {
     display: flex;
+    gap: 0.25rem;
+  }
+
+  .primary-control {
+    width: 2.45rem;
+    height: 2.45rem;
+  }
+
+  .secondary-control {
+    width: 2.05rem;
+    height: 2.05rem;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr;
+    gap: 0.08rem;
   }
 
   .time-readout {
-    min-width: 4.45rem;
-    font-size: 0.74rem;
+    min-width: 0;
+    font-size: 0.66rem;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .timeline-range {
+    height: 0.85rem;
+  }
+
+  .tempo-control .drag-number-value {
+    min-width: 4.25rem;
+    min-height: 2rem;
+    padding-right: 0.3rem;
+    padding-left: 0.3rem;
+    font-size: 0.72rem;
+  }
+
+  .status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
   }
 
   .practice-panel {
     padding: 1.1rem;
-  }
-
-  .mixer {
-    margin-right: -1.1rem;
-    margin-left: -1.1rem;
-    padding-right: 1.1rem;
-    padding-left: 1.1rem;
   }
 
   .score-heading-row {
@@ -823,7 +938,7 @@ button:disabled {
   }
 }
 
-@media (orientation: landscape) and (max-height: 620px) {
+@media (orientation: landscape) and (min-width: 821px) and (max-height: 620px) {
   .transport {
     grid-template-columns: auto minmax(160px, 1fr) minmax(150px, 210px) auto;
     min-height: 88px;
@@ -23702,7 +23817,6 @@ button:disabled {
     const totalTime = document.getElementById("totalTime");
     const seek = document.getElementById("seek");
     const tempo = document.getElementById("tempo");
-    const tempoValue = document.getElementById("tempoValue");
     const scoreSize = document.getElementById("scoreSize");
     const scoreSizeValue = document.getElementById("scoreSizeValue");
     const fitScore = document.getElementById("fitScore");
@@ -23721,10 +23835,122 @@ button:disabled {
     let renderTimer = 0;
     const mutedTracks = new Set();
     const soloedTracks = new Set();
+    const volumeDrags = [];
+    let tempoDrag = null;
     let trackVolumes = Array(PART_NAMES.length).fill(100);
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
+    }
+
+    function createDragNumber(
+      button,
+      {
+        min,
+        max,
+        step = 1,
+        pixelsPerStep = 32,
+        formatValue = (value) => String(value),
+        ariaValueText = formatValue,
+      },
+    ) {
+      const safeStep = Math.max(Number(step) || 1, Number.EPSILON);
+      const safePixelsPerStep = Math.max(Number(pixelsPerStep) || 32, 1);
+
+      function clampToStep(raw) {
+        const numeric = Number(raw);
+        const fallback = Number.isFinite(numeric) ? numeric : min;
+        const stepped = min + Math.round((fallback - min) / safeStep) * safeStep;
+        return clamp(stepped, min, max);
+      }
+
+      function render(value) {
+        button.dataset.value = String(value);
+        button.textContent = formatValue(value);
+        button.setAttribute("aria-valuenow", String(value));
+        button.setAttribute("aria-valuetext", ariaValueText(value));
+      }
+
+      const controller = {
+        value() {
+          return Number(button.dataset.value);
+        },
+        setValue(raw, emit = false) {
+          const next = clampToStep(raw);
+          const changed = controller.value() !== next;
+          if (changed || !button.dataset.value) render(next);
+          if (emit && changed) {
+            button.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          return next;
+        },
+      };
+
+      button.setAttribute("role", "slider");
+      button.setAttribute("aria-valuemin", String(min));
+      button.setAttribute("aria-valuemax", String(max));
+      render(clampToStep(button.dataset.value));
+
+      let dragging = false;
+      let moved = false;
+      let startX = 0;
+      let startY = 0;
+      let startValue = controller.value();
+
+      function finishDrag(event) {
+        if (!dragging) return;
+        dragging = false;
+        button.classList.remove("is-dragging");
+        if (
+          event?.pointerId !== undefined &&
+          button.hasPointerCapture?.(event.pointerId)
+        ) {
+          button.releasePointerCapture(event.pointerId);
+        }
+        if (!moved) button.focus();
+      }
+
+      button.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        dragging = true;
+        moved = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        startValue = controller.value();
+        button.classList.add("is-dragging");
+        button.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+
+      button.addEventListener("pointermove", (event) => {
+        if (!dragging) return;
+        const axisDelta =
+          ((event.clientX - startX) - (event.clientY - startY)) / Math.SQRT2;
+        const delta = Math.round(axisDelta / safePixelsPerStep);
+        if (delta === 0) return;
+        moved = true;
+        controller.setValue(startValue + delta * safeStep, true);
+      });
+
+      button.addEventListener("pointerup", finishDrag);
+      button.addEventListener("pointercancel", finishDrag);
+      button.addEventListener("keydown", (event) => {
+        let next = null;
+        if (event.key === "ArrowUp" || event.key === "ArrowRight") {
+          next = controller.value() + safeStep;
+        } else if (event.key === "ArrowDown" || event.key === "ArrowLeft") {
+          next = controller.value() - safeStep;
+        } else if (event.key === "Home") {
+          next = min;
+        } else if (event.key === "End") {
+          next = max;
+        }
+        if (next === null) return;
+        event.preventDefault();
+        controller.setValue(next, true);
+      });
+
+      return controller;
     }
 
     function defaultScoreSize() {
@@ -23766,7 +23992,7 @@ button:disabled {
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
-            tempoBpm: Number(tempo.value),
+            tempoBpm: tempoDrag?.value() ?? ORIGINAL_BPM,
             scoreSize: Number(scoreSize.value),
             volumes: trackVolumes,
           }),
@@ -23815,10 +24041,7 @@ button:disabled {
     }
 
     function updateTempo(value) {
-      const next = clamp(Number(value), MIN_BPM, MAX_BPM);
-      tempo.value = String(next);
-      tempoValue.value = `${next} BPM`;
-      tempoValue.textContent = `${next} BPM`;
+      const next = tempoDrag.setValue(value);
       if (api) api.playbackSpeed = next / ORIGINAL_BPM;
       savePreferences();
     }
@@ -23891,14 +24114,7 @@ button:disabled {
         button.setAttribute("aria-pressed", "false");
       });
       trackVolumes = Array(PART_NAMES.length).fill(100);
-      mixer.querySelectorAll(".part-volume-range").forEach((input) => {
-        input.value = "100";
-        input.setAttribute("aria-valuetext", "100 percent");
-      });
-      mixer.querySelectorAll(".part-volume-value").forEach((output) => {
-        output.value = "100%";
-        output.textContent = "100%";
-      });
+      volumeDrags.forEach((control) => control?.setValue(100));
       savePreferences();
       updateMixerAppearance();
     }
@@ -23950,49 +24166,42 @@ button:disabled {
           setSolo(index, soloButton.getAttribute("aria-pressed") !== "true");
         });
 
-        const volumeControl = document.createElement("div");
-        volumeControl.className = "part-volume";
-
-        const volumeHeading = document.createElement("div");
-        volumeHeading.className = "part-volume-heading";
-        const volumeLabel = document.createElement("label");
-        volumeLabel.htmlFor = `part-volume-${index}`;
+        const volumeControl = document.createElement("label");
+        volumeControl.className = "drag-number-control part-volume";
+        const volumeLabel = document.createElement("span");
+        volumeLabel.className = "visually-hidden";
         volumeLabel.textContent = "Level";
-        const volumeValue = document.createElement("output");
-        volumeValue.className = "part-volume-value";
-        volumeValue.htmlFor = `part-volume-${index}`;
-        volumeValue.value = `${trackVolumes[index]}%`;
-        volumeValue.textContent = `${trackVolumes[index]}%`;
-        volumeHeading.append(volumeLabel, volumeValue);
 
-        const volumeSlider = document.createElement("input");
-        volumeSlider.id = `part-volume-${index}`;
-        volumeSlider.className = "range part-volume-range";
-        volumeSlider.type = "range";
-        volumeSlider.min = "0";
-        volumeSlider.max = "100";
-        volumeSlider.step = "5";
-        volumeSlider.value = String(trackVolumes[index]);
-        volumeSlider.dataset.volumeIndex = String(index);
-        volumeSlider.setAttribute(
+        const volumeValue = document.createElement("button");
+        volumeValue.id = `part-volume-${index}`;
+        volumeValue.className = "drag-number-value part-volume-value";
+        volumeValue.type = "button";
+        volumeValue.dataset.value = String(trackVolumes[index]);
+        volumeValue.setAttribute(
           "aria-label",
           `${nameText.textContent} playback level`,
         );
-        volumeSlider.setAttribute(
-          "aria-valuetext",
-          `${trackVolumes[index]} percent`,
-        );
-        volumeSlider.addEventListener("input", () => {
-          const next = clamp(Number(volumeSlider.value), 0, 100);
-          trackVolumes[index] = next;
-          volumeValue.value = `${next}%`;
-          volumeValue.textContent = `${next}%`;
-          volumeSlider.setAttribute("aria-valuetext", `${next} percent`);
+        volumeValue.title =
+          `Drag up or right to raise ${nameText.textContent}; ` +
+          "down or left to lower it";
+
+        const volumeDrag = createDragNumber(volumeValue, {
+          min: 0,
+          max: 100,
+          step: 5,
+          pixelsPerStep: 12,
+          formatValue: (value) => `${value}%`,
+          ariaValueText: (value) => `${value} percent`,
+        });
+        volumeDrags[index] = volumeDrag;
+        trackVolumes[index] = volumeDrag.value();
+        volumeValue.addEventListener("input", () => {
+          trackVolumes[index] = volumeDrag.value();
           savePreferences();
           updateMixerAppearance();
         });
 
-        volumeControl.append(volumeHeading, volumeSlider);
+        volumeControl.append(volumeLabel, volumeValue);
         row.append(name, muteButton, soloButton, volumeControl);
         mixer.append(row);
       });
@@ -24391,12 +24600,19 @@ button:disabled {
       }
     }
 
+    tempoDrag = createDragNumber(tempo, {
+      min: MIN_BPM,
+      max: MAX_BPM,
+      step: 1,
+      pixelsPerStep: 4,
+      formatValue: (value) => `${value} BPM`,
+      ariaValueText: (value) => `${value} beats per minute`,
+    });
+
     const preferences = readPreferences();
     trackVolumes = preferences.volumes.slice();
-    tempo.value = String(preferences.tempoBpm);
+    tempoDrag.setValue(preferences.tempoBpm);
     scoreSize.value = String(preferences.scoreSize);
-    tempoValue.value = `${preferences.tempoBpm} BPM`;
-    tempoValue.textContent = `${preferences.tempoBpm} BPM`;
     scoreSizeValue.value = `${preferences.scoreSize}%`;
     scoreSizeValue.textContent = `${preferences.scoreSize}%`;
 
@@ -24511,7 +24727,7 @@ button:disabled {
       if (isReady) api.stop();
     });
 
-    tempo.addEventListener("input", () => updateTempo(tempo.value));
+    tempo.addEventListener("input", () => updateTempo(tempoDrag.value()));
     scoreSize.addEventListener("input", () => updateScoreSize(Number(scoreSize.value)));
     fitScore.addEventListener("click", () => updateScoreSize(defaultScoreSize()));
     resetMix.addEventListener("click", resetMixer);
@@ -24642,20 +24858,20 @@ button:disabled {
           </div>
 
           <div class="tempo-control">
-            <div class="control-heading">
-              <label for="tempo">Tempo</label>
-              <output id="tempoValue" for="tempo">124 BPM</output>
-            </div>
-            <input
-              id="tempo"
-              class="range"
-              type="range"
-              min="62"
-              max="186"
-              value="124"
-              step="1"
-              aria-describedby="tempoHint"
-            />
+            <label class="drag-number-control">
+              <span>Tempo</span>
+              <button
+                class="drag-number-value"
+                id="tempo"
+                type="button"
+                data-value="124"
+                aria-label="Tempo"
+                aria-describedby="tempoHint"
+                title="Drag up or right to increase tempo; down or left to decrease"
+              >
+                124 BPM
+              </button>
+            </label>
             <span class="control-hint" id="tempoHint">Base BPM · preserves the score’s rubato</span>
           </div>
 

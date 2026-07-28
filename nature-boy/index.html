@@ -684,6 +684,17 @@ button:disabled {
   stroke-dasharray: 4 4;
 }
 
+.pitch-guide-label {
+  fill: rgba(33, 31, 27, 0.72);
+  font-family:
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 9px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+}
+
 .bar-playhead {
   stroke: var(--rust);
   stroke-width: 2.5;
@@ -24297,6 +24308,10 @@ button:disabled {
       return element;
     }
 
+    function dPitchLabel(pitch) {
+      return `D${Math.floor(pitch / 12) - 1}`;
+    }
+
     function buildPitchSegments(rawNotes) {
       const byPitch = new Map();
       rawNotes.forEach(([track, startTick, endTick, pitch]) => {
@@ -24399,7 +24414,7 @@ button:disabled {
       );
       const scale = scoreSizeDrag.value() / 100;
       const pitchStep = clamp(5.4 * scale, 3.6, 8.4);
-      const leftPad = 24;
+      const leftPad = 32;
       const rightPad = 6;
       const availablePlotWidth = viewWidth - leftPad - rightPad;
       const targetMeasureWidth = clamp(132 * scale, 94, 210);
@@ -24409,15 +24424,10 @@ button:disabled {
         10,
       );
 
-      const pitches = sequence.notes.map((note) => note[3]);
-      const minPitch = Math.min(...pitches) - 1;
-      const maxPitch = Math.max(...pitches) + 1;
       const renderKey = [
         viewWidth,
         pitchStep.toFixed(2),
         measuresPerLine,
-        minPitch,
-        maxPitch,
       ].join(":");
       if (!force && renderKey === barRenderKey && barSystems.length) {
         barMeasuresPerLine = measuresPerLine;
@@ -24434,8 +24444,6 @@ button:disabled {
       const fragment = document.createDocumentFragment();
       const nextSystems = [];
       const topPad = 18;
-      const plotHeight = (maxPitch - minPitch + 2) * pitchStep;
-      const viewHeight = topPad + plotHeight + 8;
       const measureCount = sequence.measures.length;
       const systemCount = Math.ceil(measureCount / measuresPerLine);
 
@@ -24448,6 +24456,15 @@ button:disabled {
         const rowStartTick = rowMeasures[0][0];
         const lastMeasure = rowMeasures[rowMeasures.length - 1];
         const rowEndTick = lastMeasure[0] + lastMeasure[1];
+        const rowSegments = barPitchSegments.filter(
+          (segment) =>
+            segment.endTick > rowStartTick && segment.startTick < rowEndTick,
+        );
+        const rowPitches = rowSegments.map((segment) => segment.pitch);
+        const minPitch = rowPitches.length ? Math.min(...rowPitches) : 50;
+        const maxPitch = rowPitches.length ? Math.max(...rowPitches) : 50;
+        const plotHeight = (maxPitch - minPitch + 2) * pitchStep;
+        const viewHeight = topPad + plotHeight + 8;
         const rowTickSpan = Math.max(1, rowEndTick - rowStartTick);
         const plotWidth =
           availablePlotWidth * (rowMeasures.length / measuresPerLine);
@@ -24463,7 +24480,7 @@ button:disabled {
           role: "img",
           "aria-label": `Measures ${firstMeasureIndex + 1} through ${
             firstMeasureIndex + rowMeasures.length
-          }. Tap horizontally to seek.`,
+          }. The pitch range is cropped to the notes used on this line. Tap horizontally to seek.`,
           preserveAspectRatio: "xMinYMin meet",
         });
         const title = createSvgElement("title");
@@ -24513,13 +24530,7 @@ button:disabled {
         svg.append(endLine);
 
         const patternCache = new Map();
-        barPitchSegments.forEach((segment) => {
-          if (
-            segment.endTick <= rowStartTick ||
-            segment.startTick >= rowEndTick
-          ) {
-            return;
-          }
+        rowSegments.forEach((segment) => {
           const visibleStart = Math.max(segment.startTick, rowStartTick);
           const visibleEnd = Math.min(segment.endTick, rowEndTick);
           const x = xAtTick(visibleStart);
@@ -24553,15 +24564,24 @@ button:disabled {
           else if (pitchClass === 5) guideClass = "pitch-guide-f";
           if (!guideClass) continue;
           const y = topPad + (maxPitch - pitch + 1) * pitchStep;
-          svg.append(
-            createSvgElement("line", {
-              class: `pitch-guide ${guideClass}`,
-              x1: leftPad,
-              x2: leftPad + plotWidth,
-              y1: y,
-              y2: y,
-            }),
-          );
+          const guide = createSvgElement("line", {
+            class: `pitch-guide ${guideClass}`,
+            x1: leftPad,
+            x2: leftPad + plotWidth,
+            y1: y,
+            y2: y,
+          });
+          svg.append(guide);
+          if (pitchClass === 2) {
+            const label = createSvgElement("text", {
+              class: "pitch-guide-label",
+              x: leftPad - 4,
+              y: y + 3,
+              "text-anchor": "end",
+            });
+            label.textContent = dPitchLabel(pitch);
+            svg.append(label);
+          }
         }
 
         const cursor = createSvgElement("line", {

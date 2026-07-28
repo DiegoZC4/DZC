@@ -151,7 +151,7 @@ main {
   border-radius: calc(var(--radius) + 4px);
   background: rgba(255, 253, 248, 0.82);
   box-shadow: var(--shadow);
-  overflow: clip;
+  overflow: visible;
 }
 
 .player-shell:fullscreen {
@@ -159,6 +159,7 @@ main {
   height: 100%;
   border: 0;
   border-radius: 0;
+  overflow: auto;
   background: var(--paper-deep);
 }
 
@@ -167,16 +168,17 @@ main {
 }
 
 .player-shell:fullscreen .score-scroll {
-  height: calc(100dvh - 176px);
-  max-height: none;
+  min-height: calc(100dvh - 176px);
 }
 
 .transport {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 20;
   min-height: 110px;
   padding: 1rem 1.1rem;
   border-bottom: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 3px) calc(var(--radius) + 3px) 0 0;
   display: grid;
   grid-template-columns: auto minmax(180px, 1fr) minmax(170px, 230px) auto;
   align-items: center;
@@ -350,6 +352,7 @@ button:disabled {
 }
 
 .practice-panel {
+  align-self: start;
   padding: 1.35rem;
   border-right: 1px solid var(--line);
   background:
@@ -372,8 +375,7 @@ button:disabled {
 }
 
 .panel-heading h2,
-.score-heading-row h2,
-.notes h2 {
+.score-heading-row h2 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.55rem;
@@ -582,15 +584,9 @@ button:disabled {
 
 .score-scroll {
   position: relative;
-  height: clamp(620px, 72vh, 940px);
-  max-height: 940px;
-  border: 1px solid var(--line-dark);
-  border-radius: 0.85rem;
-  overflow: auto;
-  overscroll-behavior: contain;
+  min-height: 72dvh;
+  overflow: visible;
   background: var(--paper);
-  box-shadow: 0 8px 24px rgba(46, 37, 27, 0.08);
-  scrollbar-color: var(--line-dark) transparent;
 }
 
 #score {
@@ -654,76 +650,6 @@ button:disabled {
   stroke: var(--rust);
 }
 
-.notes {
-  max-width: 760px;
-  padding: clamp(4rem, 8vw, 7rem) 0;
-}
-
-.notes h2 {
-  margin-bottom: 1rem;
-  font-size: 2rem;
-}
-
-.notes p {
-  margin: 0.7rem 0;
-  color: #504b44;
-}
-
-footer {
-  width: min(1460px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 1.5rem 0 2.5rem;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.55rem;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-footer a {
-  color: var(--ink);
-  font-weight: 750;
-  text-underline-offset: 0.2rem;
-}
-
-.license-details {
-  margin-left: auto;
-}
-
-.license-details summary {
-  color: var(--ink);
-  cursor: pointer;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: rgba(33, 31, 27, 0.25);
-  text-underline-offset: 0.2rem;
-}
-
-.license-details[open] {
-  width: 100%;
-  margin: 1rem 0 0;
-}
-
-.license-details p {
-  max-width: 76rem;
-  margin: 0.75rem 0;
-}
-
-.license-copy {
-  max-height: 20rem;
-  margin: 0.75rem 0 0;
-  padding: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 0.65rem;
-  overflow: auto;
-  color: #504b44;
-  background: rgba(255, 253, 248, 0.75);
-  font: 0.68rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  white-space: pre-wrap;
-}
-
 .noscript {
   position: fixed;
   z-index: 1000;
@@ -774,14 +700,11 @@ footer a {
 
 @media (max-width: 820px) {
   main,
-  .site-header,
-  footer {
+  .site-header {
     width: min(100% - 1rem, 1460px);
   }
 
   .transport {
-    position: sticky;
-    top: 0;
     grid-template-columns: 1fr;
     gap: 0.8rem;
   }
@@ -831,8 +754,7 @@ footer a {
   }
 
   .score-scroll {
-    height: 70dvh;
-    min-height: 480px;
+    min-height: 70dvh;
   }
 }
 
@@ -885,9 +807,7 @@ footer a {
   }
 
   .score-scroll {
-    height: 68dvh;
-    min-height: 420px;
-    border-radius: 0.65rem;
+    min-height: 68dvh;
   }
 
   .score-loading {
@@ -906,8 +826,7 @@ footer a {
   }
 
   .score-scroll {
-    height: 76dvh;
-    min-height: 360px;
+    min-height: 76dvh;
   }
 }
 
@@ -24508,7 +24427,7 @@ footer a {
       settings.importer.mergePartGroupsInMusicXml = false;
       settings.player.playerMode = window.alphaTab.PlayerMode.EnabledExternalMedia;
       settings.player.soundFont = null;
-      settings.player.scrollElement = scoreScroll;
+      settings.player.scrollElement = "html,body";
       settings.player.enableCursor = true;
       settings.player.enableElementHighlighting = true;
       settings.player.enableAnimatedBeatCursor = true;
@@ -24802,9 +24721,8 @@ footer a {
             <div
               class="score-scroll"
               id="scoreScroll"
-              tabindex="0"
               role="region"
-              aria-label="Scrollable Nature Boy score"
+              aria-label="Nature Boy score"
             >
               <div class="score-loading" id="scoreLoading">
                 <span class="loading-rule" aria-hidden="true"></span>
@@ -24815,38 +24733,15 @@ footer a {
           </section>
         </div>
       </section>
-
-      <section class="notes" aria-labelledby="notes-heading">
-        <h2 id="notes-heading">About this rehearsal copy</h2>
-        <p>
-          The player follows the tempo changes in Blake’s MuseScore typesetting and
-          scales them proportionally with the tempo control. A small sax-like Web Audio
-          synthesizer plays directly from the notation, which makes true per-part mute
-          and solo possible without samples or a MIDI sound library.
-        </p>
-        <p>
-          Music and lyrics by eden ahbez; arrangement by Anders Edenroth. This page is
-          intended for choir rehearsal, and everything needed for the score and player
-          is contained in this single page.
-        </p>
-      </section>
     </main>
 
-    <footer>
-      <a href="../">diegozc.com</a>
-      <span aria-hidden="true">·</span>
-      <span>Made for focused practice</span>
+    <script id="third-party-notices" type="text/plain">
+RESPONSIVE NOTATION
+alphaTab 1.8.4
+Corresponding source:
+https://github.com/CoderLine/alphaTab/tree/022a45c8e42370f9e12e68949d11eada370da83d
 
-      <details class="license-details">
-        <summary>Open-source notices</summary>
-        <p>
-          Responsive notation is rendered by
-          <a href="https://www.alphatab.net/">alphaTab 1.8.4</a>.
-          The exact corresponding source is available from
-          <a href="https://github.com/CoderLine/alphaTab/tree/022a45c8e42370f9e12e68949d11eada370da83d">the alphaTab repository</a>.
-          Music symbols use the Bravura font by Steinberg Media Technologies GmbH.
-        </p>
-        <pre class="license-copy">ALPHATAB
+ALPHATAB
 
 alphaTab is licensed under MPL-2.0.
 Copyright © 2025, Daniel Kuschny and Contributors, All rights reserved.
@@ -25276,7 +25171,7 @@ new environment.
 "Author" refers to any designer, engineer, programmer, technical
 writer or other person who contributed to the Font Software.
 
-PERMISSION &amp; CONDITIONS
+PERMISSION & CONDITIONS
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Font Software, to use, study, copy, merge, embed, modify,
 redistribute, and sell modified and unmodified copies of the Font
@@ -25323,9 +25218,8 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-</pre>
-      </details>
-    </footer>
+
+    </script>
 
     <noscript>
       <p class="noscript">

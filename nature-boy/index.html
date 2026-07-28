@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4efe6" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="A responsive, interactive SSATB rehearsal score for Nature Boy with synchronized playback, tempo, mute, and solo controls."
+    />
+    <title>Nature Boy — Interactive Rehearsal Score</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./vendor/alphatab/alphaTab.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#score">Skip to the score</a>
+
+    <header class="site-header">
+      <a class="site-mark" href="../" aria-label="Return to diegozc.com">
+        <span aria-hidden="true">DZC</span>
+      </a>
+      <p>Rehearsal tools</p>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Interactive SSATB score</p>
+        <h1 id="page-title">Nature Boy</h1>
+        <p class="credits">
+          Music and lyrics by eden ahbez
+          <span aria-hidden="true">·</span>
+          arranged by Anders Edenroth
+        </p>
+        <p class="intro">
+          Read, listen, slow down, and isolate any voice. The notation reflows to the
+          width of your screen, so rotating a phone or changing score size rearranges
+          the measures automatically.
+        </p>
+      </section>
+
+      <section class="player-shell" id="player" aria-label="Interactive score player">
+        <div class="transport" aria-label="Playback controls">
+          <div class="transport-main">
+            <button class="primary-control" id="playPause" type="button" disabled>
+              <span class="play-symbol" aria-hidden="true"></span>
+              <span id="playPauseLabel">Play</span>
+            </button>
+            <button class="secondary-control" id="stopPlayback" type="button" disabled>
+              Restart
+            </button>
+            <button
+              class="secondary-control toggle-control"
+              id="loopPlayback"
+              type="button"
+              aria-pressed="false"
+              disabled
+            >
+              Loop
+            </button>
+          </div>
+
+          <div class="timeline">
+            <div class="time-readout" aria-live="off">
+              <span id="currentTime">0:00</span>
+              <span aria-hidden="true">/</span>
+              <span id="totalTime">0:00</span>
+            </div>
+            <label class="visually-hidden" for="seek">Playback position</label>
+            <input
+              id="seek"
+              class="range timeline-range"
+              type="range"
+              min="0"
+              max="1"
+              value="0"
+              step="1"
+              disabled
+            />
+          </div>
+
+          <div class="tempo-control">
+            <div class="control-heading">
+              <label for="tempo">Tempo</label>
+              <output id="tempoValue" for="tempo">100%</output>
+            </div>
+            <input
+              id="tempo"
+              class="range"
+              type="range"
+              min="50"
+              max="150"
+              value="100"
+              step="5"
+              aria-describedby="tempoHint"
+            />
+            <span class="control-hint" id="tempoHint">Preserves the score’s rubato</span>
+          </div>
+
+          <div class="player-status" id="playerStatus" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="playerStatusText">Loading score…</span>
+          </div>
+        </div>
+
+        <div class="workbench">
+          <aside class="practice-panel" aria-labelledby="practice-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="kicker">Practice mix</p>
+                <h2 id="practice-heading">Voices</h2>
+              </div>
+              <button class="text-control" id="resetMix" type="button" disabled>
+                Reset mix
+              </button>
+            </div>
+
+            <div class="mixer" id="mixer" aria-busy="true">
+              <div class="mixer-loading">Preparing five voice parts…</div>
+            </div>
+
+            <div class="legend" aria-label="Mixer help">
+              <p><strong>Mute</strong> removes a voice.</p>
+              <p><strong>Solo</strong> keeps one or more selected voices.</p>
+            </div>
+
+            <div class="display-controls">
+              <div class="control-heading">
+                <label for="scoreSize">Score size</label>
+                <output id="scoreSizeValue" for="scoreSize">100%</output>
+              </div>
+              <input
+                id="scoreSize"
+                class="range"
+                type="range"
+                min="65"
+                max="155"
+                value="100"
+                step="5"
+              />
+              <div class="display-actions">
+                <button class="text-control" id="fitScore" type="button">Fit screen</button>
+                <button class="text-control" id="fullscreenScore" type="button">
+                  Full screen
+                </button>
+              </div>
+              <p class="reflow-status" id="reflowStatus">Automatic measure wrapping</p>
+            </div>
+
+            <details class="shortcuts">
+              <summary>Keyboard shortcuts</summary>
+              <dl>
+                <div><dt>Space</dt><dd>Play or pause</dd></div>
+                <div><dt>R</dt><dd>Restart</dd></div>
+                <div><dt>L</dt><dd>Toggle loop</dd></div>
+              </dl>
+            </details>
+          </aside>
+
+          <section class="score-panel" aria-labelledby="score-heading">
+            <div class="score-heading-row">
+              <div>
+                <p class="kicker">Responsive notation</p>
+                <h2 id="score-heading">Full score</h2>
+              </div>
+              <p>Tap a note to seek</p>
+            </div>
+
+            <div
+              class="score-scroll"
+              id="scoreScroll"
+              tabindex="0"
+              role="region"
+              aria-label="Scrollable Nature Boy score"
+            >
+              <div class="score-loading" id="scoreLoading">
+                <span class="loading-rule" aria-hidden="true"></span>
+                <p>Engraving the score for this screen…</p>
+              </div>
+              <div id="score" aria-label="Nature Boy SSATB notation"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">About this rehearsal copy</h2>
+        <p>
+          The player follows the tempo changes in Blake’s MuseScore typesetting and
+          scales them proportionally with the tempo control. Playback is synthesized
+          from the notation, which is what makes true per-part mute and solo possible.
+        </p>
+        <p>
+          This page is intended for choir rehearsal. The underlying arrangement remains
+          credited to Anders Edenroth.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <a href="../">diegozc.com</a>
+      <span aria-hidden="true">·</span>
+      <span>Made for focused practice</span>
+    </footer>
+
+    <noscript>
+      <p class="noscript">
+        This interactive score needs JavaScript enabled for notation and playback.
+      </p>
+    </noscript>
+  </body>
+</html>

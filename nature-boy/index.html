@@ -23676,6 +23676,9 @@ button:disabled {
 
   function init() {
     const PREFS_KEY = "nature-boy-player:v2";
+    const ORIGINAL_BPM = 124;
+    const MIN_BPM = 62;
+    const MAX_BPM = 186;
     const PART_COLORS = ["#9d3d2b", "#c7752e", "#a48320", "#2f7770", "#3f557d"];
     const PART_NAMES = ["Soprano 1", "Soprano 2", "Alto", "Tenor", "Bass"];
 
@@ -23731,14 +23734,21 @@ button:disabled {
           const value = Number(parsed.volumes?.[index]);
           return Number.isFinite(value) ? clamp(value, 0, 100) : 100;
         });
+        const savedBpm = Number(parsed.tempoBpm);
+        const legacyPercent = Number(parsed.tempo);
+        const tempoBpm = Number.isFinite(savedBpm)
+          ? clamp(savedBpm, MIN_BPM, MAX_BPM)
+          : Number.isFinite(legacyPercent)
+            ? clamp(Math.round((legacyPercent / 100) * ORIGINAL_BPM), MIN_BPM, MAX_BPM)
+            : ORIGINAL_BPM;
         return {
-          tempo: clamp(Number(parsed.tempo) || 100, 50, 150),
+          tempoBpm,
           scoreSize: clamp(Number(parsed.scoreSize) || defaultScoreSize(), 65, 155),
           volumes,
         };
       } catch {
         return {
-          tempo: 100,
+          tempoBpm: ORIGINAL_BPM,
           scoreSize: defaultScoreSize(),
           volumes: Array(PART_NAMES.length).fill(100),
         };
@@ -23750,7 +23760,7 @@ button:disabled {
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
-            tempo: Number(tempo.value),
+            tempoBpm: Number(tempo.value),
             scoreSize: Number(scoreSize.value),
             volumes: trackVolumes,
           }),
@@ -23800,11 +23810,11 @@ button:disabled {
     }
 
     function updateTempo(value) {
-      const next = clamp(Number(value), 50, 150);
+      const next = clamp(Number(value), MIN_BPM, MAX_BPM);
       tempo.value = String(next);
-      tempoValue.value = `${next}%`;
-      tempoValue.textContent = `${next}%`;
-      if (api) api.playbackSpeed = next / 100;
+      tempoValue.value = `${next} BPM`;
+      tempoValue.textContent = `${next} BPM`;
+      if (api) api.playbackSpeed = next / ORIGINAL_BPM;
       savePreferences();
     }
 
@@ -24383,10 +24393,10 @@ button:disabled {
 
     const preferences = readPreferences();
     trackVolumes = preferences.volumes.slice();
-    tempo.value = String(preferences.tempo);
+    tempo.value = String(preferences.tempoBpm);
     scoreSize.value = String(preferences.scoreSize);
-    tempoValue.value = `${preferences.tempo}%`;
-    tempoValue.textContent = `${preferences.tempo}%`;
+    tempoValue.value = `${preferences.tempoBpm} BPM`;
+    tempoValue.textContent = `${preferences.tempoBpm} BPM`;
     scoreSizeValue.value = `${preferences.scoreSize}%`;
     scoreSizeValue.textContent = `${preferences.scoreSize}%`;
 
@@ -24458,7 +24468,7 @@ button:disabled {
       stopPlayback.disabled = false;
       loopPlayback.disabled = false;
       seek.disabled = false;
-      updateTempo(preferences.tempo);
+      updateTempo(preferences.tempoBpm);
       setStatus("Ready · sax-like browser synth", "ready");
     });
 
@@ -24633,19 +24643,19 @@ button:disabled {
           <div class="tempo-control">
             <div class="control-heading">
               <label for="tempo">Tempo</label>
-              <output id="tempoValue" for="tempo">100%</output>
+              <output id="tempoValue" for="tempo">124 BPM</output>
             </div>
             <input
               id="tempo"
               class="range"
               type="range"
-              min="50"
-              max="150"
-              value="100"
-              step="5"
+              min="62"
+              max="186"
+              value="124"
+              step="1"
               aria-describedby="tempoHint"
             />
-            <span class="control-hint" id="tempoHint">Preserves the score’s rubato</span>
+            <span class="control-hint" id="tempoHint">Base BPM · preserves the score’s rubato</span>
           </div>
 
           <div class="player-status" id="playerStatus" role="status" aria-live="polite">

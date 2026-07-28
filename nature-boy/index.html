@@ -209,18 +209,18 @@ button:disabled {
 
 .primary-control,
 .secondary-control {
-  min-height: 2.8rem;
+  flex: 0 0 auto;
+  width: 2.8rem;
+  height: 2.8rem;
+  padding: 0;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
   font-weight: 700;
 }
 
 .primary-control {
-  min-width: 6.7rem;
-  padding: 0.65rem 1rem;
   color: white;
   background: var(--rust);
   box-shadow: 0 8px 20px rgba(168, 71, 45, 0.2);
@@ -231,8 +231,8 @@ button:disabled {
 }
 
 .secondary-control {
-  min-width: 4.7rem;
-  padding: 0.65rem 0.85rem;
+  width: 2.35rem;
+  height: 2.35rem;
   border: 1px solid var(--line);
   color: var(--ink);
   background: transparent;
@@ -243,6 +243,12 @@ button:disabled {
   border-color: var(--teal);
   color: var(--teal);
   background: var(--teal-soft);
+}
+
+.button-symbol {
+  font-family: "Apple Symbols", "Arial Unicode MS", system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .play-symbol {
@@ -387,20 +393,27 @@ button:disabled {
   font-weight: 500;
 }
 
-.text-control {
-  padding: 0.25rem 0;
+.icon-control {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
   color: var(--teal);
-  background: transparent;
-  font-size: 0.78rem;
+  background: var(--paper);
+  font-family: "Apple Symbols", "Arial Unicode MS", system-ui, sans-serif;
+  font-size: 1.05rem;
   font-weight: 750;
-  text-decoration: underline;
-  text-decoration-color: rgba(29, 109, 103, 0.28);
-  text-underline-offset: 0.22rem;
+  line-height: 1;
 }
 
-.text-control:hover:not(:disabled) {
+.icon-control:hover:not(:disabled),
+.icon-control[aria-pressed="true"] {
+  border-color: var(--teal);
   color: var(--ink);
-  text-decoration-color: currentColor;
+  background: var(--teal-soft);
 }
 
 .mixer {
@@ -528,8 +541,8 @@ button:disabled {
 .display-actions {
   margin-top: 0.55rem;
   display: flex;
-  justify-content: space-between;
-  gap: 0.7rem;
+  justify-content: flex-end;
+  gap: 0.45rem;
 }
 
 .reflow-status {
@@ -773,17 +786,7 @@ button:disabled {
   }
 
   .transport-main {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 0.8fr;
-  }
-
-  .primary-control,
-  .secondary-control {
-    min-width: 0;
-    min-height: 2.65rem;
-    padding-right: 0.65rem;
-    padding-left: 0.65rem;
-    font-size: 0.82rem;
+    display: flex;
   }
 
   .time-readout {
@@ -23694,9 +23697,7 @@ button:disabled {
     const playerStatus = document.getElementById("playerStatus");
     const playerStatusText = document.getElementById("playerStatusText");
     const playPause = document.getElementById("playPause");
-    const playPauseLabel = document.getElementById("playPauseLabel");
     const stopPlayback = document.getElementById("stopPlayback");
-    const loopPlayback = document.getElementById("loopPlayback");
     const currentTime = document.getElementById("currentTime");
     const totalTime = document.getElementById("totalTime");
     const seek = document.getElementById("seek");
@@ -23792,7 +23793,6 @@ button:disabled {
       scoreLoading.querySelector("p").textContent = message;
       playPause.disabled = true;
       stopPlayback.disabled = true;
-      loopPlayback.disabled = true;
       seek.disabled = true;
     }
 
@@ -23821,11 +23821,6 @@ button:disabled {
       tempoValue.textContent = `${next} BPM`;
       if (api) api.playbackSpeed = next / ORIGINAL_BPM;
       savePreferences();
-    }
-
-    function updateLoop(next) {
-      loopPlayback.setAttribute("aria-pressed", String(next));
-      if (api) api.isLooping = next;
     }
 
     function updateMixerAppearance() {
@@ -24471,7 +24466,6 @@ button:disabled {
       isReady = true;
       playPause.disabled = false;
       stopPlayback.disabled = false;
-      loopPlayback.disabled = false;
       seek.disabled = false;
       updateTempo(preferences.tempoBpm);
       setStatus("Ready · sax-like browser synth", "ready");
@@ -24480,8 +24474,8 @@ button:disabled {
     api.playerStateChanged.on((event) => {
       const playing = event.state === window.alphaTab.synth.PlayerState.Playing;
       playPause.classList.toggle("is-playing", playing);
-      playPauseLabel.textContent = playing ? "Pause" : "Play";
       playPause.setAttribute("aria-label", playing ? "Pause playback" : "Play score");
+      playPause.title = playing ? "Pause" : "Play";
       if (playing) setStatus("Playing · sax-like browser synth", "ready");
       else if (isReady) setStatus("Ready · sax-like browser synth", "ready");
     });
@@ -24499,10 +24493,9 @@ button:disabled {
     });
 
     api.playerFinished.on(() => {
-      if (!api.isLooping) {
-        playPause.classList.remove("is-playing");
-        playPauseLabel.textContent = "Play";
-      }
+      playPause.classList.remove("is-playing");
+      playPause.setAttribute("aria-label", "Play score");
+      playPause.title = "Play";
     });
 
     api.error.on((error) => {
@@ -24516,10 +24509,6 @@ button:disabled {
 
     stopPlayback.addEventListener("click", () => {
       if (isReady) api.stop();
-    });
-
-    loopPlayback.addEventListener("click", () => {
-      updateLoop(loopPlayback.getAttribute("aria-pressed") !== "true");
     });
 
     tempo.addEventListener("input", () => updateTempo(tempo.value));
@@ -24552,7 +24541,12 @@ button:disabled {
 
     document.addEventListener("fullscreenchange", () => {
       const active = document.fullscreenElement === playerShell;
-      fullscreenScore.textContent = active ? "Exit full screen" : "Full screen";
+      fullscreenScore.setAttribute("aria-pressed", String(active));
+      fullscreenScore.setAttribute(
+        "aria-label",
+        active ? "Exit full screen" : "Enter full screen",
+      );
+      fullscreenScore.title = active ? "Exit full screen" : "Full screen";
       window.setTimeout(updateReflowLabel, 100);
     });
 
@@ -24571,8 +24565,6 @@ button:disabled {
         api.playPause();
       } else if (event.key.toLowerCase() === "r") {
         api.stop();
-      } else if (event.key.toLowerCase() === "l") {
-        updateLoop(!api.isLooping);
       }
     });
 
@@ -24608,21 +24600,25 @@ button:disabled {
       <section class="player-shell" id="player" aria-label="Interactive score player">
         <div class="transport" aria-label="Playback controls">
           <div class="transport-main">
-            <button class="primary-control" id="playPause" type="button" disabled>
-              <span class="play-symbol" aria-hidden="true"></span>
-              <span id="playPauseLabel">Play</span>
-            </button>
-            <button class="secondary-control" id="stopPlayback" type="button" disabled>
-              Restart
-            </button>
             <button
-              class="secondary-control toggle-control"
-              id="loopPlayback"
+              class="primary-control"
+              id="playPause"
               type="button"
-              aria-pressed="false"
+              aria-label="Play score"
+              title="Play"
               disabled
             >
-              Loop
+              <span class="play-symbol" aria-hidden="true"></span>
+            </button>
+            <button
+              class="secondary-control"
+              id="stopPlayback"
+              type="button"
+              aria-label="Restart from beginning"
+              title="Restart"
+              disabled
+            >
+              <span class="button-symbol" aria-hidden="true">⏮︎</span>
             </button>
           </div>
 
@@ -24676,8 +24672,15 @@ button:disabled {
                 <p class="kicker">Practice mix</p>
                 <h2 id="practice-heading">Voices</h2>
               </div>
-              <button class="text-control" id="resetMix" type="button" disabled>
-                Reset mix
+              <button
+                class="icon-control"
+                id="resetMix"
+                type="button"
+                aria-label="Reset voice mix"
+                title="Reset mix"
+                disabled
+              >
+                <span aria-hidden="true">↺</span>
               </button>
             </div>
 
@@ -24706,9 +24709,24 @@ button:disabled {
                 step="5"
               />
               <div class="display-actions">
-                <button class="text-control" id="fitScore" type="button">Fit screen</button>
-                <button class="text-control" id="fullscreenScore" type="button">
-                  Full screen
+                <button
+                  class="icon-control"
+                  id="fitScore"
+                  type="button"
+                  aria-label="Fit score to screen"
+                  title="Fit score to screen"
+                >
+                  <span aria-hidden="true">↔</span>
+                </button>
+                <button
+                  class="icon-control"
+                  id="fullscreenScore"
+                  type="button"
+                  aria-label="Enter full screen"
+                  aria-pressed="false"
+                  title="Full screen"
+                >
+                  <span aria-hidden="true">⛶</span>
                 </button>
               </div>
               <p class="reflow-status" id="reflowStatus">Automatic measure wrapping</p>
@@ -24719,7 +24737,6 @@ button:disabled {
               <dl>
                 <div><dt>Space</dt><dd>Play or pause</dd></div>
                 <div><dt>R</dt><dd>Restart</dd></div>
-                <div><dt>L</dt><dd>Toggle loop</dd></div>
               </dl>
             </details>
           </aside>

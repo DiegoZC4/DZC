@@ -7,8 +7,9 @@
     <meta name="robots" content="noindex, nofollow" />
     <meta
       name="description"
-      content="A responsive, interactive SSATB rehearsal score for Nature Boy with synchronized playback, tempo, mixing, and per-voice notation controls."
+      content="A responsive, interactive SSATB rehearsal score for Nature Boy with synchronized playback, measure looping, tempo, mixing, and per-voice notation controls."
     />
+    <link rel="canonical" href="https://diegozc.com/nature-boy/" />
     <title>Nature Boy — Interactive Rehearsal Score</title>
     <link
       rel="icon"
@@ -366,14 +367,181 @@ button:disabled {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rust-dark) 32%, transparent);
 }
 
+.loop-region-track {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 0.43rem;
+  left: 0.43rem;
+  height: 0.7rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.loop-region-track[hidden] {
+  display: none;
+}
+
+.loop-region {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 3px;
+  border-right: 2px solid var(--teal);
+  border-left: 2px solid var(--teal);
+  border-radius: 0.12rem;
+  background: rgba(29, 109, 103, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(29, 109, 103, 0.16);
+}
+
+.loop-region-track.is-disabled .loop-region {
+  border-color: color-mix(in srgb, var(--teal) 58%, var(--line-dark));
+  background: rgba(29, 109, 103, 0.07);
+  box-shadow: none;
+}
+
+.loop-handle-track {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 0.43rem;
+  left: 0.43rem;
+  height: 0;
+  pointer-events: none;
+}
+
+.loop-handle-track[hidden],
+.loop-handle[hidden],
+.contextual-action[hidden],
+.seek-preview[hidden],
+.transport-toast[hidden] {
+  display: none !important;
+}
+
+.loop-handle {
+  position: absolute;
+  top: 0;
+  width: 1.32rem;
+  height: 1.32rem;
+  padding: 0;
+  border: 1.5px solid var(--paper);
+  border-radius: 0.34rem;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: var(--teal);
+  box-shadow: 0 1px 5px rgba(58, 43, 24, 0.3);
+  cursor: ew-resize;
+  font-size: 0.61rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.loop-handle.is-start {
+  transform: translate(-100%, -50%);
+}
+
+.loop-handle.is-end {
+  transform: translate(0, -50%);
+}
+
+.loop-handle.is-at-left-edge {
+  transform: translate(-0.43rem, -50%);
+}
+
+.loop-handle.is-at-right-edge {
+  transform: translate(calc(-100% + 0.43rem), -50%);
+}
+
+.player-shell:not(.is-loop-enabled) .loop-handle {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal-soft) 62%, var(--paper));
+  border-color: color-mix(in srgb, var(--teal) 46%, var(--paper));
+}
+
+.loop-handle:hover,
+.loop-handle:focus-visible,
+.loop-handle.is-dragging {
+  color: var(--ink);
+  background: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.seek-preview {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.3rem);
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: 0.28rem 0.48rem;
+  border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--line));
+  border-radius: 0.46rem;
+  color: var(--ink);
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: 0 5px 16px rgba(58, 43, 24, 0.16);
+  font-size: 0.68rem;
+  font-weight: 720;
+  line-height: 1.15;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.transport-toast {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.35rem);
+  right: max(0.55rem, env(safe-area-inset-right));
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: 0.48rem 0.68rem;
+  border: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+  border-radius: 0.58rem;
+  color: var(--ink);
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: 0 8px 24px rgba(58, 43, 24, 0.2);
+  font-size: 0.74rem;
+  font-weight: 720;
+  line-height: 1.25;
+  opacity: 0;
+  transform: translateY(-0.3rem);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+  pointer-events: none;
+}
+
+.transport-toast[data-tone="error"] {
+  border-color: color-mix(in srgb, var(--rust) 55%, var(--line));
+  color: var(--rust-dark);
+}
+
+.transport-toast[data-tone="success"] {
+  border-color: color-mix(in srgb, var(--teal) 62%, var(--line));
+}
+
+.transport-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (pointer: coarse) {
   .timeline-track,
   .timeline-range {
     height: 1.5rem;
   }
+
+  .loop-handle {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
 }
 
 .tempo-control,
+.settings-group,
+.settings-group-content,
 .settings-stack,
 .settings-actions {
   min-width: 0;
@@ -721,6 +889,40 @@ button:disabled {
   opacity: 0.52;
 }
 
+.settings-group,
+.settings-group-content {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.3rem, 0.6vw, 0.4rem);
+}
+
+.settings-group-content {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.settings-group-title {
+  display: none;
+}
+
+.settings-parts-group {
+  flex: 0 1 auto;
+}
+
+.settings-practice-group {
+  flex: 1 1 18.4rem;
+}
+
+.settings-display-group {
+  flex: 0 1 auto;
+}
+
+.settings-practice-group,
+.settings-display-group {
+  padding-left: clamp(0.35rem, 0.7vw, 0.52rem);
+  border-left: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+
 .settings-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -760,6 +962,66 @@ button:disabled {
   align-items: stretch;
 }
 
+.loop-boundary-controls {
+  width: 5.25rem;
+  flex: 0 0 5.25rem;
+  align-items: stretch;
+}
+
+.loop-boundary-button {
+  min-height: 2.2rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 0.72rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.loop-boundary-button:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--ink);
+}
+
+.loop-boundary-button.has-boundary {
+  border-color: color-mix(in srgb, var(--teal) 70%, var(--line));
+  color: var(--ink);
+  background: color-mix(in srgb, var(--teal-soft) 58%, var(--paper));
+}
+
+.loop-boundary-symbol {
+  color: var(--teal);
+  font-weight: 850;
+}
+
+.loop-boundary-measure {
+  min-width: 1.45em;
+  text-align: center;
+}
+
+.loop-toggle-symbol {
+  width: 1.12rem;
+  height: 1.12rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.loop-boundary-button:disabled,
+#loopToggle:disabled {
+  cursor: not-allowed;
+}
+
 .score-layout-number {
   width: 100%;
   min-height: 2.2rem;
@@ -778,10 +1040,24 @@ button:disabled {
 
 .settings-actions {
   flex: 0 0 auto;
-  margin-left: auto;
+  margin-left: 0;
   display: flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.practice-actions,
+.display-actions {
+  align-self: stretch;
+  align-items: center;
+}
+
+.settings-utility-actions {
+  margin-left: auto;
+}
+
+.contextual-action {
+  color: var(--rust);
 }
 
 .score-panel {
@@ -817,6 +1093,105 @@ button:disabled {
   left: 0;
   overflow: visible;
   pointer-events: none;
+}
+
+.score-loop-region {
+  position: absolute;
+  z-index: 0;
+  box-sizing: border-box;
+  border-radius: 0.18rem;
+  background: color-mix(in srgb, var(--teal) 3%, transparent);
+  box-shadow:
+    inset 0 1px color-mix(in srgb, var(--teal) 8%, transparent),
+    inset 0 -1px color-mix(in srgb, var(--teal) 8%, transparent);
+}
+
+.score-loop-region:not(.has-loop-start) {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.score-loop-region:not(.has-loop-end) {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.player-shell.is-loop-enabled .score-loop-region {
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
+  box-shadow:
+    inset 0 1px color-mix(in srgb, var(--teal) 19%, transparent),
+    inset 0 -1px color-mix(in srgb, var(--teal) 19%, transparent);
+}
+
+.score-loop-boundary {
+  position: absolute;
+  z-index: 3;
+  width: 14px;
+  color: color-mix(in srgb, var(--teal) 58%, var(--muted));
+  opacity: 0.72;
+  transform: translateX(-50%);
+}
+
+.score-loop-boundary::before,
+.score-loop-boundary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left-color: currentColor;
+  border-left-style: dashed;
+}
+
+.score-loop-boundary::before {
+  border-left-width: 2.6px;
+}
+
+.score-loop-boundary::after {
+  border-left-width: 1.15px;
+}
+
+.score-loop-boundary.is-start::before {
+  left: 2px;
+}
+
+.score-loop-boundary.is-start::after {
+  left: 6.2px;
+}
+
+.score-loop-boundary.is-end::before {
+  right: 2px;
+}
+
+.score-loop-boundary.is-end::after {
+  right: 6.2px;
+}
+
+.score-loop-boundary-dots {
+  position: absolute;
+  top: calc(50% - 4.5px);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 7px currentColor;
+}
+
+.score-loop-boundary.is-start .score-loop-boundary-dots {
+  left: 10px;
+}
+
+.score-loop-boundary.is-end .score-loop-boundary-dots {
+  right: 10px;
+}
+
+.player-shell.is-loop-enabled .score-loop-boundary {
+  color: var(--teal);
+  opacity: 0.94;
+}
+
+.player-shell.is-loop-enabled .score-loop-boundary::before,
+.player-shell.is-loop-enabled .score-loop-boundary::after {
+  border-left-style: solid;
 }
 
 .score-phrase-measure,
@@ -915,6 +1290,48 @@ button:disabled {
 
 .bar-system-background {
   fill: #fffefa;
+}
+
+.bar-loop-region {
+  fill: color-mix(in srgb, var(--teal) 3%, transparent);
+  pointer-events: none;
+}
+
+.player-shell.is-loop-enabled .bar-loop-region {
+  fill: color-mix(in srgb, var(--teal) 8%, transparent);
+}
+
+.bar-loop-boundary {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.bar-loop-boundary-line {
+  stroke: color-mix(in srgb, var(--teal) 58%, var(--muted));
+  stroke-width: 1.15;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.bar-loop-boundary-line.is-heavy {
+  stroke-width: 2.6;
+}
+
+.bar-loop-boundary-dot {
+  fill: color-mix(in srgb, var(--teal) 58%, var(--muted));
+}
+
+.player-shell.is-loop-enabled .bar-loop-boundary {
+  opacity: 0.94;
+}
+
+.player-shell.is-loop-enabled .bar-loop-boundary-line {
+  stroke: var(--teal);
+  stroke-dasharray: none;
+}
+
+.player-shell.is-loop-enabled .bar-loop-boundary-dot {
+  fill: var(--teal);
 }
 
 .bar-measure-line {
@@ -1285,6 +1702,31 @@ button:disabled {
     gap: 0.35rem;
   }
 
+  .transport-settings .settings-group {
+    width: 100%;
+    padding: 0 0 0.48rem;
+    border-left: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    display: grid;
+    align-items: start;
+    gap: 0.28rem;
+  }
+
+  .transport-settings .settings-group-title {
+    display: block;
+    color: var(--muted);
+    font-size: 0.61rem;
+    font-weight: 850;
+    letter-spacing: 0.07em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .transport-settings .settings-group-content {
+    width: 100%;
+    align-items: center;
+  }
+
   .mixer {
     width: 100%;
     min-width: 0;
@@ -1296,8 +1738,8 @@ button:disabled {
   }
 
   .transport-settings .settings-view-stack {
-    width: auto;
-    flex: 1 1 10rem;
+    width: 100%;
+    flex: 1 1 100%;
   }
 
   .transport-settings .score-layout-controls {
@@ -1305,8 +1747,18 @@ button:disabled {
     flex: 0 0 5.25rem;
   }
 
+  .transport-settings .loop-boundary-controls {
+    width: 5.25rem;
+    flex: 0 0 5.25rem;
+  }
+
   .transport-settings .settings-actions {
     margin-left: auto;
+  }
+
+  .transport-settings .settings-utility-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .pill-toggle {
@@ -23781,6 +24233,22 @@ button:disabled {
     const RATE_FADE_OUT_SECONDS = 0.05;
     const RATE_FADE_IN_SECONDS = 0.08;
     const RATE_FADE_SETTLE_SECONDS = 0.01;
+    const AUDIO_SCHEDULER_LEAD_SECONDS = 0.006;
+    const LOOP_RESTART_LEAD_SECONDS = 0.003;
+    const LOOP_BOUNDARY_TOLERANCE_TICKS = 2;
+    const PRACTICE_LINK_VERSION = "1";
+    const PUBLIC_SCORE_URL = "https://diegozc.com/nature-boy/";
+    const POSITION_SAVE_INTERVAL_MS = 2000;
+    const MEDIA_POSITION_INTERVAL_MS = 750;
+    const MEDIA_SESSION_ACTIONS = [
+      "play",
+      "pause",
+      "seekbackward",
+      "seekforward",
+      "seekto",
+      "previoustrack",
+      "nexttrack",
+    ];
     const PART_COLORS = ["#9d3d2b", "#c7752e", "#a48320", "#2f7770", "#3f557d"];
     const PART_NAMES = ["Soprano 1", "Soprano 2", "Alto", "Tenor", "Bass"];
     const PART_LABELS = ["S1", "S2", "A", "T", "B"];
@@ -23820,11 +24288,18 @@ button:disabled {
     const playerShell = document.getElementById("player");
     const playerStatus = document.getElementById("playerStatus");
     const playerStatusText = document.getElementById("playerStatusText");
+    const transportToast = document.getElementById("transportToast");
     const playPause = document.getElementById("playPause");
     const currentTime = document.getElementById("currentTime");
     const totalTime = document.getElementById("totalTime");
     const seek = document.getElementById("seek");
     const phraseMarkers = document.getElementById("phraseMarkers");
+    const loopRegionTrack = document.getElementById("loopRegionTrack");
+    const loopRegion = document.getElementById("loopRegion");
+    const loopHandleTrack = document.getElementById("loopHandleTrack");
+    const loopStartHandle = document.getElementById("loopStartHandle");
+    const loopEndHandle = document.getElementById("loopEndHandle");
+    const seekPreview = document.getElementById("seekPreview");
     const tempo = document.getElementById("tempo");
     const scoreLayout = document.getElementById("scoreLayout");
     const scoreVertical = document.getElementById("scoreVertical");
@@ -23834,6 +24309,13 @@ button:disabled {
     const fullscreenScore = document.getElementById("fullscreenScore");
     const reflowStatus = document.getElementById("reflowStatus");
     const mixer = document.getElementById("mixer");
+    const loopStart = document.getElementById("loopStart");
+    const loopEnd = document.getElementById("loopEnd");
+    const loopStartMeasure = document.getElementById("loopStartMeasure");
+    const loopEndMeasure = document.getElementById("loopEndMeasure");
+    const loopToggle = document.getElementById("loopToggle");
+    const loopClear = document.getElementById("loopClear");
+    const sharePractice = document.getElementById("sharePractice");
     const resetMix = document.getElementById("resetMix");
     const compactSettingsQuery = window.matchMedia(
       "(max-width: 820px), (max-height: 520px) and (max-width: 920px)",
@@ -23862,11 +24344,25 @@ button:disabled {
     let barMeasuresPerLine = 0;
     let phraseRecords = [];
     let phraseOverlayFrame = 0;
+    let seekPreviewTimer = 0;
+    let transportToastTimer = 0;
     let currentScoreView = "standard";
     let currentPlaybackTick = 0;
+    let loopStartTick = null;
+    let loopEndTick = null;
+    let loopStartMeasureNumber = null;
+    let loopEndMeasureNumber = null;
+    let loopEnabled = false;
     let activeBarSystemIndex = -1;
     let playbackFollowFrame = 0;
     let playerIsPlaying = false;
+    let lastPositionPreferenceSave = 0;
+    let lastMediaPositionSync = 0;
+    let lastMediaPosition = 0;
+    let mediaSessionReady = false;
+    let loopHandleGesture = null;
+    let sharedPracticeUnsupported = false;
+    let restoredCursorTick = 0;
     let sequence = null;
     const audibleTracks = new Set(
       PART_NAMES.map((_, index) => index),
@@ -24015,24 +24511,167 @@ button:disabled {
       return 100;
     }
 
-    function readPreferences() {
+    function integerInRange(raw, min, max, step = 1) {
+      const value = Number(raw);
+      return Number.isInteger(value) &&
+        value >= min &&
+        value <= max &&
+        (value - min) % step === 0
+        ? value
+        : null;
+    }
+
+    function readSharedPracticeState() {
+      if (window.location.search.length > 2048) {
+        return { state: {}, provided: {}, unsupported: false };
+      }
+      const params = new URLSearchParams(window.location.search);
+      const versions = params.getAll("nb");
+      if (!versions.length) {
+        return { state: {}, provided: {}, unsupported: false };
+      }
+      if (
+        versions.length !== 1 ||
+        versions[0] !== PRACTICE_LINK_VERSION
+      ) {
+        return { state: {}, provided: {}, unsupported: true };
+      }
+
+      const state = {};
+      const provided = {
+        loop: params.has("l"),
+        cursor: params.has("c"),
+      };
+      const uniqueValue = (key) => {
+        const values = params.getAll(key);
+        return values.length === 1 ? values[0] : null;
+      };
+
+      const loopValue = uniqueValue("l");
+      if (loopValue === "0") {
+        state.loopMeasures = [null, null];
+      } else {
+        const match = loopValue?.match(/^(\d*)-(\d*)$/);
+        if (match && (match[1] || match[2])) {
+          const start = match[1]
+            ? integerInRange(match[1], 1, Number.MAX_SAFE_INTEGER)
+            : null;
+          const end = match[2]
+            ? integerInRange(match[2], 1, Number.MAX_SAFE_INTEGER)
+            : null;
+          if (
+            (match[1] ? start !== null : true) &&
+            (match[2] ? end !== null : true) &&
+            (start === null || end === null || start <= end)
+          ) {
+            state.loopMeasures = [start, end];
+          }
+        }
+      }
+
+      const cursorValue = uniqueValue("c");
+      const cursorMatch = cursorValue?.match(/^(\d+)\.(\d+)$/);
+      if (cursorMatch) {
+        const measure = integerInRange(
+          cursorMatch[1],
+          1,
+          Number.MAX_SAFE_INTEGER,
+        );
+        const offset = integerInRange(
+          cursorMatch[2],
+          0,
+          Number.MAX_SAFE_INTEGER,
+        );
+        if (measure !== null && offset !== null) {
+          state.cursor = [measure, offset];
+        }
+      }
+
+      const tempoValue = uniqueValue("t");
+      const tempoPercent = integerInRange(
+        tempoValue,
+        MIN_TEMPO_PERCENT,
+        MAX_TEMPO_PERCENT,
+        10,
+      );
+      if (tempoPercent !== null) state.tempoPercent = tempoPercent;
+
+      const viewValue = uniqueValue("v");
+      if (viewValue === "s" || viewValue === "p") {
+        state.scoreView = viewValue === "p" ? "bars" : "standard";
+      }
+
+      const parseBits = (key, requireVisible = false) => {
+        const value = uniqueValue(key);
+        if (!value || !/^[01]{5}$/.test(value)) return null;
+        const bits = Array.from(value, (bit) => bit === "1");
+        return requireVisible && !bits.some(Boolean) ? null : bits;
+      };
+      const visibleTracks = parseBits("s", true);
+      if (visibleTracks) state.visibleTracks = visibleTracks;
+      const audibleParts = parseBits("h");
+      if (audibleParts) state.audibleTracks = audibleParts;
+
+      const gainValue = uniqueValue("g");
+      const gains = gainValue?.split(".").map((value) =>
+        integerInRange(value, 0, 100, 5),
+      );
+      if (gains?.length === PART_NAMES.length && gains.every((value) => value !== null)) {
+        state.volumes = gains;
+      }
+
+      const scaleValue = uniqueValue("z");
+      const scaleParts = scaleValue?.split(".");
+      if (scaleParts?.length === 2) {
+        const size = integerInRange(
+          scaleParts[0],
+          MIN_SCORE_SIZE,
+          MAX_SCORE_SIZE,
+          10,
+        );
+        const spacing = integerInRange(
+          scaleParts[1],
+          MIN_SCORE_SPACING,
+          MAX_SCORE_SPACING,
+        );
+        if (size !== null && spacing !== null) {
+          state.scoreSize = size;
+          state.scoreSpacing = spacing;
+        }
+      }
+
+      return { state, provided, unsupported: false };
+    }
+
+    function defaultPreferences() {
+      return {
+        tempoPercent: DEFAULT_TEMPO_PERCENT,
+        scoreSize: defaultScoreSize(),
+        scoreSpacing: DEFAULT_SCORE_SPACING,
+        volumes: Array(PART_NAMES.length).fill(100),
+        visibleTracks: Array(PART_NAMES.length).fill(true),
+        audibleTracks: Array(PART_NAMES.length).fill(true),
+        scoreView: "standard",
+        loopMeasures: [null, null],
+        cursor: [1, 0],
+      };
+    }
+
+    function readPreferences(sharedState = {}) {
+      const defaults = defaultPreferences();
+      let stored = {};
       try {
-        const parsed = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
-        const volumes = PART_NAMES.map((_, index) => {
-          const value = Number(parsed.volumes?.[index]);
-          return Number.isFinite(value) ? clamp(value, 0, 100) : 100;
-        });
-        const savedPercent = Number(parsed.tempo);
-        const savedBpm = Number(parsed.tempoBpm);
-        const savedSpacing = Number(parsed.scoreSpacing);
-        const visibleTracks = PART_NAMES.map(
-          (_, index) => parsed.visibleTracks?.[index] !== false,
-        );
-        if (!visibleTracks.some(Boolean)) visibleTracks.fill(true);
-        const audibleParts = PART_NAMES.map(
-          (_, index) => parsed.audibleTracks?.[index] !== false,
-        );
-        const tempoPercent = Number.isFinite(savedPercent)
+        stored = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+      } catch {
+        stored = {};
+      }
+
+      const savedPercent = Number(stored.tempo);
+      const savedBpm = Number(stored.tempoBpm);
+      const savedSpacing = Number(stored.scoreSpacing);
+      const local = {
+        ...defaults,
+        tempoPercent: Number.isFinite(savedPercent)
           ? clamp(savedPercent, MIN_TEMPO_PERCENT, MAX_TEMPO_PERCENT)
           : Number.isFinite(savedBpm)
             ? clamp(
@@ -24040,44 +24679,69 @@ button:disabled {
                 MIN_TEMPO_PERCENT,
                 MAX_TEMPO_PERCENT,
               )
-            : DEFAULT_TEMPO_PERCENT;
-        return {
-          tempoPercent,
-          scoreSize: clamp(
-            Number(parsed.scoreSize) || defaultScoreSize(),
-            MIN_SCORE_SIZE,
-            MAX_SCORE_SIZE,
-          ),
-          scoreSpacing: Number.isFinite(savedSpacing)
-            ? clamp(
-                savedSpacing,
-                MIN_SCORE_SPACING,
-                MAX_SCORE_SPACING,
-              )
-            : DEFAULT_SCORE_SPACING,
-          volumes,
-          visibleTracks,
-          audibleTracks: audibleParts,
-          scoreView: parsed.scoreView === "bars" ? "bars" : "standard",
-        };
-      } catch {
-        return {
-          tempoPercent: DEFAULT_TEMPO_PERCENT,
-          scoreSize: defaultScoreSize(),
-          scoreSpacing: DEFAULT_SCORE_SPACING,
-          volumes: Array(PART_NAMES.length).fill(100),
-          visibleTracks: Array(PART_NAMES.length).fill(true),
-          audibleTracks: Array(PART_NAMES.length).fill(true),
-          scoreView: "standard",
-        };
-      }
+            : defaults.tempoPercent,
+        scoreSize: clamp(
+          Number(stored.scoreSize) || defaults.scoreSize,
+          MIN_SCORE_SIZE,
+          MAX_SCORE_SIZE,
+        ),
+        scoreSpacing: Number.isFinite(savedSpacing)
+          ? clamp(savedSpacing, MIN_SCORE_SPACING, MAX_SCORE_SPACING)
+          : defaults.scoreSpacing,
+        volumes: PART_NAMES.map((_, index) => {
+          const value = Number(stored.volumes?.[index]);
+          return Number.isFinite(value) ? clamp(value, 0, 100) : 100;
+        }),
+        visibleTracks: PART_NAMES.map(
+          (_, index) => stored.visibleTracks?.[index] !== false,
+        ),
+        audibleTracks: PART_NAMES.map(
+          (_, index) => stored.audibleTracks?.[index] !== false,
+        ),
+        scoreView: stored.scoreView === "bars" ? "bars" : "standard",
+        loopMeasures: Array.isArray(stored.loopMeasures)
+          ? [stored.loopMeasures[0] ?? null, stored.loopMeasures[1] ?? null]
+          : defaults.loopMeasures,
+        cursor: Array.isArray(stored.cursor)
+          ? [stored.cursor[0], stored.cursor[1]]
+          : defaults.cursor,
+      };
+      if (!local.visibleTracks.some(Boolean)) local.visibleTracks.fill(true);
+
+      const merged = { ...local };
+      [
+        "tempoPercent",
+        "scoreSize",
+        "scoreSpacing",
+        "scoreView",
+        "loopMeasures",
+        "cursor",
+      ].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(sharedState, key)) {
+          merged[key] = sharedState[key];
+        }
+      });
+      ["volumes", "visibleTracks", "audibleTracks"].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(sharedState, key)) {
+          merged[key] = sharedState[key].slice();
+        }
+      });
+      return merged;
     }
 
     function savePreferences() {
       try {
+        const cursor = cursorPositionForTick(currentPlaybackTick);
+        const savedLoopMeasures = loopHandleGesture
+          ? [
+              loopHandleGesture.snapshot.startMeasure,
+              loopHandleGesture.snapshot.endMeasure,
+            ]
+          : [loopStartMeasureNumber, loopEndMeasureNumber];
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
+            schema: 3,
             tempo: tempoDrag?.value() ?? DEFAULT_TEMPO_PERCENT,
             scoreSize: scoreLayoutControl?.size() ?? defaultScoreSize(),
             scoreSpacing:
@@ -24090,8 +24754,13 @@ button:disabled {
               audibleTracks.has(index),
             ),
             scoreView: currentScoreView,
+            loopMeasures: savedLoopMeasures,
+            cursor: cursor
+              ? [cursor.measureNumber, cursor.offsetTicks]
+              : [1, 0],
           }),
         );
+        lastPositionPreferenceSave = performance.now();
       } catch {
         // Device-local preferences are optional.
       }
@@ -24110,6 +24779,116 @@ button:disabled {
       const fraction = beat - whole;
       if (Math.abs(fraction - 0.5) < 0.001) return `${whole}½`;
       return String(beat);
+    }
+
+    function measureIndexAtTick(tick) {
+      const measures = sequence?.measures || [];
+      if (!measures.length) return -1;
+      const boundedTick = clamp(
+        Number(tick) || 0,
+        0,
+        sequence.endTick,
+      );
+      if (boundedTick >= sequence.endTick) return measures.length - 1;
+      let low = 0;
+      let high = measures.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (measures[middle][0] <= boundedTick) low = middle + 1;
+        else high = middle;
+      }
+      return clamp(low - 1, 0, measures.length - 1);
+    }
+
+    function cursorPositionForTick(tick) {
+      const measureIndex = measureIndexAtTick(tick);
+      if (measureIndex < 0) return null;
+      const [startTick, duration] = sequence.measures[measureIndex];
+      return {
+        measureNumber: measureIndex + 1,
+        offsetTicks: Math.round(
+          clamp((Number(tick) || 0) - startTick, 0, duration),
+        ),
+      };
+    }
+
+    function tickForCursorPosition(cursor) {
+      if (!Array.isArray(cursor) || cursor.length !== 2) return null;
+      const measureNumber = Number(cursor[0]);
+      const offsetTicks = Number(cursor[1]);
+      const measure = sequence?.measures?.[measureNumber - 1];
+      if (
+        !measure ||
+        !Number.isInteger(measureNumber) ||
+        !Number.isInteger(offsetTicks) ||
+        offsetTicks < 0 ||
+        offsetTicks > measure[1]
+      ) {
+        return null;
+      }
+      return measure[0] + offsetTicks;
+    }
+
+    function musicalPositionAtTick(tick) {
+      const measureIndex = measureIndexAtTick(tick);
+      if (measureIndex < 0) return null;
+      const [startTick, duration, , denominator] =
+        sequence.measures[measureIndex];
+      const offsetTicks = clamp((Number(tick) || 0) - startTick, 0, duration);
+      const beatTicks = (sequence.division * 4) / denominator;
+      const beat = Math.round((1 + offsetTicks / beatTicks) * 2) / 2;
+      return {
+        measureNumber: measureIndex + 1,
+        beat,
+        offsetTicks: Math.round(offsetTicks),
+      };
+    }
+
+    function resolveLoopMeasures(loopMeasures) {
+      if (!Array.isArray(loopMeasures) || loopMeasures.length !== 2) return null;
+      const measureCount = sequence?.measures?.length || 0;
+      const start = loopMeasures[0] == null ? null : Number(loopMeasures[0]);
+      const end = loopMeasures[1] == null ? null : Number(loopMeasures[1]);
+      if (
+        (start !== null &&
+          (!Number.isInteger(start) || start < 1 || start > measureCount)) ||
+        (end !== null &&
+          (!Number.isInteger(end) || end < 1 || end > measureCount)) ||
+        (start !== null && end !== null && start > end)
+      ) {
+        return null;
+      }
+      return [start, end];
+    }
+
+    function restorePracticePosition(
+      preferences,
+      localPreferences,
+      sharedPractice,
+    ) {
+      const loopMeasures = sharedPractice.provided.loop
+        ? resolveLoopMeasures(sharedPractice.state.loopMeasures) ?? [null, null]
+        : resolveLoopMeasures(preferences.loopMeasures) ??
+          resolveLoopMeasures(localPreferences.loopMeasures) ??
+          [null, null];
+      [loopStartMeasureNumber, loopEndMeasureNumber] = loopMeasures;
+      loopStartTick =
+        loopStartMeasureNumber === null
+          ? null
+          : sequence.measures[loopStartMeasureNumber - 1][0];
+      loopEndTick =
+        loopEndMeasureNumber === null
+          ? null
+          : sequence.measures[loopEndMeasureNumber - 1][0] +
+            sequence.measures[loopEndMeasureNumber - 1][1];
+      loopEnabled = false;
+
+      restoredCursorTick = sharedPractice.provided.cursor
+        ? tickForCursorPosition(sharedPractice.state.cursor) ?? 0
+        : tickForCursorPosition(preferences.cursor) ??
+          tickForCursorPosition(localPreferences.cursor) ??
+          0;
+      currentPlaybackTick = restoredCursorTick;
     }
 
     function phraseStartTick(phrase) {
@@ -24185,11 +24964,117 @@ button:disabled {
       return left.x + (right.x - left.x) * ratio;
     }
 
+    function appendStandardLoopRegions(
+      fragment,
+      lookup,
+      offsetX,
+      offsetY,
+    ) {
+      if (
+        !hasValidLoop() ||
+        !Number.isInteger(loopStartMeasureNumber) ||
+        !Number.isInteger(loopEndMeasureNumber)
+      ) {
+        return;
+      }
+
+      const regions = [];
+      for (
+        let measureIndex = loopStartMeasureNumber - 1;
+        measureIndex < loopEndMeasureNumber;
+        measureIndex += 1
+      ) {
+        const lineBounds =
+          lookup.findMasterBarByIndex(measureIndex)?.lineAlignedBounds;
+        if (
+          !lineBounds ||
+          ![lineBounds.x, lineBounds.y, lineBounds.w, lineBounds.h].every(
+            Number.isFinite,
+          )
+        ) {
+          continue;
+        }
+
+        const right = lineBounds.x + lineBounds.w;
+        const previous = regions[regions.length - 1];
+        const continuesPrevious =
+          previous &&
+          Math.abs(previous.y - lineBounds.y) <= 0.5 &&
+          Math.abs(previous.height - lineBounds.h) <= 0.5 &&
+          lineBounds.x >= previous.left - 0.5;
+        if (continuesPrevious) {
+          previous.left = Math.min(previous.left, lineBounds.x);
+          previous.right = Math.max(previous.right, right);
+          continue;
+        }
+        regions.push({
+          left: lineBounds.x,
+          right,
+          y: lineBounds.y,
+          height: lineBounds.h,
+        });
+      }
+
+      regions.forEach((region, index) => {
+        const highlight = document.createElement("span");
+        highlight.className = [
+          "score-loop-region",
+          index === 0 ? "has-loop-start" : "",
+          index === regions.length - 1 ? "has-loop-end" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        highlight.style.left = `${offsetX + region.left}px`;
+        highlight.style.top = `${offsetY + region.y + 1}px`;
+        highlight.style.width = `${Math.max(1, region.right - region.left)}px`;
+        highlight.style.height = `${Math.max(6, region.height - 2)}px`;
+        fragment.append(highlight);
+      });
+    }
+
+    function appendStandardLoopBoundary(
+      fragment,
+      lookup,
+      kind,
+      offsetX,
+      offsetY,
+    ) {
+      const isStart = kind === "start";
+      const tick = isStart ? loopStartTick : loopEndTick;
+      const measureNumber = isStart
+        ? loopStartMeasureNumber
+        : loopEndMeasureNumber;
+      if (!Number.isFinite(tick) || !Number.isInteger(measureNumber)) return;
+
+      const lineBounds =
+        lookup.findMasterBarByIndex(measureNumber - 1)?.lineAlignedBounds;
+      if (
+        !lineBounds ||
+        ![lineBounds.x, lineBounds.y, lineBounds.w, lineBounds.h].every(
+          Number.isFinite,
+        )
+      ) {
+        return;
+      }
+
+      const boundary = document.createElement("span");
+      boundary.className = `score-loop-boundary is-${kind}`;
+      boundary.dataset.tick = String(tick);
+      boundary.style.left = `${
+        offsetX + lineBounds.x + (isStart ? 0 : lineBounds.w)
+      }px`;
+      boundary.style.top = `${offsetY + lineBounds.y + 2}px`;
+      boundary.style.height = `${Math.max(8, lineBounds.h - 4)}px`;
+      const dots = document.createElement("span");
+      dots.className = "score-loop-boundary-dots";
+      boundary.append(dots);
+      fragment.append(boundary);
+    }
+
     function renderScorePhraseMarkers() {
       if (
         !scorePhraseOverlay ||
         !api ||
-        !phraseRecords.length ||
         currentScoreView !== "standard"
       ) {
         return;
@@ -24211,6 +25096,7 @@ button:disabled {
       )}px`;
 
       const fragment = document.createDocumentFragment();
+      appendStandardLoopRegions(fragment, lookup, offsetX, offsetY);
       phraseRecords.forEach((record, index) => {
         record.scoreElement = null;
         const masterBarBounds = lookup.findMasterBarByIndex(
@@ -24256,6 +25142,20 @@ button:disabled {
         record.scoreElement = marker;
         fragment.append(marker);
       });
+      appendStandardLoopBoundary(
+        fragment,
+        lookup,
+        "start",
+        offsetX,
+        offsetY,
+      );
+      appendStandardLoopBoundary(
+        fragment,
+        lookup,
+        "end",
+        offsetX,
+        offsetY,
+      );
       scorePhraseOverlay.replaceChildren(fragment);
       updatePhraseMarkerState(currentPlaybackTick);
     }
@@ -24295,15 +25195,71 @@ button:disabled {
 
     function updateSeekValueText(milliseconds, tick) {
       const activePhrase = phraseRecordAtTick(tick);
+      const position = musicalPositionAtTick(tick);
       const phraseText = activePhrase
-        ? `, ${activePhrase.phrase.label}, measure ${
-            activePhrase.phrase.measure
-          }, beat ${formatBeat(activePhrase.phrase.beat)}`
+        ? `, ${activePhrase.phrase.label}`
+        : "";
+      const positionText = position
+        ? `, measure ${position.measureNumber}, beat ${formatBeat(position.beat)}`
         : "";
       seek.setAttribute(
         "aria-valuetext",
-        `${formatTime(milliseconds)} of ${formatTime(endTime)}${phraseText}`,
+        `${formatTime(milliseconds)} of ${formatTime(
+          endTime,
+        )}${phraseText}${positionText}`,
       );
+    }
+
+    function seekPreviewText(milliseconds, tick) {
+      const activePhrase = phraseRecordAtTick(tick);
+      const position = musicalPositionAtTick(tick);
+      const phrase = activePhrase?.phrase.label || "Score";
+      const musicalPosition = position
+        ? `m${position.measureNumber}·${formatBeat(position.beat)}`
+        : "";
+      return [phrase, musicalPosition, formatTime(milliseconds)]
+        .filter(Boolean)
+        .join(" · ");
+    }
+
+    function hideSeekPreview(delay = 0) {
+      window.clearTimeout(seekPreviewTimer);
+      if (delay > 0) {
+        seekPreviewTimer = window.setTimeout(() => hideSeekPreview(), delay);
+        return;
+      }
+      seekPreview.hidden = true;
+    }
+
+    function showSeekPreview(milliseconds, linger = 0) {
+      if (!audioEngine?.duration || !seekPreview) return;
+      const next = clamp(
+        Number(milliseconds) || 0,
+        0,
+        audioEngine.duration * 1000,
+      );
+      const tick = audioEngine.tickAtSeconds(next / 1000);
+      seekPreview.textContent = seekPreviewText(next, tick);
+      seekPreview.hidden = false;
+      const trackBounds = seek.parentElement.getBoundingClientRect();
+      const seekBounds = seek.getBoundingClientRect();
+      const fraction = seekFractionAtTime(next);
+      const rawX =
+        seekBounds.left -
+        trackBounds.left +
+        7 +
+        fraction * Math.max(1, seekBounds.width - 14);
+      const halfWidth = Math.min(
+        Math.max(seekPreview.offsetWidth / 2, 38),
+        trackBounds.width / 2,
+      );
+      seekPreview.style.left = `${clamp(
+        rawX,
+        halfWidth,
+        Math.max(halfWidth, trackBounds.width - halfWidth),
+      )}px`;
+      window.clearTimeout(seekPreviewTimer);
+      if (linger > 0) hideSeekPreview(linger);
     }
 
     function buildPhraseMarkers() {
@@ -24440,6 +25396,7 @@ button:disabled {
         const previewTick = audioEngine.tickAtSeconds(next / 1000);
         updateSeekValueText(next, previewTick);
       }
+      if (isSeeking) showSeekPreview(next);
       return next;
     }
 
@@ -24448,15 +25405,768 @@ button:disabled {
         isSeeking = false;
         return;
       }
+      const wasSeeking = isSeeking;
       const next = previewSeek(value);
       isSeeking = false;
       seek.value = String(Math.round(next));
-      api.tickPosition = audioEngine.tickAtSeconds(next / 1000);
+      const nextTick = audioEngine.tickAtSeconds(next / 1000);
+      updateBarPlayhead(nextTick);
+      api.tickPosition = nextTick;
+      savePreferences();
+      syncMediaSessionPosition(true);
+      if (wasSeeking) showSeekPreview(next, 650);
+    }
+
+    function hasValidLoop() {
+      return (
+        Number.isFinite(loopStartTick) &&
+        Number.isFinite(loopEndTick) &&
+        loopEndTick > loopStartTick
+      );
+    }
+
+    function measureBoundaryAtCursor(kind) {
+      const measures = sequence?.measures || [];
+      if (!measures.length) return null;
+
+      const apiTick = Number(api?.tickPosition);
+      const cursorTick = clamp(
+        Number.isFinite(apiTick)
+          ? apiTick
+          : Number(currentPlaybackTick) || 0,
+        0,
+        sequence.endTick,
+      );
+      const boundaries = measures.map((measure) => measure[0]);
+      boundaries.push(sequence.endTick);
+      let boundaryIndex = -1;
+      let boundaryDistance = Number.POSITIVE_INFINITY;
+      boundaries.forEach((boundary, index) => {
+        const distance = Math.abs(cursorTick - boundary);
+        if (
+          distance <= LOOP_BOUNDARY_TOLERANCE_TICKS &&
+          distance < boundaryDistance
+        ) {
+          boundaryIndex = index;
+          boundaryDistance = distance;
+        }
+      });
+
+      if (boundaryIndex >= 0) {
+        if (kind === "start") {
+          if (boundaryIndex >= measures.length) {
+            return {
+              error: "Move before the end of the score to set the loop start",
+            };
+          }
+          return {
+            tick: boundaries[boundaryIndex],
+            measureNumber: boundaryIndex + 1,
+            atBoundary: true,
+          };
+        }
+        if (boundaryIndex === 0) {
+          return {
+            error: "Move after the start of the score to set the loop end",
+          };
+        }
+        return {
+          tick: boundaries[boundaryIndex],
+          measureNumber: boundaryIndex,
+          atBoundary: true,
+        };
+      }
+
+      const measureIndex = measures.findIndex(([startTick, duration]) => {
+        return cursorTick >= startTick && cursorTick < startTick + duration;
+      });
+      if (measureIndex < 0) return null;
+      const [startTick, duration] = measures[measureIndex];
+      return {
+        tick: kind === "start" ? startTick : startTick + duration,
+        measureNumber: measureIndex + 1,
+        atBoundary: false,
+      };
+    }
+
+    function loopMeasureDescription() {
+      if (!hasValidLoop()) return "";
+      return loopStartMeasureNumber === loopEndMeasureNumber
+        ? `measure ${loopStartMeasureNumber}`
+        : `measures ${loopStartMeasureNumber}–${loopEndMeasureNumber}`;
+    }
+
+    function legalLoopMeasureRange(kind) {
+      const measureCount = sequence?.measures?.length || 1;
+      return kind === "start"
+        ? {
+            min: 1,
+            max: Number.isInteger(loopEndMeasureNumber)
+              ? loopEndMeasureNumber
+              : measureCount,
+          }
+        : {
+            min: Number.isInteger(loopStartMeasureNumber)
+              ? loopStartMeasureNumber
+              : 1,
+            max: measureCount,
+          };
+    }
+
+    function setLoopBoundaryMeasure(
+      kind,
+      measureNumber,
+      {
+        commit = true,
+        enableWhenComplete = false,
+        persist = commit,
+      } = {},
+    ) {
+      const measure = sequence?.measures?.[measureNumber - 1];
+      if (!measure) return false;
+      const range = legalLoopMeasureRange(kind);
+      const nextMeasure = clamp(measureNumber, range.min, range.max);
+      const next = sequence.measures[nextMeasure - 1];
+      if (kind === "start") {
+        loopStartMeasureNumber = nextMeasure;
+        loopStartTick = next[0];
+      } else {
+        loopEndMeasureNumber = nextMeasure;
+        loopEndTick = next[0] + next[1];
+      }
+      if (!hasValidLoop()) loopEnabled = false;
+      else if (enableWhenComplete) loopEnabled = true;
+      if (commit) applyLoopState({ persist });
+      else updateLoopUi();
+      return true;
+    }
+
+    function loopBoundaryStops(kind) {
+      if (!audioEngine?.duration) return [];
+      const range = legalLoopMeasureRange(kind);
+      return sequence.measures
+        .map(([startTick, duration], index) => {
+          const measureNumber = index + 1;
+          const tick = kind === "start" ? startTick : startTick + duration;
+          return {
+            measureNumber,
+            tick,
+            fraction: clamp(
+              audioEngine.secondsAtTick(tick) / audioEngine.duration,
+              0,
+              1,
+            ),
+          };
+        })
+        .filter(
+          ({ measureNumber }) =>
+            measureNumber >= range.min && measureNumber <= range.max,
+        );
+    }
+
+    function nearestLoopBoundaryMeasure(kind, clientX) {
+      const stops = loopBoundaryStops(kind);
+      const bounds = loopHandleTrack.getBoundingClientRect();
+      if (!stops.length || !bounds.width) return null;
+      const fraction = clamp((clientX - bounds.left) / bounds.width, 0, 1);
+      return stops.reduce((nearest, stop) =>
+        Math.abs(stop.fraction - fraction) <
+        Math.abs(nearest.fraction - fraction)
+          ? stop
+          : nearest,
+      ).measureNumber;
+    }
+
+    function updateLoopHandle(
+      handle,
+      kind,
+      tick,
+      measureNumber,
+      isSet,
+    ) {
+      handle.hidden = !isSet;
+      if (!isSet || !audioEngine?.duration) return;
+      const range = legalLoopMeasureRange(kind);
+      const fraction = clamp(
+        audioEngine.secondsAtTick(tick) / audioEngine.duration,
+        0,
+        1,
+      );
+      handle.style.left = `${fraction * 100}%`;
+      handle.classList.toggle("is-at-left-edge", fraction <= 0.00001);
+      handle.classList.toggle("is-at-right-edge", fraction >= 0.99999);
+      handle.setAttribute("aria-valuemin", String(range.min));
+      handle.setAttribute("aria-valuemax", String(range.max));
+      handle.setAttribute("aria-valuenow", String(measureNumber));
+      handle.setAttribute(
+        "aria-valuetext",
+        kind === "start"
+          ? `Loop starts at the beginning of measure ${measureNumber}`
+          : `Loop ends after measure ${measureNumber}`,
+      );
+      handle.title =
+        kind === "start"
+          ? `Loop start: measure ${measureNumber} · drag or use arrow keys`
+          : `Loop end: after measure ${measureNumber} · drag or use arrow keys`;
+    }
+
+    function scheduleLoopScoreVisuals() {
+      scheduleScorePhraseMarkers();
+      scheduleBarRender();
+    }
+
+    function updateLoopUi() {
+      const valid = hasValidLoop();
+      const startSet = Number.isFinite(loopStartTick);
+      const endSet = Number.isFinite(loopEndTick);
+      playerShell.classList.toggle("has-loop-start", startSet);
+      playerShell.classList.toggle("has-loop-end", endSet);
+      playerShell.classList.toggle("has-loop-range", valid);
+      playerShell.classList.toggle("is-loop-enabled", valid && loopEnabled);
+      loopStartMeasure.textContent = startSet
+        ? String(loopStartMeasureNumber)
+        : "—";
+      loopEndMeasure.textContent = endSet
+        ? String(loopEndMeasureNumber)
+        : "—";
+      loopStart.classList.toggle("has-boundary", startSet);
+      loopEnd.classList.toggle("has-boundary", endSet);
+      loopStart.disabled = !isReady;
+      loopEnd.disabled = !isReady;
+      loopClear.hidden = !startSet && !endSet;
+      loopClear.disabled = !isReady;
+      loopHandleTrack.hidden = !startSet && !endSet;
+      updateLoopHandle(
+        loopStartHandle,
+        "start",
+        loopStartTick,
+        loopStartMeasureNumber,
+        startSet,
+      );
+      updateLoopHandle(
+        loopEndHandle,
+        "end",
+        loopEndTick,
+        loopEndMeasureNumber,
+        endSet,
+      );
+      loopStart.setAttribute(
+        "aria-label",
+        startSet
+          ? `Loop starts at the beginning of measure ${loopStartMeasureNumber}. Set start at the cursor`
+          : "Set loop start to the beginning of the cursor's measure",
+      );
+      loopEnd.setAttribute(
+        "aria-label",
+        endSet
+          ? `Loop ends after measure ${loopEndMeasureNumber}. Set end at the cursor`
+          : "Set loop end to the end of the cursor's measure",
+      );
+      loopStart.title = startSet
+        ? `Start: measure ${loopStartMeasureNumber} · Shift+S`
+        : "Set loop start at cursor · Shift+S";
+      loopEnd.title = endSet
+        ? `End: after measure ${loopEndMeasureNumber} · Shift+E`
+        : "Set loop end at cursor · Shift+E";
+
+      loopToggle.disabled = !isReady || !valid;
+      loopToggle.setAttribute("aria-pressed", String(valid && loopEnabled));
+      loopToggle.setAttribute(
+        "aria-label",
+        valid
+          ? `${loopEnabled ? "Disable" : "Enable"} loop for ${loopMeasureDescription()}`
+          : "Enable measure loop after setting its start and end",
+      );
+      loopToggle.title = valid
+        ? `${loopEnabled ? "Disable" : "Enable"} ${loopMeasureDescription()} · L`
+        : "Set the loop start and end first";
+
+      if (!valid || !audioEngine?.duration) {
+        loopRegionTrack.hidden = true;
+        scheduleLoopScoreVisuals();
+        return;
+      }
+      const startFraction = clamp(
+        audioEngine.secondsAtTick(loopStartTick) / audioEngine.duration,
+        0,
+        1,
+      );
+      const endFraction = clamp(
+        audioEngine.secondsAtTick(loopEndTick) / audioEngine.duration,
+        startFraction,
+        1,
+      );
+      loopRegion.style.left = `${startFraction * 100}%`;
+      loopRegion.style.width = `${(endFraction - startFraction) * 100}%`;
+      loopRegionTrack.classList.toggle("is-disabled", !loopEnabled);
+      loopRegionTrack.hidden = false;
+      scheduleLoopScoreVisuals();
+    }
+
+    function applyLoopState({ persist = true } = {}) {
+      if (!hasValidLoop()) loopEnabled = false;
+      audioEngine?.setLoopRange(
+        loopStartTick,
+        loopEndTick,
+        loopEnabled,
+      );
+      updateLoopUi();
+      if (persist) savePreferences();
+      syncMediaSessionPosition(true);
+    }
+
+    function setLoopStartFromCursor() {
+      const boundary = measureBoundaryAtCursor("start");
+      if (!boundary || boundary.error) {
+        setStatus(boundary?.error || "The loop start could not be set here", "error");
+        return;
+      }
+      loopStartTick = boundary.tick;
+      loopStartMeasureNumber = boundary.measureNumber;
+      if (
+        Number.isFinite(loopEndTick) &&
+        loopEndTick <= loopStartTick
+      ) {
+        loopEndTick = null;
+        loopEndMeasureNumber = null;
+      }
+      loopEnabled = hasValidLoop();
+      applyLoopState();
+      setStatus(
+        hasValidLoop()
+          ? `Loop on: ${loopMeasureDescription()}`
+          : `Loop starts at measure ${loopStartMeasureNumber}; set the end`,
+        "ready",
+      );
+    }
+
+    function setLoopEndFromCursor() {
+      const boundary = measureBoundaryAtCursor("end");
+      if (!boundary || boundary.error) {
+        setStatus(boundary?.error || "The loop end could not be set here", "error");
+        return;
+      }
+      if (
+        Number.isFinite(loopStartTick) &&
+        boundary.tick <= loopStartTick
+      ) {
+        setStatus("The loop end must be after its start", "error");
+        return;
+      }
+      loopEndTick = boundary.tick;
+      loopEndMeasureNumber = boundary.measureNumber;
+      loopEnabled = hasValidLoop();
+      applyLoopState();
+      setStatus(
+        hasValidLoop()
+          ? `Loop on: ${loopMeasureDescription()}`
+          : `Loop ends after measure ${loopEndMeasureNumber}; set the start`,
+        "ready",
+      );
+    }
+
+    function toggleLoop() {
+      if (!hasValidLoop()) return;
+      loopEnabled = !loopEnabled;
+      applyLoopState();
+      setStatus(
+        `Loop ${loopEnabled ? "on" : "off"}: ${loopMeasureDescription()}`,
+        "ready",
+      );
+    }
+
+    function clearLoop(announce = true) {
+      loopStartTick = null;
+      loopEndTick = null;
+      loopStartMeasureNumber = null;
+      loopEndMeasureNumber = null;
+      loopEnabled = false;
+      applyLoopState();
+      if (announce) setStatus("Loop cleared", "ready");
+    }
+
+    function restoreLoopHandleSnapshot(snapshot) {
+      loopStartTick = snapshot.startTick;
+      loopEndTick = snapshot.endTick;
+      loopStartMeasureNumber = snapshot.startMeasure;
+      loopEndMeasureNumber = snapshot.endMeasure;
+      loopEnabled = snapshot.enabled;
+      updateLoopUi();
+    }
+
+    function finishLoopHandleGesture(event, cancelled = false) {
+      const gesture = loopHandleGesture;
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      loopHandleGesture = null;
+      gesture.handle.classList.remove("is-dragging");
+      if (gesture.handle.hasPointerCapture?.(gesture.pointerId)) {
+        gesture.handle.releasePointerCapture(gesture.pointerId);
+      }
+      if (cancelled) {
+        restoreLoopHandleSnapshot(gesture.snapshot);
+        savePreferences();
+        return;
+      }
+      applyLoopState();
+      const measureNumber =
+        gesture.kind === "start"
+          ? loopStartMeasureNumber
+          : loopEndMeasureNumber;
+      setStatus(
+        gesture.kind === "start"
+          ? `Loop start moved to measure ${measureNumber}`
+          : `Loop end moved after measure ${measureNumber}`,
+        "ready",
+      );
+    }
+
+    function installLoopHandle(handle, kind) {
+      handle.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || !isReady) return;
+        loopHandleGesture = {
+          pointerId: event.pointerId,
+          handle,
+          kind,
+          lastMeasure:
+            kind === "start"
+              ? loopStartMeasureNumber
+              : loopEndMeasureNumber,
+          snapshot: {
+            startTick: loopStartTick,
+            endTick: loopEndTick,
+            startMeasure: loopStartMeasureNumber,
+            endMeasure: loopEndMeasureNumber,
+            enabled: loopEnabled,
+          },
+        };
+        handle.focus({ preventScroll: true });
+        handle.classList.add("is-dragging");
+        handle.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+      });
+
+      handle.addEventListener("pointermove", (event) => {
+        const gesture = loopHandleGesture;
+        if (
+          !gesture ||
+          gesture.handle !== handle ||
+          gesture.pointerId !== event.pointerId
+        ) {
+          return;
+        }
+        const measureNumber = nearestLoopBoundaryMeasure(kind, event.clientX);
+        if (
+          measureNumber === null ||
+          measureNumber === gesture.lastMeasure
+        ) {
+          return;
+        }
+        gesture.lastMeasure = measureNumber;
+        setLoopBoundaryMeasure(kind, measureNumber, {
+          commit: false,
+          persist: false,
+        });
+        event.preventDefault();
+      });
+
+      handle.addEventListener("pointerup", (event) => {
+        finishLoopHandleGesture(event);
+      });
+      handle.addEventListener("pointercancel", (event) => {
+        finishLoopHandleGesture(event, true);
+      });
+      handle.addEventListener("lostpointercapture", (event) => {
+        if (loopHandleGesture?.handle === handle) {
+          finishLoopHandleGesture(event, true);
+        }
+      });
+
+      handle.addEventListener("keydown", (event) => {
+        if (event.key === "Delete" || event.key === "Backspace") {
+          event.preventDefault();
+          event.stopPropagation();
+          clearLoop();
+          seek.focus({ preventScroll: true });
+          return;
+        }
+        const range = legalLoopMeasureRange(kind);
+        const current =
+          kind === "start" ? loopStartMeasureNumber : loopEndMeasureNumber;
+        let next = null;
+        if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+          next = current - 1;
+        } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+          next = current + 1;
+        } else if (event.key === "Home") {
+          next = range.min;
+        } else if (event.key === "End") {
+          next = range.max;
+        }
+        if (next === null) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const measureNumber = clamp(next, range.min, range.max);
+        if (measureNumber === current) return;
+        setLoopBoundaryMeasure(kind, measureNumber);
+        setStatus(
+          kind === "start"
+            ? `Loop start moved to measure ${measureNumber}`
+            : `Loop end moved after measure ${measureNumber}`,
+          "ready",
+        );
+      });
+    }
+
+    function requestPlayback(shouldPlay) {
+      if (!isReady) return;
+      if (api.playbackRange) api.playbackRange = null;
+      if (shouldPlay && loopEnabled && hasValidLoop()) {
+        const outsideLoop =
+          currentPlaybackTick < loopStartTick - LOOP_BOUNDARY_TOLERANCE_TICKS ||
+          currentPlaybackTick >= loopEndTick - LOOP_BOUNDARY_TOLERANCE_TICKS;
+        if (outsideLoop) api.tickPosition = loopStartTick;
+      }
+      if (shouldPlay) api.play();
+      else api.pause();
+    }
+
+    function togglePlayback() {
+      requestPlayback(!playerIsPlaying);
+    }
+
+    function showToast(message, tone = "neutral", duration = 2400) {
+      window.clearTimeout(transportToastTimer);
+      transportToast.textContent = message;
+      transportToast.dataset.tone = tone;
+      transportToast.hidden = false;
+      window.requestAnimationFrame(() => {
+        transportToast.classList.add("is-visible");
+      });
+      transportToastTimer = window.setTimeout(() => {
+        transportToast.classList.remove("is-visible");
+        transportToastTimer = window.setTimeout(() => {
+          transportToast.hidden = true;
+        }, 180);
+      }, duration);
     }
 
     function setStatus(message, state = "loading") {
       playerStatus.dataset.state = state;
       playerStatusText.textContent = message;
+      if (state === "error") showToast(message, "error", 3400);
+    }
+
+    function practiceLinkParameters() {
+      const params = new URLSearchParams();
+      const cursor = cursorPositionForTick(currentPlaybackTick) || {
+        measureNumber: 1,
+        offsetTicks: 0,
+      };
+      params.set("nb", PRACTICE_LINK_VERSION);
+      params.set(
+        "l",
+        loopStartMeasureNumber === null && loopEndMeasureNumber === null
+          ? "0"
+          : `${loopStartMeasureNumber ?? ""}-${loopEndMeasureNumber ?? ""}`,
+      );
+      params.set("c", `${cursor.measureNumber}.${cursor.offsetTicks}`);
+      params.set("t", String(tempoDrag.value()));
+      params.set("v", currentScoreView === "bars" ? "p" : "s");
+      params.set(
+        "s",
+        PART_NAMES.map((_, index) =>
+          hiddenScoreTracks.has(index) ? "0" : "1",
+        ).join(""),
+      );
+      params.set(
+        "h",
+        PART_NAMES.map((_, index) =>
+          audibleTracks.has(index) ? "1" : "0",
+        ).join(""),
+      );
+      params.set("g", trackVolumes.join("."));
+      params.set(
+        "z",
+        `${scoreLayoutControl.size()}.${scoreLayoutControl.spacing()}`,
+      );
+      return params;
+    }
+
+    function buildPracticeLink() {
+      const url =
+        window.location.protocol === "file:"
+          ? new URL(PUBLIC_SCORE_URL)
+          : new URL(window.location.href);
+      url.search = practiceLinkParameters().toString();
+      url.hash = "";
+      return url.href;
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          // Fall through for local files or denied clipboard access.
+        }
+      }
+      const previouslyFocused =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.append(textarea);
+      textarea.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      textarea.remove();
+      if (previouslyFocused?.isConnected) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
+      return copied;
+    }
+
+    async function copyPracticeLink() {
+      const copied = await copyText(buildPracticeLink());
+      if (copied) {
+        showToast("Practice link copied", "success");
+        setStatus("Practice link copied", "ready");
+      } else {
+        setStatus(
+          "The practice link could not be copied. Check clipboard permission.",
+          "error",
+        );
+      }
+    }
+
+    function setMediaSessionPlaybackState(playing) {
+      if (!mediaSessionReady) return;
+      try {
+        navigator.mediaSession.playbackState = playing
+          ? "playing"
+          : "paused";
+      } catch {
+        // Media Session support varies by browser.
+      }
+    }
+
+    function syncMediaSessionPosition(force = false) {
+      if (
+        !mediaSessionReady ||
+        !audioEngine?.duration ||
+        typeof navigator.mediaSession.setPositionState !== "function"
+      ) {
+        return;
+      }
+      const position = clamp(
+        audioEngine.currentBaseSeconds(),
+        0,
+        audioEngine.duration,
+      );
+      const now = performance.now();
+      const loopedBackward = position + 0.25 < lastMediaPosition;
+      if (
+        !force &&
+        !loopedBackward &&
+        now - lastMediaPositionSync < MEDIA_POSITION_INTERVAL_MS
+      ) {
+        return;
+      }
+      lastMediaPosition = position;
+      lastMediaPositionSync = now;
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audioEngine.duration,
+          playbackRate: audioEngine.rate,
+          position,
+        });
+      } catch {
+        // Invalid or temporarily unavailable platform position state is optional.
+      }
+    }
+
+    function registerMediaSessionAction(action, handler) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch {
+        // Unsupported actions should not prevent the remaining handlers.
+      }
+    }
+
+    function initializeMediaSession() {
+      if (mediaSessionReady || !("mediaSession" in navigator)) return;
+      mediaSessionReady = true;
+      if ("MediaMetadata" in window) {
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: "Nature Boy",
+            album: "Interactive rehearsal score",
+          });
+        } catch {
+          // Metadata is optional.
+        }
+      }
+      registerMediaSessionAction("play", () => requestPlayback(true));
+      registerMediaSessionAction("pause", () => requestPlayback(false));
+      registerMediaSessionAction("seekbackward", (details) => {
+        commitSeek(
+          (audioEngine.currentBaseSeconds() -
+            (Number(details?.seekOffset) || 10)) *
+            1000,
+        );
+      });
+      registerMediaSessionAction("seekforward", (details) => {
+        commitSeek(
+          (audioEngine.currentBaseSeconds() +
+            (Number(details?.seekOffset) || 10)) *
+            1000,
+        );
+      });
+      registerMediaSessionAction("seekto", (details) => {
+        const seekTime = Number(details?.seekTime);
+        if (Number.isFinite(seekTime)) commitSeek(seekTime * 1000);
+      });
+      registerMediaSessionAction("previoustrack", () => {
+        commitSeek(adjacentPhraseTime(-1));
+      });
+      registerMediaSessionAction("nexttrack", () => {
+        commitSeek(adjacentPhraseTime(1));
+      });
+      syncMediaSessionPosition(true);
+      setMediaSessionPlaybackState(playerIsPlaying);
+    }
+
+    function clearMediaSession() {
+      if (!("mediaSession" in navigator)) return;
+      MEDIA_SESSION_ACTIONS.forEach((action) => {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // Unsupported actions may never have been installed.
+        }
+      });
+      try {
+        navigator.mediaSession.playbackState = "none";
+      } catch {
+        // Playback state is optional.
+      }
+      if (typeof navigator.mediaSession.setPositionState === "function") {
+        try {
+          navigator.mediaSession.setPositionState();
+        } catch {
+          // Clearing position state is optional.
+        }
+      }
+      mediaSessionReady = false;
     }
 
     function setSettingsOpen(open, returnFocus = false) {
@@ -24483,10 +26193,23 @@ button:disabled {
     }
 
     function failGracefully(message) {
+      isReady = false;
+      playerIsPlaying = false;
+      try {
+        api?.pause();
+      } catch {
+        // The player may already be unavailable.
+      }
+      clearMediaSession();
       setStatus(message, "error");
       scoreLoading.querySelector("p").textContent = message;
       playPause.disabled = true;
       seek.disabled = true;
+      loopStart.disabled = true;
+      loopEnd.disabled = true;
+      loopToggle.disabled = true;
+      loopClear.disabled = true;
+      sharePractice.disabled = true;
     }
 
     function scheduleScoreRender() {
@@ -24520,6 +26243,7 @@ button:disabled {
           const active = button.dataset.scoreView === nextView;
           button.classList.toggle("is-active", active);
           button.setAttribute("aria-selected", String(active));
+          button.tabIndex = active ? 0 : -1;
         });
         scoreScroll.hidden = nextView !== "standard";
         barScore.hidden = nextView !== "bars";
@@ -24552,6 +26276,7 @@ button:disabled {
       const next = tempoDrag.setValue(value);
       if (api) api.playbackSpeed = next / 100;
       if (persist) savePreferences();
+      syncMediaSessionPosition(true);
     }
 
     function announceAudioMix() {
@@ -24757,6 +26482,7 @@ button:disabled {
     }
 
     function resetMixer() {
+      clearLoop(false);
       scoreTracks.forEach((track, index) => {
         if (!audibleTracks.has(index)) api.changeTrackMute([track], false);
       });
@@ -24785,14 +26511,14 @@ button:disabled {
       const caption = document.createElement("caption");
       caption.className = "visually-hidden";
       caption.textContent =
-        "Voice controls. Part headings toggle notation, squares toggle audio, and percentages set playback level.";
+        "Voice controls. The See row toggles notation, the Hear row toggles audio, and the Volume row sets playback level.";
 
       const head = document.createElement("thead");
       const headingRow = document.createElement("tr");
       const corner = document.createElement("th");
       corner.className = "voice-matrix-row-label";
       corner.scope = "col";
-      corner.textContent = "Part";
+      corner.textContent = "See";
       headingRow.append(corner);
 
       const body = document.createElement("tbody");
@@ -24808,7 +26534,7 @@ button:disabled {
       const levelHeading = document.createElement("th");
       levelHeading.className = "voice-matrix-row-label";
       levelHeading.scope = "row";
-      levelHeading.textContent = "Vol";
+      levelHeading.textContent = "Volume";
       levelRow.append(levelHeading);
 
       scoreTracks.forEach((track, index) => {
@@ -24930,6 +26656,57 @@ button:disabled {
         element.setAttribute(key, String(value));
       });
       return element;
+    }
+
+    function appendBarLoopBoundary(
+      svg,
+      kind,
+      tick,
+      x,
+      top,
+      height,
+    ) {
+      const isStart = kind === "start";
+      const group = createSvgElement("g", {
+        class: `bar-loop-boundary is-${kind}`,
+        "data-tick": tick,
+        "aria-hidden": "true",
+      });
+      const bottom = top + height;
+      const centerY = top + height / 2;
+      const dotOffset = Math.min(4, Math.max(2.2, height * 0.16));
+      const heavyX = x + (isStart ? -3 : 3);
+      const lightX = x + (isStart ? 1 : -1);
+      const dotX = x + (isStart ? 5 : -5);
+      group.append(
+        createSvgElement("line", {
+          class: "bar-loop-boundary-line is-heavy",
+          x1: heavyX,
+          x2: heavyX,
+          y1: top - 2,
+          y2: bottom,
+        }),
+        createSvgElement("line", {
+          class: "bar-loop-boundary-line",
+          x1: lightX,
+          x2: lightX,
+          y1: top - 2,
+          y2: bottom,
+        }),
+        createSvgElement("circle", {
+          class: "bar-loop-boundary-dot",
+          cx: dotX,
+          cy: centerY - dotOffset,
+          r: 1.55,
+        }),
+        createSvgElement("circle", {
+          class: "bar-loop-boundary-dot",
+          cx: dotX,
+          cy: centerY + dotOffset,
+          r: 1.55,
+        }),
+      );
+      svg.append(group);
     }
 
     function svgClientX(svg, event, viewWidth) {
@@ -25145,6 +26922,8 @@ button:disabled {
         pitchStep.toFixed(2),
         measuresPerLine,
         visibilityKey,
+        Number.isFinite(loopStartTick) ? loopStartTick : "x",
+        Number.isFinite(loopEndTick) ? loopEndTick : "x",
       ].join(":");
       if (!force && renderKey === barRenderKey && barSystems.length) {
         barMeasuresPerLine = measuresPerLine;
@@ -25325,6 +27104,24 @@ button:disabled {
             height: plotHeight,
           }),
         );
+        if (hasValidLoop()) {
+          const visibleLoopStart = Math.max(loopStartTick, rowStartTick);
+          const visibleLoopEnd = Math.min(loopEndTick, rowEndTick);
+          if (visibleLoopEnd > visibleLoopStart) {
+            svg.append(
+              createSvgElement("rect", {
+                class: "bar-loop-region",
+                x: xAtTick(visibleLoopStart),
+                y: topPad,
+                width: Math.max(
+                  0.8,
+                  xAtTick(visibleLoopEnd) - xAtTick(visibleLoopStart),
+                ),
+                height: plotHeight,
+              }),
+            );
+          }
+        }
 
         rowMeasures.forEach((measure, measureOffset) => {
           const x = xAtTick(measure[0]);
@@ -25580,6 +27377,35 @@ button:disabled {
           svg.append(hyphen);
         });
 
+        if (
+          Number.isFinite(loopStartTick) &&
+          loopStartTick >= rowStartTick &&
+          loopStartTick < rowEndTick
+        ) {
+          appendBarLoopBoundary(
+            svg,
+            "start",
+            loopStartTick,
+            xAtTick(loopStartTick),
+            topPad,
+            plotHeight,
+          );
+        }
+        if (
+          Number.isFinite(loopEndTick) &&
+          loopEndTick > rowStartTick &&
+          loopEndTick <= rowEndTick
+        ) {
+          appendBarLoopBoundary(
+            svg,
+            "end",
+            loopEndTick,
+            xAtTick(loopEndTick),
+            topPad,
+            plotHeight,
+          );
+        }
+
         const cursor = createSvgElement("line", {
           class: "bar-playhead",
           x1: leftPad,
@@ -25611,7 +27437,7 @@ button:disabled {
           );
           const tick =
             system.startTick + ratio * (system.endTick - system.startTick);
-          api.tickPosition = tick;
+          commitSeek(audioEngine.secondsAtTick(tick) * 1000);
         });
 
         shell.append(svg);
@@ -25745,6 +27571,11 @@ button:disabled {
         this.saxWave = null;
         this.timer = 0;
         this.rateTransitionTimer = 0;
+        this.loopBoundaryTimer = 0;
+        this.loopRestarting = false;
+        this.playRequestGeneration = 0;
+        this.loopRange = null;
+        this.loopEnabled = false;
         this.scheduledVoices = new Set();
         this.audible = new Set(
           PART_NAMES.map((_, index) => index),
@@ -25926,8 +27757,131 @@ button:disabled {
         );
       }
 
+      setLoopRange(startTick, endTick, enabled) {
+        const position = this.currentBaseSeconds();
+        const valid =
+          Number.isFinite(startTick) &&
+          Number.isFinite(endTick) &&
+          endTick > startTick;
+        const nextRange = valid
+          ? {
+              startTick,
+              endTick,
+              startSeconds: this.secondsAtTick(startTick),
+              endSeconds: this.secondsAtTick(endTick),
+            }
+          : null;
+        const nextEnabled = Boolean(enabled && nextRange);
+        const previousRange = this.loopRange;
+        const changed =
+          this.loopEnabled !== nextEnabled ||
+          previousRange?.startTick !== nextRange?.startTick ||
+          previousRange?.endTick !== nextRange?.endTick;
+
+        this.loopRange = nextRange;
+        this.loopEnabled = nextEnabled;
+        if (nextEnabled) this.clearNativePlaybackRange();
+        this.cancelLoopBoundary();
+        if (!this.playing) return;
+
+        if (
+          nextEnabled &&
+          (position < nextRange.startSeconds - 0.002 ||
+            position >= nextRange.endSeconds - 0.001)
+        ) {
+          this.restartLoop();
+          return;
+        }
+        if (!changed) {
+          this.scheduleLoopBoundary();
+          return;
+        }
+
+        this.cancelRateTransition(true);
+        this.basePosition = position;
+        if (this.context) this.anchorContextTime = this.context.currentTime;
+        this.stopScheduledVoices(0.008);
+        this.resetScheduler();
+        this.restoreTransitionGain();
+      }
+
+      playbackEndAt(position) {
+        if (
+          this.loopEnabled &&
+          this.loopRange &&
+          position >= this.loopRange.startSeconds - 0.002 &&
+          position < this.loopRange.endSeconds
+        ) {
+          return this.loopRange.endSeconds;
+        }
+        return this.duration;
+      }
+
+      cancelLoopBoundary() {
+        if (!this.loopBoundaryTimer) return;
+        window.clearTimeout(this.loopBoundaryTimer);
+        this.loopBoundaryTimer = 0;
+      }
+
+      clearNativePlaybackRange() {
+        if (this.api?.playbackRange) this.api.playbackRange = null;
+      }
+
+      scheduleLoopBoundary() {
+        this.cancelLoopBoundary();
+        if (
+          !this.playing ||
+          !this.context ||
+          !this.loopEnabled ||
+          !this.loopRange
+        ) {
+          return;
+        }
+        const position = this.currentBaseSeconds();
+        if (
+          position < this.loopRange.startSeconds - 0.002 ||
+          position >= this.loopRange.endSeconds - 0.001
+        ) {
+          this.restartLoop();
+          return;
+        }
+        const remainingSeconds =
+          (this.loopRange.endSeconds - position) / this.rate;
+        const timerId = window.setTimeout(() => {
+          if (this.loopBoundaryTimer !== timerId) return;
+          this.loopBoundaryTimer = 0;
+          if (!this.playing || !this.loopEnabled || !this.loopRange) return;
+          if (
+            this.currentBaseSeconds() <
+            this.loopRange.endSeconds - 0.001
+          ) {
+            this.scheduleLoopBoundary();
+            return;
+          }
+          this.restartLoop();
+        }, Math.max(1, Math.ceil(remainingSeconds * 1000)));
+        this.loopBoundaryTimer = timerId;
+      }
+
+      restartLoop() {
+        if (!this.loopEnabled || !this.loopRange || this.loopRestarting) return;
+        this.cancelLoopBoundary();
+        this.loopRestarting = true;
+        try {
+          if (this.api) {
+            this.clearNativePlaybackRange();
+            this.api.tickPosition = this.loopRange.startTick;
+          } else {
+            this.seek(this.loopRange.startSeconds);
+          }
+        } finally {
+          this.loopRestarting = false;
+        }
+      }
+
       async play() {
         if (this.playing) return;
+        const requestGeneration = ++this.playRequestGeneration;
         try {
           this.ensureAudio();
           await this.context.resume();
@@ -25937,7 +27891,23 @@ button:disabled {
           this.api?.pause();
           return;
         }
+        if (requestGeneration !== this.playRequestGeneration) return;
 
+        this.clearNativePlaybackRange();
+        if (
+          this.loopEnabled &&
+          this.loopRange &&
+          (this.basePosition < this.loopRange.startSeconds - 0.002 ||
+            this.basePosition >= this.loopRange.endSeconds - 0.001)
+        ) {
+          this.basePosition = this.loopRange.startSeconds;
+          this.loopRestarting = true;
+          try {
+            if (this.api) this.api.tickPosition = this.loopRange.startTick;
+          } finally {
+            this.loopRestarting = false;
+          }
+        }
         if (this.basePosition >= this.duration - 0.005) this.basePosition = 0;
         this.cancelRateTransition(false);
         this.restoreTransitionGain(true);
@@ -25950,9 +27920,11 @@ button:disabled {
       }
 
       pause() {
+        this.playRequestGeneration += 1;
         if (this.playing) this.basePosition = this.currentBaseSeconds();
         this.playing = false;
         this.cancelRateTransition(false);
+        this.cancelLoopBoundary();
         window.clearInterval(this.timer);
         this.timer = 0;
         this.stopScheduledVoices();
@@ -25961,11 +27933,30 @@ button:disabled {
       }
 
       seek(nextPosition) {
+        const requestedPosition = clamp(nextPosition, 0, this.duration);
+        if (
+          this.playing &&
+          this.loopEnabled &&
+          this.loopRange &&
+          !this.loopRestarting &&
+          (requestedPosition < this.loopRange.startSeconds - 0.002 ||
+            requestedPosition >= this.loopRange.endSeconds - 0.001)
+        ) {
+          this.restartLoop();
+          return;
+        }
+        this.cancelLoopBoundary();
         this.cancelRateTransition(false);
-        this.basePosition = clamp(nextPosition, 0, this.duration);
+        this.basePosition = requestedPosition;
         if (this.context) this.anchorContextTime = this.context.currentTime;
         this.stopScheduledVoices();
-        if (this.playing) this.resetScheduler();
+        if (this.playing) {
+          this.resetScheduler(
+            this.loopRestarting
+              ? LOOP_RESTART_LEAD_SECONDS
+              : AUDIO_SCHEDULER_LEAD_SECONDS,
+          );
+        }
         this.restoreTransitionGain();
         this.pushPosition();
       }
@@ -25979,6 +27970,7 @@ button:disabled {
         if (this.context) this.anchorContextTime = this.context.currentTime;
         if (this.playing) this.beginRateTransition();
         else this.restoreTransitionGain();
+        this.scheduleLoopBoundary();
         this.pushPosition();
       }
 
@@ -26009,7 +28001,10 @@ button:disabled {
         });
       }
 
-      resetScheduler() {
+      resetScheduler(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        const hardEnd = this.playbackEndAt(this.basePosition);
         let low = 0;
         let high = this.notes.length;
         while (low < high) {
@@ -26021,31 +28016,58 @@ button:disabled {
 
         for (let index = 0; index < low; index += 1) {
           const note = this.notes[index];
-          if (note.end > this.basePosition) this.scheduleNote(note, this.basePosition);
+          if (note.end > this.basePosition && note.start < hardEnd) {
+            this.scheduleNote(
+              note,
+              this.basePosition,
+              hardEnd,
+              minimumLeadSeconds,
+            );
+          }
         }
-        this.scheduleAhead();
+        this.scheduleAhead(minimumLeadSeconds);
+        this.scheduleLoopBoundary();
       }
 
-      scheduleAhead() {
+      scheduleAhead(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
         if (!this.playing || !this.context) return;
         const position = this.currentBaseSeconds();
-        const horizon = position + 0.28 * this.rate;
+        const hardEnd = this.playbackEndAt(position);
+        const horizon = Math.min(position + 0.28 * this.rate, hardEnd);
         while (
           this.nextNoteIndex < this.notes.length &&
-          this.notes[this.nextNoteIndex].start <= horizon
+          this.notes[this.nextNoteIndex].start <= horizon &&
+          this.notes[this.nextNoteIndex].start < hardEnd
         ) {
-          this.scheduleNote(this.notes[this.nextNoteIndex], position);
+          this.scheduleNote(
+            this.notes[this.nextNoteIndex],
+            position,
+            hardEnd,
+            minimumLeadSeconds,
+          );
           this.nextNoteIndex += 1;
         }
       }
 
-      scheduleNote(note, currentPosition) {
-        if (!this.context || note.end <= currentPosition) return;
+      scheduleNote(
+        note,
+        currentPosition,
+        hardEnd = this.duration,
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        const noteEnd = Math.min(note.end, hardEnd);
+        if (!this.context || noteEnd <= currentPosition) return;
         const noteStart = Math.max(note.start, currentPosition);
-        const when =
-          this.context.currentTime +
-          Math.max(0.006, (noteStart - currentPosition) / this.rate);
-        const duration = Math.max(0.025, (note.end - noteStart) / this.rate);
+        const startDelay = Math.max(
+          minimumLeadSeconds,
+          (noteStart - currentPosition) / this.rate,
+        );
+        const endDelay = (noteEnd - currentPosition) / this.rate;
+        if (endDelay <= startDelay + 0.0005) return;
+        const when = this.context.currentTime + startDelay;
+        const duration = endDelay - startDelay;
         const frequency = 440 * 2 ** ((note.key - 69) / 12);
 
         const oscillator = this.context.createOscillator();
@@ -26066,11 +28088,14 @@ button:disabled {
         const envelope = this.context.createGain();
         const level = Math.max(0.008, 0.15 * (note.velocity / 127) ** 1.25);
         const attackEnd = when + Math.min(0.032, duration * 0.28);
-        const releaseStart = Math.max(
-          attackEnd + 0.001,
-          when + duration - Math.min(0.075, duration * 0.3),
-        );
         const end = when + duration;
+        const releaseStart = Math.min(
+          end - 0.0001,
+          Math.max(
+            attackEnd,
+            end - Math.min(0.075, duration * 0.3),
+          ),
+        );
         envelope.gain.setValueAtTime(0.0001, when);
         envelope.gain.exponentialRampToValueAtTime(level, attackEnd);
         envelope.gain.setValueAtTime(level * 0.84, releaseStart);
@@ -26213,26 +28238,25 @@ button:disabled {
       update() {
         if (!this.playing) return;
         const position = this.currentBaseSeconds();
+        if (
+          this.loopEnabled &&
+          this.loopRange &&
+          position >= this.loopRange.endSeconds - 0.001
+        ) {
+          this.restartLoop();
+          return;
+        }
         if (position >= this.duration - 0.004) {
           this.basePosition = this.duration;
           this.pushPosition();
-          if (this.api?.isLooping) {
-            this.cancelRateTransition(false);
-            this.stopScheduledVoices();
-            this.basePosition = 0;
-            this.anchorContextTime = this.context.currentTime;
-            this.resetScheduler();
-            this.restoreTransitionGain();
-            this.pushPosition();
-          } else {
-            this.playing = false;
-            this.cancelRateTransition(false);
-            window.clearInterval(this.timer);
-            this.timer = 0;
-            this.stopScheduledVoices();
-            this.restoreTransitionGain();
-            this.api?.pause();
-          }
+          this.playing = false;
+          this.cancelRateTransition(false);
+          this.cancelLoopBoundary();
+          window.clearInterval(this.timer);
+          this.timer = 0;
+          this.stopScheduledVoices();
+          this.restoreTransitionGain();
+          this.api?.pause();
           return;
         }
         if (!this.rateTransitionTimer) this.scheduleAhead();
@@ -26249,7 +28273,10 @@ button:disabled {
       ariaValueText: (value) => `${value} percent of the written tempo`,
     });
 
-    const preferences = readPreferences();
+    const sharedPractice = readSharedPracticeState();
+    sharedPracticeUnsupported = sharedPractice.unsupported;
+    const localPreferences = readPreferences();
+    const preferences = readPreferences(sharedPractice.state);
     scoreVerticalDrag = createDragNumber(scoreVertical, {
       min: MIN_SCORE_SIZE,
       max: MAX_SCORE_SIZE,
@@ -26310,6 +28337,11 @@ button:disabled {
       ) {
         throw new Error("Embedded score assets are incomplete.");
       }
+      restorePracticePosition(
+        preferences,
+        localPreferences,
+        sharedPractice,
+      );
     } catch (error) {
       console.error(error);
       failGracefully("The embedded score data could not be read.");
@@ -26355,6 +28387,16 @@ button:disabled {
       return;
     }
 
+    let nativeRangeClearScheduled = false;
+    api.playbackRangeChanged.on((event) => {
+      if (nativeRangeClearScheduled || !event?.playbackRange) return;
+      nativeRangeClearScheduled = true;
+      window.queueMicrotask(() => {
+        nativeRangeClearScheduled = false;
+        api.playbackRange = null;
+      });
+    });
+
     api.scoreLoaded.on((score) => {
       buildMixer(score.tracks);
       setStatus("Engraving the score for this screen…");
@@ -26363,6 +28405,9 @@ button:disabled {
     let initialViewApplied = false;
     api.renderFinished.on(() => {
       scoreLoading.classList.add("is-hidden");
+      window.setTimeout(() => {
+        scoreLoading.setAttribute("aria-hidden", "true");
+      }, 220);
       if (!initialViewApplied) {
         initialViewApplied = true;
         if (preferences.scoreView === "bars") {
@@ -26381,12 +28426,19 @@ button:disabled {
       isReady = true;
       playPause.disabled = false;
       seek.disabled = false;
+      sharePractice.disabled = false;
       endTime = audioEngine.duration * 1000;
       seek.max = String(Math.max(1, Math.round(endTime)));
       totalTime.textContent = formatTime(endTime);
       updateTempo(preferences.tempoPercent, false);
       buildPhraseMarkers();
+      applyLoopState({ persist: false });
+      commitSeek(audioEngine.secondsAtTick(restoredCursorTick) * 1000);
+      initializeMediaSession();
       setStatus("Ready", "ready");
+      if (sharedPracticeUnsupported) {
+        setStatus("This practice link uses an unsupported version", "error");
+      }
     });
 
     api.playerStateChanged.on((event) => {
@@ -26395,8 +28447,13 @@ button:disabled {
       playPause.classList.toggle("is-playing", playing);
       playPause.setAttribute("aria-label", playing ? "Pause playback" : "Play score");
       playPause.title = playing ? "Pause" : "Play";
+      setMediaSessionPlaybackState(playing);
+      syncMediaSessionPosition(true);
       if (playing) setStatus("Playing", "ready");
-      else if (isReady) setStatus("Ready", "ready");
+      else if (isReady) {
+        setStatus("Ready", "ready");
+        savePreferences();
+      }
     });
 
     api.playerPositionChanged.on((event) => {
@@ -26416,6 +28473,14 @@ button:disabled {
       }
       updateBarPlayhead(playbackTick);
       scheduleStandardPlaybackFollow();
+      syncMediaSessionPosition();
+      if (
+        !playerIsPlaying ||
+        performance.now() - lastPositionPreferenceSave >=
+          POSITION_SAVE_INTERVAL_MS
+      ) {
+        savePreferences();
+      }
     });
 
     api.playerFinished.on(() => {
@@ -26423,6 +28488,9 @@ button:disabled {
       playPause.classList.remove("is-playing");
       playPause.setAttribute("aria-label", "Play score");
       playPause.title = "Play";
+      setMediaSessionPlaybackState(false);
+      syncMediaSessionPosition(true);
+      savePreferences();
     });
 
     api.error.on((error) => {
@@ -26431,7 +28499,7 @@ button:disabled {
     });
 
     playPause.addEventListener("click", () => {
-      if (isReady) api.playPause();
+      togglePlayback();
     });
 
     tempo.addEventListener("input", () => updateTempo(tempoDrag.value()));
@@ -26441,7 +28509,33 @@ button:disabled {
         scoreLayoutControl.spacing(),
       ),
     );
-    resetMix.addEventListener("click", resetMixer);
+    loopStart.addEventListener("click", () => {
+      setLoopStartFromCursor();
+      setSettingsOpen(false, true);
+    });
+    loopEnd.addEventListener("click", () => {
+      setLoopEndFromCursor();
+      setSettingsOpen(false, true);
+    });
+    loopToggle.addEventListener("click", () => {
+      toggleLoop();
+      setSettingsOpen(false, true);
+    });
+    loopClear.addEventListener("click", () => {
+      clearLoop();
+      setSettingsOpen(false);
+      seek.focus({ preventScroll: true });
+    });
+    sharePractice.addEventListener("click", () => {
+      void copyPracticeLink();
+    });
+    resetMix.addEventListener("click", () => {
+      resetMixer();
+      setStatus("Practice settings reset", "ready");
+      showToast("Practice settings reset");
+    });
+    installLoopHandle(loopStartHandle, "start");
+    installLoopHandle(loopEndHandle, "end");
     settingsToggle.addEventListener("click", () => {
       setSettingsOpen(
         settingsToggle.getAttribute("aria-expanded") !== "true",
@@ -26483,6 +28577,30 @@ button:disabled {
         setSettingsOpen(false, true);
       }
     });
+    scoreViewToggle.addEventListener("keydown", (event) => {
+      const button = event.target.closest?.("[data-score-view]");
+      if (!button) return;
+      const currentIndex = scoreViewButtons.indexOf(button);
+      let nextIndex = null;
+      if (event.key === "ArrowLeft") {
+        nextIndex = currentIndex - 1;
+      } else if (event.key === "ArrowRight") {
+        nextIndex = currentIndex + 1;
+      } else if (event.key === "Home") {
+        nextIndex = 0;
+      } else if (event.key === "End") {
+        nextIndex = scoreViewButtons.length - 1;
+      }
+      if (nextIndex === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const nextButton =
+        scoreViewButtons[
+          (nextIndex + scoreViewButtons.length) % scoreViewButtons.length
+        ];
+      setScoreView(nextButton.dataset.scoreView);
+      nextButton.focus({ preventScroll: true });
+    });
 
     seek.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
@@ -26500,9 +28618,21 @@ button:disabled {
       );
       seekPointerMoveThreshold = event.pointerType === "mouse" ? 5 : 9;
       seek.setPointerCapture?.(event.pointerId);
+      showSeekPreview(
+        seekPointerStartedOnThumb
+          ? seekPointerStartValue
+          : phraseStartAtFraction(pointerSeekFraction(event)),
+      );
     });
     seek.addEventListener("pointermove", (event) => {
-      if (!seekPointerActive) return;
+      if (!seekPointerActive) {
+        if (event.pointerType === "mouse") {
+          showSeekPreview(
+            phraseStartAtFraction(pointerSeekFraction(event)),
+          );
+        }
+        return;
+      }
       if (
         Math.abs(event.clientX - seekPointerStartX) >
         seekPointerMoveThreshold
@@ -26540,6 +28670,7 @@ button:disabled {
       seekPointerActive = false;
       seek.classList.remove("is-pointer-active");
       commitSeek(seekPointerStartValue);
+      hideSeekPreview();
     });
     seek.addEventListener("change", () => {
       if (seekPointerActive) return;
@@ -26548,10 +28679,36 @@ button:disabled {
     seek.addEventListener("click", (event) => {
       event.preventDefault();
     });
+    seek.addEventListener("pointerleave", () => {
+      if (!seekPointerActive) hideSeekPreview();
+    });
+    seek.addEventListener("keydown", (event) => {
+      const arrowDirections = {
+        ArrowLeft: -1,
+        ArrowDown: -1,
+        ArrowRight: 1,
+        ArrowUp: 1,
+      };
+      let next = null;
+      if (event.key in arrowDirections) {
+        next =
+          (Number(seek.value) || 0) + arrowDirections[event.key] * 1000;
+      } else if (event.key === "PageUp") {
+        next = adjacentPhraseTime(-1);
+      } else if (event.key === "PageDown") {
+        next = adjacentPhraseTime(1);
+      }
+      if (next === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      isSeeking = true;
+      commitSeek(next);
+    });
     seek.addEventListener("blur", () => {
       seekPointerActive = false;
       seek.classList.remove("is-pointer-active");
       isSeeking = false;
+      hideSeekPreview();
     });
 
     fullscreenScore.addEventListener("click", async () => {
@@ -26603,12 +28760,38 @@ button:disabled {
         return;
       }
 
+      if (event.shiftKey && event.code === "KeyS") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) setLoopStartFromCursor();
+        return;
+      }
+
+      if (event.shiftKey && event.code === "KeyE") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) setLoopEndFromCursor();
+        return;
+      }
+
+      if (!event.shiftKey && event.code === "KeyL") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) toggleLoop();
+        return;
+      }
+
       if (event.code === "Space") {
         event.preventDefault();
         event.stopPropagation();
-        if (!event.repeat) api.playPause();
+        if (!event.repeat) togglePlayback();
         return;
       }
+
+      const ownsAllNavigationKeys = target?.closest?.(
+        "input[type='range'], select, textarea, [contenteditable]",
+      );
+      if (ownsAllNavigationKeys) return;
 
       const arrowDirections = {
         ArrowLeft: -1,
@@ -26616,9 +28799,14 @@ button:disabled {
         ArrowRight: 1,
         ArrowUp: 1,
       };
+      const ownsDirectionalKeys = target?.closest?.(
+        "[role='slider'], [role='tab']",
+      );
+      if (ownsDirectionalKeys && event.key in arrowDirections) return;
       if (event.key in arrowDirections) {
         event.preventDefault();
         event.stopPropagation();
+        isSeeking = true;
         commitSeek(
           (Number(seek.value) || 0) + arrowDirections[event.key] * 1000,
         );
@@ -26628,7 +28816,8 @@ button:disabled {
       if (event.key === "PageUp" || event.key === "PageDown") {
         event.preventDefault();
         event.stopPropagation();
-        commitSeek(adjacentPhraseTime(event.key === "PageUp" ? 1 : -1));
+        isSeeking = true;
+        commitSeek(adjacentPhraseTime(event.key === "PageUp" ? -1 : 1));
       }
     }, true);
 
@@ -26651,6 +28840,10 @@ button:disabled {
     });
     resizeObserver.observe(scorePanel);
     updateReflowLabel();
+    window.addEventListener("pagehide", savePreferences);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") savePreferences();
+    });
 
     const initialVisibleTracks = PART_NAMES.map((_, index) => index).filter(
       (index) => !hiddenScoreTracks.has(index),
@@ -26710,7 +28903,57 @@ button:disabled {
                   id="phraseMarkers"
                   aria-hidden="true"
                 ></div>
+                <div
+                  class="loop-region-track"
+                  id="loopRegionTrack"
+                  aria-hidden="true"
+                  hidden
+                >
+                  <span class="loop-region" id="loopRegion"></span>
+                </div>
+                <div
+                  class="loop-handle-track"
+                  id="loopHandleTrack"
+                  role="group"
+                  aria-label="Loop range"
+                  hidden
+                >
+                  <button
+                    class="loop-handle is-start"
+                    id="loopStartHandle"
+                    type="button"
+                    role="slider"
+                    aria-label="Loop start"
+                    aria-orientation="horizontal"
+                    aria-describedby="loopHandleHelp"
+                    hidden
+                  >
+                    <span aria-hidden="true">A</span>
+                  </button>
+                  <button
+                    class="loop-handle is-end"
+                    id="loopEndHandle"
+                    type="button"
+                    role="slider"
+                    aria-label="Loop end"
+                    aria-orientation="horizontal"
+                    aria-describedby="loopHandleHelp"
+                    hidden
+                  >
+                    <span aria-hidden="true">B</span>
+                  </button>
+                </div>
+                <output
+                  class="seek-preview"
+                  id="seekPreview"
+                  aria-hidden="true"
+                  hidden
+                ></output>
               </div>
+              <span class="visually-hidden" id="loopHandleHelp">
+                Drag horizontally or use arrow keys to move by one measure.
+                Delete clears the loop.
+              </span>
             </div>
 
             <div
@@ -26738,6 +28981,12 @@ button:disabled {
             <div class="player-status" id="playerStatus" role="status" aria-live="polite">
               <span id="playerStatusText">Loading score…</span>
             </div>
+            <div
+              class="transport-toast"
+              id="transportToast"
+              aria-hidden="true"
+              hidden
+            ></div>
           </div>
 
           <div
@@ -26747,113 +28996,220 @@ button:disabled {
             aria-label="Score settings"
           >
             <div class="transport-row transport-secondary">
-              <div class="mixer" id="mixer" aria-busy="true">
-                <div class="mixer-loading">Preparing five voice parts…</div>
+              <div
+                class="settings-group settings-parts-group"
+                role="group"
+                aria-label="Parts"
+              >
+                <span class="settings-group-title" aria-hidden="true">Parts</span>
+                <div class="mixer" id="mixer" aria-busy="true">
+                  <div class="mixer-loading">Preparing five voice parts…</div>
+                </div>
               </div>
 
-              <div class="settings-stack settings-view-stack">
-                <div class="tempo-control">
-                  <label class="drag-number-control">
-                    <span>Tempo</span>
-                    <button
-                      class="drag-number-value"
-                      id="tempo"
-                      type="button"
-                      data-value="100"
-                      aria-label="Relative tempo"
-                      title="Relative tempo — drag up or right to increase"
-                    >
-                      100%
-                    </button>
-                  </label>
-                </div>
+              <div
+                class="settings-group settings-practice-group"
+                role="group"
+                aria-label="Practice"
+              >
+                <span class="settings-group-title" aria-hidden="true">Practice</span>
+                <div class="settings-group-content">
+                  <div class="settings-stack settings-view-stack">
+                    <div class="tempo-control">
+                      <label class="drag-number-control">
+                        <span>Tempo</span>
+                        <button
+                          class="drag-number-value"
+                          id="tempo"
+                          type="button"
+                          data-value="100"
+                          aria-label="Relative tempo"
+                          title="Relative tempo — drag up or right to increase"
+                        >
+                          100%
+                        </button>
+                      </label>
+                    </div>
 
-                <div
-                  class="pill-toggle"
-                  aria-label="Score display"
-                >
-                  <div
-                    class="pill-toggle-group"
-                    id="scoreViewToggle"
-                    role="tablist"
-                    aria-label="Score display"
-                  >
-                    <span class="pill-thumb" aria-hidden="true"></span>
-                    <button
-                      class="pill-option is-active"
-                      type="button"
-                      role="tab"
-                      data-score-view="standard"
-                      aria-selected="true"
-                      aria-controls="scoreScroll"
+                    <div
+                      class="pill-toggle"
+                      aria-label="Score display"
                     >
-                      Standard
+                      <div
+                        class="pill-toggle-group"
+                        id="scoreViewToggle"
+                        role="tablist"
+                        aria-label="Score display"
+                      >
+                        <span class="pill-thumb" aria-hidden="true"></span>
+                        <button
+                          class="pill-option is-active"
+                          id="scoreViewStandard"
+                          type="button"
+                          role="tab"
+                          tabindex="0"
+                          data-score-view="standard"
+                          aria-selected="true"
+                          aria-controls="scoreScroll"
+                        >
+                          Standard
+                        </button>
+                        <button
+                          class="pill-option"
+                          id="scoreViewBars"
+                          type="button"
+                          role="tab"
+                          tabindex="-1"
+                          data-score-view="bars"
+                          aria-selected="false"
+                          aria-controls="barScore"
+                        >
+                          Pitch bars
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="settings-stack loop-boundary-controls"
+                    role="group"
+                    aria-label="Loop boundaries"
+                  >
+                    <button
+                      class="loop-boundary-button"
+                      id="loopStart"
+                      type="button"
+                      aria-label="Set loop start to the beginning of the cursor's measure"
+                      aria-keyshortcuts="Shift+S"
+                      title="Set loop start at cursor · Shift+S"
+                      disabled
+                    >
+                      <span class="loop-boundary-symbol" aria-hidden="true">Start</span>
+                      <span aria-hidden="true">·</span>
+                      <span class="loop-boundary-measure" id="loopStartMeasure">—</span>
                     </button>
                     <button
-                      class="pill-option"
+                      class="loop-boundary-button"
+                      id="loopEnd"
                       type="button"
-                      role="tab"
-                      data-score-view="bars"
-                      aria-selected="false"
-                      aria-controls="barScore"
+                      aria-label="Set loop end to the end of the cursor's measure"
+                      aria-keyshortcuts="Shift+E"
+                      title="Set loop end at cursor · Shift+E"
+                      disabled
                     >
-                      Pitch bars
+                      <span class="loop-boundary-symbol" aria-hidden="true">End</span>
+                      <span aria-hidden="true">·</span>
+                      <span class="loop-boundary-measure" id="loopEndMeasure">—</span>
+                    </button>
+                  </div>
+
+                  <div class="settings-actions practice-actions" aria-label="Loop actions">
+                    <button
+                      class="icon-control"
+                      id="loopToggle"
+                      type="button"
+                      aria-label="Enable measure loop"
+                      aria-keyshortcuts="L"
+                      aria-pressed="false"
+                      title="Toggle measure loop · L"
+                      disabled
+                    >
+                      <svg
+                        class="loop-toggle-symbol"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M6 7h12m0 0-3-3m3 3-3 3" />
+                        <path d="M18 17H6m0 0 3 3m-3-3 3-3" />
+                      </svg>
+                    </button>
+                    <button
+                      class="icon-control contextual-action"
+                      id="loopClear"
+                      type="button"
+                      aria-label="Clear loop boundaries"
+                      title="Clear loop"
+                      hidden
+                    >
+                      <span aria-hidden="true">×</span>
                     </button>
                   </div>
                 </div>
               </div>
 
               <div
-                class="settings-stack score-layout-controls"
-                id="scoreLayout"
+                class="settings-group settings-display-group"
                 role="group"
-                aria-label="Score scale"
+                aria-label="Display"
               >
-                <label class="drag-number-control score-layout-number">
-                  <span aria-hidden="true">V</span>
-                  <button
-                    class="drag-number-value score-layout-value"
-                    id="scoreVertical"
-                    type="button"
-                    data-value="100"
-                    aria-label="Vertical score scale"
-                    title="Vertical scale — drag up or right to increase"
+                <span class="settings-group-title" aria-hidden="true">Display</span>
+                <div class="settings-group-content">
+                  <div
+                    class="settings-stack score-layout-controls"
+                    id="scoreLayout"
+                    role="group"
+                    aria-label="Score scale"
                   >
-                    100%
-                  </button>
-                </label>
-                <label class="drag-number-control score-layout-number">
-                  <span aria-hidden="true">H</span>
-                  <button
-                    class="drag-number-value score-layout-value"
-                    id="scoreHorizontal"
-                    type="button"
-                    data-value="55"
-                    aria-label="Horizontal score stretch"
-                    title="Horizontal stretch — drag up or right to increase"
-                  >
-                    55%
-                  </button>
-                </label>
+                    <label class="drag-number-control score-layout-number">
+                      <span aria-hidden="true">V</span>
+                      <button
+                        class="drag-number-value score-layout-value"
+                        id="scoreVertical"
+                        type="button"
+                        data-value="100"
+                        aria-label="Vertical score scale"
+                        title="Vertical scale — drag up or right to increase"
+                      >
+                        100%
+                      </button>
+                    </label>
+                    <label class="drag-number-control score-layout-number">
+                      <span aria-hidden="true">H</span>
+                      <button
+                        class="drag-number-value score-layout-value"
+                        id="scoreHorizontal"
+                        type="button"
+                        data-value="55"
+                        aria-label="Horizontal score stretch"
+                        title="Horizontal stretch — drag up or right to increase"
+                      >
+                        55%
+                      </button>
+                    </label>
+                  </div>
+
+                  <div class="settings-actions display-actions" aria-label="Display actions">
+                    <button
+                      class="icon-control"
+                      id="fullscreenScore"
+                      type="button"
+                      aria-label="Enter full screen"
+                      aria-pressed="false"
+                      title="Full screen"
+                    >
+                      <span aria-hidden="true">⛶</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div class="settings-actions" aria-label="Score actions">
+              <div class="settings-actions settings-utility-actions" aria-label="Settings actions">
                 <button
                   class="icon-control"
-                  id="fullscreenScore"
+                  id="sharePractice"
                   type="button"
-                  aria-label="Enter full screen"
-                  aria-pressed="false"
-                  title="Full screen"
+                  aria-label="Copy practice link"
+                  title="Copy practice link"
+                  disabled
                 >
-                  <span aria-hidden="true">⛶</span>
+                  <span aria-hidden="true">↗</span>
                 </button>
                 <button
                   class="icon-control"
                   id="resetMix"
                   type="button"
-                  aria-label="Reset tempo and all voices to defaults"
-                  title="Reset tempo and voices"
+                  aria-label="Reset tempo, voices, and loop to defaults"
+                  title="Reset tempo, voices, and loop"
                   disabled
                 >
                   <span aria-hidden="true">↺</span>
@@ -26872,7 +29228,8 @@ button:disabled {
             <div
               class="score-scroll"
               id="scoreScroll"
-              role="region"
+              role="tabpanel"
+              aria-labelledby="scoreViewStandard"
               aria-label="Nature Boy standard notation"
             >
               <div class="score-loading" id="scoreLoading">
@@ -26889,7 +29246,8 @@ button:disabled {
             <div
               class="bar-score"
               id="barScore"
-              role="region"
+              role="tabpanel"
+              aria-labelledby="scoreViewBars"
               aria-label="Nature Boy color-coded pitch-bar notation. D has the darkest solid guide, A a lighter solid guide, and F natural a dashed guide. Every system labels at least one reference pitch."
               hidden
             >

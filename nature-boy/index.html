@@ -151,6 +151,16 @@ main {
   box-shadow: 0 7px 20px rgba(58, 43, 24, 0.1);
 }
 
+.player-shell.is-continuous-layout .transport {
+  position: fixed;
+  left: 0;
+  width: 100vw;
+}
+
+.player-shell.is-continuous-layout .score-panel {
+  margin-top: var(--continuous-transport-height, 0px);
+}
+
 .transport-row {
   min-width: 0;
   display: flex;
@@ -175,6 +185,7 @@ main {
   grid-column: 1;
   gap: clamp(0.3rem, 0.6vw, 0.4rem);
   flex-wrap: wrap;
+  justify-content: flex-start;
   overflow-x: visible;
   overscroll-behavior-x: auto;
   scrollbar-width: none;
@@ -394,12 +405,6 @@ button:disabled {
   box-shadow: inset 0 0 0 1px rgba(29, 109, 103, 0.16);
 }
 
-.loop-region-track.is-disabled .loop-region {
-  border-color: color-mix(in srgb, var(--teal) 58%, var(--line-dark));
-  background: rgba(29, 109, 103, 0.07);
-  box-shadow: none;
-}
-
 .loop-handle-track {
   position: absolute;
   z-index: 3;
@@ -412,7 +417,6 @@ button:disabled {
 
 .loop-handle-track[hidden],
 .loop-handle[hidden],
-.contextual-action[hidden],
 .seek-preview[hidden],
 .transport-toast[hidden] {
   display: none !important;
@@ -542,8 +546,7 @@ button:disabled {
 .tempo-control,
 .settings-group,
 .settings-group-content,
-.settings-stack,
-.settings-actions {
+.settings-stack {
   min-width: 0;
 }
 
@@ -899,6 +902,7 @@ button:disabled {
 .settings-group-content {
   flex: 1 1 auto;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .settings-group-title {
@@ -910,7 +914,7 @@ button:disabled {
 }
 
 .settings-practice-group {
-  flex: 1 1 18.4rem;
+  flex: 0 1 auto;
 }
 
 .settings-display-group {
@@ -957,14 +961,122 @@ button:disabled {
 }
 
 .score-layout-controls {
-  width: 5.25rem;
-  flex: 0 0 5.25rem;
+  width: 8.25rem;
+  flex: 0 0 8.25rem;
   align-items: stretch;
 }
 
+.display-compact-stack {
+  width: 8.25rem;
+  flex: 0 0 8.25rem;
+  align-items: stretch;
+}
+
+.continuous-view-toggle {
+  min-height: 2.2rem;
+  padding: 0.28rem 0.42rem 0.28rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.continuous-view-toggle:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--ink);
+}
+
+.continuous-view-toggle[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--teal) 65%, var(--line));
+  color: var(--ink);
+  background: var(--teal-soft);
+}
+
+.binary-toggle-track {
+  position: relative;
+  width: 1.72rem;
+  height: 0.94rem;
+  border: 1px solid var(--line-dark);
+  border-radius: 999px;
+  display: block;
+  flex: 0 0 auto;
+  background: var(--paper-deep);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.binary-toggle-thumb {
+  position: absolute;
+  top: 0.1rem;
+  left: 0.1rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 1px 2px rgba(58, 43, 24, 0.22);
+  transition:
+    background 150ms ease,
+    transform 170ms ease;
+}
+
+.continuous-view-toggle[aria-pressed="true"] .binary-toggle-track {
+  border-color: var(--teal);
+  background: var(--teal);
+}
+
+.continuous-view-toggle[aria-pressed="true"] .binary-toggle-thumb {
+  background: var(--paper);
+  transform: translateX(0.78rem);
+}
+
+.compact-action-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.compact-action-row .icon-control {
+  width: 100%;
+  height: 2.2rem;
+  border-radius: 0.65rem;
+}
+
+.compact-action-symbol {
+  display: grid;
+  width: 1.1rem;
+  height: 1.1rem;
+  place-items: center;
+  line-height: 1;
+  transform: translateY(-0.02em);
+}
+
+.compact-action-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .loop-boundary-controls {
-  width: 5.25rem;
-  flex: 0 0 5.25rem;
+  width: 8.25rem;
+  flex: 0 0 8.25rem;
   align-items: stretch;
 }
 
@@ -975,7 +1087,7 @@ button:disabled {
   border-radius: 0.65rem;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.18rem;
   color: var(--muted);
   background: var(--paper);
@@ -997,6 +1109,14 @@ button:disabled {
   background: color-mix(in srgb, var(--teal-soft) 58%, var(--paper));
 }
 
+.loop-boundary-button.has-boundary::after {
+  content: "×";
+  margin-left: 0.08rem;
+  color: var(--rust);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
 .loop-boundary-symbol {
   color: var(--teal);
   font-weight: 850;
@@ -1004,21 +1124,11 @@ button:disabled {
 
 .loop-boundary-measure {
   min-width: 1.45em;
+  margin-left: auto;
   text-align: center;
 }
 
-.loop-toggle-symbol {
-  width: 1.12rem;
-  height: 1.12rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-.loop-boundary-button:disabled,
-#loopToggle:disabled {
+.loop-boundary-button:disabled {
   cursor: not-allowed;
 }
 
@@ -1036,28 +1146,6 @@ button:disabled {
   min-height: 1.65rem;
   padding: 0.22rem 0.3rem;
   font-size: 0.74rem;
-}
-
-.settings-actions {
-  flex: 0 0 auto;
-  margin-left: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.practice-actions,
-.display-actions {
-  align-self: stretch;
-  align-items: center;
-}
-
-.settings-utility-actions {
-  margin-left: auto;
-}
-
-.contextual-action {
-  color: var(--rust);
 }
 
 .score-panel {
@@ -1194,64 +1282,25 @@ button:disabled {
   border-left-style: solid;
 }
 
-.score-phrase-measure,
-.score-phrase-divider {
+.score-phrase-boundary {
   position: absolute;
-  color: color-mix(in srgb, var(--rust) 72%, var(--muted));
+  width: 2px;
+  color: color-mix(in srgb, var(--rust) 62%, var(--muted));
+  opacity: 0.72;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
-.score-phrase-measure {
-  min-width: 1.25rem;
-  padding: 0.08rem 0.26rem;
-  border-radius: 0.28rem;
-  background: rgba(255, 253, 248, 0.84);
-  font-size: 0.68rem;
-  font-weight: 820;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  text-align: center;
+.score-phrase-boundary.is-measure-boundary {
+  background: currentColor;
 }
 
-.score-phrase-divider {
-  width: 0;
-  border-left: 1.25px dashed
-    color-mix(in srgb, var(--rust) 48%, transparent);
-}
-
-.score-phrase-divider-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  padding: 0.07rem 0.22rem;
-  border-radius: 0.25rem;
-  color: color-mix(in srgb, var(--rust) 78%, var(--ink));
-  background: rgba(255, 253, 248, 0.88);
-  font-size: 0.61rem;
-  font-weight: 780;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  white-space: nowrap;
-  transform: translate(-50%, 0);
-}
-
-.score-phrase-measure.is-past,
-.score-phrase-divider.is-past {
-  opacity: 0.58;
-}
-
-.score-phrase-measure.is-active {
-  color: var(--paper);
-  background: var(--rust);
-}
-
-.score-phrase-divider.is-active {
-  border-left-color: var(--rust);
-  border-left-width: 2px;
-}
-
-.score-phrase-divider.is-active .score-phrase-divider-label {
-  color: var(--paper);
-  background: var(--rust);
+.score-phrase-boundary.is-mid-measure {
+  background: repeating-linear-gradient(
+    to bottom,
+    currentColor 0 2px,
+    transparent 2px 5px
+  );
 }
 
 .bar-score {
@@ -1344,6 +1393,11 @@ button:disabled {
   stroke: rgba(109, 104, 95, 0.38);
 }
 
+.bar-measure-line.is-phrase-boundary {
+  stroke: color-mix(in srgb, var(--rust) 62%, var(--muted));
+  stroke-width: 1.6;
+}
+
 .bar-measure-number {
   fill: var(--muted);
   font-family:
@@ -1354,28 +1408,13 @@ button:disabled {
   user-select: none;
 }
 
-.bar-measure-number.is-phrase-start {
-  fill: color-mix(in srgb, var(--rust) 78%, var(--ink));
-  font-weight: 850;
-}
-
 .bar-phrase-divider {
-  stroke: color-mix(in srgb, var(--rust) 58%, transparent);
-  stroke-width: 1.4;
-  stroke-dasharray: 3 3;
+  stroke: color-mix(in srgb, var(--rust) 58%, var(--muted));
+  stroke-width: 1.2;
+  stroke-dasharray: 1 3;
+  stroke-linecap: round;
   pointer-events: none;
   vector-effect: non-scaling-stroke;
-}
-
-.bar-phrase-label {
-  fill: color-mix(in srgb, var(--rust) 76%, var(--ink));
-  font-family:
-    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 8px;
-  font-weight: 780;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-  user-select: none;
 }
 
 .bar-note {
@@ -1743,22 +1782,13 @@ button:disabled {
   }
 
   .transport-settings .score-layout-controls {
-    width: 5.25rem;
-    flex: 0 0 5.25rem;
+    width: 8.25rem;
+    flex: 0 0 8.25rem;
   }
 
   .transport-settings .loop-boundary-controls {
-    width: 5.25rem;
-    flex: 0 0 5.25rem;
-  }
-
-  .transport-settings .settings-actions {
-    margin-left: auto;
-  }
-
-  .transport-settings .settings-utility-actions {
-    width: 100%;
-    justify-content: flex-end;
+    width: 8.25rem;
+    flex: 0 0 8.25rem;
   }
 
   .pill-toggle {
@@ -24286,6 +24316,7 @@ button:disabled {
       scoreViewToggle.querySelectorAll("[data-score-view]"),
     );
     const playerShell = document.getElementById("player");
+    const transport = document.querySelector(".transport");
     const playerStatus = document.getElementById("playerStatus");
     const playerStatusText = document.getElementById("playerStatusText");
     const transportToast = document.getElementById("transportToast");
@@ -24304,6 +24335,7 @@ button:disabled {
     const scoreLayout = document.getElementById("scoreLayout");
     const scoreVertical = document.getElementById("scoreVertical");
     const scoreHorizontal = document.getElementById("scoreHorizontal");
+    const continuousView = document.getElementById("continuousView");
     const settingsToggle = document.getElementById("settingsToggle");
     const transportSettings = document.getElementById("transportSettings");
     const fullscreenScore = document.getElementById("fullscreenScore");
@@ -24313,8 +24345,6 @@ button:disabled {
     const loopEnd = document.getElementById("loopEnd");
     const loopStartMeasure = document.getElementById("loopStartMeasure");
     const loopEndMeasure = document.getElementById("loopEndMeasure");
-    const loopToggle = document.getElementById("loopToggle");
-    const loopClear = document.getElementById("loopClear");
     const sharePractice = document.getElementById("sharePractice");
     const resetMix = document.getElementById("resetMix");
     const compactSettingsQuery = window.matchMedia(
@@ -24347,12 +24377,12 @@ button:disabled {
     let seekPreviewTimer = 0;
     let transportToastTimer = 0;
     let currentScoreView = "standard";
+    let currentScoreFlow = "wrapped";
     let currentPlaybackTick = 0;
     let loopStartTick = null;
     let loopEndTick = null;
     let loopStartMeasureNumber = null;
     let loopEndMeasureNumber = null;
-    let loopEnabled = false;
     let activeBarSystemIndex = -1;
     let playbackFollowFrame = 0;
     let playerIsPlaying = false;
@@ -24601,6 +24631,11 @@ button:disabled {
         state.scoreView = viewValue === "p" ? "bars" : "standard";
       }
 
+      const flowValue = uniqueValue("f");
+      if (flowValue === "c" || flowValue === "w") {
+        state.scoreFlow = flowValue === "c" ? "continuous" : "wrapped";
+      }
+
       const parseBits = (key, requireVisible = false) => {
         const value = uniqueValue(key);
         if (!value || !/^[01]{5}$/.test(value)) return null;
@@ -24652,6 +24687,7 @@ button:disabled {
         visibleTracks: Array(PART_NAMES.length).fill(true),
         audibleTracks: Array(PART_NAMES.length).fill(true),
         scoreView: "standard",
+        scoreFlow: "wrapped",
         loopMeasures: [null, null],
         cursor: [1, 0],
       };
@@ -24699,6 +24735,11 @@ button:disabled {
           (_, index) => stored.audibleTracks?.[index] !== false,
         ),
         scoreView: stored.scoreView === "bars" ? "bars" : "standard",
+        scoreFlow:
+          stored.scoreFlow === "continuous" ||
+          stored.continuousLayout === true
+            ? "continuous"
+            : "wrapped",
         loopMeasures: Array.isArray(stored.loopMeasures)
           ? [stored.loopMeasures[0] ?? null, stored.loopMeasures[1] ?? null]
           : defaults.loopMeasures,
@@ -24714,6 +24755,7 @@ button:disabled {
         "scoreSize",
         "scoreSpacing",
         "scoreView",
+        "scoreFlow",
         "loopMeasures",
         "cursor",
       ].forEach((key) => {
@@ -24741,7 +24783,7 @@ button:disabled {
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
-            schema: 3,
+            schema: 4,
             tempo: tempoDrag?.value() ?? DEFAULT_TEMPO_PERCENT,
             scoreSize: scoreLayoutControl?.size() ?? defaultScoreSize(),
             scoreSpacing:
@@ -24754,6 +24796,7 @@ button:disabled {
               audibleTracks.has(index),
             ),
             scoreView: currentScoreView,
+            scoreFlow: currentScoreFlow,
             loopMeasures: savedLoopMeasures,
             cursor: cursor
               ? [cursor.measureNumber, cursor.offsetTicks]
@@ -24881,7 +24924,6 @@ button:disabled {
           ? null
           : sequence.measures[loopEndMeasureNumber - 1][0] +
             sequence.measures[loopEndMeasureNumber - 1][1];
-      loopEnabled = false;
 
       restoredCursorTick = sharedPractice.provided.cursor
         ? tickForCursorPosition(sharedPractice.state.cursor) ?? 0
@@ -25098,7 +25140,6 @@ button:disabled {
       const fragment = document.createDocumentFragment();
       appendStandardLoopRegions(fragment, lookup, offsetX, offsetY);
       phraseRecords.forEach((record, index) => {
-        record.scoreElement = null;
         const masterBarBounds = lookup.findMasterBarByIndex(
           record.phrase.measure - 1,
         );
@@ -25108,15 +25149,13 @@ button:disabled {
         const marker = document.createElement("span");
         marker.dataset.phraseIndex = String(index);
         marker.dataset.tick = String(record.tick);
-        marker.title = `${record.phrase.label}, measure ${
-          record.phrase.measure
-        }, beat ${formatBeat(record.phrase.beat)}`;
+        marker.style.top = `${offsetY + lineBounds.y + 2}px`;
+        marker.style.height = `${Math.max(8, lineBounds.h - 4)}px`;
 
         if (record.phrase.beat === 1) {
-          marker.className = "score-phrase-measure";
-          marker.textContent = String(record.phrase.measure);
-          marker.style.left = `${offsetX + lineBounds.x + 3}px`;
-          marker.style.top = `${offsetY + lineBounds.y + 2}px`;
+          marker.className =
+            "score-phrase-boundary is-measure-boundary";
+          marker.style.left = `${offsetX + lineBounds.x}px`;
         } else {
           const phraseX = phraseXInMasterBar(
             masterBarBounds,
@@ -25124,22 +25163,13 @@ button:disabled {
             record.tick,
           );
           if (!Number.isFinite(phraseX)) return;
-          marker.className = "score-phrase-divider";
+          marker.className = "score-phrase-boundary is-mid-measure";
           marker.style.left = `${offsetX + Math.max(
             lineBounds.x + 1,
             phraseX - 3,
           )}px`;
-          marker.style.top = `${offsetY + lineBounds.y + 2}px`;
-          marker.style.height = `${Math.max(8, lineBounds.h - 4)}px`;
-          const label = document.createElement("span");
-          label.className = "score-phrase-divider-label";
-          label.textContent = `${record.phrase.measure}·${formatBeat(
-            record.phrase.beat,
-          )}`;
-          marker.append(label);
         }
 
-        record.scoreElement = marker;
         fragment.append(marker);
       });
       appendStandardLoopBoundary(
@@ -25177,11 +25207,10 @@ button:disabled {
       });
       phraseRecords.forEach((record, index) => {
         const active = index === activeIndex;
-        [record.element, record.scoreElement].forEach((marker) => {
-          if (!marker) return;
-          marker.classList.toggle("is-past", index < activeIndex);
-          marker.classList.toggle("is-active", active);
-        });
+        const marker = record.element;
+        if (!marker) return;
+        marker.classList.toggle("is-past", index < activeIndex);
+        marker.classList.toggle("is-active", active);
       });
     }
 
@@ -25275,7 +25304,6 @@ button:disabled {
             scoreSeconds,
             position: clamp(scoreSeconds / audioEngine.duration, 0, 1),
             element: null,
-            scoreElement: null,
           },
         ];
       });
@@ -25518,7 +25546,6 @@ button:disabled {
       measureNumber,
       {
         commit = true,
-        enableWhenComplete = false,
         persist = commit,
       } = {},
     ) {
@@ -25534,8 +25561,6 @@ button:disabled {
         loopEndMeasureNumber = nextMeasure;
         loopEndTick = next[0] + next[1];
       }
-      if (!hasValidLoop()) loopEnabled = false;
-      else if (enableWhenComplete) loopEnabled = true;
       if (commit) applyLoopState({ persist });
       else updateLoopUi();
       return true;
@@ -25622,7 +25647,7 @@ button:disabled {
       playerShell.classList.toggle("has-loop-start", startSet);
       playerShell.classList.toggle("has-loop-end", endSet);
       playerShell.classList.toggle("has-loop-range", valid);
-      playerShell.classList.toggle("is-loop-enabled", valid && loopEnabled);
+      playerShell.classList.toggle("is-loop-enabled", valid);
       loopStartMeasure.textContent = startSet
         ? String(loopStartMeasureNumber)
         : "—";
@@ -25633,8 +25658,6 @@ button:disabled {
       loopEnd.classList.toggle("has-boundary", endSet);
       loopStart.disabled = !isReady;
       loopEnd.disabled = !isReady;
-      loopClear.hidden = !startSet && !endSet;
-      loopClear.disabled = !isReady;
       loopHandleTrack.hidden = !startSet && !endSet;
       updateLoopHandle(
         loopStartHandle,
@@ -25653,33 +25676,21 @@ button:disabled {
       loopStart.setAttribute(
         "aria-label",
         startSet
-          ? `Loop starts at the beginning of measure ${loopStartMeasureNumber}. Set start at the cursor`
+          ? `Clear loop start at measure ${loopStartMeasureNumber}`
           : "Set loop start to the beginning of the cursor's measure",
       );
       loopEnd.setAttribute(
         "aria-label",
         endSet
-          ? `Loop ends after measure ${loopEndMeasureNumber}. Set end at the cursor`
+          ? `Clear loop end after measure ${loopEndMeasureNumber}`
           : "Set loop end to the end of the cursor's measure",
       );
       loopStart.title = startSet
-        ? `Start: measure ${loopStartMeasureNumber} · Shift+S`
+        ? `Clear loop start at measure ${loopStartMeasureNumber} · Shift+S moves it to the cursor`
         : "Set loop start at cursor · Shift+S";
       loopEnd.title = endSet
-        ? `End: after measure ${loopEndMeasureNumber} · Shift+E`
+        ? `Clear loop end after measure ${loopEndMeasureNumber} · Shift+E moves it to the cursor`
         : "Set loop end at cursor · Shift+E";
-
-      loopToggle.disabled = !isReady || !valid;
-      loopToggle.setAttribute("aria-pressed", String(valid && loopEnabled));
-      loopToggle.setAttribute(
-        "aria-label",
-        valid
-          ? `${loopEnabled ? "Disable" : "Enable"} loop for ${loopMeasureDescription()}`
-          : "Enable measure loop after setting its start and end",
-      );
-      loopToggle.title = valid
-        ? `${loopEnabled ? "Disable" : "Enable"} ${loopMeasureDescription()} · L`
-        : "Set the loop start and end first";
 
       if (!valid || !audioEngine?.duration) {
         loopRegionTrack.hidden = true;
@@ -25698,17 +25709,16 @@ button:disabled {
       );
       loopRegion.style.left = `${startFraction * 100}%`;
       loopRegion.style.width = `${(endFraction - startFraction) * 100}%`;
-      loopRegionTrack.classList.toggle("is-disabled", !loopEnabled);
       loopRegionTrack.hidden = false;
       scheduleLoopScoreVisuals();
     }
 
     function applyLoopState({ persist = true } = {}) {
-      if (!hasValidLoop()) loopEnabled = false;
+      const enabled = hasValidLoop();
       audioEngine?.setLoopRange(
         loopStartTick,
         loopEndTick,
-        loopEnabled,
+        enabled,
       );
       updateLoopUi();
       if (persist) savePreferences();
@@ -25721,21 +25731,20 @@ button:disabled {
         setStatus(boundary?.error || "The loop start could not be set here", "error");
         return;
       }
-      loopStartTick = boundary.tick;
-      loopStartMeasureNumber = boundary.measureNumber;
       if (
         Number.isFinite(loopEndTick) &&
-        loopEndTick <= loopStartTick
+        boundary.tick >= loopEndTick
       ) {
-        loopEndTick = null;
-        loopEndMeasureNumber = null;
+        setStatus("The loop start must be before its end", "error");
+        return;
       }
-      loopEnabled = hasValidLoop();
+      loopStartTick = boundary.tick;
+      loopStartMeasureNumber = boundary.measureNumber;
       applyLoopState();
       setStatus(
         hasValidLoop()
-          ? `Loop on: ${loopMeasureDescription()}`
-          : `Loop starts at measure ${loopStartMeasureNumber}; set the end`,
+          ? `Looping ${loopMeasureDescription()}`
+          : `Loop start set to measure ${loopStartMeasureNumber}; set loop end`,
         "ready",
       );
     }
@@ -25755,24 +25764,44 @@ button:disabled {
       }
       loopEndTick = boundary.tick;
       loopEndMeasureNumber = boundary.measureNumber;
-      loopEnabled = hasValidLoop();
       applyLoopState();
       setStatus(
         hasValidLoop()
-          ? `Loop on: ${loopMeasureDescription()}`
-          : `Loop ends after measure ${loopEndMeasureNumber}; set the start`,
+          ? `Looping ${loopMeasureDescription()}`
+          : `Loop end set after measure ${loopEndMeasureNumber}; set loop start`,
         "ready",
       );
     }
 
-    function toggleLoop() {
-      if (!hasValidLoop()) return;
-      loopEnabled = !loopEnabled;
+    function clearLoopBoundary(kind, announce = true) {
+      const isStart = kind === "start";
+      if (isStart) {
+        loopStartTick = null;
+        loopStartMeasureNumber = null;
+      } else {
+        loopEndTick = null;
+        loopEndMeasureNumber = null;
+      }
       applyLoopState();
-      setStatus(
-        `Loop ${loopEnabled ? "on" : "off"}: ${loopMeasureDescription()}`,
-        "ready",
-      );
+      if (announce) {
+        setStatus(
+          `Looping off; loop ${isStart ? "start" : "end"} cleared`,
+          "ready",
+        );
+      }
+    }
+
+    function activateLoopBoundary(kind) {
+      const isSet =
+        kind === "start"
+          ? Number.isFinite(loopStartTick)
+          : Number.isFinite(loopEndTick);
+      if (isSet) {
+        clearLoopBoundary(kind);
+        return;
+      }
+      if (kind === "start") setLoopStartFromCursor();
+      else setLoopEndFromCursor();
     }
 
     function clearLoop(announce = true) {
@@ -25780,7 +25809,6 @@ button:disabled {
       loopEndTick = null;
       loopStartMeasureNumber = null;
       loopEndMeasureNumber = null;
-      loopEnabled = false;
       applyLoopState();
       if (announce) setStatus("Loop cleared", "ready");
     }
@@ -25790,7 +25818,6 @@ button:disabled {
       loopEndTick = snapshot.endTick;
       loopStartMeasureNumber = snapshot.startMeasure;
       loopEndMeasureNumber = snapshot.endMeasure;
-      loopEnabled = snapshot.enabled;
       updateLoopUi();
     }
 
@@ -25836,7 +25863,6 @@ button:disabled {
             endTick: loopEndTick,
             startMeasure: loopStartMeasureNumber,
             endMeasure: loopEndMeasureNumber,
-            enabled: loopEnabled,
           },
         };
         handle.focus({ preventScroll: true });
@@ -25885,8 +25911,16 @@ button:disabled {
         if (event.key === "Delete" || event.key === "Backspace") {
           event.preventDefault();
           event.stopPropagation();
-          clearLoop();
-          seek.focus({ preventScroll: true });
+          clearLoopBoundary(kind);
+          (
+            compactSettingsQuery.matches
+              ? settingsToggle
+              : kind === "start"
+                ? loopStart
+                : loopEnd
+          ).focus({
+            preventScroll: true,
+          });
           return;
         }
         const range = legalLoopMeasureRange(kind);
@@ -25920,7 +25954,7 @@ button:disabled {
     function requestPlayback(shouldPlay) {
       if (!isReady) return;
       if (api.playbackRange) api.playbackRange = null;
-      if (shouldPlay && loopEnabled && hasValidLoop()) {
+      if (shouldPlay && hasValidLoop()) {
         const outsideLoop =
           currentPlaybackTick < loopStartTick - LOOP_BOUNDARY_TOLERANCE_TICKS ||
           currentPlaybackTick >= loopEndTick - LOOP_BOUNDARY_TOLERANCE_TICKS;
@@ -25972,6 +26006,7 @@ button:disabled {
       params.set("c", `${cursor.measureNumber}.${cursor.offsetTicks}`);
       params.set("t", String(tempoDrag.value()));
       params.set("v", currentScoreView === "bars" ? "p" : "s");
+      params.set("f", currentScoreFlow === "continuous" ? "c" : "w");
       params.set(
         "s",
         PART_NAMES.map((_, index) =>
@@ -26207,15 +26242,18 @@ button:disabled {
       seek.disabled = true;
       loopStart.disabled = true;
       loopEnd.disabled = true;
-      loopToggle.disabled = true;
-      loopClear.disabled = true;
       sharePractice.disabled = true;
+      continuousView.disabled = true;
     }
 
     function scheduleScoreRender() {
       if (!api || currentScoreView !== "standard") return;
       window.clearTimeout(renderTimer);
       renderTimer = window.setTimeout(() => {
+        api.settings.display.layoutMode =
+          currentScoreFlow === "continuous"
+            ? window.alphaTab.LayoutMode.Horizontal
+            : window.alphaTab.LayoutMode.Page;
         api.settings.display.scale = scoreLayoutControl.size() / 100;
         api.settings.display.stretchForce =
           scoreLayoutControl.spacing() / 100;
@@ -26233,6 +26271,47 @@ button:disabled {
       if (persist) savePreferences();
       scheduleScoreRender();
       scheduleBarRender();
+    }
+
+    function updateScoreFlowAppearance() {
+      const continuous = currentScoreFlow === "continuous";
+      const transportHeight = Math.ceil(
+        transport.getBoundingClientRect().height,
+      );
+      if (transportHeight > 0) {
+        playerShell.style.setProperty(
+          "--continuous-transport-height",
+          `${transportHeight}px`,
+        );
+      }
+      playerShell.classList.toggle("is-continuous-layout", continuous);
+      continuousView.setAttribute("aria-pressed", String(continuous));
+      continuousView.title = continuous
+        ? "Switch to wrapped layout"
+        : "Continuous horizontal layout";
+    }
+
+    function setScoreFlow(
+      flow,
+      { persist = true, render = true, announce = true } = {},
+    ) {
+      currentScoreFlow = flow === "continuous" ? "continuous" : "wrapped";
+      updateScoreFlowAppearance();
+      barRenderKey = "";
+      if (render) {
+        scheduleScoreRender();
+        scheduleBarRender(true);
+        updateReflowLabel();
+      }
+      if (persist) savePreferences();
+      if (announce && isReady) {
+        setStatus(
+          currentScoreFlow === "continuous"
+            ? "Continuous horizontal layout"
+            : "Wrapped score layout",
+          "ready",
+        );
+      }
     }
 
     function setScoreView(view, persist = true, animate = true) {
@@ -26640,6 +26719,13 @@ button:disabled {
     }
 
     function updateReflowLabel() {
+      if (currentScoreFlow === "continuous") {
+        reflowStatus.textContent =
+          currentScoreView === "bars"
+            ? "Pitch bars · continuous horizontal layout"
+            : "Standard notation · continuous horizontal layout";
+        return;
+      }
       if (currentScoreView === "bars") {
         reflowStatus.textContent = barMeasuresPerLine
           ? `Pitch bars · ${barMeasuresPerLine} measures per line`
@@ -26656,6 +26742,111 @@ button:disabled {
         element.setAttribute(key, String(value));
       });
       return element;
+    }
+
+    function firstLyricLetterRange(text) {
+      const source = String(text || "");
+      const letterMatch = source.match(/[\p{L}\p{N}]/u);
+      const fallbackMatch = source.match(/\S/u);
+      const match = letterMatch || fallbackMatch;
+      if (!match) return { index: 0, length: Math.min(1, source.length) };
+      const character = Array.from(source.slice(match.index))[0] || "";
+      return { index: match.index, length: character.length };
+    }
+
+    function measuredSvgTextLength(element, start, length) {
+      try {
+        const measured =
+          start === undefined
+            ? element.getComputedTextLength()
+            : element.getSubStringLength(start, length);
+        if (Number.isFinite(measured)) return measured;
+      } catch {
+        // Fall through to the small-font estimate for unusual SVG engines.
+      }
+      const text = element.textContent || "";
+      const portion =
+        start === undefined ? text : text.slice(start, start + length);
+      return portion.length * 4.25;
+    }
+
+    function layoutBarLyrics(systems) {
+      systems.forEach(({ svg, startTick, leftPad }) => {
+        const lyricBounds = new Map();
+        svg.querySelectorAll(".bar-lyric-text").forEach((lyricText) => {
+          const text = lyricText.textContent || "";
+          const onsetX = Number(lyricText.dataset.onsetX);
+          const { index, length } = firstLyricLetterRange(text);
+          const firstLetterWidth = measuredSvgTextLength(
+            lyricText,
+            index,
+            length,
+          );
+          const throughFirstLetterWidth = measuredSvgTextLength(
+            lyricText,
+            0,
+            index + length,
+          );
+          const left =
+            onsetX -
+            (throughFirstLetterWidth - firstLetterWidth / 2);
+          lyricText.setAttribute("x", String(left));
+          const width = measuredSvgTextLength(lyricText);
+          lyricBounds.set(
+            `${lyricText.dataset.track}:${lyricText.dataset.tick}:${
+              lyricText.dataset.verse
+            }`,
+            { left, right: left + width },
+          );
+        });
+
+        svg.querySelectorAll(".bar-lyric-extender").forEach((extender) => {
+          const lyricStartTick = Number(extender.dataset.tick);
+          const bounds = lyricBounds.get(
+            `${extender.dataset.track}:${extender.dataset.tick}:${
+              extender.dataset.verse
+            }`,
+          );
+          const x1 =
+            lyricStartTick >= startTick && bounds
+              ? bounds.right + 2
+              : leftPad + 1;
+          const x2 = Number(extender.getAttribute("x2"));
+          const hidden = !Number.isFinite(x2) || x2 <= x1 + 2;
+          extender.setAttribute(
+            "visibility",
+            hidden ? "hidden" : "visible",
+          );
+          if (!hidden) extender.setAttribute("x1", String(x1));
+        });
+
+        svg.querySelectorAll(".bar-lyric-hyphen").forEach((hyphen) => {
+          const current = lyricBounds.get(
+            `${hyphen.dataset.track}:${hyphen.dataset.tick}:${
+              hyphen.dataset.verse
+            }`,
+          );
+          const next = lyricBounds.get(
+            `${hyphen.dataset.track}:${hyphen.dataset.nextTick}:${
+              hyphen.dataset.verse
+            }`,
+          );
+          const hyphenWidth = measuredSvgTextLength(hyphen);
+          const freeStart = current ? current.right + 1.5 : NaN;
+          const freeEnd = next ? next.left - 1.5 : NaN;
+          const hidden =
+            !Number.isFinite(freeStart) ||
+            !Number.isFinite(freeEnd) ||
+            freeEnd - freeStart < hyphenWidth + 1;
+          hyphen.setAttribute(
+            "visibility",
+            hidden ? "hidden" : "visible",
+          );
+          if (!hidden) {
+            hyphen.setAttribute("x", String((freeStart + freeEnd) / 2));
+          }
+        });
+      });
     }
 
     function appendBarLoopBoundary(
@@ -26897,7 +27088,7 @@ button:disabled {
       const horizontalPadding =
         Number.parseFloat(computedStyle.paddingLeft) +
         Number.parseFloat(computedStyle.paddingRight);
-      const viewWidth = Math.max(
+      const viewportWidth = Math.max(
         260,
         Math.floor(barScore.clientWidth - horizontalPadding),
       );
@@ -26906,13 +27097,26 @@ button:disabled {
       const pitchStep = clamp(5.4 * scale, 3.6, 8.4);
       const leftPad = 32;
       const rightPad = 6;
-      const availablePlotWidth = viewWidth - leftPad - rightPad;
       const targetMeasureWidth = clamp(132 * (spacing / 0.85), 6, 190);
-      const measuresPerLine = clamp(
-        Math.floor(availablePlotWidth / targetMeasureWidth),
-        1,
-        sequence.measures.length,
-      );
+      const continuous = currentScoreFlow === "continuous";
+      const viewWidth = continuous
+        ? Math.max(
+            viewportWidth,
+            Math.ceil(
+              leftPad +
+                rightPad +
+                targetMeasureWidth * sequence.measures.length,
+            ),
+          )
+        : viewportWidth;
+      const availablePlotWidth = viewWidth - leftPad - rightPad;
+      const measuresPerLine = continuous
+        ? sequence.measures.length
+        : clamp(
+            Math.floor(availablePlotWidth / targetMeasureWidth),
+            1,
+            sequence.measures.length,
+          );
 
       const visibilityKey = PART_NAMES.map((_, index) =>
         hiddenScoreTracks.has(index) ? "0" : "1",
@@ -26921,6 +27125,7 @@ button:disabled {
         viewWidth,
         pitchStep.toFixed(2),
         measuresPerLine,
+        currentScoreFlow,
         visibilityKey,
         Number.isFinite(loopStartTick) ? loopStartTick : "x",
         Number.isFinite(loopEndTick) ? loopEndTick : "x",
@@ -27071,6 +27276,7 @@ button:disabled {
 
         const shell = document.createElement("div");
         shell.className = "bar-system";
+        if (continuous) shell.style.width = `${viewWidth}px`;
         const svg = createSvgElement("svg", {
           viewBox: `0 0 ${viewWidth} ${viewHeight}`,
           role: "img",
@@ -27125,9 +27331,14 @@ button:disabled {
 
         rowMeasures.forEach((measure, measureOffset) => {
           const x = xAtTick(measure[0]);
+          const measureNumber = firstMeasureIndex + measureOffset + 1;
+          const phraseBoundary =
+            downbeatPhraseMeasures.has(measureNumber);
           const line = createSvgElement("line", {
             class: `bar-measure-line${
               measureOffset === 0 ? " is-system-edge" : ""
+            }${
+              phraseBoundary ? " is-phrase-boundary" : ""
             }`,
             x1: x,
             x2: x,
@@ -27135,17 +27346,11 @@ button:disabled {
             y2: topPad + plotHeight,
           });
           const label = createSvgElement("text", {
-            class: `bar-measure-number${
-              downbeatPhraseMeasures.has(
-                firstMeasureIndex + measureOffset + 1,
-              )
-                ? " is-phrase-start"
-                : ""
-            }`,
+            class: "bar-measure-number",
             x: x + 3,
             y: 11,
           });
-          label.textContent = String(firstMeasureIndex + measureOffset + 1);
+          label.textContent = String(measureNumber);
           svg.append(line, label);
         });
         const endLine = createSvgElement("line", {
@@ -27270,7 +27475,7 @@ button:disabled {
               tick >= rowStartTick &&
               tick < rowEndTick,
           )
-          .forEach(({ phrase, tick, index }) => {
+          .forEach(({ tick, index }) => {
             const x = xAtTick(tick);
             const divider = createSvgElement("line", {
               class: "bar-phrase-divider",
@@ -27280,14 +27485,7 @@ button:disabled {
               y1: topPad - 2,
               y2: topPad + plotHeight,
             });
-            const label = createSvgElement("text", {
-              class: "bar-phrase-label",
-              x,
-              y: 11,
-              "text-anchor": "middle",
-            });
-            label.textContent = `${phrase.measure}·${formatBeat(phrase.beat)}`;
-            svg.append(divider, label);
+            svg.append(divider);
           });
 
         const lyricBaselineByLane = new Map(
@@ -27313,16 +27511,12 @@ button:disabled {
         });
 
         rowLyricExtenders.forEach((lyric) => {
-          const [track, startTick, verse, text, , extendEndTick] = lyric;
+          const [track, startTick, verse, , , extendEndTick] = lyric;
           const baseline = lyricBaselineByLane.get(`${track}:${verse}`);
           if (baseline === undefined) return;
           const visibleStartTick = Math.max(startTick, rowStartTick);
           const visibleEndTick = Math.min(extendEndTick, rowEndTick);
-          const textOffset =
-            startTick >= rowStartTick
-              ? Math.min(22, Math.max(6, text.length * 2.15))
-              : 1;
-          const x1 = xAtTick(visibleStartTick) + textOffset;
+          const x1 = xAtTick(visibleStartTick) + 1;
           const x2 = xAtTick(visibleEndTick) - 1;
           if (x2 <= x1 + 2) return;
           svg.append(
@@ -27330,6 +27524,7 @@ button:disabled {
               class: "bar-lyric-extender",
               "data-track": track,
               "data-tick": startTick,
+              "data-verse": verse,
               x1,
               x2,
               y1: baseline + 2,
@@ -27347,9 +27542,10 @@ button:disabled {
             "data-track": track,
             "data-tick": startTick,
             "data-verse": verse,
+            "data-onset-x": xAtTick(startTick),
             x: xAtTick(startTick),
             y: baseline,
-            "text-anchor": "middle",
+            "text-anchor": "start",
           });
           lyricText.textContent = text;
           svg.append(lyricText);
@@ -27369,6 +27565,8 @@ button:disabled {
             class: "bar-lyric-hyphen",
             "data-track": track,
             "data-tick": startTick,
+            "data-next-tick": nextLyric[1],
+            "data-verse": verse,
             x: hyphenX,
             y: baseline,
             "text-anchor": "middle",
@@ -27446,6 +27644,7 @@ button:disabled {
       }
 
       barScore.replaceChildren(fragment);
+      layoutBarLyrics(nextSystems);
       barScore.removeAttribute("aria-busy");
       barSystems = nextSystems;
       barRenderKey = renderKey;
@@ -27462,34 +27661,62 @@ button:disabled {
         : document.scrollingElement || document.documentElement;
       const scrollBounds = fullscreenPlayer
         ? playerShell.getBoundingClientRect()
-        : { top: 0, bottom: window.innerHeight };
+        : {
+            top: 0,
+            right: window.innerWidth,
+            bottom: window.innerHeight,
+            left: 0,
+          };
       const transportBottom =
-        document.querySelector(".transport")?.getBoundingClientRect().bottom ||
-        scrollBounds.top;
+        transport.getBoundingClientRect().bottom || scrollBounds.top;
 
       return {
         scrollElement,
         top: Math.max(scrollBounds.top, transportBottom),
+        right: Math.min(scrollBounds.right, window.innerWidth),
         bottom: Math.min(scrollBounds.bottom, window.innerHeight),
+        left: Math.max(scrollBounds.left, 0),
       };
     }
 
     function pagePlaybackElementIntoView(element) {
       if (!element || !playerIsPlaying) return;
       const bounds = element.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
+      if (!bounds.height) return;
 
       const viewport = playbackViewport();
       const tolerance = 1;
-      const visible =
+      const verticallyVisible =
         bounds.bottom > viewport.top + tolerance &&
         bounds.top < viewport.bottom - tolerance;
-      if (visible) return;
+      const horizontallyVisible =
+        currentScoreFlow !== "continuous" ||
+        (bounds.right >= viewport.left + tolerance &&
+          bounds.left <= viewport.right - tolerance);
+      if (verticallyVisible && horizontallyVisible) return;
 
       const previousScrollBehavior =
         viewport.scrollElement.style.scrollBehavior;
       viewport.scrollElement.style.scrollBehavior = "auto";
-      viewport.scrollElement.scrollTop += bounds.top - viewport.top;
+      const margin = 12;
+      if (!verticallyVisible) {
+        if (bounds.bottom <= viewport.top + tolerance) {
+          viewport.scrollElement.scrollTop +=
+            bounds.bottom - (viewport.top + margin);
+        } else if (bounds.top >= viewport.bottom - tolerance) {
+          viewport.scrollElement.scrollTop +=
+            bounds.top - (viewport.bottom - margin);
+        }
+      }
+      if (!horizontallyVisible) {
+        if (bounds.left < viewport.left + margin) {
+          viewport.scrollElement.scrollLeft +=
+            bounds.left - (viewport.left + margin);
+        } else if (bounds.right > viewport.right - margin) {
+          viewport.scrollElement.scrollLeft +=
+            bounds.right - (viewport.right - margin);
+        }
+      }
       viewport.scrollElement.style.scrollBehavior = previousScrollBehavior;
     }
 
@@ -27531,12 +27758,15 @@ button:disabled {
 
       if (
         nextActiveIndex >= 0 &&
-        nextActiveIndex !== activeBarSystemIndex &&
         currentScoreView === "bars" &&
-        playerIsPlaying
+        playerIsPlaying &&
+        (currentScoreFlow === "continuous" ||
+          nextActiveIndex !== activeBarSystemIndex)
       ) {
         const system = barSystems[nextActiveIndex];
-        pagePlaybackElementIntoView(system.shell);
+        pagePlaybackElementIntoView(
+          currentScoreFlow === "continuous" ? system.cursor : system.shell,
+        );
       }
       activeBarSystemIndex = nextActiveIndex;
     }
@@ -28311,6 +28541,11 @@ button:disabled {
       preferences.scoreSize,
       preferences.scoreSpacing,
     );
+    setScoreFlow(preferences.scoreFlow, {
+      persist: false,
+      render: false,
+      announce: false,
+    });
     trackVolumes = preferences.volumes.slice();
     preferences.visibleTracks.forEach((visible, index) => {
       if (!visible) hiddenScoreTracks.add(index);
@@ -28358,7 +28593,10 @@ button:disabled {
       settings.core.smuflFontSources = new Map([
         [window.alphaTab.FontFileFormat.Woff2, window.NATURE_BOY_FONT_SOURCE],
       ]);
-      settings.display.layoutMode = window.alphaTab.LayoutMode.Page;
+      settings.display.layoutMode =
+        currentScoreFlow === "continuous"
+          ? window.alphaTab.LayoutMode.Horizontal
+          : window.alphaTab.LayoutMode.Page;
       settings.display.scale = preferences.scoreSize / 100;
       settings.display.barsPerRow = -1;
       settings.display.stretchForce = preferences.scoreSpacing / 100;
@@ -28427,6 +28665,7 @@ button:disabled {
       playPause.disabled = false;
       seek.disabled = false;
       sharePractice.disabled = false;
+      continuousView.disabled = false;
       endTime = audioEngine.duration * 1000;
       seek.max = String(Math.max(1, Math.round(endTime)));
       totalTime.textContent = formatTime(endTime);
@@ -28509,22 +28748,19 @@ button:disabled {
         scoreLayoutControl.spacing(),
       ),
     );
+    continuousView.addEventListener("click", () => {
+      setScoreFlow(
+        currentScoreFlow === "continuous" ? "wrapped" : "continuous",
+      );
+      setSettingsOpen(false, compactSettingsQuery.matches);
+    });
     loopStart.addEventListener("click", () => {
-      setLoopStartFromCursor();
-      setSettingsOpen(false, true);
+      activateLoopBoundary("start");
+      setSettingsOpen(false, compactSettingsQuery.matches);
     });
     loopEnd.addEventListener("click", () => {
-      setLoopEndFromCursor();
-      setSettingsOpen(false, true);
-    });
-    loopToggle.addEventListener("click", () => {
-      toggleLoop();
-      setSettingsOpen(false, true);
-    });
-    loopClear.addEventListener("click", () => {
-      clearLoop();
-      setSettingsOpen(false);
-      seek.focus({ preventScroll: true });
+      activateLoopBoundary("end");
+      setSettingsOpen(false, compactSettingsQuery.matches);
     });
     sharePractice.addEventListener("click", () => {
       void copyPracticeLink();
@@ -28774,13 +29010,6 @@ button:disabled {
         return;
       }
 
-      if (!event.shiftKey && event.code === "KeyL") {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!event.repeat) toggleLoop();
-        return;
-      }
-
       if (event.code === "Space") {
         event.preventDefault();
         event.stopPropagation();
@@ -28839,6 +29068,16 @@ button:disabled {
       updateReflowLabel();
     });
     resizeObserver.observe(scorePanel);
+    const transportResizeObserver = new ResizeObserver(() => {
+      const height = Math.ceil(transport.getBoundingClientRect().height);
+      if (height > 0) {
+        playerShell.style.setProperty(
+          "--continuous-transport-height",
+          `${height}px`,
+        );
+      }
+    });
+    transportResizeObserver.observe(transport);
     updateReflowLabel();
     window.addEventListener("pagehide", savePreferences);
     document.addEventListener("visibilitychange", () => {
@@ -28952,7 +29191,7 @@ button:disabled {
               </div>
               <span class="visually-hidden" id="loopHandleHelp">
                 Drag horizontally or use arrow keys to move by one measure.
-                Delete clears the loop.
+                Delete clears this boundary.
               </span>
             </div>
 
@@ -29080,11 +29319,10 @@ button:disabled {
                       id="loopStart"
                       type="button"
                       aria-label="Set loop start to the beginning of the cursor's measure"
-                      aria-keyshortcuts="Shift+S"
                       title="Set loop start at cursor · Shift+S"
                       disabled
                     >
-                      <span class="loop-boundary-symbol" aria-hidden="true">Start</span>
+                      <span class="loop-boundary-symbol">Loop start</span>
                       <span aria-hidden="true">·</span>
                       <span class="loop-boundary-measure" id="loopStartMeasure">—</span>
                     </button>
@@ -29093,45 +29331,12 @@ button:disabled {
                       id="loopEnd"
                       type="button"
                       aria-label="Set loop end to the end of the cursor's measure"
-                      aria-keyshortcuts="Shift+E"
                       title="Set loop end at cursor · Shift+E"
                       disabled
                     >
-                      <span class="loop-boundary-symbol" aria-hidden="true">End</span>
+                      <span class="loop-boundary-symbol">Loop end</span>
                       <span aria-hidden="true">·</span>
                       <span class="loop-boundary-measure" id="loopEndMeasure">—</span>
-                    </button>
-                  </div>
-
-                  <div class="settings-actions practice-actions" aria-label="Loop actions">
-                    <button
-                      class="icon-control"
-                      id="loopToggle"
-                      type="button"
-                      aria-label="Enable measure loop"
-                      aria-keyshortcuts="L"
-                      aria-pressed="false"
-                      title="Toggle measure loop · L"
-                      disabled
-                    >
-                      <svg
-                        class="loop-toggle-symbol"
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M6 7h12m0 0-3-3m3 3-3 3" />
-                        <path d="M18 17H6m0 0 3 3m-3-3 3-3" />
-                      </svg>
-                    </button>
-                    <button
-                      class="icon-control contextual-action"
-                      id="loopClear"
-                      type="button"
-                      aria-label="Clear loop boundaries"
-                      title="Clear loop"
-                      hidden
-                    >
-                      <span aria-hidden="true">×</span>
                     </button>
                   </div>
                 </div>
@@ -29151,7 +29356,7 @@ button:disabled {
                     aria-label="Score scale"
                   >
                     <label class="drag-number-control score-layout-number">
-                      <span aria-hidden="true">V</span>
+                      <span>Vertical</span>
                       <button
                         class="drag-number-value score-layout-value"
                         id="scoreVertical"
@@ -29164,7 +29369,7 @@ button:disabled {
                       </button>
                     </label>
                     <label class="drag-number-control score-layout-number">
-                      <span aria-hidden="true">H</span>
+                      <span>Horizontal</span>
                       <button
                         class="drag-number-value score-layout-value"
                         id="scoreHorizontal"
@@ -29178,42 +29383,83 @@ button:disabled {
                     </label>
                   </div>
 
-                  <div class="settings-actions display-actions" aria-label="Display actions">
+                  <div class="settings-stack display-compact-stack">
                     <button
-                      class="icon-control"
-                      id="fullscreenScore"
+                      class="continuous-view-toggle"
+                      id="continuousView"
                       type="button"
-                      aria-label="Enter full screen"
+                      aria-label="Continuous horizontal score layout"
                       aria-pressed="false"
-                      title="Full screen"
+                      title="Continuous horizontal layout"
+                      disabled
                     >
-                      <span aria-hidden="true">⛶</span>
+                      <span>Continuous</span>
+                      <span class="binary-toggle-track" aria-hidden="true">
+                        <span class="binary-toggle-thumb"></span>
+                      </span>
                     </button>
+
+                    <div
+                      class="compact-action-row"
+                      role="group"
+                      aria-label="Display and practice actions"
+                    >
+                      <!-- Link and rotate-ccw SVG paths from Lucide: https://lucide.dev/license -->
+                      <button
+                        class="icon-control compact-action"
+                        id="fullscreenScore"
+                        type="button"
+                        aria-label="Enter full screen"
+                        aria-pressed="false"
+                        title="Full screen"
+                      >
+                        <span class="compact-action-symbol" aria-hidden="true">⛶</span>
+                      </button>
+                      <button
+                        class="icon-control compact-action"
+                        id="sharePractice"
+                        type="button"
+                        aria-label="Copy practice link"
+                        title="Copy practice link"
+                        disabled
+                      >
+                        <svg
+                          class="compact-action-icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path
+                            d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                          ></path>
+                          <path
+                            d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                          ></path>
+                        </svg>
+                      </button>
+                      <button
+                        class="icon-control compact-action"
+                        id="resetMix"
+                        type="button"
+                        aria-label="Reset practice settings"
+                        title="Reset tempo, voices, and loop"
+                        disabled
+                      >
+                        <svg
+                          class="compact-action-icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path
+                            d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+                          ></path>
+                          <path d="M3 3v5h5"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div class="settings-actions settings-utility-actions" aria-label="Settings actions">
-                <button
-                  class="icon-control"
-                  id="sharePractice"
-                  type="button"
-                  aria-label="Copy practice link"
-                  title="Copy practice link"
-                  disabled
-                >
-                  <span aria-hidden="true">↗</span>
-                </button>
-                <button
-                  class="icon-control"
-                  id="resetMix"
-                  type="button"
-                  aria-label="Reset tempo, voices, and loop to defaults"
-                  title="Reset tempo, voices, and loop"
-                  disabled
-                >
-                  <span aria-hidden="true">↺</span>
-                </button>
               </div>
 
               <p class="visually-hidden" id="reflowStatus">

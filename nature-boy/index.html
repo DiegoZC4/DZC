@@ -184,6 +184,7 @@ main {
   grid-row: 2;
   grid-column: 1;
   gap: clamp(0.3rem, 0.6vw, 0.4rem);
+  padding-top: 0.2rem;
   flex-wrap: wrap;
   justify-content: flex-start;
   overflow-x: visible;
@@ -206,15 +207,23 @@ button:disabled {
 }
 
 .primary-control {
+  position: relative;
   flex: 0 0 auto;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.45rem;
+  height: 2.45rem;
   padding: 0;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
+}
+
+.primary-control::before {
+  position: absolute;
+  inset: -0.18rem;
+  border-radius: inherit;
+  content: "";
 }
 
 .primary-control {
@@ -228,6 +237,8 @@ button:disabled {
 }
 
 .play-symbol {
+  position: relative;
+  z-index: 1;
   width: 0;
   height: 0;
   border-top: 0.38rem solid transparent;
@@ -884,12 +895,11 @@ button:disabled {
   min-height: 0;
   margin: 0;
   padding: 0;
-  border: 0;
-  background: transparent;
+  display: grid;
+  place-items: center;
 }
 
-.part-volume-value,
-.part-pan-value {
+.part-volume-value {
   width: 100%;
   min-width: 0;
   min-height: 1.62rem;
@@ -899,8 +909,123 @@ button:disabled {
   font-size: 0.72rem;
 }
 
-.part-pan-value {
+.part-pan-knob {
+  --pan-angle: 0deg;
+  --pan-active-start: 135deg;
+  --pan-active-end: 135deg;
+  width: 100%;
+  min-width: 0;
+  height: 1.9rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.42rem;
+  display: grid;
+  place-items: center;
   color: var(--teal);
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.part-pan-ring {
+  position: relative;
+  width: 1.62rem;
+  height: 1.62rem;
+  border-radius: 50%;
+  display: block;
+  transition: transform 100ms ease;
+}
+
+.part-pan-ring::before,
+.part-pan-ring::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  content: "";
+}
+
+.part-pan-ring::before {
+  background: conic-gradient(
+    from 225deg,
+    color-mix(in srgb, var(--teal) 28%, var(--line)) 0deg 270deg,
+    transparent 270deg 360deg
+  );
+}
+
+.part-pan-ring::after {
+  background: conic-gradient(
+    from 225deg,
+    transparent 0deg var(--pan-active-start),
+    var(--part-color) var(--pan-active-start) var(--pan-active-end),
+    transparent var(--pan-active-end) 360deg
+  );
+}
+
+.part-pan-center-mark {
+  position: absolute;
+  z-index: 3;
+  top: -0.06rem;
+  left: 50%;
+  width: 0.11rem;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 56%, var(--line));
+  transform: translateX(-50%);
+}
+
+.part-pan-cap {
+  position: absolute;
+  z-index: 1;
+  inset: 0.23rem;
+  border: 1px solid color-mix(in srgb, var(--teal) 30%, var(--line));
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(58, 43, 24, 0.2);
+}
+
+.part-pan-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: rotate(var(--pan-angle));
+}
+
+.part-pan-indicator::before {
+  position: absolute;
+  top: 0.08rem;
+  left: 50%;
+  width: 0.11rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: var(--part-color);
+  transform: translateX(-50%);
+  content: "";
+}
+
+.part-pan-knob:hover .part-pan-ring,
+.part-pan-knob.is-dragging .part-pan-ring {
+  transform: scale(1.06);
+}
+
+.part-pan-knob.is-dragging .part-pan-ring {
+  transition: none;
+}
+
+.part-pan-knob:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--part-color) 52%, transparent);
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  .part-pan-knob {
+    height: 2.15rem;
+  }
+
+  .part-pan-ring {
+    width: 1.72rem;
+    height: 1.72rem;
+  }
 }
 
 .infinite-pager {
@@ -953,44 +1078,68 @@ button:disabled {
 }
 
 .voice-matrix td.is-inaudible .part-volume-value,
-.voice-matrix td.is-inaudible .part-pan-value,
+.voice-matrix td.is-inaudible .part-pan-knob,
 .voice-matrix td.is-inaudible .part-sound-pager {
   opacity: 0.52;
 }
 
-.settings-group,
-.settings-group-content {
-  display: flex;
+.settings-group {
+  position: relative;
+  min-width: 0;
+  padding: 0.52rem 0.28rem 0.28rem;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 0.78rem;
+  display: grid;
   align-items: center;
+  gap: clamp(0.3rem, 0.6vw, 0.4rem);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+}
+
+.settings-group-content {
+  min-width: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
   gap: clamp(0.3rem, 0.6vw, 0.4rem);
 }
 
-.settings-group-content {
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
 .settings-group-title {
-  display: none;
+  position: absolute;
+  z-index: 1;
+  top: -0.36rem;
+  left: 0.5rem;
+  padding: 0 0.22rem;
+  display: block;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 0.56rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .settings-parts-group {
-  flex: 0 1 auto;
+  flex: 0 1 17.6rem;
+}
+
+.settings-playback-group {
+  flex: 0 1 15.6rem;
 }
 
 .settings-practice-group {
-  flex: 0 1 auto;
+  flex: 0 1 12.85rem;
 }
 
 .settings-display-group {
-  flex: 0 1 auto;
+  flex: 0 1 19.25rem;
 }
 
-.settings-practice-group,
-.settings-display-group {
-  padding-left: clamp(0.35rem, 0.7vw, 0.52rem);
-  border-left: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+.settings-actions-group {
+  flex: 0 1 3rem;
 }
 
 .settings-stack {
@@ -1005,36 +1154,44 @@ button:disabled {
   min-width: 0;
 }
 
-.settings-view-stack .drag-number-control,
-.settings-view-stack .pill-toggle-group {
+.playback-controls .drag-number-control,
+.display-mode-controls .pill-toggle-group {
   width: 100%;
 }
 
-.settings-view-stack .pill-toggle {
+.display-mode-controls .pill-toggle {
   display: block;
 }
 
-.settings-view-stack .pill-option {
+.display-mode-controls .pill-option {
   min-width: 0;
   padding-right: 0.5rem;
   padding-left: 0.5rem;
 }
 
-.settings-view-stack {
+.playback-controls {
+  width: 15rem;
+  min-width: 13.5rem;
+  flex: 1 1 13.5rem;
+}
+
+.metronome-volume-control {
+  min-height: 2.2rem;
+}
+
+.metronome-volume-control .drag-number-value {
+  min-width: 3.5rem;
+}
+
+.display-mode-controls {
   width: 10.5rem;
   min-width: 9.5rem;
-  flex: 0 1 10.5rem;
+  flex: 1 1 9.5rem;
 }
 
 .score-layout-controls {
   width: 8.25rem;
-  flex: 0 0 8.25rem;
-  align-items: stretch;
-}
-
-.display-compact-stack {
-  width: 8.25rem;
-  flex: 0 0 8.25rem;
+  flex: 1 1 8.25rem;
   align-items: stretch;
 }
 
@@ -1111,14 +1268,24 @@ button:disabled {
 
 .compact-action-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: 2.2rem;
+  justify-content: start;
   gap: 0.25rem;
 }
 
 .compact-action-row .icon-control {
-  width: 100%;
+  width: 2.2rem;
   height: 2.2rem;
   border-radius: 0.65rem;
+}
+
+.display-actions {
+  align-self: end;
+}
+
+.utility-actions {
+  grid-auto-flow: row;
 }
 
 .compact-action-symbol {
@@ -1142,13 +1309,13 @@ button:disabled {
 
 .loop-boundary-controls {
   width: 8.25rem;
-  flex: 0 0 8.25rem;
+  flex: 1 1 8.25rem;
   align-items: stretch;
 }
 
 .pitch-capture-controls {
   width: 12.25rem;
-  flex: 0 0 12.25rem;
+  flex: 1 1 12.25rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) repeat(2, 2.2rem);
   align-items: stretch;
@@ -1556,18 +1723,12 @@ button:disabled {
   vector-effect: non-scaling-stroke;
 }
 
-.bar-lyric-part,
 .bar-lyric-text,
 .bar-lyric-hyphen {
   font-family:
     Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   pointer-events: none;
   user-select: none;
-}
-
-.bar-lyric-part {
-  font-size: 8px;
-  font-weight: 850;
 }
 
 .bar-lyric-text,
@@ -1802,8 +1963,8 @@ button:disabled {
   }
 
   .primary-control {
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .transport-primary .timeline {
@@ -1893,13 +2054,16 @@ button:disabled {
     grid-column: auto;
     align-items: center;
     gap: 0.35rem;
+    padding-top: 0;
   }
 
   .transport-settings .settings-group {
     width: 100%;
-    padding: 0 0 0.48rem;
-    border-left: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    max-width: none;
+    flex: 1 1 100%;
+    padding: 0.58rem 0.3rem 0.3rem;
+    border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+    border-radius: 0.72rem;
     display: grid;
     align-items: start;
     gap: 0.28rem;
@@ -1930,24 +2094,18 @@ button:disabled {
     width: 100%;
   }
 
-  .transport-settings .settings-view-stack {
+  .transport-settings .playback-controls,
+  .transport-settings .display-mode-controls,
+  .transport-settings .score-layout-controls,
+  .transport-settings .loop-boundary-controls,
+  .transport-settings .pitch-capture-controls {
     width: 100%;
     flex: 1 1 100%;
+    min-width: 0;
   }
 
-  .transport-settings .score-layout-controls {
-    width: 8.25rem;
-    flex: 0 0 8.25rem;
-  }
-
-  .transport-settings .loop-boundary-controls {
-    width: 8.25rem;
-    flex: 0 0 8.25rem;
-  }
-
-  .transport-settings .pitch-capture-controls {
-    width: 12.25rem;
-    flex: 0 0 12.25rem;
+  .transport-settings .utility-actions {
+    grid-auto-flow: column;
   }
 
   .pill-toggle {
@@ -25427,8 +25585,32 @@ function ceilPow2(v) {
     const PREFS_KEY = "nature-boy-player:v2";
     const ORIGINAL_BPM = 124;
     const DEFAULT_TEMPO_PERCENT = 100;
-    const MIN_TEMPO_PERCENT = 50;
-    const MAX_TEMPO_PERCENT = 150;
+    const TEMPO_PERCENT_VALUES = Object.freeze([
+      25,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100,
+      110,
+      120,
+      130,
+      140,
+      150,
+    ]);
+    const MIN_TEMPO_PERCENT = TEMPO_PERCENT_VALUES[0];
+    const MAX_TEMPO_PERCENT =
+      TEMPO_PERCENT_VALUES[TEMPO_PERCENT_VALUES.length - 1];
+    const DEFAULT_METRONOME_VOLUME_PERCENT = 0;
+    const LEGACY_METRONOME_VOLUME_PERCENT = 60;
+    const METRONOME_BEAT_DURATION_SECONDS = 0.03;
+    const METRONOME_DOWNBEAT_DURATION_SECONDS = 0.046;
+    const METRONOME_WAVEFORM_PEAK = 0.9;
+    const METRONOME_BEAT_LEVEL = 0.11;
+    const METRONOME_DOWNBEAT_LEVEL = 0.16;
     const MIN_SCORE_SIZE = 60;
     const MAX_SCORE_SIZE = 160;
     const MIN_SCORE_SPACING = 5;
@@ -25445,7 +25627,6 @@ function ceilPow2(v) {
     const AUDIO_SCHEDULER_LEAD_SECONDS = 0.006;
     const LOOP_RESTART_LEAD_SECONDS = 0.003;
     const LOOP_BOUNDARY_TOLERANCE_TICKS = 2;
-    const PRACTICE_LINK_VERSION = "1";
     const PUBLIC_SCORE_URL = "https://diegozc.com/nature-boy/";
     const POSITION_SAVE_INTERVAL_MS = 2000;
     const PITCH_TRACE_KEY = "nature-boy-pitch-trace:v1";
@@ -25457,15 +25638,21 @@ function ceilPow2(v) {
     const PITCH_CAPTURE_MIN_IDLE_MS = 4;
     const PITCH_CAPTURE_BUFFER_SIZE = 4096;
     const PITCH_DETECTOR_PEAK_CLARITY = 0.9;
+    const PITCH_DETECTOR_OCTAVE_CHECK_CLARITY = 0.98;
     const MIN_PITCH_CONFIDENCE_PERCENT = 40;
     const MAX_PITCH_CONFIDENCE_PERCENT = 95;
     const DEFAULT_PITCH_CONFIDENCE_PERCENT = 70;
-    const PITCH_STABLE_CONFIDENCE_MARGIN = 0.12;
-    const PITCH_STABLE_CONFIDENCE_MIN = 0.45;
-    const PITCH_STABLE_MATCH_CENTS = 80;
-    const PITCH_JUMP_THRESHOLD_CENTS = 350;
-    const PITCH_PENDING_MAX_GAP_SECONDS = 0.22;
-    const PITCH_VOICE_RELEASE_MISSES = 3;
+    const PITCH_EVIDENCE_CONFIDENCE_MARGIN = 0.3;
+    const PITCH_EVIDENCE_CONFIDENCE_MIN = 0.4;
+    const PITCH_WEAK_EVIDENCE_CONFIRMATIONS = 3;
+    const PITCH_STABLE_MATCH_CENTS = 100;
+    const PITCH_JUMP_THRESHOLD_CENTS = 180;
+    const PITCH_PENDING_MAX_GAP_SECONDS = 0.3;
+    const PITCH_VOICE_RELEASE_MISSES = 5;
+    const PITCH_OCTAVE_JUMP_MIN_CENTS = 900;
+    const PITCH_OCTAVE_JUMP_MAX_CENTS = 1300;
+    const PITCH_OCTAVE_CONTINUITY_CENTS = 120;
+    const PITCH_OCTAVE_ALTERNATE_MIN_CLARITY = 0.6;
     const PITCH_CAPTURE_MIN_FREQUENCY = 55;
     const PITCH_CAPTURE_MAX_FREQUENCY = 1200;
     const PITCH_CAPTURE_MAX_GAP_SECONDS = 0.5;
@@ -25636,6 +25823,7 @@ function ceilPow2(v) {
     const seekPreview = document.getElementById("seekPreview");
     const tempo = document.getElementById("tempo");
     const dynamicsToggle = document.getElementById("dynamicsToggle");
+    const metronomeVolume = document.getElementById("metronomeVolume");
     const scoreLayout = document.getElementById("scoreLayout");
     const scoreVertical = document.getElementById("scoreVertical");
     const scoreHorizontal = document.getElementById("scoreHorizontal");
@@ -25699,7 +25887,6 @@ function ceilPow2(v) {
     let lastMediaPosition = 0;
     let mediaSessionReady = false;
     let loopHandleGesture = null;
-    let sharedPracticeUnsupported = false;
     let restoredCursorTick = 0;
     let sequence = null;
     let pitchTargetNotesByTrack = [];
@@ -25727,6 +25914,7 @@ function ceilPow2(v) {
     let pitchCapturePreviousScoreSeconds = null;
     let pitchCaptureWasSilent = false;
     let pitchCaptureIgnoreUntilContextTime = 0;
+    let pitchVisibilityResumePromise = null;
     let pitchVoiceActive = false;
     let pitchVoiceMisses = 0;
     let pitchLastAcceptedCents = null;
@@ -25740,6 +25928,7 @@ function ceilPow2(v) {
     const panDrags = [];
     const soundPagers = [];
     let tempoDrag = null;
+    let metronomeVolumeDrag = null;
     let scoreVerticalDrag = null;
     let scoreHorizontalDrag = null;
     let scoreLayoutControl = null;
@@ -25775,6 +25964,7 @@ function ceilPow2(v) {
         min,
         max,
         step = 1,
+        values = null,
         pixelsPerStep = 32,
         formatValue = (value) => String(value),
         ariaValueText = formatValue,
@@ -25782,12 +25972,43 @@ function ceilPow2(v) {
     ) {
       const safeStep = Math.max(Number(step) || 1, Number.EPSILON);
       const safePixelsPerStep = Math.max(Number(pixelsPerStep) || 32, 1);
+      const allowedValues = Array.isArray(values)
+        ? Array.from(
+            new Set(
+              values
+                .map(Number)
+                .filter(
+                  (value) =>
+                    Number.isFinite(value) && value >= min && value <= max,
+                ),
+            ),
+          ).sort((left, right) => left - right)
+        : [];
 
       function clampToStep(raw) {
         const numeric = Number(raw);
         const fallback = Number.isFinite(numeric) ? numeric : min;
+        if (allowedValues.length) {
+          const bounded = clamp(fallback, min, max);
+          return allowedValues.reduce((nearest, candidate) =>
+            Math.abs(candidate - bounded) < Math.abs(nearest - bounded)
+              ? candidate
+              : nearest,
+          );
+        }
         const stepped = min + Math.round((fallback - min) / safeStep) * safeStep;
         return clamp(stepped, min, max);
+      }
+
+      function valueAtOffset(raw, offset) {
+        if (!allowedValues.length) return Number(raw) + offset * safeStep;
+        const currentIndex = allowedValues.indexOf(clampToStep(raw));
+        const nextIndex = clamp(
+          currentIndex + offset,
+          0,
+          allowedValues.length - 1,
+        );
+        return allowedValues[nextIndex];
       }
 
       function render(value) {
@@ -25854,7 +26075,7 @@ function ceilPow2(v) {
           ((event.clientX - startX) - (event.clientY - startY)) / Math.SQRT2;
         const delta = Math.round(axisDelta / safePixelsPerStep);
         if (delta !== 0) moved = true;
-        controller.setValue(startValue + delta * safeStep, true);
+        controller.setValue(valueAtOffset(startValue, delta), true);
       });
 
       button.addEventListener("pointerup", finishDrag);
@@ -25862,13 +26083,167 @@ function ceilPow2(v) {
       button.addEventListener("keydown", (event) => {
         let next = null;
         if (event.key === "ArrowUp" || event.key === "ArrowRight") {
-          next = controller.value() + safeStep;
+          next = valueAtOffset(controller.value(), 1);
         } else if (event.key === "ArrowDown" || event.key === "ArrowLeft") {
-          next = controller.value() - safeStep;
+          next = valueAtOffset(controller.value(), -1);
         } else if (event.key === "Home") {
           next = min;
         } else if (event.key === "End") {
           next = max;
+        }
+        if (next === null) return;
+        event.preventDefault();
+        controller.setValue(next, true);
+      });
+
+      return controller;
+    }
+
+    function panKnobVisualState(value) {
+      const bounded = clamp(Number(value) || 0, -100, 100);
+      const sweepPosition = ((bounded + 100) / 200) * 270;
+      return {
+        angle: -135 + sweepPosition,
+        activeStart: Math.min(135, sweepPosition),
+        activeEnd: Math.max(135, sweepPosition),
+      };
+    }
+
+    function createPanKnob(
+      button,
+      {
+        value = 0,
+        step = 5,
+        pixelsPerStep = 3,
+        ariaValueText = (next) => String(next),
+        formatTitle = ariaValueText,
+      } = {},
+    ) {
+      const safeStep = Math.max(Number(step) || 5, Number.EPSILON);
+      const safePixelsPerStep = Math.max(Number(pixelsPerStep) || 3, 1);
+
+      function clampToStep(raw) {
+        const numeric = Number(raw);
+        const fallback = Number.isFinite(numeric) ? numeric : 0;
+        return clamp(Math.round(fallback / safeStep) * safeStep, -100, 100);
+      }
+
+      const ring = document.createElement("span");
+      ring.className = "part-pan-ring";
+      ring.setAttribute("aria-hidden", "true");
+      const centerMark = document.createElement("span");
+      centerMark.className = "part-pan-center-mark";
+      const cap = document.createElement("span");
+      cap.className = "part-pan-cap";
+      const indicator = document.createElement("span");
+      indicator.className = "part-pan-indicator";
+      cap.append(indicator);
+      ring.append(centerMark, cap);
+      button.replaceChildren(ring);
+
+      function render(next) {
+        const visual = panKnobVisualState(next);
+        button.dataset.value = String(next);
+        button.setAttribute("aria-valuenow", String(next));
+        button.setAttribute("aria-valuetext", ariaValueText(next));
+        button.style.setProperty("--pan-angle", `${visual.angle}deg`);
+        button.style.setProperty(
+          "--pan-active-start",
+          `${visual.activeStart}deg`,
+        );
+        button.style.setProperty(
+          "--pan-active-end",
+          `${visual.activeEnd}deg`,
+        );
+        button.title = formatTitle(next);
+      }
+
+      const controller = {
+        value() {
+          return Number(button.dataset.value);
+        },
+        setValue(raw, emit = false) {
+          const next = clampToStep(raw);
+          const changed = controller.value() !== next;
+          if (changed || !button.dataset.value) render(next);
+          if (emit && changed) {
+            button.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          return next;
+        },
+      };
+
+      button.setAttribute("role", "slider");
+      button.setAttribute("aria-orientation", "horizontal");
+      button.setAttribute("aria-valuemin", "-100");
+      button.setAttribute("aria-valuemax", "100");
+      render(clampToStep(button.dataset.value || value));
+
+      let dragging = false;
+      let moved = false;
+      let startX = 0;
+      let startValue = controller.value();
+      let suppressDoubleClickUntil = 0;
+
+      function finishDrag(event) {
+        if (!dragging) return;
+        dragging = false;
+        button.classList.remove("is-dragging");
+        if (
+          event?.pointerId !== undefined &&
+          button.hasPointerCapture?.(event.pointerId)
+        ) {
+          button.releasePointerCapture(event.pointerId);
+        }
+        if (moved) {
+          suppressDoubleClickUntil = performance.now() + 350;
+        } else {
+          button.focus();
+        }
+      }
+
+      button.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        dragging = true;
+        moved = false;
+        startX = event.clientX;
+        startValue = controller.value();
+        button.classList.add("is-dragging");
+        button.setPointerCapture(event.pointerId);
+        if (event.pointerType !== "touch") event.preventDefault();
+      });
+
+      button.addEventListener("pointermove", (event) => {
+        if (!dragging) return;
+        const delta = Math.round(
+          (event.clientX - startX) / safePixelsPerStep,
+        );
+        if (delta !== 0) moved = true;
+        controller.setValue(startValue + delta * safeStep, true);
+        event.preventDefault();
+      });
+
+      button.addEventListener("pointerup", finishDrag);
+      button.addEventListener("pointercancel", finishDrag);
+      button.addEventListener("lostpointercapture", finishDrag);
+      button.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        if (performance.now() < suppressDoubleClickUntil) return;
+        button.focus();
+        controller.setValue(0, true);
+      });
+      button.addEventListener("keydown", (event) => {
+        let next = null;
+        if (event.key === "ArrowUp" || event.key === "ArrowRight") {
+          next = controller.value() + safeStep;
+        } else if (event.key === "ArrowDown" || event.key === "ArrowLeft") {
+          next = controller.value() - safeStep;
+        } else if (event.key === "Home") {
+          next = -100;
+        } else if (event.key === "End") {
+          next = 100;
+        } else if (event.key === "0") {
+          next = 0;
         }
         if (next === null) return;
         event.preventDefault();
@@ -26134,103 +26509,87 @@ function ceilPow2(v) {
     }
 
     function readSharedPracticeState() {
+      const state = {};
+      const provided = { loop: false, cursor: false };
       if (window.location.search.length > 2048) {
-        return { state: {}, provided: {}, unsupported: false };
+        return { active: false, state, provided };
       }
       const params = new URLSearchParams(window.location.search);
-      const versions = params.getAll("nb");
-      if (!versions.length) {
-        return { state: {}, provided: {}, unsupported: false };
+      const rehearsalMarkers = params.getAll("r");
+      if (rehearsalMarkers.length !== 1 || rehearsalMarkers[0] !== "") {
+        return { active: false, state, provided };
       }
-      if (
-        versions.length !== 1 ||
-        versions[0] !== PRACTICE_LINK_VERSION
-      ) {
-        return { state: {}, provided: {}, unsupported: true };
-      }
-
-      const state = {};
-      const provided = {
-        loop: params.has("l"),
-        cursor: params.has("c"),
-      };
       const uniqueValue = (key) => {
         const values = params.getAll(key);
         return values.length === 1 ? values[0] : null;
       };
 
       const loopValue = uniqueValue("l");
-      if (loopValue === "0") {
-        state.loopMeasures = [null, null];
-      } else {
-        const match = loopValue?.match(/^(\d*)-(\d*)$/);
-        if (match && (match[1] || match[2])) {
-          const start = match[1]
-            ? integerInRange(match[1], 1, Number.MAX_SAFE_INTEGER)
-            : null;
-          const end = match[2]
-            ? integerInRange(match[2], 1, Number.MAX_SAFE_INTEGER)
-            : null;
-          if (
-            (match[1] ? start !== null : true) &&
-            (match[2] ? end !== null : true) &&
-            (start === null || end === null || start <= end)
-          ) {
-            state.loopMeasures = [start, end];
-          }
+      const loopMatch = loopValue?.match(/^(\d*)-(\d*)$/);
+      if (loopMatch && (loopMatch[1] || loopMatch[2])) {
+        const start = loopMatch[1]
+          ? integerInRange(loopMatch[1], 1, Number.MAX_SAFE_INTEGER)
+          : null;
+        const end = loopMatch[2]
+          ? integerInRange(loopMatch[2], 1, Number.MAX_SAFE_INTEGER)
+          : null;
+        if (
+          (loopMatch[1] ? start !== null : true) &&
+          (loopMatch[2] ? end !== null : true) &&
+          (start === null || end === null || start <= end)
+        ) {
+          state.loopMeasures = [start, end];
+          provided.loop = true;
         }
       }
 
       const cursorValue = uniqueValue("c");
-      const cursorMatch = cursorValue?.match(/^(\d+)\.(\d+)$/);
+      const cursorMatch = cursorValue?.match(
+        /^([1-9]\d*)\.([1-9]\d*)\.(\d{1,2})$/,
+      );
       if (cursorMatch) {
         const measure = integerInRange(
           cursorMatch[1],
           1,
           Number.MAX_SAFE_INTEGER,
         );
-        const offset = integerInRange(
+        const beat = integerInRange(
           cursorMatch[2],
-          0,
+          1,
           Number.MAX_SAFE_INTEGER,
         );
-        if (measure !== null && offset !== null) {
-          state.cursor = [measure, offset];
+        const beatFraction = Number(`0.${cursorMatch[3]}`);
+        if (
+          measure !== null &&
+          beat !== null &&
+          Number.isFinite(beatFraction) &&
+          beatFraction >= 0 &&
+          beatFraction < 1
+        ) {
+          state.cursor = [measure, beat, beatFraction];
+          provided.cursor = true;
         }
       }
 
       const tempoValue = uniqueValue("t");
-      const tempoPercent = integerInRange(
+      const tempoCandidate = integerInRange(
         tempoValue,
         MIN_TEMPO_PERCENT,
         MAX_TEMPO_PERCENT,
-        10,
       );
+      const tempoPercent = TEMPO_PERCENT_VALUES.includes(tempoCandidate)
+        ? tempoCandidate
+        : null;
       if (tempoPercent !== null) state.tempoPercent = tempoPercent;
 
-      const viewValue = uniqueValue("v");
-      if (viewValue === "s" || viewValue === "p") {
-        state.scoreView = viewValue === "p" ? "bars" : "standard";
-      }
-
-      const flowValue = uniqueValue("f");
-      if (flowValue === "c" || flowValue === "w") {
-        state.scoreFlow = flowValue === "c" ? "continuous" : "wrapped";
-      }
-
       const dynamicsValue = uniqueValue("d");
-      if (dynamicsValue === "0" || dynamicsValue === "1") {
-        state.dynamicsEnabled = dynamicsValue === "1";
-      }
+      if (dynamicsValue === "0") state.dynamicsEnabled = false;
 
-      const parseBits = (key, requireVisible = false) => {
+      const parseBits = (key) => {
         const value = uniqueValue(key);
         if (!value || !/^[01]{5}$/.test(value)) return null;
-        const bits = Array.from(value, (bit) => bit === "1");
-        return requireVisible && !bits.some(Boolean) ? null : bits;
+        return Array.from(value, (bit) => bit === "1");
       };
-      const visibleTracks = parseBits("s", true);
-      if (visibleTracks) state.visibleTracks = visibleTracks;
       const audibleParts = parseBits("h");
       if (audibleParts) state.audibleTracks = audibleParts;
 
@@ -26242,14 +26601,6 @@ function ceilPow2(v) {
         state.volumes = gains;
       }
 
-      const panValue = uniqueValue("p");
-      const pans = panValue?.split(".").map((value) =>
-        integerInRange(value, -100, 100, 5),
-      );
-      if (pans?.length === PART_NAMES.length && pans.every((value) => value !== null)) {
-        state.pans = pans;
-      }
-
       const soundValue = uniqueValue("i");
       if (soundValue && soundValue.length === PART_NAMES.length) {
         const sounds = Array.from(soundValue, (code) =>
@@ -26258,27 +26609,7 @@ function ceilPow2(v) {
         if (sounds.every(Boolean)) state.sounds = sounds;
       }
 
-      const scaleValue = uniqueValue("z");
-      const scaleParts = scaleValue?.split(".");
-      if (scaleParts?.length === 2) {
-        const size = integerInRange(
-          scaleParts[0],
-          MIN_SCORE_SIZE,
-          MAX_SCORE_SIZE,
-          10,
-        );
-        const spacing = integerInRange(
-          scaleParts[1],
-          MIN_SCORE_SPACING,
-          MAX_SCORE_SPACING,
-        );
-        if (size !== null && spacing !== null) {
-          state.scoreSize = size;
-          state.scoreSpacing = spacing;
-        }
-      }
-
-      return { state, provided, unsupported: false };
+      return { active: true, state, provided };
     }
 
     function defaultPreferences() {
@@ -26291,6 +26622,7 @@ function ceilPow2(v) {
         pans: DEFAULT_TRACK_PANS.slice(),
         sounds: DEFAULT_TRACK_SOUNDS.slice(),
         dynamicsEnabled: true,
+        metronomeVolumePercent: DEFAULT_METRONOME_VOLUME_PERCENT,
         visibleTracks: Array(PART_NAMES.length).fill(true),
         audibleTracks: Array(PART_NAMES.length).fill(true),
         scoreView: "standard",
@@ -26300,7 +26632,7 @@ function ceilPow2(v) {
       };
     }
 
-    function readPreferences(sharedState = {}) {
+    function readPreferences() {
       const defaults = defaultPreferences();
       let stored = {};
       try {
@@ -26315,6 +26647,18 @@ function ceilPow2(v) {
       const savedPitchConfidence = Number(stored.pitchConfidencePercent);
       const savedDynamics =
         stored.dynamicsEnabled ?? stored.writtenDynamicsEnabled;
+      const savedMetronomeVolume = Number(stored.metronomeVolumePercent);
+      const savedMetronomeVolumePercent = Number.isFinite(savedMetronomeVolume)
+        ? clamp(Math.round(savedMetronomeVolume / 5) * 5, 0, 100)
+        : LEGACY_METRONOME_VOLUME_PERCENT;
+      const unifiedMetronomeVolumePercent =
+        Number(stored.schema) >= 10
+          ? Number.isFinite(savedMetronomeVolume)
+            ? savedMetronomeVolumePercent
+            : DEFAULT_METRONOME_VOLUME_PERCENT
+          : stored.metronomeEnabled === true
+            ? savedMetronomeVolumePercent
+            : DEFAULT_METRONOME_VOLUME_PERCENT;
       const local = {
         ...defaults,
         tempoPercent: Number.isFinite(savedPercent)
@@ -26356,6 +26700,7 @@ function ceilPow2(v) {
         }),
         dynamicsEnabled:
           typeof savedDynamics === "boolean" ? savedDynamics : true,
+        metronomeVolumePercent: unifiedMetronomeVolumePercent,
         visibleTracks: PART_NAMES.map(
           (_, index) => stored.visibleTracks?.[index] !== false,
         ),
@@ -26377,13 +26722,25 @@ function ceilPow2(v) {
       };
       if (!local.visibleTracks.some(Boolean)) local.visibleTracks.fill(true);
 
-      const merged = { ...local };
+      return local;
+    }
+
+    function preferencesForSharedPractice(localPreferences, sharedPractice) {
+      if (!sharedPractice.active) return localPreferences;
+      const defaults = defaultPreferences();
+      const sharedState = sharedPractice.state;
+      const merged = {
+        ...localPreferences,
+        tempoPercent: defaults.tempoPercent,
+        volumes: defaults.volumes.slice(),
+        sounds: defaults.sounds.slice(),
+        dynamicsEnabled: defaults.dynamicsEnabled,
+        audibleTracks: defaults.audibleTracks.slice(),
+        loopMeasures: defaults.loopMeasures.slice(),
+        cursor: defaults.cursor.slice(),
+      };
       [
         "tempoPercent",
-        "scoreSize",
-        "scoreSpacing",
-        "scoreView",
-        "scoreFlow",
         "dynamicsEnabled",
         "loopMeasures",
         "cursor",
@@ -26392,7 +26749,7 @@ function ceilPow2(v) {
           merged[key] = sharedState[key];
         }
       });
-      ["volumes", "pans", "sounds", "visibleTracks", "audibleTracks"].forEach((key) => {
+      ["volumes", "sounds", "audibleTracks"].forEach((key) => {
         if (Object.prototype.hasOwnProperty.call(sharedState, key)) {
           merged[key] = sharedState[key].slice();
         }
@@ -26412,7 +26769,7 @@ function ceilPow2(v) {
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
-            schema: 8,
+            schema: 10,
             tempo: tempoDrag?.value() ?? DEFAULT_TEMPO_PERCENT,
             scoreSize: scoreLayoutControl?.size() ?? defaultScoreSize(),
             scoreSpacing:
@@ -26424,6 +26781,9 @@ function ceilPow2(v) {
             pans: trackPans,
             sounds: trackSounds,
             dynamicsEnabled: writtenDynamicsEnabled,
+            metronomeVolumePercent:
+              metronomeVolumeDrag?.value() ??
+              DEFAULT_METRONOME_VOLUME_PERCENT,
             visibleTracks: PART_NAMES.map(
               (_, index) => !hiddenScoreTracks.has(index),
             ),
@@ -26483,8 +26843,67 @@ function ceilPow2(v) {
       );
     }
 
-    function rejectPitchSample() {
-      pitchPendingEvidence = null;
+    function pitchCentsForFrequency(frequency) {
+      return Math.round(
+        (69 + 12 * Math.log2(frequency / 440)) * 100,
+      );
+    }
+
+    function resolvePitchCandidate(input, sampleRate) {
+      const primary = pitchCaptureDetector.findPitch(input, sampleRate);
+      if (
+        !pitchFrequencyIsValid(primary[0]) ||
+        !Number.isFinite(primary[1]) ||
+        !Number.isFinite(pitchLastAcceptedCents)
+      ) {
+        return primary;
+      }
+
+      const primaryCents = pitchCentsForFrequency(primary[0]);
+      const primaryChange = Math.abs(primaryCents - pitchLastAcceptedCents);
+      if (
+        primaryChange < PITCH_OCTAVE_JUMP_MIN_CENTS ||
+        primaryChange > PITCH_OCTAVE_JUMP_MAX_CENTS
+      ) {
+        return primary;
+      }
+
+      let alternate;
+      try {
+        pitchCaptureDetector.clarityThreshold =
+          PITCH_DETECTOR_OCTAVE_CHECK_CLARITY;
+        alternate = pitchCaptureDetector.findPitch(input, sampleRate);
+      } finally {
+        pitchCaptureDetector.clarityThreshold =
+          PITCH_DETECTOR_PEAK_CLARITY;
+      }
+      if (
+        !alternate ||
+        !pitchFrequencyIsValid(alternate[0]) ||
+        !Number.isFinite(alternate[1]) ||
+        alternate[1] < PITCH_OCTAVE_ALTERNATE_MIN_CLARITY
+      ) {
+        return primary;
+      }
+
+      const alternateCents = pitchCentsForFrequency(alternate[0]);
+      return Math.abs(alternateCents - pitchLastAcceptedCents) <=
+        PITCH_OCTAVE_CONTINUITY_CENTS
+        ? alternate
+        : primary;
+    }
+
+    function rejectPitchSample(captureSeconds = null) {
+      const pendingGap = pitchPendingEvidence
+        ? captureSeconds - pitchPendingEvidence.captureSeconds
+        : Number.POSITIVE_INFINITY;
+      if (
+        !Number.isFinite(pendingGap) ||
+        pendingGap < 0 ||
+        pendingGap > PITCH_PENDING_MAX_GAP_SECONDS
+      ) {
+        pitchPendingEvidence = null;
+      }
       if (pitchVoiceActive) {
         pitchVoiceMisses += 1;
         if (pitchVoiceMisses >= PITCH_VOICE_RELEASE_MISSES) {
@@ -26492,6 +26911,7 @@ function ceilPow2(v) {
           pitchVoiceMisses = 0;
           pitchLastAcceptedCents = null;
           pitchLastAcceptedCaptureSeconds = null;
+          pitchPendingEvidence = null;
         }
       } else {
         pitchVoiceMisses = 0;
@@ -26526,6 +26946,7 @@ function ceilPow2(v) {
       clarity,
       captureSeconds,
       traceFrame,
+      confirmationsRequired = 2,
     ) {
       const previous = pitchPendingEvidence;
       const gap = previous ? captureSeconds - previous.captureSeconds : 0;
@@ -26538,6 +26959,12 @@ function ceilPow2(v) {
             PITCH_STABLE_MATCH_CENTS,
       );
       const count = matchesPrevious ? previous.count + 1 : 1;
+      const requiredCount = matchesPrevious
+        ? Math.min(
+            previous.confirmationsRequired ?? confirmationsRequired,
+            confirmationsRequired,
+          )
+        : confirmationsRequired;
       pitchPendingEvidence = {
         kind,
         pitchCents,
@@ -26545,10 +26972,11 @@ function ceilPow2(v) {
         captureSeconds,
         count,
         traceFrame,
+        confirmationsRequired: requiredCount,
       };
       pitchVoiceMisses = 0;
 
-      if (count >= 2) {
+      if (count >= requiredCount) {
         const backfill = previous?.traceFrame
           ? {
               ...previous.traceFrame,
@@ -26574,25 +27002,25 @@ function ceilPow2(v) {
       traceFrame = null,
     ) {
       const confidence = pitchConfidenceThreshold();
-      const stableConfidence = Math.min(
+      const evidenceConfidence = Math.min(
         confidence,
         Math.max(
-          PITCH_STABLE_CONFIDENCE_MIN,
-          confidence - PITCH_STABLE_CONFIDENCE_MARGIN,
+          PITCH_EVIDENCE_CONFIDENCE_MIN,
+          confidence - PITCH_EVIDENCE_CONFIDENCE_MARGIN,
         ),
       );
       if (
         !pitchFrequencyIsValid(frequency) ||
         !Number.isFinite(clarity) ||
         !Number.isFinite(captureSeconds) ||
-        clarity < stableConfidence
+        clarity < evidenceConfidence
       ) {
-        return rejectPitchSample();
+        return rejectPitchSample(captureSeconds);
       }
 
-      const pitchCents = Math.round(
-        (69 + 12 * Math.log2(frequency / 440)) * 100,
-      );
+      const pitchCents = pitchCentsForFrequency(frequency);
+      const confirmationsRequired =
+        clarity >= confidence ? 2 : PITCH_WEAK_EVIDENCE_CONFIRMATIONS;
       const pendingGap = pitchPendingEvidence
         ? captureSeconds - pitchPendingEvidence.captureSeconds
         : Number.POSITIVE_INFINITY;
@@ -26610,6 +27038,7 @@ function ceilPow2(v) {
           clarity,
           captureSeconds,
           traceFrame,
+          confirmationsRequired,
         );
       }
 
@@ -26630,6 +27059,7 @@ function ceilPow2(v) {
           clarity,
           captureSeconds,
           traceFrame,
+          confirmationsRequired,
         );
       }
 
@@ -26641,6 +27071,7 @@ function ceilPow2(v) {
           clarity,
           captureSeconds,
           traceFrame,
+          confirmationsRequired,
         );
       }
 
@@ -26657,6 +27088,7 @@ function ceilPow2(v) {
         clarity,
         captureSeconds,
         traceFrame,
+        confirmationsRequired,
       );
     }
 
@@ -26773,13 +27205,20 @@ function ceilPow2(v) {
       window.clearTimeout(pitchTraceSaveTimer);
       pitchTraceSaveTimer = 0;
       if (!pitchTraceDirty) return;
-      pitchTraceDirty = false;
       if (
         pitchTraceStorageUnavailable &&
         Date.now() < pitchTraceStorageRetryAfter
       ) {
+        pitchTraceSaveTimer = window.setTimeout(
+          savePitchTraceNow,
+          Math.max(
+            PITCH_TRACE_SAVE_DELAY_MS,
+            pitchTraceStorageRetryAfter - Date.now(),
+          ),
+        );
         return;
       }
+      pitchTraceDirty = false;
       try {
         if (!pitchTraceSamples.length) {
           localStorage.removeItem(PITCH_TRACE_KEY);
@@ -26800,8 +27239,13 @@ function ceilPow2(v) {
         pitchTraceStorageUnavailable = false;
         pitchTraceStorageRetryAfter = 0;
       } catch {
+        pitchTraceDirty = true;
         pitchTraceStorageUnavailable = true;
         pitchTraceStorageRetryAfter = Date.now() + PITCH_TRACE_RETRY_DELAY_MS;
+        pitchTraceSaveTimer = window.setTimeout(
+          savePitchTraceNow,
+          PITCH_TRACE_RETRY_DELAY_MS,
+        );
         showPitchStorageWarning();
       }
     }
@@ -26902,14 +27346,23 @@ function ceilPow2(v) {
         pitchTraceStorageUnavailable = false;
         pitchTraceStorageRetryAfter = 0;
       } catch {
+        pitchTraceDirty = true;
         pitchTraceStorageUnavailable = true;
         pitchTraceStorageRetryAfter = Date.now() + PITCH_TRACE_RETRY_DELAY_MS;
+        pitchTraceSaveTimer = window.setTimeout(
+          savePitchTraceNow,
+          PITCH_TRACE_RETRY_DELAY_MS,
+        );
         showPitchStorageWarning();
       }
       if (pitchCaptureEnabled()) beginPitchCapturePass();
       updatePitchCaptureAppearance();
       renderPitchTraceOverlay();
-      if (announce) showToast("Pitch trace erased");
+      if (announce) {
+        const message = "Pitch contour cleared for entire score";
+        showToast(message);
+        setStatus(message, "ready");
+      }
     }
 
     function pitchCaptureErrorMessage(error) {
@@ -26975,7 +27428,7 @@ function ceilPow2(v) {
         );
         const analysisLatency =
           PITCH_CAPTURE_BUFFER_SIZE / (2 * context.sampleRate);
-        const rate = clamp(Number(audioEngine.rate) || 1, 0.5, 1.5);
+        const rate = clamp(Number(audioEngine.rate) || 1, 0.25, 1.5);
         const scoreSeconds = clamp(
           audioEngine.currentBaseSeconds() -
             (analysisLatency + inputLatency + outputLatency) * rate,
@@ -27027,7 +27480,7 @@ function ceilPow2(v) {
           0,
           sequence.endTick,
         );
-        const [frequency, clarity] = pitchCaptureDetector.findPitch(
+        const [frequency, clarity] = resolvePitchCandidate(
           pitchCaptureBuffer,
           context.sampleRate,
         );
@@ -27258,6 +27711,62 @@ function ceilPow2(v) {
       );
     }
 
+    function resumePitchCaptureAfterVisibility() {
+      if (
+        document.visibilityState !== "visible" ||
+        !pitchCaptureEnabled() ||
+        !pitchCaptureStream ||
+        !audioEngine?.context
+      ) {
+        return Promise.resolve();
+      }
+      if (pitchVisibilityResumePromise) return pitchVisibilityResumePromise;
+
+      const stream = pitchCaptureStream;
+      const generation = pitchCaptureRequestGeneration;
+      pitchVisibilityResumePromise = (async () => {
+        const track = stream.getAudioTracks()[0];
+        if (!track || track.readyState !== "live") {
+          stopPitchCapture({ announce: false });
+          setStatus("The microphone was disconnected", "error");
+          return;
+        }
+
+        pausePitchSampling();
+        track.enabled = true;
+        if (!connectPitchCaptureSource()) {
+          throw new Error("The microphone analysis source could not reconnect.");
+        }
+        await audioEngine.context.resume();
+        if (
+          generation !== pitchCaptureRequestGeneration ||
+          stream !== pitchCaptureStream ||
+          !pitchCaptureEnabled()
+        ) {
+          return;
+        }
+        if (playerIsPlaying) startPitchSampling();
+        else {
+          pitchCaptureState = "armed";
+          updatePitchCaptureAppearance();
+        }
+      })()
+        .catch((error) => {
+          console.error(error);
+          if (stream !== pitchCaptureStream || !pitchCaptureEnabled()) return;
+          pitchCaptureState = "armed";
+          updatePitchCaptureAppearance();
+          setStatus(
+            "Microphone remains on · pitch tracking will resume with audio",
+            "ready",
+          );
+        })
+        .finally(() => {
+          pitchVisibilityResumePromise = null;
+        });
+      return pitchVisibilityResumePromise;
+    }
+
     async function startPitchCapture() {
       if (!pitchCaptureSupported() || !audioEngine) {
         setStatus(
@@ -27298,7 +27807,7 @@ function ceilPow2(v) {
         const streamPromise = navigator.mediaDevices.getUserMedia({
           audio: {
             channelCount: { ideal: 1 },
-            echoCancellation: { ideal: true },
+            echoCancellation: { ideal: false },
             noiseSuppression: { ideal: false },
             autoGainControl: { ideal: false },
           },
@@ -27317,6 +27826,14 @@ function ceilPow2(v) {
           stream.getTracks().forEach((track) => track.stop());
           return;
         }
+
+        stream.getAudioTracks().forEach((track) => {
+          try {
+            if ("contentHint" in track) track.contentHint = "music";
+          } catch {
+            // Content hints are optional; raw capture constraints still apply.
+          }
+        });
 
         const analyser = audioEngine.context.createAnalyser();
         analyser.fftSize = PITCH_CAPTURE_BUFFER_SIZE;
@@ -27425,14 +27942,77 @@ function ceilPow2(v) {
       };
     }
 
-    function tickForCursorPosition(cursor) {
-      if (!Array.isArray(cursor) || cursor.length !== 2) return null;
-      const measureNumber = Number(cursor[0]);
-      const offsetTicks = Number(cursor[1]);
-      const measure = sequence?.measures?.[measureNumber - 1];
+    function practiceCursorValueForTick(tick) {
+      const measureIndex = measureIndexAtTick(tick);
+      if (measureIndex < 0) return null;
+      const [startTick, duration, numerator, denominator] =
+        sequence.measures[measureIndex];
+      const beatTicks = (sequence.division * 4) / denominator;
       if (
-        !measure ||
-        !Number.isInteger(measureNumber) ||
+        !Number.isFinite(beatTicks) ||
+        beatTicks <= 0 ||
+        !Number.isInteger(numerator) ||
+        numerator < 1 ||
+        duration < 1
+      ) {
+        return null;
+      }
+      const offsetTicks = clamp(
+        (Number(tick) || 0) - startTick,
+        0,
+        duration,
+      );
+      let beatHundredths = Math.round(
+        (offsetTicks / beatTicks) * 100,
+      );
+      if (beatHundredths >= numerator * 100) {
+        if (measureIndex + 1 < sequence.measures.length) {
+          return `${measureIndex + 2}.1.0`;
+        }
+        beatHundredths = numerator * 100 - 1;
+      }
+      const beatIndex = Math.floor(beatHundredths / 100);
+      const fractionHundredths = beatHundredths % 100;
+      const fractionDigits =
+        String(fractionHundredths)
+          .padStart(2, "0")
+          .replace(/0+$/u, "") || "0";
+      return `${measureIndex + 1}.${beatIndex + 1}.${fractionDigits}`;
+    }
+
+    function tickForCursorPosition(cursor) {
+      if (!Array.isArray(cursor)) return null;
+      const measureNumber = Number(cursor[0]);
+      const measure = sequence?.measures?.[measureNumber - 1];
+      if (!measure || !Number.isInteger(measureNumber)) return null;
+      if (cursor.length === 3) {
+        const beatNumber = Number(cursor[1]);
+        const beatFraction = Number(cursor[2]);
+        const [startTick, duration, numerator, denominator] = measure;
+        const beatTicks = (sequence.division * 4) / denominator;
+        const offsetTicks =
+          (beatNumber - 1 + beatFraction) * beatTicks;
+        if (
+          !Number.isInteger(beatNumber) ||
+          beatNumber < 1 ||
+          beatNumber > numerator ||
+          !Number.isFinite(beatFraction) ||
+          beatFraction < 0 ||
+          beatFraction >= 1 ||
+          !Number.isFinite(offsetTicks) ||
+          offsetTicks < 0 ||
+          offsetTicks >= duration
+        ) {
+          return null;
+        }
+        return (
+          startTick +
+          clamp(Math.round(offsetTicks), 0, Math.max(0, duration - 1))
+        );
+      }
+      if (cursor.length !== 2) return null;
+      const offsetTicks = Number(cursor[1]);
+      if (
         !Number.isInteger(offsetTicks) ||
         offsetTicks < 0 ||
         offsetTicks > measure[1]
@@ -28563,46 +29143,39 @@ function ceilPow2(v) {
 
     function practiceLinkParameters() {
       const params = new URLSearchParams();
-      const cursor = cursorPositionForTick(currentPlaybackTick) || {
-        measureNumber: 1,
-        offsetTicks: 0,
-      };
-      params.set("nb", PRACTICE_LINK_VERSION);
-      params.set(
-        "l",
-        loopStartMeasureNumber === null && loopEndMeasureNumber === null
-          ? "0"
-          : `${loopStartMeasureNumber ?? ""}-${loopEndMeasureNumber ?? ""}`,
-      );
-      params.set("c", `${cursor.measureNumber}.${cursor.offsetTicks}`);
-      params.set("t", String(tempoDrag.value()));
-      params.set("v", currentScoreView === "bars" ? "p" : "s");
-      params.set("f", currentScoreFlow === "continuous" ? "c" : "w");
-      params.set("d", writtenDynamicsEnabled ? "1" : "0");
-      params.set(
-        "s",
-        PART_NAMES.map((_, index) =>
-          hiddenScoreTracks.has(index) ? "0" : "1",
-        ).join(""),
-      );
-      params.set(
-        "h",
-        PART_NAMES.map((_, index) =>
-          audibleTracks.has(index) ? "1" : "0",
-        ).join(""),
-      );
-      params.set("g", trackVolumes.join("."));
-      params.set("p", trackPans.join("."));
-      params.set(
-        "i",
-        trackSounds
-          .map((sound) => SOUND_PRESET_BY_ID.get(sound)?.code || "s")
-          .join(""),
-      );
-      params.set(
-        "z",
-        `${scoreLayoutControl.size()}.${scoreLayoutControl.spacing()}`,
-      );
+      if (
+        loopStartMeasureNumber !== null ||
+        loopEndMeasureNumber !== null
+      ) {
+        params.set(
+          "l",
+          `${loopStartMeasureNumber ?? ""}-${loopEndMeasureNumber ?? ""}`,
+        );
+      }
+      const cursorValue = practiceCursorValueForTick(currentPlaybackTick);
+      if (cursorValue && cursorValue !== "1.1.0") {
+        params.set("c", cursorValue);
+      }
+      const tempoPercent = tempoDrag?.value() ?? DEFAULT_TEMPO_PERCENT;
+      if (tempoPercent !== DEFAULT_TEMPO_PERCENT) {
+        params.set("t", String(tempoPercent));
+      }
+      if (!writtenDynamicsEnabled) params.set("d", "0");
+      const audibleMask = PART_NAMES.map((_, index) =>
+        audibleTracks.has(index) ? "1" : "0",
+      ).join("");
+      if (audibleMask !== "1".repeat(PART_NAMES.length)) {
+        params.set("h", audibleMask);
+      }
+      if (trackVolumes.some((volume) => volume !== 100)) {
+        params.set("g", trackVolumes.join("."));
+      }
+      const soundCodes = trackSounds
+        .map((sound) => SOUND_PRESET_BY_ID.get(sound)?.code || "s")
+        .join("");
+      if (soundCodes !== "s".repeat(PART_NAMES.length)) {
+        params.set("i", soundCodes);
+      }
       return params;
     }
 
@@ -28611,7 +29184,8 @@ function ceilPow2(v) {
         window.location.protocol === "file:"
           ? new URL(PUBLIC_SCORE_URL)
           : new URL(window.location.href);
-      url.search = practiceLinkParameters().toString();
+      const settingsQuery = practiceLinkParameters().toString();
+      url.search = settingsQuery ? `?r&${settingsQuery}` : "?r";
       url.hash = "";
       return url.href;
     }
@@ -28825,6 +29399,7 @@ function ceilPow2(v) {
       sharePractice.disabled = true;
       continuousView.disabled = true;
       dynamicsToggle.disabled = true;
+      metronomeVolume.disabled = true;
       pitchCaptureButton.disabled = true;
       erasePitchTraceButton.disabled = true;
     }
@@ -28971,6 +29546,16 @@ function ceilPow2(v) {
       }
     }
 
+    function updateMetronomeVolume(value, persist = true) {
+      const next = metronomeVolumeDrag.setValue(value);
+      audioEngine?.setMetronomeVolume(next / 100);
+      audioEngine?.setMetronomeEnabled(next > 0);
+      metronomeVolume.title = next > 0
+        ? `Metronome volume ${next}% — drag to adjust; 0% is off`
+        : "Metronome off — drag up or right to turn it on";
+      if (persist) savePreferences();
+    }
+
     function announceAudioMix() {
       const status = document.getElementById("voiceMixStatus");
       if (!status) return;
@@ -28980,15 +29565,10 @@ function ceilPow2(v) {
         : "Audio: all voices silent";
     }
 
-    function formatPan(value) {
-      if (value === 0) return "C";
-      if (value <= -100) return "L";
-      if (value >= 100) return "R";
-      return value < 0 ? `L${Math.abs(value)}` : `R${value}`;
-    }
-
     function describePan(value) {
-      if (value === 0) return "center";
+      if (value <= -100) return "Hard left";
+      if (value >= 100) return "Hard right";
+      if (value === 0) return "Center";
       return `${Math.abs(value)} percent ${value < 0 ? "left" : "right"}`;
     }
 
@@ -29065,6 +29645,13 @@ function ceilPow2(v) {
       savePreferences();
       scheduleScoreRender();
       scheduleBarRender(true);
+    }
+
+    function pitchBarLyricTrack() {
+      const visibleTracks = PART_NAMES.map((_, index) => index).filter(
+        (index) => !hiddenScoreTracks.has(index),
+      );
+      return visibleTracks.length === 1 ? visibleTracks[0] : null;
     }
 
     function setTrackAudible(
@@ -29223,6 +29810,7 @@ function ceilPow2(v) {
       pitchConfidenceDrag?.setValue(DEFAULT_PITCH_CONFIDENCE_PERCENT);
       resetPitchVoiceGate();
       updateTempo(DEFAULT_TEMPO_PERCENT, false);
+      updateMetronomeVolume(DEFAULT_METRONOME_VOLUME_PERCENT, false);
       setWrittenDynamics(true, { persist: false, announce: false });
       savePreferences();
       updateMixerAppearance();
@@ -29325,42 +29913,32 @@ function ceilPow2(v) {
         const panCell = document.createElement("td");
         panCell.dataset.panIndex = String(index);
         panCell.style.setProperty("--part-color", partColor);
-        const panControl = document.createElement("label");
-        panControl.className = "drag-number-control part-pan";
-        const panLabel = document.createElement("span");
-        panLabel.className = "visually-hidden";
-        panLabel.textContent = "Stereo position";
-        const panValue = document.createElement("button");
-        panValue.id = `part-pan-${index}`;
-        panValue.className = "drag-number-value part-pan-value";
-        panValue.type = "button";
-        panValue.dataset.value = String(trackPans[index]);
-        panValue.setAttribute("aria-label", `${partName} stereo position`);
-        panValue.title =
-          `Drag ${partName} left or right; ` +
-          "Home is hard left, End is hard right, and 0 centers";
-        const panDrag = createDragNumber(panValue, {
-          min: -100,
-          max: 100,
+        const panControl = document.createElement("div");
+        panControl.className = "part-pan";
+        const panKnob = document.createElement("button");
+        panKnob.id = `part-pan-${index}`;
+        panKnob.className = "part-pan-knob";
+        panKnob.type = "button";
+        panKnob.dataset.value = String(trackPans[index]);
+        panKnob.setAttribute("aria-label", `${partName} pan`);
+        panKnob.setAttribute("aria-describedby", "panKnobHelp");
+        const panDrag = createPanKnob(panKnob, {
+          value: trackPans[index],
           step: 5,
           pixelsPerStep: 3,
-          formatValue: formatPan,
           ariaValueText: describePan,
+          formatTitle: (value) =>
+            `${partName}: ${describePan(value)} · drag left or right · ` +
+            "double-click or press 0 to center",
         });
         panDrags[index] = panDrag;
         trackPans[index] = panDrag.value();
-        panValue.addEventListener("input", () => {
+        panKnob.addEventListener("input", () => {
           trackPans[index] = panDrag.value();
           savePreferences();
           updateMixerAppearance();
         });
-        panValue.addEventListener("keydown", (event) => {
-          if (event.key !== "0") return;
-          event.preventDefault();
-          event.stopPropagation();
-          panDrag.setValue(0, true);
-        });
-        panControl.append(panLabel, panValue);
+        panControl.append(panKnob);
         panCell.append(panControl);
         panRow.append(panCell);
 
@@ -29442,12 +30020,19 @@ function ceilPow2(v) {
       body.append(audioRow, panRow, soundRow, levelRow);
       table.append(caption, head, body);
 
+      const panHelp = document.createElement("p");
+      panHelp.id = "panKnobHelp";
+      panHelp.className = "visually-hidden";
+      panHelp.textContent =
+        "Drag left or right to adjust stereo position. Arrow keys adjust by " +
+        "five percent. Press 0 or double-click to center.";
+
       const mixStatus = document.createElement("p");
       mixStatus.id = "voiceMixStatus";
       mixStatus.className = "visually-hidden";
       mixStatus.setAttribute("role", "status");
       mixStatus.setAttribute("aria-live", "polite");
-      mixer.replaceChildren(table, mixStatus);
+      mixer.replaceChildren(table, panHelp, mixStatus);
       installAudibilityPainting(audioRow);
 
       scoreTracks.forEach((track, index) => {
@@ -30075,9 +30660,14 @@ function ceilPow2(v) {
       if (!barReattackMarkers) {
         barReattackMarkers = buildReattackMarkers(sequence.notes);
       }
+      const lyricTrack = pitchBarLyricTrack();
+      const visibleLyrics =
+        lyricTrack === null
+          ? []
+          : (sequence.lyrics || []).filter(([track]) => track === lyricTrack);
       const nextLyricByEntry = new Map();
       const previousLyricByLane = new Map();
-      (sequence.lyrics || []).forEach((lyric) => {
+      visibleLyrics.forEach((lyric) => {
         const laneKey = `${lyric[0]}:${lyric[2]}`;
         const previous = previousLyricByLane.get(laneKey);
         if (previous) nextLyricByEntry.set(previous, lyric);
@@ -30137,17 +30727,13 @@ function ceilPow2(v) {
         const rowPitches = rowSegments.map((segment) => segment.pitch);
         const minPitch = rowPitches.length ? Math.min(...rowPitches) : 50;
         const maxPitch = rowPitches.length ? Math.max(...rowPitches) : 50;
-        const rowLyricEvents = (sequence.lyrics || []).filter(
-          ([track, startTick]) =>
-            !hiddenScoreTracks.has(track) &&
-            startTick >= rowStartTick &&
-            startTick < rowEndTick,
+        const rowLyricEvents = visibleLyrics.filter(
+          ([, startTick]) =>
+            startTick >= rowStartTick && startTick < rowEndTick,
         );
-        const rowLyricExtenders = (sequence.lyrics || []).filter(
-          ([track, startTick, , , , extendEndTick]) =>
-            !hiddenScoreTracks.has(track) &&
-            extendEndTick > rowStartTick &&
-            startTick < rowEndTick,
+        const rowLyricExtenders = visibleLyrics.filter(
+          ([, startTick, , , , extendEndTick]) =>
+            extendEndTick > rowStartTick && startTick < rowEndTick,
         );
         const lyricLanes = Array.from(
           new Map(
@@ -30220,7 +30806,7 @@ function ceilPow2(v) {
             ).join(" and ")
           }.${
             lyricLanes.length
-              ? " Lyrics are aligned beneath their note onsets in part-labeled lanes."
+              ? " Lyrics are aligned beneath their note onsets."
               : ""
           } Tap horizontally to seek.`,
           preserveAspectRatio: "xMinYMin meet",
@@ -30437,21 +31023,6 @@ function ceilPow2(v) {
             lyricTop + laneIndex * lyricLineHeight,
           ]),
         );
-        lyricLanes.forEach(({ track, verse }) => {
-          const baseline = lyricBaselineByLane.get(`${track}:${verse}`);
-          const laneLabel = createSvgElement("text", {
-            class: "bar-lyric-part",
-            "data-track": track,
-            x: leftPad - 4,
-            y: baseline,
-            fill: PART_COLORS[track % PART_COLORS.length],
-            "text-anchor": "end",
-          });
-          laneLabel.textContent = `${PART_LABELS[track]}${
-            verse ? `·${verse + 1}` : ""
-          }`;
-          svg.append(laneLabel);
-        });
 
         rowLyricExtenders.forEach((lyric) => {
           const [track, startTick, verse, , , extendEndTick] = lyric;
@@ -30730,12 +31301,71 @@ function ceilPow2(v) {
       activeBarSystemIndex = nextActiveIndex;
     }
 
+    function synthesizeMetronomeSound(sampleRate, accent) {
+      const rate = Math.max(8000, Number(sampleRate) || 48000);
+      const duration = accent
+        ? METRONOME_DOWNBEAT_DURATION_SECONDS
+        : METRONOME_BEAT_DURATION_SECONDS;
+      const frameCount = Math.max(1, Math.ceil(rate * duration));
+      const samples = new Float32Array(frameCount);
+      const woodModes = [
+        [1650, 0.7, 0.0095],
+        [2475, 0.34, 0.0065],
+      ];
+      const accentModes = accent
+        ? [
+            [2850, 0.22, 0.015],
+            [3910, 0.13, 0.01],
+          ]
+        : [];
+      const modes = woodModes.concat(accentModes);
+      const attackSeconds = 0.00045;
+      const strikeDecaySeconds = 0.0022;
+      const fadeSeconds = accent ? 0.002 : 0.0015;
+      const fadeStart = Math.max(0, duration - fadeSeconds);
+      let noiseState = 0x6d2b79f5;
+      let previousNoise = 0;
+      let peak = 0;
+
+      for (let index = 0; index < frameCount; index += 1) {
+        const time = index / rate;
+        noiseState =
+          (Math.imul(noiseState, 1664525) + 1013904223) >>> 0;
+        const noise = noiseState / 2147483648 - 1;
+        const highPassedNoise = noise - previousNoise * 0.78;
+        previousNoise = noise;
+        let value =
+          highPassedNoise * 0.34 * Math.exp(-time / strikeDecaySeconds);
+        modes.forEach(([frequency, amplitude, decay]) => {
+          value +=
+            amplitude *
+            Math.sin(2 * Math.PI * frequency * time) *
+            Math.exp(-time / decay);
+        });
+        const attack = Math.min(1, time / attackSeconds);
+        const fade =
+          time <= fadeStart
+            ? 1
+            : Math.max(0, (duration - time) / fadeSeconds) ** 2;
+        const sample = attack * fade * value;
+        samples[index] = sample;
+        peak = Math.max(peak, Math.abs(sample));
+      }
+
+      const normalization = peak > 0 ? METRONOME_WAVEFORM_PEAK / peak : 1;
+      for (let index = 0; index < samples.length; index += 1) {
+        samples[index] *= normalization;
+      }
+      return samples;
+    }
+
     class SaxGuideEngine {
       constructor(sequence) {
         this.division = sequence.division;
         this.endTick = sequence.endTick;
         this.tempoSegments = this.buildTempoSegments(sequence.tempos);
         this.duration = this.secondsAtTick(this.endTick);
+        this.metronomeBeats = this.buildMetronomeBeats(sequence.measures);
         this.notes = sequence.notes
           .map(([track, startTick, endTick, key, velocity]) => ({
             track,
@@ -30756,6 +31386,8 @@ function ceilPow2(v) {
         this.masterGain = null;
         this.transitionGain = null;
         this.outputGain = null;
+        this.metronomeGain = null;
+        this.metronomeClickBuffers = null;
         this.trackGains = [];
         this.trackPanners = [];
         this.soundWaves = new Map();
@@ -30767,6 +31399,8 @@ function ceilPow2(v) {
         this.loopRange = null;
         this.loopEnabled = false;
         this.scheduledVoices = new Set();
+        this.scheduledMetronomeClicks = new Set();
+        this.nextMetronomeBeatIndex = 0;
         this.audible = new Set(
           PART_NAMES.map((_, index) => index),
         );
@@ -30774,6 +31408,8 @@ function ceilPow2(v) {
         this.pans = DEFAULT_TRACK_PANS.slice();
         this.sounds = DEFAULT_TRACK_SOUNDS.slice();
         this.writtenDynamicsEnabled = true;
+        this.metronomeEnabled = false;
+        this.metronomeVolume = DEFAULT_METRONOME_VOLUME_PERCENT / 100;
         this.output = null;
         this.api = null;
       }
@@ -30803,6 +31439,48 @@ function ceilPow2(v) {
           }
           return { ...item, seconds };
         });
+      }
+
+      buildMetronomeBeats(rawMeasures) {
+        const beats = [];
+        (rawMeasures || []).forEach((measure, measureIndex) => {
+          const startTick = Number(measure[0]);
+          const duration = Number(measure[1]);
+          const numerator = Math.max(1, Number(measure[2]) || 4);
+          const denominator = Math.max(1, Number(measure[3]) || 4);
+          const beatTicks = (this.division * 4) / denominator;
+          if (
+            !Number.isFinite(startTick) ||
+            !Number.isFinite(duration) ||
+            !Number.isFinite(beatTicks) ||
+            duration <= 0 ||
+            beatTicks <= 0
+          ) {
+            return;
+          }
+          const endTick = startTick + duration;
+          const beatCount = Math.max(
+            1,
+            Math.min(
+              numerator,
+              Math.ceil((duration - 0.000001) / beatTicks),
+            ),
+          );
+          for (let beatIndex = 0; beatIndex < beatCount; beatIndex += 1) {
+            const tick = startTick + beatIndex * beatTicks;
+            if (tick >= endTick - 0.000001) break;
+            beats.push({
+              tick,
+              start: this.secondsAtTick(tick),
+              accent: beatIndex === 0,
+              measureIndex,
+              beatIndex,
+            });
+          }
+        });
+        return beats.sort(
+          (left, right) => left.start - right.start || left.tick - right.tick,
+        );
       }
 
       secondsAtTick(tick) {
@@ -30862,7 +31540,7 @@ function ceilPow2(v) {
           seekTo(time) {
             const alphaTabRate = clamp(
               Number(engine.api?.playbackSpeed) || engine.rate,
-              0.5,
+              0.25,
               1.5,
             );
             // AlphaTab preserves its tick before updating the external rate.
@@ -30877,6 +31555,21 @@ function ceilPow2(v) {
             engine.pause();
           },
         };
+      }
+
+      createMetronomeClickBuffer(accent) {
+        if (!this.context) return null;
+        const samples = synthesizeMetronomeSound(
+          this.context.sampleRate,
+          accent,
+        );
+        const buffer = this.context.createBuffer(
+          1,
+          samples.length,
+          this.context.sampleRate,
+        );
+        buffer.getChannelData(0).set(samples);
+        return buffer;
       }
 
       ensureAudio() {
@@ -30917,6 +31610,16 @@ function ceilPow2(v) {
           .connect(this.transitionGain)
           .connect(limiter)
           .connect(this.context.destination);
+
+        this.metronomeGain = this.context.createGain();
+        this.metronomeGain.gain.value = this.metronomeEnabled
+          ? this.metronomeVolume
+          : 0;
+        this.metronomeGain.connect(this.masterGain);
+        this.metronomeClickBuffers = Object.freeze({
+          beat: this.createMetronomeClickBuffer(false),
+          downbeat: this.createMetronomeClickBuffer(true),
+        });
 
         this.trackPanners = [];
         this.trackGains = PART_NAMES.map((_, index) => {
@@ -31130,6 +31833,7 @@ function ceilPow2(v) {
         window.clearInterval(this.timer);
         this.timer = 0;
         this.stopScheduledVoices();
+        this.stopScheduledMetronomeClicks();
         this.restoreTransitionGain();
         this.pushPosition();
       }
@@ -31164,7 +31868,7 @@ function ceilPow2(v) {
       }
 
       setRate(nextRate) {
-        const next = clamp(Number(nextRate) || 1, 0.5, 1.5);
+        const next = clamp(Number(nextRate) || 1, 0.25, 1.5);
         if (next === this.rate) return;
         const position = this.currentBaseSeconds();
         this.basePosition = position;
@@ -31192,6 +31896,38 @@ function ceilPow2(v) {
         if (next === this.writtenDynamicsEnabled) return;
         this.writtenDynamicsEnabled = next;
         this.rescheduleCurrentVoices();
+      }
+
+      setMetronomeEnabled(enabled) {
+        const next = Boolean(enabled);
+        if (next === this.metronomeEnabled) return;
+        this.metronomeEnabled = next;
+        if (this.context && this.metronomeGain) {
+          const now = this.context.currentTime;
+          this.metronomeGain.gain.cancelScheduledValues(now);
+          this.metronomeGain.gain.setTargetAtTime(
+            next ? this.metronomeVolume : 0,
+            now,
+            0.008,
+          );
+        }
+        if (!next) {
+          this.stopScheduledMetronomeClicks();
+          return;
+        }
+        if (this.playing) this.resetMetronomeScheduler();
+      }
+
+      setMetronomeVolume(nextVolume) {
+        this.metronomeVolume = clamp(Number(nextVolume) || 0, 0, 1);
+        if (!this.context || !this.metronomeGain) return;
+        const now = this.context.currentTime;
+        this.metronomeGain.gain.cancelScheduledValues(now);
+        this.metronomeGain.gain.setTargetAtTime(
+          this.metronomeEnabled ? this.metronomeVolume : 0,
+          now,
+          0.012,
+        );
       }
 
       noteLevel(note, preset) {
@@ -31265,10 +32001,18 @@ function ceilPow2(v) {
         this.basePosition = position;
         this.anchorContextTime = this.context.currentTime;
         this.stopScheduledVoices(0.025);
-        this.resetScheduler(0.03);
+        this.resetNoteScheduler(0.03);
       }
 
       resetScheduler(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        this.resetNoteScheduler(minimumLeadSeconds);
+        this.resetMetronomeScheduler(minimumLeadSeconds);
+        this.scheduleLoopBoundary();
+      }
+
+      resetNoteScheduler(
         minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
       ) {
         const hardEnd = this.playbackEndAt(this.basePosition);
@@ -31292,11 +32036,36 @@ function ceilPow2(v) {
             );
           }
         }
-        this.scheduleAhead(minimumLeadSeconds);
-        this.scheduleLoopBoundary();
+        this.scheduleNotesAhead(minimumLeadSeconds);
+      }
+
+      resetMetronomeScheduler(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        this.stopScheduledMetronomeClicks();
+        let low = 0;
+        let high = this.metronomeBeats.length;
+        const boundaryPosition = this.currentBaseSeconds() - 0.002;
+        while (low < high) {
+          const middle = (low + high) >> 1;
+          if (this.metronomeBeats[middle].start < boundaryPosition) {
+            low = middle + 1;
+          } else {
+            high = middle;
+          }
+        }
+        this.nextMetronomeBeatIndex = low;
+        this.scheduleMetronomeAhead(minimumLeadSeconds);
       }
 
       scheduleAhead(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        this.scheduleNotesAhead(minimumLeadSeconds);
+        this.scheduleMetronomeAhead(minimumLeadSeconds);
+      }
+
+      scheduleNotesAhead(
         minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
       ) {
         if (!this.playing || !this.context) return;
@@ -31315,6 +32084,28 @@ function ceilPow2(v) {
             minimumLeadSeconds,
           );
           this.nextNoteIndex += 1;
+        }
+      }
+
+      scheduleMetronomeAhead(
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        if (!this.playing || !this.context || !this.metronomeEnabled) return;
+        const position = this.currentBaseSeconds();
+        const hardEnd = this.playbackEndAt(position);
+        const horizon = Math.min(position + 0.28 * this.rate, hardEnd);
+        while (
+          this.nextMetronomeBeatIndex < this.metronomeBeats.length &&
+          this.metronomeBeats[this.nextMetronomeBeatIndex].start <= horizon &&
+          this.metronomeBeats[this.nextMetronomeBeatIndex].start < hardEnd
+        ) {
+          this.scheduleMetronomeClick(
+            this.metronomeBeats[this.nextMetronomeBeatIndex],
+            position,
+            hardEnd,
+            minimumLeadSeconds,
+          );
+          this.nextMetronomeBeatIndex += 1;
         }
       }
 
@@ -31396,6 +32187,55 @@ function ceilPow2(v) {
         oscillator.stop(end + 0.015);
       }
 
+      scheduleMetronomeClick(
+        beat,
+        currentPosition,
+        hardEnd = this.duration,
+        minimumLeadSeconds = AUDIO_SCHEDULER_LEAD_SECONDS,
+      ) {
+        if (
+          !this.context ||
+          !this.metronomeGain ||
+          !this.metronomeEnabled ||
+          beat.start >= hardEnd ||
+          beat.start < currentPosition - 0.002
+        ) {
+          return;
+        }
+        const startDelay = Math.max(
+          minimumLeadSeconds,
+          (beat.start - currentPosition) / this.rate,
+        );
+        const when = this.context.currentTime + startDelay;
+        const buffer = beat.accent
+          ? this.metronomeClickBuffers?.downbeat
+          : this.metronomeClickBuffers?.beat;
+        if (!buffer) return;
+        const end = when + buffer.duration;
+        const level = beat.accent
+          ? METRONOME_DOWNBEAT_LEVEL
+          : METRONOME_BEAT_LEVEL;
+
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+
+        const envelope = this.context.createGain();
+        envelope.gain.setValueAtTime(level, when);
+        source.connect(envelope).connect(this.metronomeGain);
+
+        const click = { source, envelope, beat, when };
+        this.scheduledMetronomeClicks.add(click);
+        source.addEventListener(
+          "ended",
+          () => {
+            this.scheduledMetronomeClicks.delete(click);
+          },
+          { once: true },
+        );
+        source.start(when);
+        source.stop(end + 0.004);
+      }
+
       stopScheduledVoices(releaseSeconds = 0.025) {
         if (!this.context) return;
         const now = this.context.currentTime;
@@ -31428,6 +32268,37 @@ function ceilPow2(v) {
           }
         });
         this.scheduledVoices.clear();
+      }
+
+      stopScheduledMetronomeClicks(releaseSeconds = 0.008) {
+        if (!this.context) return;
+        const now = this.context.currentTime;
+        const releaseEnd = now + Math.max(0.004, releaseSeconds);
+        const stopAt = releaseEnd + 0.003;
+        this.scheduledMetronomeClicks.forEach(
+          ({ source, envelope, when }) => {
+            if (envelope?.gain) {
+              const gain = envelope.gain;
+              if (typeof gain.cancelAndHoldAtTime === "function") {
+                gain.cancelAndHoldAtTime(now);
+              } else {
+                const currentGain = Math.max(
+                  0.0001,
+                  Number(gain.value) || 0.0001,
+                );
+                gain.cancelScheduledValues(now);
+                gain.setValueAtTime(currentGain, now);
+              }
+              gain.exponentialRampToValueAtTime(0.0001, releaseEnd);
+            }
+            try {
+              source.stop(when > now ? now : stopAt);
+            } catch {
+              // The click may already have ended.
+            }
+          },
+        );
+        this.scheduledMetronomeClicks.clear();
       }
 
       holdTransitionGain(now) {
@@ -31530,6 +32401,7 @@ function ceilPow2(v) {
           window.clearInterval(this.timer);
           this.timer = 0;
           this.stopScheduledVoices();
+          this.stopScheduledMetronomeClicks();
           this.restoreTransitionGain();
           this.api?.pause();
           return;
@@ -31543,9 +32415,19 @@ function ceilPow2(v) {
       min: MIN_TEMPO_PERCENT,
       max: MAX_TEMPO_PERCENT,
       step: 10,
+      values: TEMPO_PERCENT_VALUES,
       pixelsPerStep: 10,
       formatValue: (value) => `${value}%`,
       ariaValueText: (value) => `${value} percent of the written tempo`,
+    });
+    metronomeVolumeDrag = createDragNumber(metronomeVolume, {
+      min: 0,
+      max: 100,
+      step: 5,
+      pixelsPerStep: 8,
+      formatValue: (value) => `${value}%`,
+      ariaValueText: (value) =>
+        value === 0 ? "Metronome off" : `${value} percent metronome volume`,
     });
     pitchConfidenceDrag = createDragNumber(pitchConfidence, {
       min: MIN_PITCH_CONFIDENCE_PERCENT,
@@ -31554,13 +32436,15 @@ function ceilPow2(v) {
       pixelsPerStep: 10,
       formatValue: (value) => `${value}%`,
       ariaValueText: (value) =>
-        `${value} percent pitch confidence sensitivity`,
+        `${value} percent pitch confidence threshold`,
     });
 
     const sharedPractice = readSharedPracticeState();
-    sharedPracticeUnsupported = sharedPractice.unsupported;
     const localPreferences = readPreferences();
-    const preferences = readPreferences(sharedPractice.state);
+    const preferences = preferencesForSharedPractice(
+      localPreferences,
+      sharedPractice,
+    );
     scoreVerticalDrag = createDragNumber(scoreVertical, {
       min: MIN_SCORE_SIZE,
       max: MAX_SCORE_SIZE,
@@ -31612,6 +32496,7 @@ function ceilPow2(v) {
       if (!audible) audibleTracks.delete(index);
     });
     tempoDrag.setValue(preferences.tempoPercent);
+    updateMetronomeVolume(preferences.metronomeVolumePercent, false);
     pitchConfidenceDrag.setValue(preferences.pitchConfidencePercent);
 
     if (!window.alphaTab) {
@@ -31686,6 +32571,10 @@ function ceilPow2(v) {
       audioEngine = new SaxGuideEngine(sequence);
       audioEngine.attach(api);
       audioEngine.setWrittenDynamics(writtenDynamicsEnabled);
+      audioEngine.setMetronomeVolume(
+        metronomeVolumeDrag.value() / 100,
+      );
+      audioEngine.setMetronomeEnabled(metronomeVolumeDrag.value() > 0);
       audioEngine.updateMix(
         audibleTracks,
         trackVolumes,
@@ -31742,6 +32631,7 @@ function ceilPow2(v) {
       sharePractice.disabled = false;
       continuousView.disabled = false;
       dynamicsToggle.disabled = false;
+      metronomeVolume.disabled = false;
       endTime = audioEngine.duration * 1000;
       seek.max = String(Math.max(1, Math.round(endTime)));
       totalTime.textContent = formatTime(endTime);
@@ -31752,9 +32642,6 @@ function ceilPow2(v) {
       initializeMediaSession();
       setStatus("Ready", "ready");
       if (pitchTraceStorageUnavailable) showPitchStorageWarning();
-      if (sharedPracticeUnsupported) {
-        setStatus("This practice link uses an unsupported version", "error");
-      }
     });
 
     api.playerStateChanged.on((event) => {
@@ -31831,6 +32718,9 @@ function ceilPow2(v) {
     dynamicsToggle.addEventListener("click", () => {
       setWrittenDynamics(!writtenDynamicsEnabled);
       setSettingsOpen(false, compactSettingsQuery.matches);
+    });
+    metronomeVolume.addEventListener("input", () => {
+      updateMetronomeVolume(metronomeVolumeDrag.value());
     });
     pitchConfidence.addEventListener("input", () => {
       resetPitchVoiceGate();
@@ -32187,10 +33077,11 @@ function ceilPow2(v) {
       stopPitchCapture({ announce: false });
     });
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState !== "hidden") return;
       savePreferences();
       savePitchTraceNow();
-      disablePitchCapture({ announce: false });
+      if (document.visibilityState === "visible") {
+        void resumePitchCaptureAfterVisibility();
+      }
     });
 
     const initialVisibleTracks = PART_NAMES.map((_, index) => index).filter(
@@ -32347,22 +33238,22 @@ function ceilPow2(v) {
               <div
                 class="settings-group settings-parts-group"
                 role="group"
-                aria-label="Parts"
+                aria-labelledby="partsSettingsTitle"
               >
-                <span class="settings-group-title" aria-hidden="true">Parts</span>
+                <span class="settings-group-title" id="partsSettingsTitle">Parts</span>
                 <div class="mixer" id="mixer" aria-busy="true">
                   <div class="mixer-loading">Preparing five voice parts…</div>
                 </div>
               </div>
 
               <div
-                class="settings-group settings-practice-group"
+                class="settings-group settings-playback-group"
                 role="group"
-                aria-label="Practice"
+                aria-labelledby="playbackSettingsTitle"
               >
-                <span class="settings-group-title" aria-hidden="true">Practice</span>
+                <span class="settings-group-title" id="playbackSettingsTitle">Playback</span>
                 <div class="settings-group-content">
-                  <div class="settings-stack settings-view-stack">
+                  <div class="settings-stack playback-controls">
                     <div class="tempo-control">
                       <label class="drag-number-control">
                         <span>Tempo</span>
@@ -32394,45 +33285,31 @@ function ceilPow2(v) {
                       </span>
                     </button>
 
-                    <div
-                      class="pill-toggle"
-                      aria-label="Score display"
-                    >
-                      <div
-                        class="pill-toggle-group"
-                        id="scoreViewToggle"
-                        role="tablist"
-                        aria-label="Score display"
+                    <label class="drag-number-control metronome-volume-control">
+                      <span>Metronome</span>
+                      <button
+                        class="drag-number-value"
+                        id="metronomeVolume"
+                        type="button"
+                        data-value="0"
+                        aria-label="Metronome volume"
+                        title="Metronome volume — 0% is off; drag up or right to increase"
+                        disabled
                       >
-                        <span class="pill-thumb" aria-hidden="true"></span>
-                        <button
-                          class="pill-option is-active"
-                          id="scoreViewStandard"
-                          type="button"
-                          role="tab"
-                          tabindex="0"
-                          data-score-view="standard"
-                          aria-selected="true"
-                          aria-controls="scoreScroll"
-                        >
-                          Standard
-                        </button>
-                        <button
-                          class="pill-option"
-                          id="scoreViewBars"
-                          type="button"
-                          role="tab"
-                          tabindex="-1"
-                          data-score-view="bars"
-                          aria-selected="false"
-                          aria-controls="barScore"
-                        >
-                          Pitch bars
-                        </button>
-                      </div>
-                    </div>
+                        0%
+                      </button>
+                    </label>
                   </div>
+                </div>
+              </div>
 
+              <div
+                class="settings-group settings-practice-group"
+                role="group"
+                aria-labelledby="practiceSettingsTitle"
+              >
+                <span class="settings-group-title" id="practiceSettingsTitle">Practice</span>
+                <div class="settings-group-content">
                   <div
                     class="settings-stack loop-boundary-controls"
                     role="group"
@@ -32472,7 +33349,7 @@ function ceilPow2(v) {
                   >
                     <label
                       class="drag-number-control pitch-confidence-control"
-                      title="Pitch confidence sensitivity · stable consecutive readings receive a small continuity allowance"
+                      title="Pitch confidence · repeated stable pitches can be confirmed below this value; input loudness is not used"
                     >
                       <span>Confidence</span>
                       <button
@@ -32480,7 +33357,7 @@ function ceilPow2(v) {
                         id="pitchConfidence"
                         type="button"
                         data-value="70"
-                        aria-label="Pitch confidence sensitivity"
+                        aria-label="Pitch confidence threshold"
                       >
                         70%
                       </button>
@@ -32510,8 +33387,8 @@ function ceilPow2(v) {
                       class="icon-control pitch-capture-action"
                       id="erasePitchTrace"
                       type="button"
-                      aria-label="Erase recorded pitch trace"
-                      title="Erase recorded pitch trace"
+                      aria-label="Clear pitch contour from entire score"
+                      title="Clear pitch contour from entire score"
                       disabled
                     >
                       <svg
@@ -32529,13 +33406,16 @@ function ceilPow2(v) {
                   <span class="visually-hidden" id="pitchCaptureHelp">
                     Pitch tracking records pitch positions only while playback is
                     running. Audio is never stored. A newly detected pitch replaces
-                    the earlier trace only at that point. Lower confidence follows
-                    quieter or less certain singing; higher confidence rejects more
-                    uncertain readings. Stable consecutive readings receive a small
-                    continuity allowance, while abrupt pitch changes must persist
-                    before they are drawn. The trace is graded against the nearest
-                    sounding note in the visible parts: green is on pitch and red is
-                    at least half a semitone away.
+                    the earlier trace only at that point. Lower confidence accepts
+                    less periodic or noisier tones; higher confidence rejects more
+                    uncertain readings. Stable repeated pitches can be confirmed
+                    below the displayed confidence, while abrupt pitch changes must
+                    persist before they are drawn. The detector never learns a noise
+                    floor from recent audio, so continuous singing is not reclassified
+                    as background. The trace is graded against the nearest sounding
+                    note in the visible parts: green is on pitch and red is at least
+                    half a semitone away. The eraser clears the saved pitch contour
+                    across the entire score so the next take starts clean.
                   </span>
                 </div>
               </div>
@@ -32543,10 +33423,65 @@ function ceilPow2(v) {
               <div
                 class="settings-group settings-display-group"
                 role="group"
-                aria-label="Display"
+                aria-labelledby="displaySettingsTitle"
               >
-                <span class="settings-group-title" aria-hidden="true">Display</span>
+                <span class="settings-group-title" id="displaySettingsTitle">Display</span>
                 <div class="settings-group-content">
+                  <div class="settings-stack display-mode-controls">
+                    <div
+                      class="pill-toggle"
+                      aria-label="Score display"
+                    >
+                      <div
+                        class="pill-toggle-group"
+                        id="scoreViewToggle"
+                        role="tablist"
+                        aria-label="Score display"
+                      >
+                        <span class="pill-thumb" aria-hidden="true"></span>
+                        <button
+                          class="pill-option is-active"
+                          id="scoreViewStandard"
+                          type="button"
+                          role="tab"
+                          tabindex="0"
+                          data-score-view="standard"
+                          aria-selected="true"
+                          aria-controls="scoreScroll"
+                        >
+                          Standard
+                        </button>
+                        <button
+                          class="pill-option"
+                          id="scoreViewBars"
+                          type="button"
+                          role="tab"
+                          tabindex="-1"
+                          data-score-view="bars"
+                          aria-selected="false"
+                          aria-controls="barScore"
+                        >
+                          Pitch bars
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      class="binary-setting-toggle continuous-view-toggle"
+                      id="continuousView"
+                      type="button"
+                      aria-label="Continuous horizontal score layout"
+                      aria-pressed="false"
+                      title="Continuous horizontal layout"
+                      disabled
+                    >
+                      <span>Continuous</span>
+                      <span class="binary-toggle-track" aria-hidden="true">
+                        <span class="binary-toggle-thumb"></span>
+                      </span>
+                    </button>
+                  </div>
+
                   <div
                     class="settings-stack score-layout-controls"
                     id="scoreLayout"
@@ -32581,88 +33516,87 @@ function ceilPow2(v) {
                     </label>
                   </div>
 
-                  <div class="settings-stack display-compact-stack">
+                  <div
+                    class="compact-action-row display-actions"
+                    role="group"
+                    aria-label="Display actions"
+                  >
                     <button
-                      class="binary-setting-toggle continuous-view-toggle"
-                      id="continuousView"
+                      class="icon-control compact-action"
+                      id="fullscreenScore"
                       type="button"
-                      aria-label="Continuous horizontal score layout"
+                      aria-label="Enter full screen"
                       aria-pressed="false"
-                      title="Continuous horizontal layout"
-                      disabled
+                      title="Full screen"
                     >
-                      <span>Continuous</span>
-                      <span class="binary-toggle-track" aria-hidden="true">
-                        <span class="binary-toggle-thumb"></span>
-                      </span>
+                      <span class="compact-action-symbol" aria-hidden="true">⛶</span>
                     </button>
-
-                    <div
-                      class="compact-action-row"
-                      role="group"
-                      aria-label="Display and practice actions"
-                    >
-                      <!-- Link and rotate-ccw SVG paths from Lucide: https://lucide.dev/license -->
-                      <button
-                        class="icon-control compact-action"
-                        id="fullscreenScore"
-                        type="button"
-                        aria-label="Enter full screen"
-                        aria-pressed="false"
-                        title="Full screen"
-                      >
-                        <span class="compact-action-symbol" aria-hidden="true">⛶</span>
-                      </button>
-                      <button
-                        class="icon-control compact-action"
-                        id="sharePractice"
-                        type="button"
-                        aria-label="Copy practice link"
-                        title="Copy practice link"
-                        disabled
-                      >
-                        <svg
-                          class="compact-action-icon"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path
-                            d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                          ></path>
-                          <path
-                            d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                          ></path>
-                        </svg>
-                      </button>
-                      <button
-                        class="icon-control compact-action"
-                        id="resetMix"
-                        type="button"
-                        aria-label="Reset practice settings and erase pitch trace"
-                        title="Reset tempo, dynamics, voices, loop, and pitch trace"
-                        disabled
-                      >
-                        <svg
-                          class="compact-action-icon"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path
-                            d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
-                          ></path>
-                          <path d="M3 3v5h5"></path>
-                        </svg>
-                      </button>
-                    </div>
                   </div>
+
+                  <p class="visually-hidden" id="reflowStatus">
+                    Automatic measure wrapping
+                  </p>
                 </div>
               </div>
 
-              <p class="visually-hidden" id="reflowStatus">
-                Automatic measure wrapping
-              </p>
+              <div
+                class="settings-group settings-actions-group"
+                role="group"
+                aria-labelledby="actionsSettingsTitle"
+              >
+                <span class="settings-group-title" id="actionsSettingsTitle">Actions</span>
+                <div class="settings-group-content">
+                  <div
+                    class="compact-action-row utility-actions"
+                    role="group"
+                    aria-label="Practice actions"
+                  >
+                    <!-- Link and rotate-ccw SVG paths from Lucide: https://lucide.dev/license -->
+                    <button
+                      class="icon-control compact-action"
+                      id="sharePractice"
+                      type="button"
+                      aria-label="Copy practice link"
+                      title="Copy practice link"
+                      disabled
+                    >
+                      <svg
+                        class="compact-action-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                        ></path>
+                        <path
+                          d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="icon-control compact-action"
+                      id="resetMix"
+                      type="button"
+                      aria-label="Reset practice settings and erase pitch trace"
+                      title="Reset tempo, metronome, dynamics, voices, loop, and pitch trace"
+                      disabled
+                    >
+                      <svg
+                        class="compact-action-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+                        ></path>
+                        <path d="M3 3v5h5"></path>
+                      </svg>
+                    </button>
+                    </div>
+                  </div>
+                </div>
             </div>
           </div>
         </div>

@@ -25460,21 +25460,18 @@ function ceilPow2(v) {
     const MIN_PITCH_CONFIDENCE_PERCENT = 40;
     const MAX_PITCH_CONFIDENCE_PERCENT = 95;
     const DEFAULT_PITCH_CONFIDENCE_PERCENT = 70;
-    const PITCH_CONFIDENCE_HYSTERESIS = 0.08;
-    const PITCH_NOISE_UPDATE_CONFIDENCE_MARGIN = 0.12;
-    const PITCH_NOISE_OPEN_MARGIN_DB = 3;
-    const PITCH_NOISE_CLOSE_MARGIN_DB = 1;
-    const PITCH_NOISE_FALL_TIME_SECONDS = 0.25;
-    const PITCH_NOISE_RISE_TIME_SECONDS = 3;
-    const PITCH_NOISE_RISE_CAP_DB = 6;
-    const PITCH_NOISE_STALE_MS = 60000;
-    const PITCH_NOISE_CALIBRATION_MIN_DB = -120;
-    const PITCH_VOICE_RELEASE_MISSES = 2;
-    const PITCH_AMBIENT_SAMPLE_INTERVAL_MS = 200;
-    const PITCH_RMS_EPSILON = 1e-8;
+    const PITCH_STABLE_CONFIDENCE_MARGIN = 0.12;
+    const PITCH_STABLE_CONFIDENCE_MIN = 0.45;
+    const PITCH_STABLE_MATCH_CENTS = 80;
+    const PITCH_JUMP_THRESHOLD_CENTS = 350;
+    const PITCH_PENDING_MAX_GAP_SECONDS = 0.22;
+    const PITCH_VOICE_RELEASE_MISSES = 3;
     const PITCH_CAPTURE_MIN_FREQUENCY = 55;
     const PITCH_CAPTURE_MAX_FREQUENCY = 1200;
     const PITCH_CAPTURE_MAX_GAP_SECONDS = 0.5;
+    const PITCH_TRACE_MAX_DRAW_GAP_SECONDS = 0.25;
+    const PITCH_TRACE_RENDER_JUMP_CENTS = 400;
+    const PITCH_TRACE_RENDER_MAX_RATE_CENTS_PER_SECOND = 2400;
     const PITCH_TRACE_NEUTRAL_COLOR = "#6544a3";
     const PITCH_TRACE_COLOR_STEPS = 10;
     const PITCH_TRACE_SAVE_DELAY_MS = 850;
@@ -25726,16 +25723,15 @@ function ceilPow2(v) {
     let pitchCaptureIntervalMs = PITCH_CAPTURE_TARGET_INTERVAL_MS;
     let pitchCaptureOverloadCount = 0;
     let pitchCaptureNextSampleAt = 0;
-    let pitchAmbientTimer = 0;
     let pitchCapturePreviousTick = null;
     let pitchCapturePreviousScoreSeconds = null;
     let pitchCaptureWasSilent = false;
     let pitchCaptureIgnoreUntilContextTime = 0;
-    let pitchNoiseFloorDb = null;
-    let pitchNoiseEstimateAt = 0;
-    let pitchNoiseUpdatedAt = 0;
     let pitchVoiceActive = false;
     let pitchVoiceMisses = 0;
+    let pitchLastAcceptedCents = null;
+    let pitchLastAcceptedCaptureSeconds = null;
+    let pitchPendingEvidence = null;
     const audibleTracks = new Set(
       PART_NAMES.map((_, index) => index),
     );
@@ -26471,60 +26467,12 @@ function ceilPow2(v) {
       return percent / 100;
     }
 
-    function inputRmsDecibels(samples) {
-      let squareSum = 0;
-      for (let index = 0; index < samples.length; index += 1) {
-        squareSum += samples[index] ** 2;
-      }
-      const rms = Math.sqrt(squareSum / Math.max(1, samples.length));
-      return 20 * Math.log10(Math.max(rms, PITCH_RMS_EPSILON));
-    }
-
     function resetPitchVoiceGate() {
       pitchVoiceActive = false;
       pitchVoiceMisses = 0;
-    }
-
-    function resetPitchNoiseEstimate() {
-      pitchNoiseFloorDb = null;
-      pitchNoiseEstimateAt = 0;
-      pitchNoiseUpdatedAt = 0;
-      resetPitchVoiceGate();
-    }
-
-    function expirePitchNoiseEstimate() {
-      if (
-        pitchNoiseFloorDb !== null &&
-        Date.now() - pitchNoiseUpdatedAt > PITCH_NOISE_STALE_MS
-      ) {
-        resetPitchNoiseEstimate();
-      }
-    }
-
-    function updatePitchNoiseEstimate(rmsDb) {
-      if (!Number.isFinite(rmsDb)) return;
-      const now = performance.now();
-      if (!Number.isFinite(pitchNoiseFloorDb)) {
-        pitchNoiseFloorDb = rmsDb;
-        pitchNoiseEstimateAt = now;
-        pitchNoiseUpdatedAt = Date.now();
-        return;
-      }
-
-      const elapsedSeconds = pitchNoiseEstimateAt
-        ? clamp((now - pitchNoiseEstimateAt) / 1000, 1 / 120, 1)
-        : PITCH_AMBIENT_SAMPLE_INTERVAL_MS / 1000;
-      const rising = rmsDb > pitchNoiseFloorDb;
-      const targetDb = rising
-        ? Math.min(rmsDb, pitchNoiseFloorDb + PITCH_NOISE_RISE_CAP_DB)
-        : rmsDb;
-      const timeConstant = rising
-        ? PITCH_NOISE_RISE_TIME_SECONDS
-        : PITCH_NOISE_FALL_TIME_SECONDS;
-      const blend = 1 - Math.exp(-elapsedSeconds / timeConstant);
-      pitchNoiseFloorDb += (targetDb - pitchNoiseFloorDb) * blend;
-      pitchNoiseEstimateAt = now;
-      pitchNoiseUpdatedAt = Date.now();
+      pitchLastAcceptedCents = null;
+      pitchLastAcceptedCaptureSeconds = null;
+      pitchPendingEvidence = null;
     }
 
     function pitchFrequencyIsValid(frequency) {
@@ -26535,55 +26483,181 @@ function ceilPow2(v) {
       );
     }
 
-    function pitchNoiseFrameIsEligible(frequency, clarity) {
-      const minimumVoiceClarity = Math.max(
-        0,
-        pitchConfidenceThreshold() - PITCH_NOISE_UPDATE_CONFIDENCE_MARGIN,
-      );
-      return (
-        !pitchFrequencyIsValid(frequency) ||
-        !Number.isFinite(clarity) ||
-        clarity < minimumVoiceClarity
-      );
-    }
-
-    function pitchSampleIsVoiced(frequency, clarity, rmsDb) {
-      const confidence = pitchConfidenceThreshold();
-      const validFrequency = pitchFrequencyIsValid(frequency);
-      const validClarity = Number.isFinite(clarity);
-      const wasActive = pitchVoiceActive;
-      const requiredClarity = wasActive
-        ? Math.max(0.35, confidence - PITCH_CONFIDENCE_HYSTERESIS)
-        : confidence;
-      const requiredNoiseMargin = wasActive
-        ? PITCH_NOISE_CLOSE_MARGIN_DB
-        : PITCH_NOISE_OPEN_MARGIN_DB;
-      const noiseMargin = Number.isFinite(pitchNoiseFloorDb)
-        ? rmsDb - pitchNoiseFloorDb
-        : Number.POSITIVE_INFINITY;
-      const voiced =
-        validFrequency &&
-        validClarity &&
-        clarity >= requiredClarity &&
-        noiseMargin >= requiredNoiseMargin;
-
-      if (voiced) {
-        pitchVoiceActive = true;
-        pitchVoiceMisses = 0;
-      } else if (wasActive) {
+    function rejectPitchSample() {
+      pitchPendingEvidence = null;
+      if (pitchVoiceActive) {
         pitchVoiceMisses += 1;
         if (pitchVoiceMisses >= PITCH_VOICE_RELEASE_MISSES) {
           pitchVoiceActive = false;
           pitchVoiceMisses = 0;
+          pitchLastAcceptedCents = null;
+          pitchLastAcceptedCaptureSeconds = null;
         }
       } else {
         pitchVoiceMisses = 0;
       }
+      return { accepted: false, supported: false };
+    }
 
-      const noiseEligible =
-        !pitchVoiceActive && pitchNoiseFrameIsEligible(frequency, clarity);
-      if (noiseEligible) updatePitchNoiseEstimate(rmsDb);
-      return voiced;
+    function acceptPitchSample(
+      pitchCents,
+      clarity,
+      captureSeconds,
+      breakBefore = false,
+      backfill = null,
+    ) {
+      pitchLastAcceptedCents = pitchCents;
+      pitchLastAcceptedCaptureSeconds = captureSeconds;
+      pitchPendingEvidence = null;
+      pitchVoiceActive = true;
+      pitchVoiceMisses = 0;
+      return {
+        accepted: true,
+        supported: true,
+        pitchCents,
+        breakBefore,
+        backfill,
+      };
+    }
+
+    function holdPitchEvidence(
+      kind,
+      pitchCents,
+      clarity,
+      captureSeconds,
+      traceFrame,
+    ) {
+      const previous = pitchPendingEvidence;
+      const gap = previous ? captureSeconds - previous.captureSeconds : 0;
+      const matchesPrevious = Boolean(
+        previous &&
+          previous.kind === kind &&
+          gap >= 0 &&
+          gap <= PITCH_PENDING_MAX_GAP_SECONDS &&
+          Math.abs(pitchCents - previous.pitchCents) <=
+            PITCH_STABLE_MATCH_CENTS,
+      );
+      const count = matchesPrevious ? previous.count + 1 : 1;
+      pitchPendingEvidence = {
+        kind,
+        pitchCents,
+        clarity,
+        captureSeconds,
+        count,
+        traceFrame,
+      };
+      pitchVoiceMisses = 0;
+
+      if (count >= 2) {
+        const backfill = previous?.traceFrame
+          ? {
+              ...previous.traceFrame,
+              pitchCents: previous.pitchCents,
+              clarity: previous.clarity,
+            }
+          : null;
+        return acceptPitchSample(
+          pitchCents,
+          clarity,
+          captureSeconds,
+          kind === "jump",
+          backfill,
+        );
+      }
+      return { accepted: false, supported: true };
+    }
+
+    function pitchSampleIsVoiced(
+      frequency,
+      clarity,
+      captureSeconds,
+      traceFrame = null,
+    ) {
+      const confidence = pitchConfidenceThreshold();
+      const stableConfidence = Math.min(
+        confidence,
+        Math.max(
+          PITCH_STABLE_CONFIDENCE_MIN,
+          confidence - PITCH_STABLE_CONFIDENCE_MARGIN,
+        ),
+      );
+      if (
+        !pitchFrequencyIsValid(frequency) ||
+        !Number.isFinite(clarity) ||
+        !Number.isFinite(captureSeconds) ||
+        clarity < stableConfidence
+      ) {
+        return rejectPitchSample();
+      }
+
+      const pitchCents = Math.round(
+        (69 + 12 * Math.log2(frequency / 440)) * 100,
+      );
+      const pendingGap = pitchPendingEvidence
+        ? captureSeconds - pitchPendingEvidence.captureSeconds
+        : Number.POSITIVE_INFINITY;
+      const matchesPending = Boolean(
+        pitchPendingEvidence &&
+          pendingGap >= 0 &&
+          pendingGap <= PITCH_PENDING_MAX_GAP_SECONDS &&
+          Math.abs(pitchCents - pitchPendingEvidence.pitchCents) <=
+            PITCH_STABLE_MATCH_CENTS,
+      );
+      if (matchesPending) {
+        return holdPitchEvidence(
+          pitchPendingEvidence.kind,
+          pitchCents,
+          clarity,
+          captureSeconds,
+          traceFrame,
+        );
+      }
+
+      const elapsed = Number.isFinite(pitchLastAcceptedCaptureSeconds)
+        ? captureSeconds - pitchLastAcceptedCaptureSeconds
+        : Number.POSITIVE_INFINITY;
+      const hasRecentPitch =
+        Number.isFinite(pitchLastAcceptedCents) &&
+        elapsed >= 0 &&
+        elapsed <= PITCH_PENDING_MAX_GAP_SECONDS;
+
+      if (!hasRecentPitch) {
+        pitchLastAcceptedCents = null;
+        pitchLastAcceptedCaptureSeconds = null;
+        return holdPitchEvidence(
+          "onset",
+          pitchCents,
+          clarity,
+          captureSeconds,
+          traceFrame,
+        );
+      }
+
+      const pitchChange = Math.abs(pitchCents - pitchLastAcceptedCents);
+      if (pitchChange > PITCH_JUMP_THRESHOLD_CENTS) {
+        return holdPitchEvidence(
+          "jump",
+          pitchCents,
+          clarity,
+          captureSeconds,
+          traceFrame,
+        );
+      }
+
+      pitchPendingEvidence = null;
+      if (
+        clarity >= confidence ||
+        pitchChange <= PITCH_STABLE_MATCH_CENTS
+      ) {
+        return acceptPitchSample(pitchCents, clarity, captureSeconds);
+      }
+      return holdPitchEvidence(
+        "stable",
+        pitchCents,
+        clarity,
+        captureSeconds,
+        traceFrame,
+      );
     }
 
     function updatePitchCaptureAppearance() {
@@ -26754,22 +26828,36 @@ function ceilPow2(v) {
       schedulePitchTraceSave();
     }
 
-    function replacePitchTraceWindowWithSample(startTick, endTick, sample) {
-      if (!sample) return false;
-      const boundedStart = clamp(
-        Math.floor(Math.min(startTick, endTick)),
-        0,
-        sequence.endTick,
-      );
-      const boundedEnd = clamp(
-        Math.ceil(Math.max(startTick, endTick)),
-        0,
-        sequence.endTick,
-      );
+    function replacePitchTraceWindowsWithSamples(replacements) {
+      const normalized = Array.isArray(replacements)
+        ? replacements.flatMap(({ startTick, endTick, sample }) => {
+            if (!sample) return [];
+            return [
+              {
+                startTick: clamp(
+                  Math.floor(Math.min(startTick, endTick)),
+                  0,
+                  sequence.endTick,
+                ),
+                endTick: clamp(
+                  Math.ceil(Math.max(startTick, endTick)),
+                  0,
+                  sequence.endTick,
+                ),
+                sample,
+              },
+            ];
+          })
+        : [];
+      if (!normalized.length) return false;
       pitchTraceSamples = pitchTraceSamples.filter(
-        (point) => point[0] < boundedStart || point[0] > boundedEnd,
+        (point) =>
+          !normalized.some(
+            ({ startTick, endTick }) =>
+              point[0] >= startTick && point[0] <= endTick,
+          ),
       );
-      pitchTraceSamples.push(sample);
+      pitchTraceSamples.push(...normalized.map(({ sample }) => sample));
       pitchTraceSamples.sort(
         (left, right) => left[0] - right[0] || left[3] - right[3],
       );
@@ -26778,6 +26866,12 @@ function ceilPow2(v) {
         trimmed = true;
         pitchTraceSamples = pitchTraceSamples.slice(-PITCH_TRACE_MAX_SAMPLES);
       }
+      const boundedStart = Math.min(
+        ...normalized.map(({ startTick }) => startTick),
+      );
+      const boundedEnd = Math.max(
+        ...normalized.map(({ endTick }) => endTick),
+      );
       pitchTraceChanged(
         trimmed ? null : boundedStart,
         trimmed ? null : boundedEnd,
@@ -26834,83 +26928,18 @@ function ceilPow2(v) {
       }
     }
 
-    function stopPitchAmbientSampling() {
-      window.clearTimeout(pitchAmbientTimer);
-      pitchAmbientTimer = 0;
-    }
-
-    function pitchAmbientSamplingIsActive() {
-      return Boolean(
-        pitchCaptureState === "armed" &&
-          pitchCaptureStream &&
-          pitchCaptureSourceConnected &&
-          pitchCaptureAnalyser &&
-          pitchCaptureDetector &&
-          pitchCaptureBuffer &&
-          !playerIsPlaying,
-      );
-    }
-
-    function capturePitchAmbientSample() {
-      if (!pitchAmbientSamplingIsActive()) return;
-      const context = audioEngine?.context;
-      if (!context || context.currentTime < pitchCaptureIgnoreUntilContextTime) {
-        return;
-      }
-      pitchCaptureAnalyser.getFloatTimeDomainData(pitchCaptureBuffer);
-      const rmsDb = inputRmsDecibels(pitchCaptureBuffer);
-      if (rmsDb <= PITCH_NOISE_CALIBRATION_MIN_DB) return;
-      const [frequency, clarity] = pitchCaptureDetector.findPitch(
-        pitchCaptureBuffer,
-        context.sampleRate,
-      );
-      if (pitchNoiseFrameIsEligible(frequency, clarity)) {
-        updatePitchNoiseEstimate(rmsDb);
-      }
-    }
-
-    function schedulePitchAmbientSample(
-      delay = PITCH_AMBIENT_SAMPLE_INTERVAL_MS,
-    ) {
-      if (!pitchAmbientSamplingIsActive() || pitchAmbientTimer) return;
-      pitchAmbientTimer = window.setTimeout(runPitchAmbientSamplingCycle, delay);
-    }
-
-    function runPitchAmbientSamplingCycle() {
-      pitchAmbientTimer = 0;
-      if (!pitchAmbientSamplingIsActive()) return;
-      capturePitchAmbientSample();
-      schedulePitchAmbientSample();
-    }
-
-    function startPitchAmbientSampling() {
-      if (!pitchAmbientSamplingIsActive()) return;
-      expirePitchNoiseEstimate();
-      const context = audioEngine?.context;
-      const bufferFillMilliseconds = context
-        ? Math.max(
-            0,
-            (pitchCaptureIgnoreUntilContextTime - context.currentTime) * 1000,
-          )
-        : 0;
-      schedulePitchAmbientSample(
-        Math.max(PITCH_AMBIENT_SAMPLE_INTERVAL_MS, bufferFillMilliseconds),
-      );
-    }
-
     function pausePitchSampling({ keepArmed = true } = {}) {
-      stopPitchAmbientSampling();
       window.clearTimeout(pitchCaptureTimer);
       pitchCaptureTimer = 0;
       pitchCaptureNextSampleAt = 0;
       pitchCapturePreviousTick = null;
       pitchCapturePreviousScoreSeconds = null;
+      resetPitchVoiceGate();
       if (keepArmed && pitchCaptureEnabled() && pitchCaptureStream) {
         pitchCaptureState = "armed";
       } else if (!keepArmed) {
         pitchCaptureState = "off";
       }
-      startPitchAmbientSampling();
       updatePitchCaptureAppearance();
       savePitchTraceNow();
     }
@@ -26998,27 +27027,49 @@ function ceilPow2(v) {
           0,
           sequence.endTick,
         );
-        const rmsDb = inputRmsDecibels(pitchCaptureBuffer);
         const [frequency, clarity] = pitchCaptureDetector.findPitch(
           pitchCaptureBuffer,
           context.sampleRate,
         );
-        const voiced = pitchSampleIsVoiced(frequency, clarity, rmsDb);
+        const traceFrame = {
+          startTick: sweepStartTick,
+          endTick: sweepEndTick,
+          tick,
+        };
+        const decision = pitchSampleIsVoiced(
+          frequency,
+          clarity,
+          context.currentTime,
+          traceFrame,
+        );
 
-        if (voiced) {
-          if (pitchCaptureWasSilent) {
+        if (decision.accepted) {
+          if (pitchCaptureWasSilent || decision.breakBefore) {
             pitchTraceSegment += 1;
             pitchCaptureWasSilent = false;
           }
-          const midiPitch = 69 + 12 * Math.log2(frequency / 440);
-          replacePitchTraceWindowWithSample(sweepStartTick, sweepEndTick, [
-            tick,
-            Math.round(midiPitch * 100),
-            Math.round(clamp(clarity, 0, 1) * 255),
-            pitchTraceSegment,
-          ]);
-        } else {
-          if (!pitchVoiceActive) pitchCaptureWasSilent = true;
+          const acceptedFrames = [
+            decision.backfill,
+            {
+              ...traceFrame,
+              pitchCents: decision.pitchCents,
+              clarity,
+            },
+          ].filter(Boolean);
+          replacePitchTraceWindowsWithSamples(
+            acceptedFrames.map((frame) => ({
+              startTick: frame.startTick,
+              endTick: frame.endTick,
+              sample: [
+                frame.tick,
+                frame.pitchCents,
+                Math.round(clamp(frame.clarity, 0, 1) * 255),
+                pitchTraceSegment,
+              ],
+            })),
+          );
+        } else if (!decision.supported && !pitchVoiceActive) {
+          pitchCaptureWasSilent = true;
         }
 
         pitchCapturePreviousTick = tick;
@@ -27104,7 +27155,6 @@ function ceilPow2(v) {
       ) {
         return;
       }
-      stopPitchAmbientSampling();
       beginPitchCapturePass();
       pitchCaptureState = "recording";
       updatePitchCaptureAppearance();
@@ -27141,7 +27191,6 @@ function ceilPow2(v) {
 
     function disablePitchCapture({ announce = true } = {}) {
       if (!pitchCaptureEnabled() && pitchCaptureState !== "requesting") {
-        stopPitchAmbientSampling();
         return;
       }
       pitchCaptureRequestGeneration += 1;
@@ -27174,8 +27223,7 @@ function ceilPow2(v) {
       pitchCaptureState = "off";
       pitchCaptureIgnoreUntilContextTime = 0;
       resetPitchCaptureCadence();
-      stopPitchAmbientSampling();
-      resetPitchNoiseEstimate();
+      resetPitchVoiceGate();
       updatePitchCaptureAppearance();
       if (announce) {
         setStatus("Ready", "ready");
@@ -27190,14 +27238,10 @@ function ceilPow2(v) {
       if (!connectPitchCaptureSource()) {
         throw new Error("The microphone analysis source could not reconnect.");
       }
-      expirePitchNoiseEstimate();
       resetPitchCaptureCadence();
       pitchCaptureState = playerIsPlaying ? "recording" : "armed";
       if (playerIsPlaying) startPitchSampling();
-      else {
-        beginPitchCapturePass();
-        startPitchAmbientSampling();
-      }
+      else beginPitchCapturePass();
       updatePitchCaptureAppearance();
       setStatus(
         playerIsPlaying
@@ -27285,7 +27329,7 @@ function ceilPow2(v) {
         detector.clarityThreshold = PITCH_DETECTOR_PEAK_CLARITY;
         detector.minVolumeAbsolute = 0;
 
-        resetPitchNoiseEstimate();
+        resetPitchVoiceGate();
         pitchCaptureStream = stream;
         pitchCaptureSource = source;
         pitchCaptureSourceConnected = false;
@@ -29177,7 +29221,7 @@ function ceilPow2(v) {
         control?.setValue(DEFAULT_TRACK_SOUNDS[index]),
       );
       pitchConfidenceDrag?.setValue(DEFAULT_PITCH_CONFIDENCE_PERCENT);
-      resetPitchNoiseEstimate();
+      resetPitchVoiceGate();
       updateTempo(DEFAULT_TEMPO_PERCENT, false);
       setWrittenDynamics(true, { persist: false, announce: false });
       savePreferences();
@@ -29816,7 +29860,14 @@ function ceilPow2(v) {
       return `rgb(${red} ${green} 0)`;
     }
 
-    function pitchTraceGroupsForSystem(system) {
+    function pitchTraceJumpLimitCents(scoreGap) {
+      return Math.max(
+        PITCH_TRACE_RENDER_JUMP_CENTS,
+        PITCH_TRACE_RENDER_MAX_RATE_CENTS_PER_SECOND * scoreGap,
+      );
+    }
+
+    function groupPitchTraceSamples(samples, secondsAtTick) {
       const groups = [];
       let group = [];
       let previous = null;
@@ -29825,36 +29876,48 @@ function ceilPow2(v) {
         group = [];
       };
 
-      pitchTraceSamples.forEach((sample) => {
-        const [tick, pitchCents, clarity, segment] = sample;
-        if (tick < system.startTick || tick > system.endTick) return;
-        const midiPitch = pitchCents / 100;
-        const plottedPitch = clamp(
-          midiPitch,
-          system.minPitch - 1,
-          system.maxPitch + 1,
-        );
+      samples.forEach((sample) => {
+        const [tick, pitchCents, , segment] = sample;
         const scoreGap = previous
-          ? Math.abs(
-              audioEngine.secondsAtTick(tick) -
-                audioEngine.secondsAtTick(previous.tick),
-            )
+          ? Math.abs(secondsAtTick(tick) - secondsAtTick(previous.tick))
           : 0;
         const continuous =
           previous &&
           previous.segment === segment &&
-          scoreGap <= PITCH_CAPTURE_MAX_GAP_SECONDS;
+          scoreGap <= PITCH_TRACE_MAX_DRAW_GAP_SECONDS &&
+          Math.abs(pitchCents - previous.pitchCents) <=
+            pitchTraceJumpLimitCents(scoreGap);
         if (!continuous) flush();
-        group.push({
-          x: system.xAtTick(tick),
-          y: system.yAtPitch(plottedPitch),
-          clarity,
-          errorCents: nearestVisiblePitchErrorCents(tick, midiPitch),
-        });
-        previous = { tick, segment };
+        group.push(sample);
+        previous = { tick, pitchCents, segment };
       });
       flush();
       return groups;
+    }
+
+    function pitchTraceGroupsForSystem(system) {
+      const samples = pitchTraceSamples.filter(
+        ([tick]) => tick >= system.startTick && tick <= system.endTick,
+      );
+      return groupPitchTraceSamples(
+        samples,
+        (tick) => audioEngine.secondsAtTick(tick),
+      ).map((group) =>
+        group.map(([tick, pitchCents, clarity]) => {
+          const midiPitch = pitchCents / 100;
+          const plottedPitch = clamp(
+            midiPitch,
+            system.minPitch - 1,
+            system.maxPitch + 1,
+          );
+          return {
+            x: system.xAtTick(tick),
+            y: system.yAtPitch(plottedPitch),
+            clarity,
+            errorCents: nearestVisiblePitchErrorCents(tick, midiPitch),
+          };
+        }),
+      );
     }
 
     function renderPitchTraceOverlay(systems = barSystems) {
@@ -31491,7 +31554,7 @@ function ceilPow2(v) {
       pixelsPerStep: 10,
       formatValue: (value) => `${value}%`,
       ariaValueText: (value) =>
-        `${value} percent minimum pitch confidence`,
+        `${value} percent pitch confidence sensitivity`,
     });
 
     const sharedPractice = readSharedPracticeState();
@@ -32409,7 +32472,7 @@ function ceilPow2(v) {
                   >
                     <label
                       class="drag-number-control pitch-confidence-control"
-                      title="Minimum pitch confidence · lower admits less-certain pitches"
+                      title="Pitch confidence sensitivity · stable consecutive readings receive a small continuity allowance"
                     >
                       <span>Confidence</span>
                       <button
@@ -32417,7 +32480,7 @@ function ceilPow2(v) {
                         id="pitchConfidence"
                         type="button"
                         data-value="70"
-                        aria-label="Pitch confidence threshold"
+                        aria-label="Pitch confidence sensitivity"
                       >
                         70%
                       </button>
@@ -32466,11 +32529,13 @@ function ceilPow2(v) {
                   <span class="visually-hidden" id="pitchCaptureHelp">
                     Pitch tracking records pitch positions only while playback is
                     running. Audio is never stored. A newly detected pitch replaces
-                    the earlier trace only at that point. Ambient noise is estimated
-                    automatically. Lower confidence admits more uncertain pitches;
-                    higher confidence rejects them. The trace is graded against the
-                    nearest sounding note in the visible parts: green is on pitch
-                    and red is at least half a semitone away.
+                    the earlier trace only at that point. Lower confidence follows
+                    quieter or less certain singing; higher confidence rejects more
+                    uncertain readings. Stable consecutive readings receive a small
+                    continuity allowance, while abrupt pitch changes must persist
+                    before they are drawn. The trace is graded against the nearest
+                    sounding note in the visible parts: green is on pitch and red is
+                    at least half a semitone away.
                   </span>
                 </div>
               </div>

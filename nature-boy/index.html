@@ -1280,10 +1280,6 @@ button:disabled {
   border-radius: 0.65rem;
 }
 
-.display-actions {
-  align-self: end;
-}
-
 .utility-actions {
   grid-auto-flow: row;
 }
@@ -1718,8 +1714,9 @@ button:disabled {
 
 .bar-reattack-line {
   stroke: #fffefa;
-  stroke-width: 1.4;
+  stroke-width: 2.4;
   pointer-events: none;
+  shape-rendering: crispEdges;
   vector-effect: non-scaling-stroke;
 }
 
@@ -29654,6 +29651,34 @@ function ceilPow2(v) {
       return visibleTracks.length === 1 ? visibleTracks[0] : null;
     }
 
+    function normalizePitchBarLyricText(text) {
+      const value = String(text || "").trim();
+      return /^doo?m?$/iu.test(value) ? "doo" : value;
+    }
+
+    function pitchBarLyricsForTrack(track) {
+      if (track === null) return [];
+      const previousTextByLane = new Map();
+      const simplified = [];
+      (sequence.lyrics || []).forEach((lyric) => {
+        if (lyric[0] !== track) return;
+        const text = normalizePitchBarLyricText(lyric[3]);
+        const laneKey = `${lyric[0]}:${lyric[2]}`;
+        const comparisonText = text.toLocaleLowerCase();
+        if (previousTextByLane.get(laneKey) === comparisonText) return;
+        previousTextByLane.set(laneKey, comparisonText);
+        simplified.push([
+          lyric[0],
+          lyric[1],
+          lyric[2],
+          text,
+          lyric[4],
+          lyric[5],
+        ]);
+      });
+      return simplified;
+    }
+
     function setTrackAudible(
       index,
       audible,
@@ -30661,10 +30686,7 @@ function ceilPow2(v) {
         barReattackMarkers = buildReattackMarkers(sequence.notes);
       }
       const lyricTrack = pitchBarLyricTrack();
-      const visibleLyrics =
-        lyricTrack === null
-          ? []
-          : (sequence.lyrics || []).filter(([track]) => track === lyricTrack);
+      const visibleLyrics = pitchBarLyricsForTrack(lyricTrack);
       const nextLyricByEntry = new Map();
       const previousLyricByLane = new Map();
       visibleLyrics.forEach((lyric) => {
@@ -30970,33 +30992,6 @@ function ceilPow2(v) {
             visibleMarker.tracks.push(marker.track);
             visibleReattacks.set(key, visibleMarker);
           });
-        visibleReattacks.forEach(({ pitch, tick, tracks }) => {
-          const markerX = Math.min(
-            leftPad + plotWidth,
-            Math.max(
-              leftPad + (tick === rowStartTick ? 0.75 : 0),
-              xAtTick(tick),
-            ),
-          );
-          const markerY = topPad + (maxPitch - pitch) * pitchStep;
-          const marker = createSvgElement("line", {
-            class: "bar-reattack-line",
-            "data-pitch": pitch,
-            "data-tick": tick,
-            "data-tracks": tracks.join(","),
-            x1: markerX,
-            x2: markerX,
-            y1: markerY,
-            y2: markerY + pitchStep * 2,
-          });
-          const markerTitle = createSvgElement("title");
-          markerTitle.textContent = `${tracks
-            .map((track) => PART_LABELS[track])
-            .join(", ")} rearticulation on ${pitchLabel(pitch, rowSegments)}`;
-          marker.append(markerTitle);
-          svg.append(marker);
-        });
-
         scorePhraseStarts
           .filter(
             ({ phrase, tick }) =>
@@ -31124,6 +31119,33 @@ function ceilPow2(v) {
             plotHeight,
           );
         }
+
+        visibleReattacks.forEach(({ pitch, tick, tracks }) => {
+          const markerX = Math.min(
+            leftPad + plotWidth,
+            Math.max(
+              leftPad + (tick === rowStartTick ? 0.75 : 0),
+              xAtTick(tick),
+            ),
+          );
+          const markerY = topPad + (maxPitch - pitch) * pitchStep;
+          const marker = createSvgElement("line", {
+            class: "bar-reattack-line",
+            "data-pitch": pitch,
+            "data-tick": tick,
+            "data-tracks": tracks.join(","),
+            x1: markerX,
+            x2: markerX,
+            y1: markerY,
+            y2: markerY + pitchStep * 2,
+          });
+          const markerTitle = createSvgElement("title");
+          markerTitle.textContent = `${tracks
+            .map((track) => PART_LABELS[track])
+            .join(", ")} rearticulation on ${pitchLabel(pitch, rowSegments)}`;
+          marker.append(markerTitle);
+          svg.append(marker);
+        });
 
         const cursor = createSvgElement("line", {
           class: "bar-playhead",
@@ -33516,23 +33538,6 @@ function ceilPow2(v) {
                     </label>
                   </div>
 
-                  <div
-                    class="compact-action-row display-actions"
-                    role="group"
-                    aria-label="Display actions"
-                  >
-                    <button
-                      class="icon-control compact-action"
-                      id="fullscreenScore"
-                      type="button"
-                      aria-label="Enter full screen"
-                      aria-pressed="false"
-                      title="Full screen"
-                    >
-                      <span class="compact-action-symbol" aria-hidden="true">⛶</span>
-                    </button>
-                  </div>
-
                   <p class="visually-hidden" id="reflowStatus">
                     Automatic measure wrapping
                   </p>
@@ -33552,6 +33557,16 @@ function ceilPow2(v) {
                     aria-label="Practice actions"
                   >
                     <!-- Link and rotate-ccw SVG paths from Lucide: https://lucide.dev/license -->
+                    <button
+                      class="icon-control compact-action"
+                      id="fullscreenScore"
+                      type="button"
+                      aria-label="Enter full screen"
+                      aria-pressed="false"
+                      title="Full screen"
+                    >
+                      <span class="compact-action-symbol" aria-hidden="true">⛶</span>
+                    </button>
                     <button
                       class="icon-control compact-action"
                       id="sharePractice"

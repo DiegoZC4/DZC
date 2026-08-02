@@ -1038,7 +1038,7 @@ button:disabled {
   align-items: stretch;
 }
 
-.continuous-view-toggle {
+.binary-setting-toggle {
   min-height: 2.2rem;
   padding: 0.28rem 0.42rem 0.28rem 0.55rem;
   border: 1px solid var(--line);
@@ -1060,12 +1060,12 @@ button:disabled {
     background 150ms ease;
 }
 
-.continuous-view-toggle:hover:not(:disabled) {
+.binary-setting-toggle:hover:not(:disabled) {
   border-color: var(--teal);
   color: var(--ink);
 }
 
-.continuous-view-toggle[aria-pressed="true"] {
+.binary-setting-toggle[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--teal) 65%, var(--line));
   color: var(--ink);
   background: var(--teal-soft);
@@ -1099,12 +1099,12 @@ button:disabled {
     transform 170ms ease;
 }
 
-.continuous-view-toggle[aria-pressed="true"] .binary-toggle-track {
+.binary-setting-toggle[aria-pressed="true"] .binary-toggle-track {
   border-color: var(--teal);
   background: var(--teal);
 }
 
-.continuous-view-toggle[aria-pressed="true"] .binary-toggle-thumb {
+.binary-setting-toggle[aria-pressed="true"] .binary-toggle-thumb {
   background: var(--paper);
   transform: translateX(0.78rem);
 }
@@ -25435,6 +25435,10 @@ function ceilPow2(v) {
     const MAX_SCORE_SPACING = 120;
     const DEFAULT_SCORE_SPACING = 55;
     const OUTPUT_MAKEUP_GAIN = 1.8;
+    const EVEN_DYNAMICS_VELOCITY = 95;
+    const LOW_NOTE_COMPENSATION_START_KEY = 50;
+    const LOW_NOTE_COMPENSATION_DB_PER_SEMITONE = 0.8;
+    const LOW_NOTE_COMPENSATION_MAX_DB = 10;
     const RATE_FADE_OUT_SECONDS = 0.05;
     const RATE_FADE_IN_SECONDS = 0.08;
     const RATE_FADE_SETTLE_SECONDS = 0.01;
@@ -25634,6 +25638,7 @@ function ceilPow2(v) {
     const loopEndHandle = document.getElementById("loopEndHandle");
     const seekPreview = document.getElementById("seekPreview");
     const tempo = document.getElementById("tempo");
+    const dynamicsToggle = document.getElementById("dynamicsToggle");
     const scoreLayout = document.getElementById("scoreLayout");
     const scoreVertical = document.getElementById("scoreVertical");
     const scoreHorizontal = document.getElementById("scoreHorizontal");
@@ -25683,6 +25688,7 @@ function ceilPow2(v) {
     let transportToastTimer = 0;
     let currentScoreView = "standard";
     let currentScoreFlow = "wrapped";
+    let writtenDynamicsEnabled = true;
     let currentPlaybackTick = 0;
     let loopStartTick = null;
     let loopEndTick = null;
@@ -26216,6 +26222,11 @@ function ceilPow2(v) {
         state.scoreFlow = flowValue === "c" ? "continuous" : "wrapped";
       }
 
+      const dynamicsValue = uniqueValue("d");
+      if (dynamicsValue === "0" || dynamicsValue === "1") {
+        state.dynamicsEnabled = dynamicsValue === "1";
+      }
+
       const parseBits = (key, requireVisible = false) => {
         const value = uniqueValue(key);
         if (!value || !/^[01]{5}$/.test(value)) return null;
@@ -26283,6 +26294,7 @@ function ceilPow2(v) {
         volumes: Array(PART_NAMES.length).fill(100),
         pans: DEFAULT_TRACK_PANS.slice(),
         sounds: DEFAULT_TRACK_SOUNDS.slice(),
+        dynamicsEnabled: true,
         visibleTracks: Array(PART_NAMES.length).fill(true),
         audibleTracks: Array(PART_NAMES.length).fill(true),
         scoreView: "standard",
@@ -26305,6 +26317,8 @@ function ceilPow2(v) {
       const savedBpm = Number(stored.tempoBpm);
       const savedSpacing = Number(stored.scoreSpacing);
       const savedPitchConfidence = Number(stored.pitchConfidencePercent);
+      const savedDynamics =
+        stored.dynamicsEnabled ?? stored.writtenDynamicsEnabled;
       const local = {
         ...defaults,
         tempoPercent: Number.isFinite(savedPercent)
@@ -26344,6 +26358,8 @@ function ceilPow2(v) {
           const value = stored.sounds?.[index] ?? stored.instruments?.[index];
           return SOUND_PRESET_BY_ID.has(value) ? value : "sax";
         }),
+        dynamicsEnabled:
+          typeof savedDynamics === "boolean" ? savedDynamics : true,
         visibleTracks: PART_NAMES.map(
           (_, index) => stored.visibleTracks?.[index] !== false,
         ),
@@ -26372,6 +26388,7 @@ function ceilPow2(v) {
         "scoreSpacing",
         "scoreView",
         "scoreFlow",
+        "dynamicsEnabled",
         "loopMeasures",
         "cursor",
       ].forEach((key) => {
@@ -26399,7 +26416,7 @@ function ceilPow2(v) {
         localStorage.setItem(
           PREFS_KEY,
           JSON.stringify({
-            schema: 7,
+            schema: 8,
             tempo: tempoDrag?.value() ?? DEFAULT_TEMPO_PERCENT,
             scoreSize: scoreLayoutControl?.size() ?? defaultScoreSize(),
             scoreSpacing:
@@ -26410,6 +26427,7 @@ function ceilPow2(v) {
             volumes: trackVolumes,
             pans: trackPans,
             sounds: trackSounds,
+            dynamicsEnabled: writtenDynamicsEnabled,
             visibleTracks: PART_NAMES.map(
               (_, index) => !hiddenScoreTracks.has(index),
             ),
@@ -28516,6 +28534,7 @@ function ceilPow2(v) {
       params.set("t", String(tempoDrag.value()));
       params.set("v", currentScoreView === "bars" ? "p" : "s");
       params.set("f", currentScoreFlow === "continuous" ? "c" : "w");
+      params.set("d", writtenDynamicsEnabled ? "1" : "0");
       params.set(
         "s",
         PART_NAMES.map((_, index) =>
@@ -28761,6 +28780,7 @@ function ceilPow2(v) {
       loopEnd.disabled = true;
       sharePractice.disabled = true;
       continuousView.disabled = true;
+      dynamicsToggle.disabled = true;
       pitchCaptureButton.disabled = true;
       erasePitchTraceButton.disabled = true;
     }
@@ -28878,6 +28898,33 @@ function ceilPow2(v) {
       if (api) api.playbackSpeed = next / 100;
       if (persist) savePreferences();
       syncMediaSessionPosition(true);
+    }
+
+    function updateDynamicsAppearance() {
+      dynamicsToggle.setAttribute(
+        "aria-pressed",
+        String(writtenDynamicsEnabled),
+      );
+      dynamicsToggle.title = writtenDynamicsEnabled
+        ? "Written dynamics on · click for equal guide-note levels"
+        : "Written dynamics off · part volumes determine the balance";
+    }
+
+    function setWrittenDynamics(
+      enabled,
+      { persist = true, announce = true } = {},
+    ) {
+      writtenDynamicsEnabled = Boolean(enabled);
+      updateDynamicsAppearance();
+      audioEngine?.setWrittenDynamics(writtenDynamicsEnabled);
+      if (persist) savePreferences();
+      if (announce && isReady) {
+        const message = writtenDynamicsEnabled
+          ? "Following written dynamics"
+          : "Written dynamics off · equal guide-note levels";
+        setStatus(message, "ready");
+        showToast(message);
+      }
     }
 
     function announceAudioMix() {
@@ -29132,6 +29179,7 @@ function ceilPow2(v) {
       pitchConfidenceDrag?.setValue(DEFAULT_PITCH_CONFIDENCE_PERCENT);
       resetPitchNoiseEstimate();
       updateTempo(DEFAULT_TEMPO_PERCENT, false);
+      setWrittenDynamics(true, { persist: false, announce: false });
       savePreferences();
       updateMixerAppearance();
       updateScoreVisibilityAppearance();
@@ -30662,6 +30710,7 @@ function ceilPow2(v) {
         this.levels = Array(PART_NAMES.length).fill(1);
         this.pans = DEFAULT_TRACK_PANS.slice();
         this.sounds = DEFAULT_TRACK_SOUNDS.slice();
+        this.writtenDynamicsEnabled = true;
         this.output = null;
         this.api = null;
       }
@@ -31075,6 +31124,31 @@ function ceilPow2(v) {
         );
       }
 
+      setWrittenDynamics(enabled) {
+        const next = Boolean(enabled);
+        if (next === this.writtenDynamicsEnabled) return;
+        this.writtenDynamicsEnabled = next;
+        this.rescheduleCurrentVoices();
+      }
+
+      noteLevel(note, preset) {
+        const effectiveVelocity = this.writtenDynamicsEnabled
+          ? clamp(Number(note.velocity) || 1, 1, 127)
+          : EVEN_DYNAMICS_VELOCITY;
+        const velocityGain = (effectiveVelocity / 127) ** 1.25;
+        const lowNoteCompensationDb = clamp(
+          (LOW_NOTE_COMPENSATION_START_KEY - note.key) *
+            LOW_NOTE_COMPENSATION_DB_PER_SEMITONE,
+          0,
+          LOW_NOTE_COMPENSATION_MAX_DB,
+        );
+        const lowNoteGain = 10 ** (lowNoteCompensationDb / 20);
+        return Math.max(
+          0.008,
+          0.15 * preset.level * velocityGain * lowNoteGain,
+        );
+      }
+
       updateMix(
         audible,
         volumes = null,
@@ -31118,11 +31192,17 @@ function ceilPow2(v) {
           else panner.pan.setTargetAtTime(pan, now, 0.02);
         });
         if (soundsChanged && this.playing) {
-          this.basePosition = this.currentBaseSeconds();
-          this.anchorContextTime = now;
-          this.stopScheduledVoices(0.025);
-          this.resetScheduler(0.03);
+          this.rescheduleCurrentVoices();
         }
+      }
+
+      rescheduleCurrentVoices() {
+        if (!this.context || !this.playing) return;
+        const position = this.currentBaseSeconds();
+        this.basePosition = position;
+        this.anchorContextTime = this.context.currentTime;
+        this.stopScheduledVoices(0.025);
+        this.resetScheduler(0.03);
       }
 
       resetScheduler(
@@ -31218,10 +31298,7 @@ function ceilPow2(v) {
         filter.Q.value = preset.filterQ;
 
         const envelope = this.context.createGain();
-        const level = Math.max(
-          0.008,
-          0.15 * preset.level * (note.velocity / 127) ** 1.25,
-        );
+        const level = this.noteLevel(note, preset);
         const attackEnd = when + Math.min(preset.attack, duration * 0.28);
         const end = when + duration;
         const releaseStart = Math.min(
@@ -31463,6 +31540,8 @@ function ceilPow2(v) {
     trackVolumes = preferences.volumes.slice();
     trackPans = preferences.pans.slice();
     trackSounds = preferences.sounds.slice();
+    writtenDynamicsEnabled = preferences.dynamicsEnabled;
+    updateDynamicsAppearance();
     preferences.visibleTracks.forEach((visible, index) => {
       if (!visible) hiddenScoreTracks.add(index);
     });
@@ -31543,6 +31622,7 @@ function ceilPow2(v) {
       api = new window.alphaTab.AlphaTabApi(scoreElement, settings);
       audioEngine = new SaxGuideEngine(sequence);
       audioEngine.attach(api);
+      audioEngine.setWrittenDynamics(writtenDynamicsEnabled);
       audioEngine.updateMix(
         audibleTracks,
         trackVolumes,
@@ -31598,6 +31678,7 @@ function ceilPow2(v) {
       seek.disabled = false;
       sharePractice.disabled = false;
       continuousView.disabled = false;
+      dynamicsToggle.disabled = false;
       endTime = audioEngine.duration * 1000;
       seek.max = String(Math.max(1, Math.round(endTime)));
       totalTime.textContent = formatTime(endTime);
@@ -31684,6 +31765,10 @@ function ceilPow2(v) {
     });
 
     tempo.addEventListener("input", () => updateTempo(tempoDrag.value()));
+    dynamicsToggle.addEventListener("click", () => {
+      setWrittenDynamics(!writtenDynamicsEnabled);
+      setSettingsOpen(false, compactSettingsQuery.matches);
+    });
     pitchConfidence.addEventListener("input", () => {
       resetPitchVoiceGate();
       savePreferences();
@@ -32231,6 +32316,21 @@ function ceilPow2(v) {
                       </label>
                     </div>
 
+                    <button
+                      class="binary-setting-toggle dynamics-toggle"
+                      id="dynamicsToggle"
+                      type="button"
+                      aria-label="Follow written dynamics"
+                      aria-pressed="true"
+                      title="Follow written dynamics"
+                      disabled
+                    >
+                      <span>Dynamics</span>
+                      <span class="binary-toggle-track" aria-hidden="true">
+                        <span class="binary-toggle-thumb"></span>
+                      </span>
+                    </button>
+
                     <div
                       class="pill-toggle"
                       aria-label="Score display"
@@ -32418,7 +32518,7 @@ function ceilPow2(v) {
 
                   <div class="settings-stack display-compact-stack">
                     <button
-                      class="continuous-view-toggle"
+                      class="binary-setting-toggle continuous-view-toggle"
                       id="continuousView"
                       type="button"
                       aria-label="Continuous horizontal score layout"
@@ -32475,7 +32575,7 @@ function ceilPow2(v) {
                         id="resetMix"
                         type="button"
                         aria-label="Reset practice settings and erase pitch trace"
-                        title="Reset tempo, voices, loop, and pitch trace"
+                        title="Reset tempo, dynamics, voices, loop, and pitch trace"
                         disabled
                       >
                         <svg

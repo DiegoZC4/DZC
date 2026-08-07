@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Thu, 23 Jul 2026 17:41:26 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 10 Aug 2026 17:00:00 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -31,7 +31,51 @@
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
     <item>
-      <title>#92 - Lonely Dissent</title>
+      <title>#93 - Oops</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-93</link>
+      <guid isPermaLink="false">urn:lsrg:93:k1</guid>
+      <pubDate>Mon, 10 Aug 2026 17:00:00 +0000</pubDate>
+      <description><![CDATA[
+0:00 - The Importance of Saying “Oops” by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/i9/the_importance_of_saying_oops/
+
+5:13 - The Crackpot Offer by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/j8/the_crackpot_offer/
+
+10:05 - Just Lose Hope Already by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/gx/just_lose_hope_already/
+
+12:38 - The Proper Use of Doubt by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/ib/the_proper_use_of_doubt/
+
+18:31 - You Can Face Reality by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/id/you_can_face_reality/
+
+19:04 - The Meditation on Curiosity by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/jz/the_meditation_on_curiosity/
+
+26:32 - No One Can Exempt You From Rationality’s Laws by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/k1/no_one_can_exempt_you_from_rationalitys_laws/
+
+32:21 - (Optional) The Cowpox of Doubt by Scott Alexander
+https://slatestarcodex.com/2014/04/15/the-cowpox-of-doubt/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-93
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>93</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2363</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#92 - Conformity</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-92</link>
       <guid isPermaLink="false">urn:lsrg:92:j5</guid>
       <pubDate>Thu, 23 Jul 2026 17:41:26 +0000</pubDate>
@@ -50,6 +94,8 @@ https://www.lesswrong.com/lw/mc/cultish_countercultishness/
 
 41:42 - (Optional) Asches to Asches by Scott Alexander
 https://www.lesswrong.com/s/B384FrQNrxSq4hZoS/p/pfmZ5cYQCahABGZzi
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-92
 
 Sources
 Rationality: From AI to Zombies, by Eliezer Yudkowsky
@@ -86,6 +132,8 @@ https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans
 
 26:31 - (Optional) Cargo Cult Science by Richard Feynman
 https://calteches.library.caltech.edu/51/2/CargoCult.htm
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-90
 
 Sources
 Rationality: From AI to Zombies, by Eliezer Yudkowsky

@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 10 Aug 2026 17:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 17 Aug 2026 17:00:00 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,41 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#94 - Letting Go</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-94</link>
+      <guid isPermaLink="false">urn:lsrg:94:k2</guid>
+      <pubDate>Mon, 17 Aug 2026 17:00:00 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Leave a Line of Retreat by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/o4/leave_a_line_of_retreat/
+
+7:48 - Crisis of Faith by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/ur/crisis_of_faith/
+
+24:29 - The Ritual by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/us/the_ritual/
+
+33:42 - (Optional) Crony Beliefs by Kevin Simler
+https://meltingasphalt.com/crony-beliefs/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-94
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Second Enumerations, narrated by Grognor
+http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Kevin Simler</itunes:author>
+      <itunes:episode>94</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4227</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
+    </item>
     <item>
       <title>#93 - Oops</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-93</link>

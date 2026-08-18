@@ -63,7 +63,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
       <itunes:duration>4227</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.mp4" length="26425158" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
     </item>
     <item>
       <title>#93 - Oops</title>
@@ -107,7 +107,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2363</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.mp4" length="14813695" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
     </item>
     <item>
       <title>#92 - Conformity</title>

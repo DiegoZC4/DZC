@@ -1,0 +1,7 @@
+# Hostinger's default MIME map has no entry for .m4a, so it falls back to
+# text/plain. Podcast clients and browsers need audio/mp4 to stream and seek
+# the AAC episodes under /audio/. Other extensions in use (.mp3, .json, .xml)
+# already resolve correctly and are deliberately left alone.
+<IfModule mod_mime.c>
+  AddType audio/mp4 .m4a
+</IfModule>

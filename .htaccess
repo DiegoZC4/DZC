@@ -1,0 +1,58 @@
+# MIME types.
+#
+# Hostinger's default map is missing many modern extensions and falls back to
+# text/plain for them. That is not just a cosmetic mislabel: a text/* response
+# gets gzipped, and a compressed response cannot serve byte ranges, so audio
+# and video silently lose seeking. This file pins the correct type for every
+# format likely to be served here.
+#
+# Syntax per Hostinger docs (support article 1583371): "AddType type/subtype ext"
+# -- extensions are listed WITHOUT a leading dot, and directives are NOT wrapped
+# in <IfModule>, because LiteSpeed does not register Apache module names and a
+# guarded block would be silently skipped.
+
+# Audio
+AddType audio/mp4 m4a m4b f4a f4b
+AddType audio/aac aac
+AddType audio/flac flac
+AddType audio/ogg ogg oga opus
+AddType audio/wav wav
+AddType audio/webm weba
+AddType audio/midi mid midi
+
+# Video
+AddType video/mp4 mp4 m4v f4v f4p
+AddType video/webm webm
+AddType video/ogg ogv
+AddType video/quicktime mov
+AddType video/x-matroska mkv
+
+# Subtitles and captions
+AddType text/vtt vtt
+
+# Images
+AddType image/webp webp
+AddType image/avif avif
+AddType image/svg+xml svg svgz
+AddType image/heic heic
+AddType image/heif heif
+AddType image/x-icon ico
+
+# Fonts
+AddType font/woff woff
+AddType font/woff2 woff2
+AddType font/ttf ttf
+AddType font/otf otf
+AddType application/vnd.ms-fontobject eot
+
+# Web application
+AddType text/javascript js mjs
+AddType application/json json
+AddType application/manifest+json webmanifest
+AddType application/wasm wasm
+
+# Documents and archives
+AddType application/epub+zip epub
+AddType application/zip zip
+AddType application/gzip gz
+AddType text/markdown md

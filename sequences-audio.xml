@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 17 Aug 2026 17:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 25 Aug 2026 01:41:29 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -31,6 +31,34 @@
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
     <item>
+      <title>#95 - Minds and Intelligence</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-95</link>
+      <guid isPermaLink="false">urn:lsrg:95:book3</guid>
+      <pubDate>Tue, 25 Aug 2026 01:41:29 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Minds: An Introduction by Rob Bensinger
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/8GhSZzsQmusCN9is7
+
+10:26 - The Power of Intelligence by Eliezer Yudkowsky
+
+18:58 - (Optional) The ‘Breaking’ News: The OpenAI–Hugging Face Incident by Eric Wallace and Michael Dalton
+https://www.youtube.com/watch?v=87DyyMV0kCY
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-95
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Rob Bensinger, Eliezer Yudkowsky, Eric Wallace, and Michael Dalton</itunes:author>
+      <itunes:episode>95</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3386</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-95-book3-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
+    </item>
+    <item>
       <title>#94 - Letting Go</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-94</link>
       <guid isPermaLink="false">urn:lsrg:94:k2</guid>
@@ -40,10 +68,8 @@
 https://www.lesswrong.com/lw/o4/leave_a_line_of_retreat/
 
 7:48 - Crisis of Faith by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/ur/crisis_of_faith/
 
 24:29 - The Ritual by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/us/the_ritual/
 
 33:42 - (Optional) Crony Beliefs by Kevin Simler
 https://meltingasphalt.com/crony-beliefs/
@@ -75,22 +101,16 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
 https://www.lesswrong.com/lw/i9/the_importance_of_saying_oops/
 
 5:13 - The Crackpot Offer by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/j8/the_crackpot_offer/
 
 10:05 - Just Lose Hope Already by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/gx/just_lose_hope_already/
 
 12:38 - The Proper Use of Doubt by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/ib/the_proper_use_of_doubt/
 
 18:31 - You Can Face Reality by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/id/you_can_face_reality/
 
 19:04 - The Meditation on Curiosity by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/jz/the_meditation_on_curiosity/
 
 26:32 - No One Can Exempt You From Rationality’s Laws by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/k1/no_one_can_exempt_you_from_rationalitys_laws/
 
 32:21 - (Optional) The Cowpox of Doubt by Scott Alexander
 https://slatestarcodex.com/2014/04/15/the-cowpox-of-doubt/
@@ -119,13 +139,10 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
 https://www.lesswrong.com/lw/m9/aschs_conformity_experiment/
 
 7:47 - On Expressing Your Concerns by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/ma/on_expressing_your_concerns/
 
 13:38 - Lonely Dissent by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/mb/lonely_dissent/
 
 22:10 - Cultish Countercultishness by Eliezer Yudkowsky
-https://www.lesswrong.com/lw/mc/cultish_countercultishness/
 
 41:42 - (Optional) Asches to Asches by Scott Alexander
 https://www.lesswrong.com/s/B384FrQNrxSq4hZoS/p/pfmZ5cYQCahABGZzi
@@ -157,13 +174,10 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
 https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth
 
 9:04 - Guardians of the Gene Pool by Eliezer Yudkowsky
-https://www.lesswrong.com/posts/aFtWRL3QihoF5uQd5/guardians-of-the-gene-pool
 
 11:05 - Guardians of Ayn Rand by Eliezer Yudkowsky
-https://www.lesswrong.com/posts/96TBXaHwLbFyeAxrg/guardians-of-ayn-rand
 
 22:24 - Two Cult Koans by Eliezer Yudkowsky
-https://www.lesswrong.com/posts/Qr4MB9hFRzamuMRHJ/two-cult-koans
 
 26:31 - (Optional) Cargo Cult Science by Richard Feynman
 https://calteches.library.caltech.edu/51/2/CargoCult.htm

@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 25 Aug 2026 01:41:29 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 31 Aug 2026 22:21:51 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,37 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#96 - Evolution</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-96</link>
+      <guid isPermaLink="false">urn:lsrg:96:l1</guid>
+      <pubDate>Mon, 31 Aug 2026 22:21:51 +0000</pubDate>
+      <description><![CDATA[
+0:00 - An Alien God by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/kr/an_alien_god/
+
+18:05 - The Wonder of Evolution by Eliezer Yudkowsky
+
+27:14 - (Optional) Meditations on Moloch by Scott Alexander
+https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-96
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast, narrated by Jeremiah
+https://sscpodcast.libsyn.com/meditations-on-moloch
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>96</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>8041</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="50131502" type="audio/mp4" />
+    </item>
     <item>
       <title>#95 - Minds and Intelligence</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-95</link>

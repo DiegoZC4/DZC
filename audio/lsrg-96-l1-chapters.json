@@ -1,0 +1,28 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#96 - Evolution",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for September 1, 2026.",
+  "fileName": "lsrg-96-l1.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 1085.423,
+      "title": "An Alien God",
+      "url": "https://www.lesswrong.com/lw/kr/an_alien_god/"
+    },
+    {
+      "startTime": 1085.423,
+      "endTime": 1633.973,
+      "title": "The Wonder of Evolution",
+      "url": "https://www.lesswrong.com/lw/ks/the_wonder_of_evolution/"
+    },
+    {
+      "startTime": 1633.973,
+      "endTime": 8040.788,
+      "title": "(Optional) Meditations on Moloch",
+      "url": "https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch"
+    }
+  ]
+}

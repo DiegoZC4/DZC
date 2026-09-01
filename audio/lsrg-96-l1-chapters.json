@@ -8,19 +8,19 @@
   "chapters": [
     {
       "startTime": 0.0,
-      "endTime": 1085.423,
+      "endTime": 1080.420136,
       "title": "An Alien God",
       "url": "https://www.lesswrong.com/lw/kr/an_alien_god/"
     },
     {
-      "startTime": 1085.423,
-      "endTime": 1633.973,
+      "startTime": 1080.420136,
+      "endTime": 1628.970803,
       "title": "The Wonder of Evolution",
       "url": "https://www.lesswrong.com/lw/ks/the_wonder_of_evolution/"
     },
     {
-      "startTime": 1633.973,
-      "endTime": 8040.788,
+      "startTime": 1628.970803,
+      "endTime": 7963.534,
       "title": "(Optional) Meditations on Moloch",
       "url": "https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch"
     }

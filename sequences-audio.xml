@@ -39,9 +39,9 @@
 0:00 - An Alien God by Eliezer Yudkowsky
 https://www.lesswrong.com/lw/kr/an_alien_god/
 
-18:05 - The Wonder of Evolution by Eliezer Yudkowsky
+18:00 - The Wonder of Evolution by Eliezer Yudkowsky
 
-27:14 - (Optional) Meditations on Moloch by Scott Alexander
+27:09 - (Optional) Meditations on Moloch by Scott Alexander
 https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch
 
 Read along: https://diegozc.com/sequences-audio.html#lsrg-96
@@ -56,10 +56,10 @@ https://sscpodcast.libsyn.com/meditations-on-moloch
       <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
       <itunes:episode>96</itunes:episode>
       <itunes:episodeType>full</itunes:episodeType>
-      <itunes:duration>8041</itunes:duration>
+      <itunes:duration>7964</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="50131502" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
     </item>
     <item>
       <title>#95 - Minds and Intelligence</title>

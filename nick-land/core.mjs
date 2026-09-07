@@ -1,4 +1,12 @@
 export const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+export function audioCandidates(row, canPlayType) {
+  const sources = [...(row.audioSources || [])];
+  if (row.audio && !sources.some(source => source.src === row.audio)) {
+    sources.push({src:row.audio, type:'audio/mp4; codecs="mp4a.40.2"'});
+  }
+  const supported = sources.filter(source => Boolean(canPlayType(source.type)));
+  return supported.length ? supported : sources.filter(source => source.src === row.audio);
+}
 export function formatTime(value) {
   const total = Math.max(0, Math.floor(Number(value) || 0));
   const hours = Math.floor(total / 3600);

@@ -9,7 +9,7 @@
   <link rel="icon" href="nick-land/portrait.jpg">
   <link rel="stylesheet" href="nick-land/reader.css">
   <script defer src="nick-land/lucide.min.js"></script>
-  <script type="module" src="nick-land/reader.mjs"></script>
+  <script type="module" src="nick-land/reader.mjs?v=20260907-opus"></script>
 </head>
 <body>
   <header class="masthead">
@@ -36,7 +36,7 @@
       <div id="transcript" tabindex="0" aria-label="Transcript"></div>
       <div id="notice" role="status" aria-live="polite"></div>
       <footer class="player" aria-label="Audio player">
-        <audio id="audio" preload="metadata"></audio>
+        <audio id="audio" preload="none"></audio>
         <div class="seek-track"><canvas id="speaker-track" aria-hidden="true"></canvas><input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="Seek recording"></div>
         <div class="time-row"><output id="elapsed">0:00</output><span id="speaker-now"></span><output id="duration">0:00</output></div>
         <div class="transport">

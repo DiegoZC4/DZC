@@ -1,4 +1,4 @@
-import {clamp, formatTime, nextNick, nickRemaining, wordAt, searchPassages} from './core.mjs';
+import {clamp, formatTime, nextNick, nickRemaining, wordAt, searchPassages, audioCandidates} from './core.mjs?v=20260907-opus';
 
 const $ = id => document.getElementById(id);
 const audio = $('audio');
@@ -7,7 +7,9 @@ const store = {
   set(key, value) { try { localStorage.setItem('nickAudio.' + key, JSON.stringify(value)); } catch {} }
 };
 const state = {catalog: [], index: null, data: null, row: null, words: [], current: -1,
-  query: '', nickSearch: false, nickOnly: false, follow: true, loading: 0, seekTime: null, saveAt: 0};
+  query: '', nickSearch: false, nickOnly: false, follow: true, loading: 0, seekTime: null, saveAt: 0,
+  sources: [], sourceIndex: 0, mediaAttached: false, playIntent: false, indexPromise: null, indexError: false};
+const currentTime = () => state.seekTime ?? (audio.currentTime || 0);
 const icons = () => window.lucide?.createIcons();
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -74,7 +76,8 @@ function renderLibrary() {
   }
   const ready = state.catalog.filter(row => row.status === 'ready').length;
   $('search-status').textContent = query
-    ? `${matches.length} transcript matches${state.index === null ? ' · Index loading' : ''}`
+    ? state.indexError ? 'Search unavailable. Type again to retry.' : state.index === null
+      ? 'Searching transcripts...' : `${matches.length} transcript matches`
     : `${state.catalog.length} recordings · ${ready} transcripts ready`;
   if (!count) root.append(el('div', 'empty', query ? 'No matches found.' : 'No recordings available.'));
 }
@@ -83,16 +86,23 @@ async function json(url) {
   if (!response.ok) throw new Error(`Could not load ${url.split('/').pop()} (${response.status})`);
   return response.json();
 }
+function loadSearch() {
+  if (state.index !== null || state.indexPromise) return;
+  state.indexError = false;
+  state.indexPromise = json('nick-land/search.json').then(index => { state.index = index; })
+    .catch(() => { state.indexError = true; })
+    .finally(() => { state.indexPromise = null; renderLibrary(); });
+}
 function savePosition(force = false) {
-  if (!state.row || !Number.isFinite(audio.currentTime)) return;
+  if (!state.row || !Number.isFinite(currentTime())) return;
   if (!force && Date.now() - state.saveAt < 2000) return;
-  store.set('position.' + state.row.id, audio.currentTime); state.saveAt = Date.now();
+  store.set('position.' + state.row.id, currentTime()); state.saveAt = Date.now();
 }
 function updateLink() {
   if (!state.row) return;
   const url = new URL(location.href);
   url.searchParams.set('id', state.row.id);
-  url.searchParams.set('t', audio.currentTime.toFixed(2));
+  url.searchParams.set('t', currentTime().toFixed(2));
   if (state.nickOnly) url.searchParams.set('nick', '1'); else url.searchParams.delete('nick');
   return url;
 }
@@ -105,12 +115,32 @@ function setNickMode(enabled, jump = true) {
 }
 function enforceNick(force = false) {
   if (!state.nickOnly || !state.data || audio.seeking || (!force && audio.paused)) return;
-  const target = nextNick(state.data.nickIntervals, audio.currentTime);
+  const target = nextNick(state.data.nickIntervals, currentTime());
   if (target === null) {
-    audio.pause(); notice('End of Nick Land\'s turns');
+    state.playIntent = false; audio.pause(); notice('End of Nick Land\'s turns');
     return;
   }
-  if (target - audio.currentTime > .025) audio.currentTime = target;
+  if (target - currentTime() > .025) setTime(target);
+}
+function setTime(target) {
+  if (state.mediaAttached && audio.readyState >= 1) { state.seekTime = null; audio.currentTime = target; }
+  else state.seekTime = target;
+}
+function updateDownload() {
+  const source = state.sources[state.sourceIndex];
+  $('download').hidden = !source;
+  if (!source) { $('download').removeAttribute('href'); return; }
+  $('download').href = source.src;
+  const format = source.type.includes('opus') ? 'Opus' : 'AAC';
+  $('download').title = `Download ${format} audio${source.bytes ? ' (' + (source.bytes / 1e6).toFixed(1) + ' MB)' : ''}`;
+}
+function attachAudio() {
+  if (state.mediaAttached) return;
+  const source = state.sources[state.sourceIndex];
+  if (!source) return;
+  state.mediaAttached = true;
+  audio.src = source.src;
+  audio.playbackRate = store.get('rate', 1);
 }
 function seek(time, play = false, context = false) {
   if (!state.row?.audio) return;
@@ -118,22 +148,28 @@ function seek(time, play = false, context = false) {
   if (context && state.nickOnly && state.data && nextNick(state.data.nickIntervals, target) !== target) {
     setNickMode(false, false); notice('Full conversation');
   }
-  if (audio.readyState >= 1) audio.currentTime = target;
-  else state.seekTime = target;
+  setTime(target);
   $('seek').value = String(target); $('elapsed').textContent = formatTime(target);
   savePosition(true); if (play) requestPlay(); sync(true);
 }
 async function requestPlay() {
   if (!state.row?.audio) { notice('Audio is still processing'); return; }
-  if (state.nickOnly && nextNick(state.data.nickIntervals, audio.currentTime) === null) {
+  if (state.nickOnly && nextNick(state.data.nickIntervals, currentTime()) === null) {
     seek(state.data.nickIntervals[0][0]);
   }
   enforceNick(true);
-  try { await audio.play(); } catch (error) { if (error.name !== 'AbortError') notice('Playback failed. Try the play button again.'); }
+  state.playIntent = true; attachAudio();
+  const token = state.loading, sourceIndex = state.sourceIndex;
+  try { await audio.play(); }
+  catch (error) {
+    if (error.name !== 'AbortError' && token === state.loading && sourceIndex === state.sourceIndex) {
+      notice('Playback failed. Try the play button again.');
+    }
+  }
 }
 function jumpTurn(direction) {
   const intervals = state.data?.nickIntervals || [];
-  const time = audio.currentTime;
+  const time = currentTime();
   const target = direction > 0 ? intervals.find(([start]) => start > time + .3)
     : [...intervals].reverse().find(([start]) => start < time - 1.5);
   if (target) seek(target[0], !audio.paused);
@@ -206,8 +242,8 @@ async function openRecording(id, time, play = false) {
   $('title').textContent = row.title;
   $('recording-meta').textContent = `${dateLabel(row.date)} · ${row.channel}`;
   $('source').href = row.sourceUrl;
-  $('download').hidden = !row.audio;
-  if (row.audio) $('download').href = row.audio; else $('download').removeAttribute('href');
+  state.sources = audioCandidates(row, type => audio.canPlayType(type));
+  state.sourceIndex = 0; state.playIntent = false; updateDownload();
   $('save-transcript').disabled = row.status !== 'ready';
   $('transcript-status').textContent = row.status === 'ready' ? 'Loading transcript...' : 'Transcript processing';
   $('transcript').replaceChildren(el('div', 'empty', row.status === 'ready' ? 'Loading transcript...' : 'Transcript processing'));
@@ -215,9 +251,10 @@ async function openRecording(id, time, play = false) {
   $('duration').textContent = formatTime(row.duration);
   $('play').disabled = !row.audio;
   $('back').disabled = $('forward').disabled = $('seek').disabled = !row.audio;
-  state.seekTime = time ?? store.get('position.' + id, 0);
-  if (row.audio) { audio.src = row.audio; audio.load(); }
-  else { audio.removeAttribute('src'); audio.load(); }
+  state.seekTime = clamp(Number(time ?? store.get('position.' + id, 0)) || 0, 0, row.duration || 0);
+  state.mediaAttached = false;
+  // No source is attached until an explicit play action, even for deep links.
+  audio.removeAttribute('src'); audio.load(); audio.playbackRate = store.get('rate', 1); sync();
   store.set('lastId', id); renderLibrary(); drawTurns();
   const url = new URL(location.href); url.searchParams.set('id', id); url.searchParams.delete('t');
   history.replaceState(null, '', url);
@@ -242,13 +279,13 @@ async function openRecording(id, time, play = false) {
     if (token !== state.loading) return;
     $('transcript-status').textContent = 'Transcript unavailable';
     const message = el('div', 'empty', error.message);
-    const retry = el('button', 'toggle', 'Retry'); retry.addEventListener('click', () => openRecording(id, audio.currentTime));
+    const retry = el('button', 'toggle', 'Retry'); retry.addEventListener('click', () => openRecording(id, currentTime()));
     message.append(document.createElement('br'), retry); $('transcript').replaceChildren(message);
   }
 }
 function sync(force = false) {
   enforceNick();
-  const current = audio.currentTime || 0;
+  const current = currentTime();
   if (document.activeElement !== $('seek')) $('seek').value = current;
   $('elapsed').textContent = formatTime(current);
   $('seek').setAttribute('aria-valuetext', `${formatTime(current)} of ${formatTime(state.row?.duration)}`);
@@ -286,8 +323,8 @@ function setMedia() {
   navigator.mediaSession.metadata = new MediaMetadata({title:state.row.title, artist:state.row.channel,
     album:'Nick Land Interview Archive', artwork:[{src:new URL('nick-land/portrait.jpg', location.href).href, type:'image/jpeg'}]});
   for (const [action, handler] of Object.entries({play:requestPlay, pause:() => audio.pause(),
-    seekbackward:details => seek(audio.currentTime - (details.seekOffset || 10)),
-    seekforward:details => seek(audio.currentTime + (details.seekOffset || 10)),
+    seekbackward:details => seek(currentTime() - (details.seekOffset || 10)),
+    seekforward:details => seek(currentTime() + (details.seekOffset || 10)),
     seekto:details => seek(details.seekTime), previoustrack:() => jumpTurn(-1), nexttrack:() => jumpTurn(1)})) {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch {}
   }
@@ -308,7 +345,11 @@ function downloadTranscript() {
 }
 let searchTimer;
 $('search').addEventListener('input', () => {
-  clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.query = $('search').value.trim(); renderLibrary(); highlightSearch(); }, 150);
+  clearTimeout(searchTimer); searchTimer = setTimeout(() => {
+    state.query = $('search').value.trim();
+    if (state.query) loadSearch();
+    renderLibrary(); highlightSearch();
+  }, 150);
 });
 $('sort').addEventListener('change', renderLibrary);
 $('nick-search').addEventListener('click', () => {
@@ -317,8 +358,8 @@ $('nick-search').addEventListener('click', () => {
 $('library-toggle').addEventListener('click', () => library(!document.body.classList.contains('library-open')));
 $('main').addEventListener('click', event => { if (!event.target.closest('#library-toggle')) library(false); });
 $('play').addEventListener('click', () => audio.paused ? requestPlay() : audio.pause());
-$('back').addEventListener('click', () => seek(audio.currentTime - 10 * audio.playbackRate));
-$('forward').addEventListener('click', () => seek(audio.currentTime + 10 * audio.playbackRate));
+$('back').addEventListener('click', () => seek(currentTime() - 10 * audio.playbackRate));
+$('forward').addEventListener('click', () => seek(currentTime() + 10 * audio.playbackRate));
 $('previous').addEventListener('click', () => jumpTurn(-1));
 $('next').addEventListener('click', () => jumpTurn(1));
 $('seek').addEventListener('input', event => seek(Number(event.target.value)));
@@ -366,29 +407,41 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') library(false);
   if (event.metaKey || event.ctrlKey || event.altKey || /INPUT|SELECT|TEXTAREA|BUTTON/.test(event.target.tagName)) return;
   if (event.code === 'Space') { event.preventDefault(); audio.paused ? requestPlay() : audio.pause(); }
-  if (event.key === 'ArrowLeft') { event.preventDefault(); seek(audio.currentTime - 10); }
-  if (event.key === 'ArrowRight') { event.preventDefault(); seek(audio.currentTime + 10); }
+  if (event.key === 'ArrowLeft') { event.preventDefault(); seek(currentTime() - 10); }
+  if (event.key === 'ArrowRight') { event.preventDefault(); seek(currentTime() + 10); }
 });
 audio.addEventListener('loadedmetadata', () => {
+  if (!state.mediaAttached) return;
   audio.playbackRate = store.get('rate', 1);
   if (state.seekTime !== null) { audio.currentTime = clamp(state.seekTime, 0, audio.duration); state.seekTime = null; }
   sync(true);
 });
 let timer;
 audio.addEventListener('play', () => {
+  state.playIntent = true;
   setIcon($('play'), 'pause'); $('play').setAttribute('aria-label', 'Pause'); $('play').title = 'Pause';
   clearInterval(timer); timer = setInterval(sync, 50);
   if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing';
 });
 audio.addEventListener('pause', () => {
+  if (!audio.error) state.playIntent = false;
   setIcon($('play'), 'play'); $('play').setAttribute('aria-label', 'Play'); $('play').title = 'Play';
   clearInterval(timer); savePosition(true);
   if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused';
 });
 audio.addEventListener('timeupdate', () => sync());
 audio.addEventListener('seeked', () => { enforceNick(); sync(true); });
-audio.addEventListener('ended', () => { savePosition(true); notice('End of recording'); });
-audio.addEventListener('error', () => { if (state.row?.audio) notice('Audio unavailable. Reload to retry, or open the original recording.'); });
+audio.addEventListener('ended', () => { state.playIntent = false; savePosition(true); notice('End of recording'); });
+audio.addEventListener('error', () => {
+  if (!state.mediaAttached || !audio.error) return;
+  const resume = state.playIntent;
+  state.seekTime = currentTime();
+  if (state.sourceIndex + 1 < state.sources.length) {
+    state.sourceIndex++; state.mediaAttached = false; updateDownload();
+    if (resume) requestPlay();
+    else { audio.removeAttribute('src'); audio.load(); }
+  } else { state.playIntent = false; notice('Audio unavailable. Reload to retry, or open the original recording.'); }
+});
 audio.addEventListener('waiting', () => notice('Buffering audio...'));
 window.addEventListener('resize', drawTurns);
 window.addEventListener('pagehide', () => savePosition(true));
@@ -408,8 +461,6 @@ async function init() {
     const candidate = params.get('id') || store.get('lastId');
     const id = state.catalog.some(r => r.id === candidate) ? candidate : state.catalog[0]?.id;
     if (id) await openRecording(id, params.has('t') ? Number(params.get('t')) : undefined);
-    try { state.index = await json('nick-land/search.json'); renderLibrary(); }
-    catch { $('search-status').textContent = 'Search index unavailable. Reload to retry.'; }
   } catch (error) { $('search-status').textContent = 'Archive unavailable'; $('transcript').replaceChildren(el('div', 'empty', error.message)); }
 }
 init();

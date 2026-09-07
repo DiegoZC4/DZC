@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f7f8f8">
+  <meta name="description" content="Nick Land's interviews and media appearances, with searchable transcripts and speaker-aware audio.">
+  <title>Nick Land | Interview Archive</title>
+  <link rel="icon" href="nick-land/portrait.jpg">
+  <link rel="stylesheet" href="nick-land/reader.css">
+  <script defer src="nick-land/lucide.min.js"></script>
+  <script type="module" src="nick-land/reader.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="icon home" href="/" title="Diego's website" aria-label="Diego's website"><i data-lucide="arrow-left"></i></a>
+    <img class="portrait" src="nick-land/portrait.jpg" alt="Nick Land">
+    <div class="mast-title"><h1>Nick Land</h1><p>Interview archive <span id="archive-count"></span></p></div>
+    <button class="icon" id="theme" title="Change color theme" aria-label="Change color theme"><i data-lucide="sun-moon"></i></button>
+  </header>
+  <div class="workspace">
+    <aside id="library" aria-label="Interview library">
+      <div class="library-tools">
+        <label class="searchbox"><i data-lucide="search"></i><input id="search" type="search" placeholder="Search all interviews" aria-label="Search all interviews" autocomplete="off"></label>
+        <div class="filters"><button id="nick-search" class="toggle" aria-pressed="false">Nick's words</button><select id="sort" aria-label="Sort interviews"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="short">Shortest first</option></select></div>
+        <div id="search-status" class="subtle" aria-live="polite">Loading archive...</div>
+      </div>
+      <nav id="recordings" aria-label="Recordings and search results"></nav>
+    </aside>
+    <main id="main">
+      <div class="recording-heading">
+        <div class="heading-actions"><button id="library-toggle" class="icon mobile" title="Interview library" aria-label="Interview library" aria-expanded="false"><i data-lucide="panel-left"></i></button><span id="recording-meta" class="subtle"></span><a id="source" class="icon" target="_blank" rel="noopener" title="Original recording on YouTube" aria-label="Original recording on YouTube"><i data-lucide="external-link"></i></a><a id="download" class="icon" download title="Download audio" aria-label="Download audio"><i data-lucide="download"></i></a></div>
+        <h2 id="title">Interview archive</h2>
+        <div class="transcript-bar"><span id="transcript-status" class="subtle">Loading...</span><div class="transcript-actions"><button id="follow" class="icon" title="Follow audio" aria-label="Follow audio" aria-pressed="true"><i data-lucide="scan-line"></i></button><button id="copy" class="icon" title="Copy link to this moment" aria-label="Copy link to this moment"><i data-lucide="link"></i></button><button id="save-transcript" class="icon" title="Download transcript" aria-label="Download transcript"><i data-lucide="file-down"></i></button></div></div>
+      </div>
+      <div id="transcript" tabindex="0" aria-label="Transcript"></div>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <footer class="player" aria-label="Audio player">
+        <audio id="audio" preload="metadata"></audio>
+        <div class="seek-track"><canvas id="speaker-track" aria-hidden="true"></canvas><input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="Seek recording"></div>
+        <div class="time-row"><output id="elapsed">0:00</output><span id="speaker-now"></span><output id="duration">0:00</output></div>
+        <div class="transport">
+          <div class="transport-buttons"><button id="previous" class="icon" title="Previous Nick Land turn" aria-label="Previous Nick Land turn"><i data-lucide="skip-back"></i></button><button id="back" class="icon" title="Back 10 seconds" aria-label="Back 10 seconds"><i data-lucide="rotate-ccw"></i></button><button id="play" class="icon play" title="Play" aria-label="Play"><i data-lucide="play"></i></button><button id="forward" class="icon" title="Forward 10 seconds" aria-label="Forward 10 seconds"><i data-lucide="rotate-cw"></i></button><button id="next" class="icon" title="Next Nick Land turn" aria-label="Next Nick Land turn"><i data-lucide="skip-forward"></i></button></div>
+          <div class="mode-tools"><button id="nick-only" class="toggle" aria-pressed="false" disabled><i data-lucide="audio-lines"></i>Nick only</button><button id="rate" class="drag" role="spinbutton" aria-label="Playback speed" aria-valuemin="0.5" aria-valuemax="3" aria-valuenow="1" title="Playback speed">1.00x</button><button id="mute" class="icon" title="Mute" aria-label="Mute"><i data-lucide="volume-2"></i></button></div>
+        </div>
+      </footer>
+    </main>
+  </div>
+  <noscript>This audio archive requires JavaScript. <a href="https://www.youtube.com/watch?v=NgbHpwPrS8k">Listen to the latest interview on YouTube.</a></noscript>
+</body>
+</html>

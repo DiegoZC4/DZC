@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 31 Aug 2026 22:21:51 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 08 Sep 2026 00:35:34 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,39 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#97 - Selection and Slack</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-97</link>
+      <guid isPermaLink="false">urn:lsrg:97:l2</guid>
+      <pubDate>Tue, 08 Sep 2026 00:35:34 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Evolutions Are Stupid (But Work Anyway) by Eliezer Yudkowsky
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/jAToJHtg39AMTAuJo
+
+9:19 - No Evolutions for Corporations or Nanodevices by Eliezer Yudkowsky
+
+21:57 - Evolving to Extinction by Eliezer Yudkowsky
+
+35:26 - (Optional) Studies on Slack by Scott Alexander
+https://www.lesswrong.com/posts/GZSzMqr8hAB2dR8pk/studies-on-slack
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-97
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast
+https://sscpodcast.libsyn.com/studies-on-slack
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>97</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4930</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-97-l2-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
+    </item>
     <item>
       <title>#96 - Evolution</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-96</link>

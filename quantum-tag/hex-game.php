@@ -13,17 +13,23 @@ function valid_integer($value, int $min, int $max): bool { return (is_int($value
 final class HexGrid {
     public array $cells = [];
     public array $blocked = [];
+    public array $outOfBounds = [];
     private array $lookup = [];
     private array $polygons = [];
     private array $sight = [];
     private const DIRECTIONS = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
 
-    public function __construct(int $columns, int $rows, array $obstacles) {
+    public function __construct(int $columns, int $rows, array $obstacles, array $outOfBounds = []) {
         for ($r = 0; $r < $rows; $r++) for ($c = 0; $c < $columns - $r % 2; $c++) {
             $h = hex_offset($c, $r);
             $this->cells[] = $h;
             $this->lookup[hex_key($h)] = true;
         }
+        foreach ($outOfBounds as $h) {
+            if (!$this->contains($h)) throw new InvalidArgumentException('Out-of-bounds tiles must be inside the editor canvas.');
+            $this->outOfBounds[hex_key($h)] = true;
+        }
+        $this->cells = array_values(array_filter($this->cells, fn($h) => !isset($this->outOfBounds[hex_key($h)])));
         foreach ($obstacles as $h) {
             if (!$this->has($h)) throw new InvalidArgumentException('Obstacle tiles must be inside the board.');
             $key = hex_key($h);
@@ -37,9 +43,10 @@ final class HexGrid {
             $this->polygons[$key] = $polygon;
         }
     }
-    public function has($h): bool {
+    public function contains($h): bool {
         return is_array($h) && valid_integer($h['q'] ?? null, -100, 100) && valid_integer($h['r'] ?? null, 0, 100) && isset($this->lookup[hex_key($h)]);
     }
+    public function has($h): bool { return $this->contains($h) && !isset($this->outOfBounds[hex_key($h)]); }
     public function open(array $h): bool { return $this->has($h) && !isset($this->blocked[hex_key($h)]); }
     private function neighbors(array $h): array {
         $neighbors = [];
@@ -117,37 +124,59 @@ final class HexGame {
     public HexGrid $grid;
 
     public static function validateSetup($setup): array {
-        if (!is_array($setup) || !in_array($setup['version'] ?? null, [1, 2], true) || !is_array($setup['config'] ?? null) || !is_array($setup['obstacles'] ?? null) || count($setup['obstacles']) > 546 || !is_array($setup['roles'] ?? null) || count($setup['roles']) !== 2 || !is_array($setup['carriers'] ?? null) || count($setup['carriers']) !== 2) throw new InvalidArgumentException('Invalid board setup.');
+        if (!is_array($setup) || !in_array($setup['version'] ?? null, [1, 2, 3], true) || !is_array($setup['config'] ?? null) || !is_array($setup['obstacles'] ?? null) || count($setup['obstacles']) > 546 || !is_array($setup['roles'] ?? null) || count($setup['roles']) !== 2 || !is_array($setup['carriers'] ?? null) || count($setup['carriers']) !== 2) throw new InvalidArgumentException('Invalid board setup.');
         $config = [];
         foreach (['columns' => [9, 26], 'rows' => [7, 21], 'playersPerTeam' => [1, 10], 'turnDuration' => [1, 30], 'freezeRounds' => [0, 12], 'peekDiameter' => [0, 6], 'goalDiameter' => [1, 7]] as $key => [$lo, $hi]) {
             if (!valid_integer($setup['config'][$key] ?? null, $lo, $hi)) throw new InvalidArgumentException('Invalid ' . $key . '.');
             $config[$key] = (int)$setup['config'][$key];
         }
-        $grid = new HexGrid($config['columns'], $config['rows'], $setup['obstacles']);
+        $explicit = $setup['version'] === 3;
+        if ($explicit && (!is_array($setup['outOfBounds'] ?? null) || count($setup['outOfBounds']) > 546 || !is_array($setup['positions'] ?? null) || count($setup['positions']) !== 2)) throw new InvalidArgumentException('Invalid board terrain or player positions.');
+        $grid = new HexGrid($config['columns'], $config['rows'], $setup['obstacles'], $explicit ? $setup['outOfBounds'] : []);
         $obstacles = array_values(array_filter($grid->cells, fn($h) => isset($grid->blocked[hex_key($h)])));
-        if ($setup['version'] === 2) foreach ($obstacles as $cell) {
+        if ($setup['version'] >= 2) foreach ($obstacles as $cell) {
             if (!isset($grid->blocked[hex_key(hex_mirror($cell, $config['columns']))])) throw new InvalidArgumentException('Board obstacles must mirror left to right.');
         }
+        if ($explicit) foreach ($setup['outOfBounds'] as $cell) {
+            if (!isset($grid->outOfBounds[hex_key(hex_mirror($cell, $config['columns']))])) throw new InvalidArgumentException('Board terrain must mirror left to right.');
+        }
         $roles = []; $carriers = [];
+        $positions = [[], []]; $occupied = [];
         foreach ([0, 1] as $team) {
             $list = $setup['roles'][$team] ?? null;
-            if (!is_array($list) || count($list) !== $config['playersPerTeam']) throw new InvalidArgumentException('Choose a role for every piece.');
+            if (!is_array($list) || count($list) !== $config['playersPerTeam']) throw new InvalidArgumentException('Place the same number of players on both teams (1–10 each) before playing.');
             foreach ($list as $role) if (!in_array($role, ['standard', 'seer', 'medic', 'samurai'], true)) throw new InvalidArgumentException('Invalid role.');
             if (!valid_integer($setup['carriers'][$team] ?? null, 0, $config['playersPerTeam'] - 1)) throw new InvalidArgumentException('Invalid flag carrier.');
             $roles[] = array_values($list); $carriers[] = (int)$setup['carriers'][$team];
+            if ($explicit) {
+                $cells = $setup['positions'][$team] ?? null;
+                if (!is_array($cells) || count($cells) !== count($list)) throw new InvalidArgumentException('Every piece needs a starting tile.');
+                foreach ($cells as $cell) {
+                    if (!$grid->has($cell) || !$grid->open($cell)) throw new InvalidArgumentException('Place players on empty field tiles.');
+                    if (isset($occupied[hex_key($cell)])) throw new InvalidArgumentException('Place only one player on each starting tile.');
+                    $occupied[hex_key($cell)] = true;
+                    $positions[$team][] = ['q' => (int)$cell['q'], 'r' => (int)$cell['r']];
+                }
+            }
         }
-        return ['version' => $setup['version'], 'config' => $config, 'obstacles' => $obstacles, 'roles' => $roles, 'carriers' => $carriers];
+        $result = ['version' => $setup['version'], 'config' => $config, 'obstacles' => $obstacles, 'roles' => $roles, 'carriers' => $carriers];
+        if ($explicit) {
+            $canvas = new HexGrid($config['columns'], $config['rows'], []);
+            $result['outOfBounds'] = array_values(array_filter($canvas->cells, fn($h) => isset($grid->outOfBounds[hex_key($h)])));
+            $result['positions'] = $positions;
+        }
+        return $result;
     }
     public function __construct(array $setup, ?array $state = null) {
         $setup = self::validateSetup($setup); $c = $setup['config'];
-        $this->grid = new HexGrid($c['columns'], $c['rows'], $setup['obstacles']);
+        $this->grid = new HexGrid($c['columns'], $c['rows'], $setup['obstacles'], $setup['outOfBounds'] ?? []);
         if ($state !== null) { $this->state = $state; return; }
         $this->state = ['setup' => $setup, 'players' => [], 'flags' => [], 'turn' => 0, 'time' => 0, 'turnEndsAt' => $c['turnDuration'], 'winner' => null, 'knowledge' => [['players' => [], 'flags' => []], ['players' => [], 'flags' => []]], 'visibility' => [[], []], 'observation' => ['awake', 'sleep'], 'events' => [[], []]];
         foreach ([0, 1] as $team) for ($index = 0; $index < $c['playersPerTeam']; $index++) {
             $row = (int)round(($index + 1) * ($c['rows'] - 1) / ($c['playersPerTeam'] + 1));
             $desired = hex_offset($team === 0 ? 1 : $c['columns'] - 2 - $row % 2, $row);
             $occupied = array_column(array_map(fn($p) => [hex_key($p['cell']), true], $this->state['players']), 1, 0);
-            $candidates = array_values(array_filter($this->grid->cells, function($cell) use ($team, $c, $setup, $occupied) {
+            $candidates = isset($setup['positions']) ? [$setup['positions'][$team][$index]] : array_values(array_filter($this->grid->cells, function($cell) use ($team, $c, $setup, $occupied) {
                 $column = $cell['q'] + (int)floor($cell['r'] / 2);
                 $relative = $team === 0 ? $cell : hex_mirror($cell, $c['columns']);
                 $inStart = $setup['version'] === 1 ? ($team === 0 ? $column < 3 : $column >= $c['columns'] - 4) : $relative['q'] + (int)floor($relative['r'] / 2) < 3;

@@ -1,0 +1,7 @@
+Options -Indexes
+<IfModule mod_headers.c>
+    Header set Referrer-Policy "no-referrer"
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, private"
+    </FilesMatch>
+</IfModule>

@@ -72,6 +72,7 @@ try {
     $action = $method === 'GET' ? 'read' : ($request['action'] ?? '');
     if ($action === 'create') {
         $setup = HexGame::validateSetup($request['setup'] ?? null);
+        if ($setup['version'] !== 2) reply(['ok' => false, 'error' => 'New rooms use symmetric boards. Reload the board editor and create the room again.'], 400);
         $creationLock = lock_file($directory . '/creation.lock');
         $ratesPath = $directory . '/creation-rates.json';
         $rates = is_file($ratesPath) ? read_json($ratesPath) : [];

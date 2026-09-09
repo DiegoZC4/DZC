@@ -3441,6 +3441,13 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       });
     }
 
+    function refreshPlayerBuffering(audio) {
+      if (audio.error || audio._reloading || audio._retryShouldPlay) return;
+      // A stalled download is not a playback stall when enough audio is buffered.
+      const waiting = (audio._playRequested || !audio.paused) && audio.readyState < 3;
+      setPlayerStatus(audio, waiting ? 'loading' : '');
+    }
+
     function retryAudio(audio) {
       const stored = savedPlaybackPosition(audio);
       const position = Number.isFinite(audio.currentTime) && audio.currentTime > 0
@@ -3612,12 +3619,13 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
 
     function updateCustomPlayer(audio, requestedCurrent = null) {
       const player = audio.closest('.player-dock').querySelector('.custom-player');
+      const seek = player.querySelector('.seek-slider');
       const fallbackDuration = Number(player.dataset.duration);
       const duration = Number.isFinite(audio.duration) ? audio.duration : fallbackDuration;
-      const sourceCurrent = requestedCurrent === null ? audio.currentTime : requestedCurrent;
+      const sourceCurrent = seek._pointerSeeking ? seek._previewTime
+        : requestedCurrent === null ? audio.currentTime : requestedCurrent;
       const current = Math.min(Number(sourceCurrent) || 0, duration);
-      updateCurrentChapter(audio, current);
-      const seek = player.querySelector('.seek-slider');
+      updateCurrentChapter(audio, seek._pointerSeeking ? audio.currentTime : current);
       const play = player.querySelector('.play-toggle');
       const muted = audio.muted || audio.volume === 0;
       player.querySelector('.current-time').textContent = formatPlayerTime(current);
@@ -3654,7 +3662,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       volume.textContent = volumeLabel;
       volume.setAttribute('aria-valuenow', String(volumePercent));
       volume.setAttribute('aria-valuetext', volumeLabel);
-      updateMediaPositionState(audio, duration, current);
+      if (!seek._pointerSeeking) updateMediaPositionState(audio, duration, current);
     }
 
     function seekAudioTo(audio, target, forceSave = true) {
@@ -3665,6 +3673,95 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       audio.currentTime = nextTime;
       updateCustomPlayer(audio, nextTime);
       savePlaybackPosition(audio, nextTime, forceSave);
+    }
+
+    function setupTimelineSeeking(audio, player) {
+      const seek = player.querySelector('.seek-slider');
+      seek._pointerSeeking = false;
+      seek._pointerId = null;
+      seek._previewTime = null;
+      const previewFromPointer = (event) => {
+        const bounds = seek.getBoundingClientRect();
+        if (bounds.width <= 0) return;
+        const fraction = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+        seek._previewTime = snapSeekValue(seek, fraction * Number(seek.max));
+        // Display-only while dragging: currentTime writes abort range requests.
+        updateCustomPlayer(audio, seek._previewTime);
+      };
+      const clearPointer = () => {
+        const pointerId = seek._pointerId;
+        seek._pointerSeeking = false;
+        seek._pointerId = null;
+        seek._previewTime = null;
+        audio._followScrollBlocked = seek._previousFollowBlocked;
+        if (seek.hasPointerCapture(pointerId)) seek.releasePointerCapture(pointerId);
+      };
+      const cancelPointer = () => {
+        if (!seek._pointerSeeking) return;
+        clearPointer();
+        updateCustomPlayer(audio);
+      };
+      seek.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || event.isPrimary === false || seek._pointerSeeking) return;
+        activeAudio = audio;
+        seek._pointerSeeking = true;
+        seek._pointerId = event.pointerId;
+        seek._previewTime = audio.currentTime;
+        seek._previousFollowBlocked = audio._followScrollBlocked;
+        audio._followScrollBlocked = true;
+        clearTimeout(audio._seekFollowTimer);
+        seek.setPointerCapture(event.pointerId);
+        seek.focus({ preventScroll: true });
+        previewFromPointer(event);
+        event.preventDefault();
+      });
+      seek.addEventListener('pointermove', (event) => {
+        if (!seek._pointerSeeking || event.pointerId !== seek._pointerId) return;
+        previewFromPointer(event);
+        event.preventDefault();
+      });
+      seek.addEventListener('pointerup', (event) => {
+        if (!seek._pointerSeeking || event.pointerId !== seek._pointerId) return;
+        previewFromPointer(event);
+        const target = seek._previewTime;
+        clearPointer();
+        seekAudioTo(audio, target, true);
+        recordUsage('timelineseek', { w: usageWeek(audio) });
+        event.preventDefault();
+      });
+      for (const eventName of ['pointercancel', 'lostpointercapture']) {
+        seek.addEventListener(eventName, (event) => {
+          if (event.pointerId === seek._pointerId) cancelPointer();
+        });
+      }
+      seek.addEventListener('input', (event) => {
+        if (seek._pointerSeeking) return;
+        activeAudio = audio;
+        seekAudioTo(audio, Number(event.currentTarget.value), true);
+        recordUsage('timelineseek', { w: usageWeek(audio) });
+      });
+      seek.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && seek._pointerSeeking) {
+          event.preventDefault();
+          cancelPointer();
+          return;
+        }
+        if (seek._pointerSeeking) return;
+        const current = Number(seek.value);
+        const duration = Number(seek.max);
+        let next = null;
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = current - 5;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = current + 5;
+        if (event.key === 'PageDown') next = current - 60;
+        if (event.key === 'PageUp') next = current + 60;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = duration;
+        if (next === null) return;
+        event.preventDefault();
+        activeAudio = audio;
+        seekAudioTo(audio, next, true);
+        recordUsage('timelineseek', { w: usageWeek(audio) });
+      });
     }
 
     function skipAudio(audio, direction, seconds = baseSkipSeconds) {
@@ -4885,68 +4982,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       player.querySelector('.retry-audio').addEventListener('click', () => {
         retryAudio(audio);
       });
-      const seek = player.querySelector('.seek-slider');
-      seek._pointerSeeking = false;
-      const seekToValue = (rawValue, forceSave = false) => {
-        const value = snapSeekValue(seek, rawValue);
-        seek.value = String(value);
-        audio.currentTime = value;
-        updateCustomPlayer(audio, value);
-        savePlaybackPosition(audio, value, forceSave);
-      };
-      const seekFromPointer = (event, forceSave = false) => {
-        const bounds = seek.getBoundingClientRect();
-        const fraction = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
-        seekToValue(fraction * Number(seek.max), forceSave);
-      };
-      seek.addEventListener('pointerdown', (event) => {
-        if (event.button !== 0) return;
-        activeAudio = audio;
-        seek._pointerSeeking = true;
-        seek.setPointerCapture(event.pointerId);
-        seek.focus({ preventScroll: true });
-        seekFromPointer(event);
-        event.preventDefault();
-      });
-      seek.addEventListener('pointermove', (event) => {
-        if (!seek._pointerSeeking) return;
-        seekFromPointer(event);
-        event.preventDefault();
-      });
-      const finishPointerSeek = (event) => {
-        if (!seek._pointerSeeking) return;
-        seekFromPointer(event, true);
-        seek._pointerSeeking = false;
-        recordUsage('timelineseek', { w: usageWeek(audio) });
-        if (seek.hasPointerCapture(event.pointerId)) seek.releasePointerCapture(event.pointerId);
-      };
-      seek.addEventListener('pointerup', finishPointerSeek);
-      seek.addEventListener('pointercancel', (event) => {
-        seek._pointerSeeking = false;
-        if (seek.hasPointerCapture(event.pointerId)) seek.releasePointerCapture(event.pointerId);
-      });
-      seek.addEventListener('input', (event) => {
-        if (seek._pointerSeeking) return;
-        activeAudio = audio;
-        seekToValue(Number(event.currentTarget.value), true);
-        recordUsage('timelineseek', { w: usageWeek(audio) });
-      });
-      seek.addEventListener('keydown', (event) => {
-        const current = Number(seek.value);
-        const duration = Number(seek.max);
-        let next = null;
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = current - 5;
-        if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = current + 5;
-        if (event.key === 'PageDown') next = current - 60;
-        if (event.key === 'PageUp') next = current + 60;
-        if (event.key === 'Home') next = 0;
-        if (event.key === 'End') next = duration;
-        if (next === null) return;
-        event.preventDefault();
-        activeAudio = audio;
-        seekToValue(Math.min(duration, Math.max(0, next)), true);
-        recordUsage('timelineseek', { w: usageWeek(audio) });
-      });
+      setupTimelineSeeking(audio, player);
       audio.addEventListener('loadedmetadata', () => updateCustomPlayer(audio));
       audio.addEventListener('durationchange', () => updateCustomPlayer(audio));
       audio.addEventListener('volumechange', () => updateCustomPlayer(audio));
@@ -4956,10 +4992,10 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         if (audio._playRequested || audio._reloading) setPlayerStatus(audio, 'loading');
       });
       audio.addEventListener('waiting', () => {
-        if (audio._playRequested || !audio.paused) setPlayerStatus(audio, 'loading');
+        refreshPlayerBuffering(audio);
       });
       audio.addEventListener('stalled', () => {
-        if (audio._playRequested || !audio.paused) setPlayerStatus(audio, 'loading');
+        refreshPlayerBuffering(audio);
       });
       audio.addEventListener('canplay', () => {
         if (!audio.error) setPlayerStatus(audio);
@@ -5024,6 +5060,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       });
       audio.addEventListener('seeked', () => {
         audio._isSeeking = false;
+        refreshPlayerBuffering(audio);
         updateCustomPlayer(audio);
         savePlaybackPosition(audio, audio.currentTime, true);
         syncAudio(audio, false, false);
@@ -5035,6 +5072,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         }
       });
       audio.addEventListener('timeupdate', () => {
+        refreshPlayerBuffering(audio);
         updateCustomPlayer(audio);
         savePlaybackPosition(audio);
         syncAudio(audio, false, !audio._isSeeking && !audio._followScrollBlocked);

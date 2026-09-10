@@ -240,21 +240,35 @@ final class HexGame {
         elseif (count($regions) > 1) $add('disconnected-field', 'Field splits into ' . count($regions) . ' unreachable regions. Every open tile must connect.', array_merge(...array_slice($regions, 1)));
         return $issues;
     }
+    private static function startingPositions(array $setup): array {
+        $c = $setup['config'];
+        $centerX2 = 2 * ($c['left'] ?? 0) + $c['columns'];
+        $centerRow2 = 2 * ($c['top'] ?? 0) + $c['rows'] - 1;
+        $distance = fn($cell) => 4 * (2 * $cell['q'] + $cell['r'] + 1 - $centerX2) ** 2 + 3 * (2 * $cell['r'] - $centerRow2) ** 2;
+        $positions = [];
+        foreach ([0, 1] as $team) {
+            $cells = $setup['endzones'][$team];
+            usort($cells, fn($a, $b) => ($distance($a) <=> $distance($b)) ?: ($a['r'] <=> $b['r']) ?: ($team === 0 ? $b['q'] <=> $a['q'] : $a['q'] <=> $b['q']));
+            $positions[] = array_slice($cells, 0, count($setup['roles'][$team]));
+        }
+        return $positions;
+    }
     public function __construct(array $setup, ?array $state = null) {
         $setup = self::validateSetup($setup); $c = $setup['config'];
         $this->grid = new HexGrid($c['columns'], $c['rows'], $setup['obstacles'], $setup['outOfBounds'] ?? [], $c['left'] ?? 0, $c['top'] ?? 0);
         if ($state !== null) { $this->state = $state; return; }
+        $positions = $setup['version'] >= 6 ? self::startingPositions($setup) : ($setup['positions'] ?? null);
         $this->state = ['setup' => $setup, 'players' => [], 'flags' => [], 'turn' => 0, 'time' => 0, 'turnEndsAt' => $c['turnDuration'], 'winner' => null, 'ready' => $setup['version'] >= 6 ? [false, false] : null, 'knowledge' => [['players' => [], 'flags' => []], ['players' => [], 'flags' => []]], 'visibility' => [[], []], 'observation' => ['awake', 'sleep'], 'events' => [[], []]];
         foreach ([0, 1] as $team) for ($index = 0; $index < $c['playersPerTeam']; $index++) {
             $row = (int)round(($index + 1) * ($c['rows'] - 1) / ($c['playersPerTeam'] + 1));
             $desired = hex_offset($team === 0 ? 1 : $c['columns'] - 2 - $row % 2, $row);
             $occupied = array_column(array_map(fn($p) => [hex_key($p['cell']), true], $this->state['players']), 1, 0);
-            $candidates = $setup['version'] >= 6 ? [$setup['endzones'][$team][$index]] : (isset($setup['positions']) ? [$setup['positions'][$team][$index]] : array_values(array_filter($this->grid->cells, function($cell) use ($team, $c, $setup, $occupied) {
+            $candidates = $positions !== null ? [$positions[$team][$index]] : array_values(array_filter($this->grid->cells, function($cell) use ($team, $c, $setup, $occupied) {
                 $column = $cell['q'] + (int)floor($cell['r'] / 2);
                 $relative = $team === 0 ? $cell : hex_mirror($cell, $c['columns']);
                 $inStart = $setup['version'] === 1 ? ($team === 0 ? $column < 3 : $column >= $c['columns'] - 4) : $relative['q'] + (int)floor($relative['r'] / 2) < 3;
                 return $this->grid->open($cell) && $inStart && !isset($occupied[hex_key($cell)]);
-            })));
+            }));
             usort($candidates, fn($a, $b) => (hex_distance($a, $desired) <=> hex_distance($b, $desired)) ?: (($a['r'] <=> $b['r']) ?: ($a['q'] <=> $b['q'])));
             if (!$candidates) throw new InvalidArgumentException('Leave enough open starting tiles for both teams.');
             $role = $setup['roles'][$team][$index];

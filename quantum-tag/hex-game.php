@@ -150,10 +150,10 @@ final class HexGame {
         }
         $endzones = [[], []];
         if ($setup['version'] >= 5) {
-            if (!is_array($setup['endzones'] ?? null) || !array_is_list($setup['endzones']) || count($setup['endzones']) !== 2) throw new InvalidArgumentException('Invalid endzone tiles.');
+            if (!is_array($setup['endzones'] ?? null) || array_values($setup['endzones']) !== $setup['endzones'] || count($setup['endzones']) !== 2) throw new InvalidArgumentException('Invalid endzone tiles.');
             foreach ([0, 1] as $team) {
                 $zone = $setup['endzones'][$team]; $seen = [];
-                if (!is_array($zone) || !array_is_list($zone) || count($zone) > 2080) throw new InvalidArgumentException('Invalid endzone tiles.');
+                if (!is_array($zone) || array_values($zone) !== $zone || count($zone) > 2080) throw new InvalidArgumentException('Invalid endzone tiles.');
                 foreach ($zone as $cell) {
                     if (!is_array($cell) || !valid_integer($cell['q'] ?? null, -2000, 2000) || !valid_integer($cell['r'] ?? null, -2000, 2000) || isset($seen[hex_key($cell)])) throw new InvalidArgumentException('Invalid endzone tiles.');
                     $seen[hex_key($cell)] = true; $endzones[$team][] = ['q' => (int)$cell['q'], 'r' => (int)$cell['r']];

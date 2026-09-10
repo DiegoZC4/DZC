@@ -134,7 +134,7 @@ try {
         }
         else {
             if ((int)$request['revision'] !== $room['revision']) reply(['ok' => false, 'error' => 'The board changed. Check the updated position and try again.', 'snapshot' => room_snapshot($room, $game, $team)], 409);
-            if (!$room['joined'][0] || !$room['joined'][1]) reply(['ok' => false, 'error' => 'Wait for the other team to join.'], 409);
+            if ((!($game->state['ready'] ?? null) || !in_array($request['command']['kind'] ?? '', ['deploy', 'ready'], true)) && (!$room['joined'][0] || !$room['joined'][1])) reply(['ok' => false, 'error' => 'Wait for the other team to join.'], 409);
             $accepted = $game->command($team, $request['command']);
             if ($accepted) { $room['revision']++; $room['expiresAt'] = time() + 7 * 86400; }
             $room['processed'][$receipt] = ['accepted' => $accepted, 'fingerprint' => $fingerprint];

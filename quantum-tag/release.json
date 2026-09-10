@@ -1,8 +1,8 @@
 {
-  "builtAt": "2026-09-10T16:43:19.985Z",
+  "builtAt": "2026-09-10T17:29:26.900Z",
   "hashes": {
     "api.php": "238cc107f425795c71614a9acec218e18765f238195b9a74f55575f078ce89c5",
-    "hex-game.php": "da66eb509ad2c6894e894128f3a421f884ff64f3e8881ac7438faca612c42377",
-    "index.html": "9ebab2909aff97ec186c17b7caf3f95f1a3d56089bc313d2286f87db9ba37d86"
+    "hex-game.php": "d98fa40d1b3e163b67c140da9434813d51761e802ad8b9f21f0b900f82ce2a58",
+    "index.html": "0bfb75ce146ec192b36ff26bfd4cc80b9b8774410d905174946682d8c4d5475d"
   }
 }

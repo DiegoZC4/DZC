@@ -124,13 +124,17 @@ final class HexGame {
     public HexGrid $grid;
 
     public static function validateSetup($setup): array {
-        if (!is_array($setup) || !in_array($setup['version'] ?? null, [1, 2, 3, 4], true) || !is_array($setup['config'] ?? null) || !is_array($setup['obstacles'] ?? null) || count($setup['obstacles']) > 2080 || !is_array($setup['roles'] ?? null) || count($setup['roles']) !== 2 || !is_array($setup['carriers'] ?? null) || count($setup['carriers']) !== 2) throw new InvalidArgumentException('Invalid board setup.');
+        if (!is_array($setup) || !in_array($setup['version'] ?? null, [1, 2, 3, 4, 5], true) || !is_array($setup['config'] ?? null) || !is_array($setup['obstacles'] ?? null) || count($setup['obstacles']) > 2080 || !is_array($setup['roles'] ?? null) || count($setup['roles']) !== 2 || !is_array($setup['carriers'] ?? null) || count($setup['carriers']) !== 2) throw new InvalidArgumentException('Invalid board setup.');
         $config = [];
-        foreach (['columns' => $setup['version'] === 4 ? [1, 52] : [9, 26], 'rows' => $setup['version'] === 4 ? [1, 40] : [7, 21], 'playersPerTeam' => [1, 10], 'turnDuration' => [1, 30], 'freezeRounds' => [0, 12], 'peekDiameter' => [0, 6], 'goalDiameter' => [1, 7]] as $key => [$lo, $hi]) {
+        foreach (['columns' => $setup['version'] >= 4 ? [1, 52] : [9, 26], 'rows' => $setup['version'] >= 4 ? [1, 40] : [7, 21], 'playersPerTeam' => [1, 10], 'turnDuration' => [1, 30], 'freezeRounds' => [0, 12], 'peekDiameter' => [0, 6]] as $key => [$lo, $hi]) {
             if (!valid_integer($setup['config'][$key] ?? null, $lo, $hi)) throw new InvalidArgumentException('Invalid ' . $key . '.');
             $config[$key] = (int)$setup['config'][$key];
         }
-        if ($setup['version'] === 4) foreach (['left', 'top'] as $name) {
+        if ($setup['version'] < 5) {
+            if (!valid_integer($setup['config']['goalDiameter'] ?? null, 1, 7)) throw new InvalidArgumentException('Invalid goalDiameter.');
+            $config['goalDiameter'] = (int)$setup['config']['goalDiameter'];
+        }
+        if ($setup['version'] >= 4) foreach (['left', 'top'] as $name) {
             if (!valid_integer($setup['config'][$name] ?? null, -1000, 1000)) throw new InvalidArgumentException('Invalid board origin.');
             $config[$name] = (int)$setup['config'][$name];
         }
@@ -143,6 +147,18 @@ final class HexGame {
         }
         if ($explicit) foreach ($setup['outOfBounds'] as $cell) {
             if (!isset($grid->outOfBounds[hex_key(hex_mirror($cell, $config['columns'] + 2 * ($config['left'] ?? 0)))])) throw new InvalidArgumentException('Board terrain must mirror left to right.');
+        }
+        $endzones = [[], []];
+        if ($setup['version'] >= 5) {
+            if (!is_array($setup['endzones'] ?? null) || !array_is_list($setup['endzones']) || count($setup['endzones']) !== 2) throw new InvalidArgumentException('Invalid endzone tiles.');
+            foreach ([0, 1] as $team) {
+                $zone = $setup['endzones'][$team]; $seen = [];
+                if (!is_array($zone) || !array_is_list($zone) || count($zone) > 2080) throw new InvalidArgumentException('Invalid endzone tiles.');
+                foreach ($zone as $cell) {
+                    if (!is_array($cell) || !valid_integer($cell['q'] ?? null, -2000, 2000) || !valid_integer($cell['r'] ?? null, -2000, 2000) || isset($seen[hex_key($cell)])) throw new InvalidArgumentException('Invalid endzone tiles.');
+                    $seen[hex_key($cell)] = true; $endzones[$team][] = ['q' => (int)$cell['q'], 'r' => (int)$cell['r']];
+                }
+            }
         }
         $roles = []; $carriers = [];
         $positions = [[], []]; $occupied = [];
@@ -169,7 +185,60 @@ final class HexGame {
             $result['outOfBounds'] = array_values(array_filter($canvas->cells, fn($h) => isset($grid->outOfBounds[hex_key($h)])));
             $result['positions'] = $positions;
         }
+        if ($setup['version'] >= 5) {
+            $result['endzones'] = $endzones;
+            $issues = self::mapIssues($result, $grid);
+            if ($issues) throw new InvalidArgumentException($issues[0]['message']);
+        }
         return $result;
+    }
+    public static function connectedRegions(array $cells): array {
+        $remaining = []; $regions = [];
+        foreach ($cells as $cell) $remaining[hex_key($cell)] = $cell;
+        while ($remaining) {
+            $first = reset($remaining); $region = [$first]; unset($remaining[hex_key($first)]);
+            for ($i = 0; $i < count($region); $i++) foreach ([[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]] as [$q, $r]) {
+                $key = hex_key(['q' => $region[$i]['q'] + $q, 'r' => $region[$i]['r'] + $r]);
+                if (isset($remaining[$key])) { $region[] = $remaining[$key]; unset($remaining[$key]); }
+            }
+            $regions[] = $region;
+        }
+        usort($regions, fn($a, $b) => count($b) <=> count($a));
+        return $regions;
+    }
+    public static function mapIssues(array $setup, HexGrid $grid): array {
+        $zones = $setup['endzones']; $issues = [];
+        $keys = array_map(fn($zone) => array_fill_keys(array_map('hex_key', $zone), true), $zones);
+        $add = function(string $id, string $message, array $cells = []) use (&$issues) { $issues[] = ['id' => $id, 'message' => $message, 'cells' => array_values($cells)]; };
+        foreach ([0, 1] as $team) {
+            $name = ['Cyan', 'Orange'][$team]; $zone = $zones[$team]; $count = count($setup['roles'][$team]);
+            if (!$zone) $add("missing-endzone-$team", "$name endzone is missing. Paint it with 3.");
+            else {
+                if (count($zone) < max(1, $count)) $add("small-endzone-$team", "$name endzone has " . count($zone) . ' tiles; needs at least ' . max(1, $count) . '.', $zone);
+                $blocked = array_filter($zone, fn($cell) => !$grid->open($cell));
+                if ($blocked) $add("blocked-endzone-$team", "$name endzone includes blocked or off-board tiles.", $blocked);
+                if (count(self::connectedRegions($zone)) > 1) $add("split-endzone-$team", "$name endzone must be one connected region.", $zone);
+            }
+            if (!$count) $add("empty-team-$team", "Place at least one $name player.");
+            $positions = $setup['positions'][$team];
+            $invalid = array_filter($positions, fn($cell) => !$grid->open($cell));
+            if ($invalid) $add("invalid-start-$team", "$name players must start on open tiles.", $invalid);
+            $outside = array_filter($positions, fn($cell) => $grid->open($cell) && !isset($keys[$team][hex_key($cell)]));
+            if ($zone && $outside) $add("outside-endzone-$team", count($outside) . " $name player" . (count($outside) === 1 ? '' : 's') . ' outside their endzone.', $outside);
+        }
+        if (count($setup['roles'][0]) !== count($setup['roles'][1])) $add('unequal-teams', 'Teams must have the same number of players.');
+        $overlap = array_filter($zones[0], fn($cell) => isset($keys[1][hex_key($cell)]));
+        if ($overlap) $add('overlapping-endzones', 'Endzones overlap. Keep them off the vertical symmetry line.', $overlap);
+        $asymmetric = []; $width = $setup['config']['columns'] + 2 * $setup['config']['left'];
+        foreach ([0, 1] as $team) foreach ($zones[$team] as $cell) if (!isset($keys[1 - $team][hex_key(hex_mirror($cell, $width))])) $asymmetric[] = $cell;
+        if ($asymmetric) $add('asymmetric-endzones', 'Endzones must mirror left to right.', $asymmetric);
+        $occupied = []; $duplicates = [];
+        foreach (array_merge(...$setup['positions']) as $cell) { $key = hex_key($cell); if (isset($occupied[$key])) $duplicates[] = $cell; else $occupied[$key] = true; }
+        if ($duplicates) $add('overlapping-starts', 'Starting players share a tile.', $duplicates);
+        $regions = self::connectedRegions(array_values(array_filter($grid->cells, fn($cell) => $grid->open($cell))));
+        if (!$regions) $add('no-field', 'The map has no open field tiles.');
+        elseif (count($regions) > 1) $add('disconnected-field', 'Field splits into ' . count($regions) . ' unreachable regions. Every open tile must connect.', array_merge(...array_slice($regions, 1)));
+        return $issues;
     }
     public function __construct(array $setup, ?array $state = null) {
         $setup = self::validateSetup($setup); $c = $setup['config'];
@@ -218,6 +287,7 @@ final class HexGame {
         return $team === 0 ? hex_mirror($left, $c['columns'] + 2 * ($c['left'] ?? 0)) : $left;
     }
     private function inGoal(array $cell, int $team): bool {
+        if ($this->state['setup']['version'] >= 5) return in_array($cell, $this->state['setup']['endzones'][1 - $team], true);
         $a = hex_center($cell); $b = hex_center($this->goal($team));
         return hypot($a['x'] - $b['x'], $a['y'] - $b['y']) <= ($this->state['setup']['config']['goalDiameter'] - 1) / 2 + 1e-8;
     }

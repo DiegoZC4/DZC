@@ -130,6 +130,10 @@ final class HexGame {
             if (!valid_integer($setup['config'][$key] ?? null, $lo, $hi)) throw new InvalidArgumentException('Invalid ' . $key . '.');
             $config[$key] = (int)$setup['config'][$key];
         }
+        if (array_key_exists('allowVoluntaryDrops', $setup['config'])) {
+            if (!is_bool($setup['config']['allowVoluntaryDrops'])) throw new InvalidArgumentException('Invalid allowVoluntaryDrops.');
+            $config['allowVoluntaryDrops'] = $setup['config']['allowVoluntaryDrops'];
+        }
         if ($setup['version'] < 5) {
             if (!valid_integer($setup['config']['goalDiameter'] ?? null, 1, 7)) throw new InvalidArgumentException('Invalid goalDiameter.');
             $config['goalDiameter'] = (int)$setup['config']['goalDiameter'];
@@ -310,11 +314,20 @@ final class HexGame {
         $this->state['events'][$team] = array_slice($this->state['events'][$team], 0, 32);
     }
     private function flagState(array $flag): array {
+        unset($flag['droppedBy']);
         $carrier = null;
         foreach ($this->state['players'] as $player) if ($player['carrying'] === $flag['id']) { $carrier = $player; break; }
         $flag['cell'] = $carrier['cell'] ?? $flag['cell'];
         $flag['carrier'] = $carrier === null ? null : player_key($carrier);
         return $flag;
+    }
+    private function dropFlag(array &$player, bool $voluntary = false): int {
+        $id = $player['carrying']; $flag =& $this->state['flags'][$id];
+        $flag['cell'] = $player['cell']; $flag['carrier'] = null; $flag['delivered'] = null;
+        if ($voluntary) $flag['droppedBy'] = player_key($player); else unset($flag['droppedBy']);
+        $player['carrying'] = null;
+        $this->state['knowledge'][$player['team']]['flags'][$id] = $this->flagState($flag) + ['observedAt' => $this->state['time']];
+        return $id;
     }
     private function ownCarrier(int $team, int $flag): bool {
         foreach ($this->state['players'] as $p) if ($p['team'] === $team && $p['carrying'] === $flag) return true;
@@ -348,10 +361,17 @@ final class HexGame {
         }
     }
     private function collectAndScore(): void {
+        foreach ($this->state['flags'] as &$flag) if (isset($flag['droppedBy'])) {
+            $stayed = false;
+            foreach ($this->state['players'] as $player) if (player_key($player) === $flag['droppedBy'] && $player['cell'] === $flag['cell']) { $stayed = true; break; }
+            if (!$stayed) unset($flag['droppedBy']);
+        }
+        unset($flag);
         foreach ($this->state['players'] as &$p) if ($p['team'] === $this->team() && !$p['frozen']) {
             if ($p['carrying'] === null) foreach ($this->state['flags'] as &$flag) {
-                if ($this->ownCarrier(0, $flag['id']) || $this->ownCarrier(1, $flag['id']) || $flag['delivered'] === $p['team'] || $flag['cell'] !== $p['cell']) continue;
+                if (($flag['droppedBy'] ?? null) === player_key($p) || $this->ownCarrier(0, $flag['id']) || $this->ownCarrier(1, $flag['id']) || $flag['delivered'] === $p['team'] || $flag['cell'] !== $p['cell']) continue;
                 $p['carrying'] = $flag['id']; $flag['carrier'] = player_key($p); $flag['delivered'] = null;
+                unset($flag['droppedBy']);
                 $this->log($p['team'], player_label($p) . ' collected F' . ($flag['id'] + 1) . '.');
                 break;
             }
@@ -388,7 +408,7 @@ final class HexGame {
             return true;
         }
         if (($this->state['ready'] ?? null) || $this->state['winner'] !== null || $team !== $this->team()) return false;
-        if (in_array($kind, ['order', 'hold', 'touch'], true)) {
+        if (in_array($kind, ['order', 'hold', 'touch', 'drop'], true)) {
             if (!valid_integer($command['index'] ?? null, 0, $this->state['setup']['config']['playersPerTeam'] - 1)) throw new InvalidArgumentException('Invalid piece.');
             $slot = $this->slot($team, (int)$command['index']); $p =& $this->state['players'][$slot];
         }
@@ -400,6 +420,13 @@ final class HexGame {
             $p['route'] = $route; return true;
         }
         if ($kind === 'hold') { $p['route'] = []; return true; }
+        if ($kind === 'drop') {
+            if (!($this->state['setup']['config']['allowVoluntaryDrops'] ?? false) || $p['frozen'] || $p['carrying'] === null) return false;
+            $id = $this->dropFlag($p, true);
+            $this->log($team, player_label($p) . ' dropped F' . ($id + 1) . '.');
+            unset($p);
+            $this->collectAndScore(); $this->observe($this->state['observation'][$team] === 'awake' ? 'awake' : 'active'); return true;
+        }
         if ($kind === 'step') {
             if ($this->remaining() <= 0) return false;
             foreach ($this->state['players'] as &$mover) if ($mover['team'] === $team && in_array('movement', $this->actions($mover), true)) {
@@ -433,9 +460,7 @@ final class HexGame {
             if ($friendly) { $other['frozen'] = 0; $this->log($team, player_label($p) . ' revived ' . player_label($other) . '. ' . $this->remaining() . ' t left.'); }
             else {
                 $other['frozen'] = $this->state['setup']['config']['freezeRounds']; $other['route'] = [];
-                if ($other['carrying'] !== null) {
-                    $flag =& $this->state['flags'][$other['carrying']]; $flag['cell'] = $other['cell']; $flag['carrier'] = null; $flag['delivered'] = null; $other['carrying'] = null; unset($flag);
-                }
+                if ($other['carrying'] !== null) $this->dropFlag($other);
                 $this->log($team, player_label($p) . ' froze ' . player_label($other) . '.'); $this->log($other['team'], player_label($other) . ' was tagged.');
             }
             unset($p, $other);

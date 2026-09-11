@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111316">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f6f8">
+  <meta name="description" content="Write a question. Keep only a few words. Can your friends still guess the answer? A three-player party game with timed rounds.">
+  <meta name="robots" content="noindex">
+  <title>Nutshell · Play with friends</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=1">
+  <script src="app.js?v=1" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <a class="home" href="/">diegozc.com <span>/ play</span></a>
+      <div class="room-tools" id="room-tools" hidden>
+        <span class="room-tag" id="room-code"></span>
+        <button class="quiet" id="invite">Copy invite</button>
+        <button class="quiet" id="leave">Leave</button>
+      </div>
+    </header>
+
+    <section id="entrance" class="entrance">
+      <div class="intro">
+        <div class="eyebrow">THREE FRIENDS. FEWER WORDS.</div>
+        <h1>Nutshell<span class="period">.</span></h1>
+        <p>Write a question. Strip it down.<br>See who can still crack it.</p>
+        <ol class="how">
+          <li><span>01</span><div><strong>Write</strong><small>A question and its answer.</small></div></li>
+          <li><span>02</span><div><strong>Mask</strong><small>Choose the words worth keeping.</small></div></li>
+          <li><span>03</span><div><strong>Guess</strong><small>Beat the clock. Then switch roles.</small></div></li>
+        </ol>
+      </div>
+      <form id="entry-form" class="entry-card">
+        <h2 id="entry-title">Bring your people.</h2>
+        <label for="name">Your name</label>
+        <input id="name" name="name" autocomplete="nickname" maxlength="24" placeholder="What should we call you?" required>
+        <label for="join-code">Room code <span class="muted">if you have one</span></label>
+        <input id="join-code" name="room" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Or create a new room">
+        <button class="primary" id="entry-submit" type="submit">Create room</button>
+        <p class="fine">Three players · No accounts · Works on your phone</p>
+      </form>
+    </section>
+
+    <section id="game" hidden aria-label="Game room">
+      <div class="game-heading"><h1>Nutshell<span class="period">.</span></h1><span id="round-label" class="muted">Lobby</span></div>
+      <div class="seats" id="seats"></div>
+      <div class="timer-settings" aria-label="Phase durations">
+        <span class="settings-title">SECONDS</span>
+        <div id="duration-controls"></div>
+        <span id="settings-note" class="fine">Drag up or down</span>
+      </div>
+      <section class="play-surface">
+        <div class="stage-top">
+          <div><div id="phase-kicker" class="eyebrow">GET TOGETHER</div><h2 id="stage-title">Waiting for your friends.</h2></div>
+          <div class="clock" id="clock" role="timer" aria-label="Time remaining" hidden>0:30</div>
+        </div>
+        <div class="time-track" id="time-track" hidden><div id="time-fill"></div></div>
+        <div id="stage-body"></div>
+      </section>
+      <div class="room-footer"><span id="connection" role="status">Connected</span><span id="save-state"></span></div>
+    </section>
+    <p class="notice" id="notice" role="status" hidden></p>
+    <noscript>This game needs JavaScript to keep your room in sync.</noscript>
+    <footer class="credit">A homemade game inspired by <a href="https://confidentgames.com/products/in-a-nutshell" target="_blank" rel="noopener noreferrer">In A Nutshell</a>. Bring your own questions.</footer>
+  </main>
+</body>
+</html>

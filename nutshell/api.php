@@ -8,7 +8,7 @@ header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 ini_set('display_errors', '0');
 
-function nk_response(array $body, int $status = 200): never {
+function nk_response(array $body, int $status = 200): void {
     http_response_code($status);
     echo json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     exit;

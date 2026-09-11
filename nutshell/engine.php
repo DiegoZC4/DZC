@@ -129,7 +129,8 @@ function nk_action(array &$room, string $id, string $action, array $body, float 
                 if ($action === 'submit') nk_require(count(nk_words($room['question'])) >= 2 && $room['answer'] !== '', 'Write a question (at least two words) and an answer.');
             } elseif ($role === 'mask') {
                 $visible = $body['visible'] ?? null;
-                nk_require(is_array($visible) && array_is_list($visible) && count($visible) === count($room['words']), 'Invalid word selection.');
+                // PHP 8.0-compatible list check; array_is_list was added in 8.1.
+                nk_require(is_array($visible) && array_values($visible) === $visible && count($visible) === count($room['words']), 'Invalid word selection.');
                 foreach ($visible as $flag) nk_require(is_bool($flag), 'Invalid word selection.');
                 $room['visible'] = $visible;
                 if ($action === 'submit') nk_require(in_array(true, $visible, true), 'Keep at least one word visible.');

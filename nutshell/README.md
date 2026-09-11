@@ -5,7 +5,7 @@ Discord bot, external API, build step, or permanently running game process requi
 
 ## Runtime
 
-Serve this directory at `https://diegozc.com/nutshell/` using PHP 8.1+ with
+Serve this directory at `https://diegozc.com/nutshell/` using PHP 8.0+ with
 `pdo_sqlite` and `mbstring`. The existing website hosting supports the PHP/SQLite stack.
 Only `index.html`, `style.css`, `app.js`, `api.php`, and `engine.php` are required.
 

@@ -60,12 +60,30 @@ foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP'] as 
     }
 }
 
+// Diagnostic for the token holder only: 8-char hashes of each address
+// candidate, never the values, so stability across two requests can be
+// checked without exposing anything.
+$short = static fn (string $v): string => $v === '' ? '' : substr(hash('sha256', $v), 0, 8);
+$xff = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+$hops = $xff === '' ? [] : array_map('trim', explode(',', $xff));
+$probe = [
+    'xff_hops' => count($hops),
+    'xff_first' => $short($hops[0] ?? ''),
+    'xff_last' => $short($hops[count($hops) - 1] ?? ''),
+    'x_real_ip' => $short((string) ($_SERVER['HTTP_X_REAL_IP'] ?? '')),
+    'cf_connecting_ip' => $short((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '')),
+    'remote_addr' => $short((string) ($_SERVER['REMOTE_ADDR'] ?? '')),
+    'user_agent' => $short((string) ($_SERVER['HTTP_USER_AGENT'] ?? '')),
+];
+
 echo json_encode([
     'generated' => gmdate('c'),
     'this_week' => gmdate('o-\WW'),
-    'weeks' => $weeks,
-    'history' => $history,
+    'weeks' => (object) $weeks,
+    'history' => (object) $history,
+    'probe' => $probe,
     'storage' => [
+        'exists' => $root !== '' && is_dir($root),
         'writable' => $root !== '' && is_dir($root) && is_writable($root),
         'client_address_source' => $forwarded,
     ],

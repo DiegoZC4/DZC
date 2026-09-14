@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 08 Sep 2026 00:35:34 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 14 Sep 2026 21:06:07 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,38 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#98 - Group Selection</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-98</link>
+      <guid isPermaLink="false">urn:lsrg:98:weekly</guid>
+      <pubDate>Mon, 14 Sep 2026 21:06:07 +0000</pubDate>
+      <description><![CDATA[
+0:00 - The Tragedy of Group Selectionism by Eliezer Yudkowsky
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/QsMJQSFj7WfoTMNgW
+
+12:17 - Fake Optimization Criteria by Eliezer Yudkowsky
+
+17:59 - Adaptation-Executers, not Fitness-Maximizers by Eliezer Yudkowsky
+
+24:25 - Evolutionary Psychology by Eliezer Yudkowsky
+
+34:23 - (Optional) Why Motivated Reasoning? by johnswentworth
+https://www.lesswrong.com/posts/GnatTWjdfCNn6hrFM/why-motivated-reasoning
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-98
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and johnswentworth</itunes:author>
+      <itunes:episode>98</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2646</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-98-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-98-weekly.m4a" length="16262655" type="audio/mp4" />
+    </item>
     <item>
       <title>#97 - Selection and Slack</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-97</link>

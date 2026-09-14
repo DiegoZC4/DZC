@@ -26,12 +26,10 @@ if ($version !== '1' || !is_string($event) || !in_array($event, $allowedEvents, 
     exit;
 }
 
-// Weekly unique counting, deliberately minimal. For `page` and `play` only, a
-// SHA-256 of (weekly salt | client address | user agent) is appended to a per-
-// week file outside the web root. No address, agent, cookie or timestamp is
-// stored; the salt is derived from a server-side secret and the ISO week, so
-// the same visitor hashes identically within a week (which is what makes the
-// weekly count unique) and to something unrelated the next week.
+// Visitor log. For `page` and `play`, the client IP address and user agent are
+// recorded once per (ISO week, reading week) in a file outside the web root,
+// so that unique visitors and listeners per week of readings can be counted
+// later. Nothing is ever pruned. See docs/ANALYTICS.md.
 function statsRoot(): ?string
 {
     $docroot = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
@@ -47,8 +45,8 @@ function statsRoot(): ?string
 
 function clientAddress(): string
 {
-    // The site sits behind Hostinger's CDN, so REMOTE_ADDR is usually an edge
-    // node; the visitor is the first hop of the forwarded chain when present.
+    // Behind Hostinger's CDN the visitor is the first forwarded hop
+    // (verified 2026-09-14); REMOTE_ADDR alone would be an edge node.
     foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP'] as $key) {
         $value = trim((string) ($_SERVER[$key] ?? ''));
         if ($value !== '') {
@@ -58,37 +56,35 @@ function clientAddress(): string
     return (string) ($_SERVER['REMOTE_ADDR'] ?? '');
 }
 
-function recordWeeklyUnique(string $event): void
+function recordVisitor(string $event): void
 {
     $root = statsRoot();
     if ($root === null) {
         return;
     }
-    $secretFile = $root . '/secret';
-    if (!is_file($secretFile)) {
-        @file_put_contents($secretFile, bin2hex(random_bytes(32)), LOCK_EX);
-        @chmod($secretFile, 0600);
-    }
-    $secret = (string) @file_get_contents($secretFile);
-    if ($secret === '') {
+    $ip = clientAddress();
+    if ($ip === '') {
         return;
     }
-    $week = gmdate('o-\WW');
-    $salt = hash('sha256', $secret . '|' . $week);
-    $id = hash('sha256', $salt . '|' . clientAddress() . '|' . (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+    $reading = (string) ($_GET['w'] ?? '');
+    if (!preg_match('/^lsrg-\d{1,4}$/', $reading)) {
+        $reading = 'none';
+    }
+    $agent = str_replace(["\t", "\n", "\r"], ' ', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+    $line = $ip . "\t" . $agent . "\n";
     $weeks = $root . '/weeks';
     if (!is_dir($weeks) && !@mkdir($weeks, 0700, true)) {
         return;
     }
-    $handle = @fopen($weeks . '/' . $week . '.' . $event, 'c+');
+    $handle = @fopen($weeks . '/' . gmdate('o-\WW') . '__' . $reading . '.' . $event, 'c+');
     if ($handle === false) {
         return;
     }
     if (flock($handle, LOCK_EX)) {
-        $existing = (string) stream_get_contents($handle);
-        if (strpos($existing, $id . "\n") === false) {
+        // Prefix with a newline so a line can only match another whole line.
+        if (strpos("\n" . (string) stream_get_contents($handle), "\n" . $line) === false) {
             fseek($handle, 0, SEEK_END);
-            fwrite($handle, $id . "\n");
+            fwrite($handle, $line);
         }
         flock($handle, LOCK_UN);
     }
@@ -96,9 +92,7 @@ function recordWeeklyUnique(string $event): void
 }
 
 if ($event === 'page' || $event === 'play') {
-    recordWeeklyUnique($event);
+    recordVisitor($event);
 }
 
-// Hostinger's access log still records the validated query string; nothing
-// else about the request is kept.
 http_response_code(204);

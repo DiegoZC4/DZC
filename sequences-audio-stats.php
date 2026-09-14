@@ -2,15 +2,13 @@
 
 declare(strict_types=1);
 
-// Weekly unique visitors and listeners of the readalong, as JSON. Gated by a
-// token whose SHA-256 is embedded here; the token itself lives only on Diego's
-// Mac. A wrong or missing token answers 404 so the endpoint is not advertised.
+// Visitor log as JSON, for the token holder. The token exists only on Diego's
+// Mac; this file embeds its SHA-256 and answers 404 to anything else.
 
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex, nofollow');
 
 const TOKEN_SHA256 = 'be79b50c12d2b00c4c8d0c31cf8e8bc877aed58dfb27b13821e5631d91cd09b4';
-const KEEP_WEEKS = 26;
 
 if (!hash_equals(TOKEN_SHA256, hash('sha256', (string) ($_GET['k'] ?? '')))) {
     http_response_code(404);
@@ -21,70 +19,59 @@ header('Content-Type: application/json; charset=utf-8');
 $docroot = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
 $root = $docroot === '' ? '' : dirname($docroot) . '/sequences-audio-stats';
 $weeksDir = $root . '/weeks';
-$historyFile = $root . '/history.json';
-$history = is_file($historyFile) ? (json_decode((string) file_get_contents($historyFile), true) ?: []) : [];
+
+// Remove artifacts of the earlier hashed counter (format 1).
+foreach (['secret', 'history.json'] as $legacy) {
+    @unlink($root . '/' . $legacy);
+}
 
 $weeks = [];
 if (is_dir($weeksDir)) {
     foreach (scandir($weeksDir) ?: [] as $name) {
-        if (!preg_match('/^(\d{4}-W\d{2})\.(page|play)$/', $name, $m)) {
+        if (preg_match('/^\d{4}-W\d{2}\.(page|play)$/', $name)) {
+            @unlink($weeksDir . '/' . $name);
             continue;
         }
-        $lines = file($weeksDir . '/' . $name, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
-        $weeks[$m[1]][$m[2] === 'page' ? 'visitors' : 'listeners'] = count(array_unique($lines));
+        if (!preg_match('/^(\d{4}-W\d{2})__(lsrg-\d+|none)\.(page|play)$/', $name, $m)) {
+            continue;
+        }
+        [$_, $week, $reading, $kind] = $m;
+        $ips = [];
+        $devices = 0;
+        foreach (file($weeksDir . '/' . $name, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+            $ip = explode("\t", $line, 2)[0];
+            if ($ip !== '') {
+                $ips[$ip] = true;
+                $devices++;
+            }
+        }
+        ksort($ips);
+        $weeks[$week][$reading][$kind === 'page' ? 'visitors' : 'listeners'] = [
+            'unique_ips' => count($ips),
+            'unique_devices' => $devices,
+            'ips' => array_keys($ips),
+        ];
+        $weeks[$week]['all_readings']['ips_' . ($kind === 'page' ? 'visitors' : 'listeners')] =
+            array_merge($weeks[$week]['all_readings']['ips_' . ($kind === 'page' ? 'visitors' : 'listeners')] ?? [], array_keys($ips));
     }
 }
 ksort($weeks);
-
-// Fold weeks older than the retention window into history and drop their hashes.
-$cutoff = gmdate('o-\WW', strtotime('-' . KEEP_WEEKS . ' weeks'));
-foreach ($weeks as $week => $counts) {
-    if (strcmp($week, $cutoff) < 0) {
-        $history[$week] = $counts;
-        foreach (['page', 'play'] as $kind) {
-            @unlink($weeksDir . '/' . $week . '.' . $kind);
-        }
-        unset($weeks[$week]);
+foreach ($weeks as $week => &$entry) {
+    foreach (['visitors', 'listeners'] as $kind) {
+        $list = array_values(array_unique($entry['all_readings']['ips_' . $kind] ?? []));
+        $entry['all_readings'][$kind . '_unique_ips'] = count($list);
+        unset($entry['all_readings']['ips_' . $kind]);
     }
 }
-if ($history) {
-    ksort($history);
-    @file_put_contents($historyFile, json_encode($history), LOCK_EX);
-}
-
-$forwarded = 'none';
-foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP'] as $key) {
-    if (trim((string) ($_SERVER[$key] ?? '')) !== '') {
-        $forwarded = $key;
-        break;
-    }
-}
-
-// Diagnostic for the token holder only: 8-char hashes of each address
-// candidate, never the values, so stability across two requests can be
-// checked without exposing anything.
-$short = static fn (string $v): string => $v === '' ? '' : substr(hash('sha256', $v), 0, 8);
-$xff = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-$hops = $xff === '' ? [] : array_map('trim', explode(',', $xff));
-$probe = [
-    'xff_hops' => count($hops),
-    'xff_first' => $short($hops[0] ?? ''),
-    'xff_last' => $short($hops[count($hops) - 1] ?? ''),
-    'x_real_ip' => $short((string) ($_SERVER['HTTP_X_REAL_IP'] ?? '')),
-    'cf_connecting_ip' => $short((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '')),
-    'remote_addr' => $short((string) ($_SERVER['REMOTE_ADDR'] ?? '')),
-    'user_agent' => $short((string) ($_SERVER['HTTP_USER_AGENT'] ?? '')),
-];
+unset($entry);
 
 echo json_encode([
+    'format' => 2,
     'generated' => gmdate('c'),
     'this_week' => gmdate('o-\WW'),
     'weeks' => (object) $weeks,
-    'history' => (object) $history,
-    'probe' => $probe,
     'storage' => [
         'exists' => $root !== '' && is_dir($root),
         'writable' => $root !== '' && is_dir($root) && is_writable($root),
-        'client_address_source' => $forwarded,
     ],
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), "\n";

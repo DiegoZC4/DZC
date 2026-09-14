@@ -56,3 +56,15 @@ AddType application/epub+zip epub
 AddType application/zip zip
 AddType application/gzip gz
 AddType text/markdown md
+
+# Caching.
+#
+# Weekly read-along audio never changes once published (each week has its own
+# file name), so browsers may keep it for a week. The read-along page holds a
+# whole week in memory after the first play; with this header a reload can
+# usually reuse the downloaded file from the browser cache instead of fetching
+# it again. The HTML, RSS, chapters JSON and PHP endpoints are deliberately
+# not covered: they are republished under the same names.
+<FilesMatch "\.(m4a|m4b|mp3)$">
+  Header set Cache-Control "public, max-age=604800"
+</FilesMatch>

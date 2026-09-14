@@ -61,7 +61,7 @@ https://sscpodcast.libsyn.com/studies-on-slack
       <itunes:duration>4930</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-97-l2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
     </item>
     <item>
       <title>#96 - Evolution</title>
@@ -92,7 +92,7 @@ https://sscpodcast.libsyn.com/meditations-on-moloch
       <itunes:duration>7964</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
     </item>
     <item>
       <title>#95 - Minds and Intelligence</title>
@@ -120,7 +120,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>3386</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-95-book3-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
     </item>
     <item>
       <title>#94 - Letting Go</title>
@@ -153,7 +153,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
       <itunes:duration>4227</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
     </item>
     <item>
       <title>#93 - Oops</title>
@@ -191,7 +191,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2363</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
     </item>
     <item>
       <title>#92 - Conformity</title>
@@ -226,7 +226,7 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
       <itunes:duration>3700</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-92-j5-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
     </item>
     <item>
       <title>#91 - Guardians</title>
@@ -261,7 +261,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/
       <itunes:duration>2946</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-90-j4-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
     </item>
   </channel>
 </rss>

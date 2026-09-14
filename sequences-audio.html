@@ -223,7 +223,7 @@
     .player-status:empty { display: none; }
     .player-context {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
       align-items: center;
       min-width: 0;
       gap: 4px;
@@ -280,6 +280,34 @@
     }
     .retry-audio[hidden], .volume-drag[hidden] { display: none; }
     .retry-audio:hover { color: var(--paper); background: var(--button); }
+    .offline-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 22px;
+      padding: 0 5px;
+      border: 0;
+      border-radius: 3px;
+      color: var(--muted);
+      background: transparent;
+      font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .offline-copy[hidden] { display: none; }
+    .offline-copy:disabled { cursor: default; }
+    .offline-copy:not(:disabled) { color: var(--link); text-decoration: underline; cursor: pointer; }
+    .offline-copy:not(:disabled):hover { background: var(--soft); }
+    .offline-copy[data-state="saving"]::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border: 1.5px solid var(--line);
+      border-top-color: var(--link);
+      border-radius: 50%;
+      animation: player-spin 700ms linear infinite;
+    }
+    .offline-copy[data-state="ready"]::before { content: "¹3"; font-size: 10px; }
     .player-button { width: 52px; min-width: 52px; min-height: 52px; padding: 0; border-color: var(--line); color: var(--ink); background: var(--soft); }
     .player-button:hover { color: var(--paper); background: var(--button); }
     .play-toggle { width: 62px; min-width: 62px; min-height: 62px; border-radius: 50%; }
@@ -483,6 +511,7 @@
     @media (prefers-reduced-motion: reduce) {
       .narration-return, .narration-return svg, .reading-progress { transition: none; }
       .player-status.is-loading::before { animation: none; }
+      .offline-copy[data-state="saving"]::before { animation: none; }
     }
     @media (max-width: 660px) {
       .playback-controls {
@@ -506,6 +535,7 @@
       .track-main { padding: 10px 11px 16px; }
       .week-search { grid-template-columns: minmax(0, 1fr) auto 34px 34px; gap: 4px; }
       .player-status { font-size: 10px; }
+      .offline-copy { font-size: 10px; }
       .week-search-status { min-width: 34px; }
       .week-search-nav { width: 34px; min-width: 34px; min-height: 36px; }
       .playback-controls { gap: 4px; }
@@ -574,7 +604,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
   <div class="tracks"><article class="track" id="lsrg-98">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-98" data-date="2026-09-15" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-98-weekly.m4a"></audio>
+      <audio id="audio-lsrg-98" data-date="2026-09-15" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="16262655" preload="metadata" src="/audio/lsrg-98-weekly.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-98" data-duration="2646.057007" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:736.679" data-start="0.0" data-end="736.679184" data-title="The Tragedy of Group Selectionism" title="The Tragedy of Group Selectionism"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:342.700" data-start="736.679184" data-end="1079.379592" data-title="Fake Optimization Criteria" title="Fake Optimization Criteria"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:385.585" data-start="1079.379592" data-end="1464.964853" data-title="Adaptation-Executers, not Fitness-Maximizers" title="Adaptation-Executers, not Fitness-Maximizers"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:597.724" data-start="1464.964853" data-end="2062.688753" data-title="Evolutionary Psychology" title="Evolutionary Psychology"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:583.368" data-start="2062.688753" data-end="2646.057007" data-title="Why Motivated Reasoning?" title="Why Motivated Reasoning?"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -591,6 +621,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-98" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-98" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-98" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -772,7 +803,7 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
   <div class="tracks"><article class="track" id="lsrg-97">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-97" data-date="2026-09-08" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-97-l2.m4a"></audio>
+      <audio id="audio-lsrg-97" data-date="2026-09-08" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="30444273" preload="metadata" src="/audio/lsrg-97-l2.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-97" data-duration="4929.801995" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:559.464" data-start="0.0" data-end="559.46449" data-title="Evolutions Are Stupid (But Work Anyway)" title="Evolutions Are Stupid (But Work Anyway)"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:757.629" data-start="559.46449" data-end="1317.093878" data-title="No Evolutions for Corporations or Nanodevices" title="No Evolutions for Corporations or Nanodevices"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:808.908" data-start="1317.093878" data-end="2126.001633" data-title="Evolving to Extinction" title="Evolving to Extinction"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:2803.800" data-start="2126.001633" data-end="4929.801995" data-title="Studies on Slack" title="Studies on Slack"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -789,6 +820,7 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-97" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-97" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-97" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1052,7 +1084,7 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
   <div class="tracks"><article class="track" id="lsrg-96">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-96" data-date="2026-09-01" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-96-l1.m4a"></audio>
+      <audio id="audio-lsrg-96" data-date="2026-09-01" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="49649440" preload="metadata" src="/audio/lsrg-96-l1.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-96" data-duration="7963.534" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:1080.420" data-start="0.0" data-end="1080.420136" data-title="An Alien God" title="An Alien God"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:548.551" data-start="1080.420136" data-end="1628.970803" data-title="The Wonder of Evolution" title="The Wonder of Evolution"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:6334.563" data-start="1628.970803" data-end="7963.534" data-title="Meditations on Moloch" title="Meditations on Moloch"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -1069,6 +1101,7 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-96" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-96" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-96" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1581,7 +1614,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
   <div class="tracks"><article class="track" id="lsrg-95">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-95" data-date="2026-08-25" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-95-book3.m4a"></audio>
+      <audio id="audio-lsrg-95" data-date="2026-08-25" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="21275549" preload="metadata" src="/audio/lsrg-95-book3.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-95" data-duration="3385.7" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:625.931" data-start="0.0" data-end="625.931" data-title="Minds: An Introduction" title="Minds: An Introduction"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:512.136" data-start="625.931" data-end="1138.067" data-title="The Power of Intelligence" title="The Power of Intelligence"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:2247.633" data-start="1138.067" data-end="3385.7" data-title="The ‘Breaking’ News: The OpenAI–Hugging Face Incident" title="The ‘Breaking’ News: The OpenAI–Hugging Face Incident"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -1598,6 +1631,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-95" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-95" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-95" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1799,7 +1833,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
   <div class="tracks"><article class="track" id="lsrg-94">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-94" data-date="2026-08-18" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-94-k2.m4a"></audio>
+      <audio id="audio-lsrg-94" data-date="2026-08-18" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="26425158" preload="metadata" src="/audio/lsrg-94-k2.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-94" data-duration="4227.195" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:468.250" data-start="0.0" data-end="468.25" data-title="Leave a Line of Retreat" title="Leave a Line of Retreat"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:1000.641" data-start="468.25" data-end="1468.891" data-title="Crisis of Faith" title="Crisis of Faith"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:553.053" data-start="1468.891" data-end="2021.944" data-title="The Ritual" title="The Ritual"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:2205.251" data-start="2021.944" data-end="4227.195" data-title="Crony Beliefs" title="Crony Beliefs"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -1816,6 +1850,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-94" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-94" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-94" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2140,7 +2175,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
   <div class="tracks"><article class="track" id="lsrg-93">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-93" data-date="2026-08-11" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-93-k1.m4a"></audio>
+      <audio id="audio-lsrg-93" data-date="2026-08-11" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="14813695" preload="metadata" src="/audio/lsrg-93-k1.m4a"></audio>
       <div class="custom-player" data-audio="audio-lsrg-93" data-duration="2363.008" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:313.104" data-start="0.0" data-end="313.104" data-title="The Importance of Saying “Oops”" title="The Importance of Saying “Oops”"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:292.362" data-start="313.104" data-end="605.466" data-title="The Crackpot Offer" title="The Crackpot Offer"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:152.549" data-start="605.466" data-end="758.015" data-title="Just Lose Hope Already" title="Just Lose Hope Already"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:353.386" data-start="758.015" data-end="1111.401" data-title="The Proper Use of Doubt" title="The Proper Use of Doubt"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:32.722" data-start="1111.401" data-end="1144.123" data-title="You Can Face Reality" title="You Can Face Reality"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:447.887" data-start="1144.123" data-end="1592.01" data-title="The Meditation on Curiosity" title="The Meditation on Curiosity"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:349.331" data-start="1592.01" data-end="1941.341" data-title="No One Can Exempt You From Rationality’s Laws" title="No One Can Exempt You From Rationality’s Laws"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:421.667" data-start="1941.341" data-end="2363.008" data-title="The Cowpox of Doubt" title="The Cowpox of Doubt"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -2157,6 +2192,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-93" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-93" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-93" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2437,7 +2473,7 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
   <div class="tracks"><article class="track" id="lsrg-92">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-92" data-date="2026-07-28" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-92-j5.mp3"></audio>
+      <audio id="audio-lsrg-92" data-date="2026-07-28" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="59208092" preload="metadata" src="/audio/lsrg-92-j5.mp3"></audio>
       <div class="custom-player" data-audio="audio-lsrg-92" data-duration="3700.428" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:466.892" data-start="0" data-end="466.892" data-title="Asch’s Conformity Experiment" title="Asch’s Conformity Experiment"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:351.608" data-start="466.892" data-end="818.5" data-title="On Expressing Your Concerns" title="On Expressing Your Concerns"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:511.927" data-start="818.5" data-end="1330.427" data-title="Lonely Dissent" title="Lonely Dissent"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:1171.728" data-start="1330.427" data-end="2502.155" data-title="Cultish Countercultishness" title="Cultish Countercultishness"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:1198.273" data-start="2502.155" data-end="3700.428" data-title="Asches to Asches" title="Asches to Asches"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -2454,6 +2490,7 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-92" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-92" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-92" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2731,7 +2768,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
   <div class="tracks"><article class="track" id="lsrg-90">
   <div class="track-main">
     <div class="player-dock">
-      <audio id="audio-lsrg-90" data-date="2026-07-21" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" preload="metadata" src="/audio/lsrg-90-j4.mp3"></audio>
+      <audio id="audio-lsrg-90" data-date="2026-07-21" data-artwork="https://diegozc.com/sequences-audio-cover.png?v=20260720c" data-album="Lighthaven Sequences Reading Group Audio" data-bytes="47136733" preload="metadata" src="/audio/lsrg-90-j4.mp3"></audio>
       <div class="custom-player" data-audio="audio-lsrg-90" data-duration="2946" role="group" aria-label="Audio player">
         <div class="chapter-seek">
           <div class="seek-segments" aria-hidden="true"><span class="seek-segment" style="--segment-weight:543.901" data-start="0" data-end="543.901" data-title="Guardians of the Truth" title="Guardians of the Truth"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:121.396" data-start="543.901" data-end="665.297" data-title="Guardians of the Gene Pool" title="Guardians of the Gene Pool"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:679.137" data-start="665.297" data-end="1344.434" data-title="Guardians of Ayn Rand" title="Guardians of Ayn Rand"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment" style="--segment-weight:246.889" data-start="1344.434" data-end="1591.323" data-title="Two Cult Koans" title="Two Cult Koans"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span><span class="seek-segment optional" style="--segment-weight:1354.634" data-start="1591.323" data-end="2945.957" data-title="Cargo Cult Science" title="Cargo Cult Science"><span class="seek-segment-buffer"></span><span class="seek-segment-progress"></span></span></div>
@@ -2748,6 +2785,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-90" hidden>Retry</button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-90" hidden></button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -3646,6 +3684,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
     }
 
     function retryAudio(audio) {
+      if (maybeSwapToOfflineCopy(audio, 'retry')) return;
       const stored = savedPlaybackPosition(audio);
       const position = Number.isFinite(audio.currentTime) && audio.currentTime > 0
         ? audio.currentTime
@@ -3663,6 +3702,188 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       audio.load();
       if (audio.readyState > 0) resume();
       else audio.addEventListener('loadedmetadata', resume, { once: true });
+    }
+
+    // Offline copy. Once a week starts playing, its whole file is fetched into
+    // memory so playback survives losing the connection while the page stays
+    // open. The element keeps streaming from the network until the copy is
+    // complete, then switches to the in-memory copy at the same position: at
+    // once when paused, otherwise at the next quiet moment (a pause, a stall,
+    // an error, or the browser going offline), so healthy playback is never
+    // interrupted. Nothing is written to disk; a reload starts over.
+    const offlineCopies = new WeakMap();
+    const offlineCopyQueue = [];
+    let offlineCopyActive = null;
+    const OFFLINE_COPY_AUTO_ATTEMPTS = 3;
+
+    function offlineCopyUrl(source) {
+      // fetch() needs a same-origin URL. The audio src is the canonical apex
+      // URL; a visitor on the www host would otherwise hit CORS.
+      try {
+        const url = new URL(source, location.href);
+        const strip = (host) => host.replace(/^www\./, '');
+        if (url.host !== location.host && strip(url.hostname) === strip(location.hostname)) {
+          return `${location.origin}${url.pathname}${url.search}`;
+        }
+        return url.href;
+      } catch {
+        return '';
+      }
+    }
+
+    function offlineCopyState(audio) {
+      let copy = offlineCopies.get(audio);
+      if (!copy) {
+        copy = {
+          state: 'idle', url: '', blobUrl: '', received: 0, total: 0,
+          attempts: 0, swapPending: false, renderedAt: 0
+        };
+        offlineCopies.set(audio, copy);
+      }
+      return copy;
+    }
+
+    function formatMegabytes(bytes) {
+      const megabytes = bytes / 1048576;
+      return `${megabytes >= 10 ? Math.round(megabytes) : megabytes.toFixed(1)} MB`;
+    }
+
+    function renderOfflineCopy(audio) {
+      const badge = audio.closest('.player-dock').querySelector('.offline-copy');
+      if (!badge) return;
+      const copy = offlineCopyState(audio);
+      copy.renderedAt = performance.now();
+      const size = copy.total ? ` (${formatMegabytes(copy.total)})` : '';
+      let label = '';
+      let title = '';
+      if (copy.state === 'queued') {
+        label = 'Saving offline';
+        title = 'Waiting for another week to finish downloading';
+      } else if (copy.state === 'saving') {
+        const percent = copy.total ? Math.min(99, Math.floor((copy.received / copy.total) * 100)) : 0;
+        label = copy.total ? `Saving offline ${percent}%` : 'Saving offline';
+        title = `Downloading this week${size} so listening continues without a connection`;
+      } else if (copy.state === 'ready') {
+        label = 'Offline ready';
+        title = `This week${size} is held in memory; listening continues without a connection while this page stays open`;
+      } else if (copy.state === 'failed') {
+        label = 'Save offline';
+        title = 'The offline download failed; click to try again';
+      } else if (copy.state === 'waiting') {
+        label = 'Save offline';
+        title = `Download this week${size} so listening continues without a connection (skipped automatically because the browser asks for reduced data)`;
+      }
+      badge.dataset.state = copy.state;
+      badge.disabled = !(copy.state === 'failed' || copy.state === 'waiting');
+      badge.textContent = label;
+      badge.title = title;
+      badge.setAttribute('aria-label', title || label);
+      badge.hidden = !label;
+    }
+
+    function requestOfflineCopy(audio, manual = false) {
+      const copy = offlineCopyState(audio);
+      if (!copy.url || ['queued', 'saving', 'ready'].includes(copy.state)) return;
+      if (!manual) {
+        if (navigator.connection && navigator.connection.saveData) {
+          copy.state = 'waiting';
+          renderOfflineCopy(audio);
+          return;
+        }
+        if (copy.state === 'waiting' || copy.attempts >= OFFLINE_COPY_AUTO_ATTEMPTS) return;
+      }
+      copy.state = 'queued';
+      copy.received = 0;
+      renderOfflineCopy(audio);
+      offlineCopyQueue.push(audio);
+      pumpOfflineCopies();
+    }
+
+    async function pumpOfflineCopies() {
+      if (offlineCopyActive || !offlineCopyQueue.length) return;
+      const audio = offlineCopyQueue.shift();
+      offlineCopyActive = audio;
+      try {
+        await downloadOfflineCopy(audio);
+      } finally {
+        offlineCopyActive = null;
+        pumpOfflineCopies();
+      }
+    }
+
+    async function downloadOfflineCopy(audio) {
+      const copy = offlineCopyState(audio);
+      copy.state = 'saving';
+      copy.attempts += 1;
+      copy.received = 0;
+      copy.total = Number(audio.dataset.bytes) || 0;
+      renderOfflineCopy(audio);
+      try {
+        const response = await fetch(copy.url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const type = response.headers.get('Content-Type') || 'audio/mp4';
+        if (!copy.total) copy.total = Number(response.headers.get('Content-Length')) || 0;
+        let blob;
+        if (response.body && typeof response.body.getReader === 'function') {
+          const reader = response.body.getReader();
+          const chunks = [];
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            copy.received += value.byteLength;
+            if (performance.now() - copy.renderedAt > 250) renderOfflineCopy(audio);
+          }
+          blob = new Blob(chunks, { type });
+        } else {
+          blob = await response.blob();
+        }
+        const expected = Number(audio.dataset.bytes) || 0;
+        if (expected && blob.size !== expected) throw new Error(`Incomplete download: ${blob.size} of ${expected} bytes`);
+        copy.received = blob.size;
+        copy.total = blob.size;
+        if (copy.blobUrl) URL.revokeObjectURL(copy.blobUrl);
+        copy.blobUrl = URL.createObjectURL(blob);
+        copy.state = 'ready';
+        copy.swapPending = true;
+        renderOfflineCopy(audio);
+        maybeSwapToOfflineCopy(audio, 'complete');
+      } catch (error) {
+        copy.state = 'failed';
+        copy.received = 0;
+        renderOfflineCopy(audio);
+      }
+    }
+
+    function maybeSwapToOfflineCopy(audio, reason) {
+      const copy = offlineCopyState(audio);
+      if (!copy.swapPending || !copy.blobUrl) return false;
+      const playing = !audio.paused && !audio.ended && !audio.error;
+      // Healthy playback is never interrupted for the switch: while streaming
+      // goes well it waits for a pause, a stall, an error, or going offline.
+      if (playing && reason === 'complete') return false;
+      copy.swapPending = false;
+      const stored = savedPlaybackPosition(audio);
+      const position = Number.isFinite(audio.currentTime) && audio.currentTime > 0
+        ? audio.currentTime
+        : stored || 0;
+      const shouldPlay = playing || Boolean(audio._playRequested) || Boolean(audio._retryShouldPlay);
+      const rate = audio.playbackRate;
+      audio._retryShouldPlay = false;
+      audio._reloading = true;
+      if (shouldPlay) setPlayerStatus(audio, 'loading', 'Switching to offline copy');
+      const resume = () => {
+        audio._reloading = false;
+        if (audio.playbackRate !== rate) audio.playbackRate = rate;
+        seekAudioTo(audio, position, true);
+        if (shouldPlay) requestAudioPlay(audio);
+        else setPlayerStatus(audio);
+      };
+      audio.src = copy.blobUrl;
+      audio.load();
+      if (audio.readyState > 0) resume();
+      else audio.addEventListener('loadedmetadata', resume, { once: true });
+      return true;
     }
 
     function mediaSessionIsAvailable() {
@@ -5150,6 +5371,11 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
       const volumeControl = player.querySelector('.volume-drag');
       volumeControl.hidden = !supportsProgrammableVolume(audio);
       setPlayerStatus(audio);
+      offlineCopyState(audio).url = offlineCopyUrl(audio.getAttribute('src') || '');
+      renderOfflineCopy(audio);
+      player.querySelector('.offline-copy').addEventListener('click', () => {
+        requestOfflineCopy(audio, true);
+      });
       updatePlaybackTools(audio);
       updateCustomPlayer(audio);
       audio.addEventListener('ratechange', () => {
@@ -5189,9 +5415,11 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         if (audio._playRequested || audio._reloading) setPlayerStatus(audio, 'loading');
       });
       audio.addEventListener('waiting', () => {
+        if (maybeSwapToOfflineCopy(audio, 'stall')) return;
         refreshPlayerBuffering(audio);
       });
       audio.addEventListener('stalled', () => {
+        if (maybeSwapToOfflineCopy(audio, 'stall')) return;
         refreshPlayerBuffering(audio);
       });
       audio.addEventListener('canplay', () => {
@@ -5206,6 +5434,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         );
         audio._playRequested = false;
         audio._reloading = false;
+        if (maybeSwapToOfflineCopy(audio, 'error')) return;
         setPlayerStatus(audio, 'error');
       });
       audio.addEventListener('emptied', () => updateBufferedSegments(audio));
@@ -5222,6 +5451,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         updateCustomPlayer(audio);
         openReaderAtPosition(audio, audio.currentTime, true);
         startSyncTimer(audio);
+        requestOfflineCopy(audio);
       });
       audio.addEventListener('pause', () => {
         clearInterval(syncTimers.get(audio));
@@ -5232,6 +5462,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         updateCustomPlayer(audio);
         savePlaybackPosition(audio, audio.currentTime, true);
         syncAudio(audio, false, !audio._followScrollBlocked);
+        maybeSwapToOfflineCopy(audio, 'pause');
       });
       audio.addEventListener('ended', () => {
         clearInterval(syncTimers.get(audio));
@@ -5315,6 +5546,13 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         activeAudio = audio;
         skipAudio(audio, Number(skip.dataset.direction));
       });
+    });
+
+    window.addEventListener('offline', () => {
+      document.querySelectorAll('audio').forEach((audio) => maybeSwapToOfflineCopy(audio, 'offline'));
+    });
+    window.addEventListener('online', () => {
+      if (activeAudio && offlineCopyState(activeAudio).state === 'failed') requestOfflineCopy(activeAudio);
     });
 
     window.addEventListener('pagehide', () => {

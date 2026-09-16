@@ -24,7 +24,7 @@ PORTABLE_FRAMEWORKS := \
 	-framework CoreServices \
 	-framework Accelerate
 
-.PHONY: all clean dev-world dev-midi dev-web test-pitch test-vibrato-lock app-macos package-source release
+.PHONY: all clean dev-world dev-midi dev-web test-pitch test-vibrato-lock test-unvoiced-hold app-macos package-source release
 
 all: harmonizer_world harmonizer harmonizer_web
 
@@ -68,6 +68,9 @@ test-pitch: pitch_analyzer
 
 test-vibrato-lock: harmonizer_web pitch_analyzer
 	./scripts/test_vibrato_lock.sh
+
+test-unvoiced-hold: harmonizer_web
+	./scripts/test_unvoiced_hold.sh
 
 clean:
 	rm -f harmonizer harmonizer_world harmonizer_web harmonizer_web_portable pitch_analyzer watch_files_macos

@@ -1,0 +1,260 @@
+<html>
+<head><title>Scales Playground</title><meta charset="UTF-8"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+</head>
+<body>
+  <div id="sliders"></div>
+  <div id="keyboard"></div>
+<script>
+
+const sliderLength = '200px'
+const numberWidth  = '50px'
+
+class NumSlider {
+  constructor(min, max, start, units, step=1, parent='sliders') {
+    this.min = min
+    this.max = max
+
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = start
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right'
+    this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
+
+    let label = document.createElement('label')
+    label.append(this.slider)
+    label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
+    this.label = label
+
+    document.getElementById(parent).append(this.label)
+  }
+  value() {return Number(this.slider.value)}
+  on(event, func) {
+    this.slider.addEventListener(event,func)
+    this.num.addEventListener(event,func)
+  }
+}
+
+const sliders = document.getElementById('sliders')
+const baseFreq= new NumSlider( -24,24,0, 'Transpose')
+const volume  = new NumSlider(  0,100, 15, 'volume')
+const decay   = new NumSlider(  0, 10,  1, 'decay (seconds)', step=0.1);
+[baseFreq, volume, decay].forEach(s=>{
+  sliders.appendChild(s.label)
+  // sliders.appendChild(document.createElement('br'))
+})
+
+const wave = document.createElement('select');
+["sine", "square", "sawtooth", "triangle"].forEach(w=>{
+  let option = document.createElement("option")
+  option.value = w
+  option.innerHTML = w
+  wave.appendChild(option)
+})
+wave.value = 'triangle'
+let label = document.createElement('label')
+label.innerHTML = 'Waveform '
+label.appendChild(wave)
+sliders.appendChild(label)
+sliders.appendChild(document.createElement('p'))
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+const masterGain = audioContext.createGain()
+masterGain.gain.value = volume.value()/100
+masterGain.connect(audioContext.destination)
+volume.on('input', () => {
+  const now = audioContext.currentTime
+  masterGain.gain.cancelScheduledValues(now)
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.value = volume.value()/100
+})
+
+const buttonSize = '50px'
+const upSaturation = '50%'
+const downSaturation = '100%'
+const upLightness = '50%'
+const downLightness = '75%'
+const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
+function freq2Pitch(freq) {
+  const C0 = 16.35; // Frequency of C0
+  const log2C0 = Math.log2(C0); // Correct value for log2 of C0
+  let halfsteps = (Math.log2(freq) - log2C0) * 12;
+  let noteIndex = Math.round(halfsteps) % 12;
+  if (noteIndex < 0) noteIndex += 12; // Handle negative modulus for frequencies below C0
+  let octave = Math.floor((Math.round(halfsteps)) / 12);
+  let cents = Math.round((halfsteps - Math.round(halfsteps)) * 100);
+  return `${pitches[noteIndex]}${octave}${(cents < 0 ? "" : "+") + cents}`;
+}
+
+class Key{
+  constructor(key, freq, hue){
+    this.key = key
+    this.freq = freq
+    
+    let b = document.createElement('button')
+    b.style.width = buttonSize
+    b.style.height = buttonSize
+    b.textContent = key
+    this.button = b
+    this.hue = hue
+    this.setColor()
+    b.addEventListener('mousedown',(e)=>{
+      e.preventDefault()
+      this.press()
+    })
+    b.addEventListener('mouseup',(e)=>{
+      e.preventDefault()
+      this.release()
+    })
+    
+    let osc = audioContext.createOscillator()
+    osc.type = wave.value
+    osc.start()
+    this.osc = osc
+    let vol = audioContext.createGain();
+    vol.gain.value = 0
+    osc.connect(vol)
+    vol.connect(masterGain)
+    this.vol = vol
+    this.setFrequency(freq)
+  }
+  html(){return this.button}
+  setFrequency(freq){
+    this.osc.frequency.value = freq
+    this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)}`
+  }
+  setWaveform(wave){this.osc.type = wave}
+  setHue(hue){
+    this.hue=hue
+    this.setColor()
+  }
+  setColor(down=false){
+    this.button.style.background = 
+    `hsl(${this.hue},
+    ${down?downSaturation:upSaturation},
+    ${down? downLightness: upLightness})`
+  }
+  press(){
+    this.setColor(true)
+    this.setGain(1)
+  }
+  release(){
+    this.setColor(false)
+    this.setGain(0,pedal?decay.value():0.01)
+  }
+  setGain(g,ramp=0.01){
+    const now = audioContext.currentTime
+    this.vol.gain.cancelScheduledValues(now)
+    this.vol.gain.setValueAtTime(this.vol.gain.value, now);
+    this.vol.gain.linearRampToValueAtTime(g, now+ramp)
+  }
+}
+
+const keyboardDiv = document.getElementById('keyboard')
+const keyboardChars = [
+  ['AltL','AltR'],
+  'FJ',
+  'RU',
+  'DK',
+  'EI',
+  'SL',
+  'WO',
+  "A;",
+  'QP',
+]
+const coords2Note = (i,j) => {
+  // return [
+  //   [12,-3],
+  //   [-1,0],
+  //   [2,7],
+  //   [4,9],
+  //   [5,11],
+  //   [7,14],
+  //   [17,16],
+  //   [19,21],
+  //   [24,23],
+  // ]
+  return [[12,-1,2,4,5,7,17,19,24],[-3,0,7,9,11,14,16,21,23]]
+  [i][j] + baseFreq.value()
+}
+const coords2Freq = (i,j) => 130.815*2**(coords2Note(i,j)/12)
+const coords2Hue = (i,j) => (coords2Note(i,j)/12)*360
+
+const char2Keys = {}
+const keys = keyboardChars.map((row,j)=>[...row].map((key,i)=>{
+  // console.log(coords2Freq(i,j))
+  let k = new Key(key, coords2Freq(i,j), coords2Hue(i,j))
+  char2Keys[`Key${key}`] = k
+  char2Keys[{';':'Semicolon', "'":'Quote', '[':'BracketLeft','AltL':'AltLeft','AltR':'AltRight'}[key]] = k
+  return k
+}))
+
+keys.toReversed().forEach(row=>{
+  row.forEach(b=>keyboardDiv.appendChild(b.html()))
+  keyboardDiv.appendChild(document.createElement('br'))
+})
+
+function updateKeys(){
+  keys.forEach((row,j)=>row.forEach((k,i)=>{
+    // console.log(i,j,coords2Freq(i,j))
+    k.setHue(coords2Hue(i,j))
+    k.setFrequency(coords2Freq(i,j))
+    k.setWaveform(wave.value)
+  }))
+}
+
+baseFreq.on('input',updateKeys)
+wave.addEventListener('input',updateKeys)
+updateKeys()
+
+let pedal = false
+document.onkeydown = function (e) {
+  e = e || window.event
+  e.preventDefault()
+  let key = e.code
+  // console.log(key)
+  if (key == ' ') pedal = !pedal
+  if (key in char2Keys) char2Keys[key].press()
+}
+document.onkeyup = function (e) {
+  e = e || window.event
+  e.preventDefault()
+  let key = e.code
+  if (key in char2Keys) char2Keys[key].release()
+}
+
+function resumeAudioContext() {
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log('AudioContext resumed');
+    }).catch((error) => {
+      console.error('Failed to resume the AudioContext:', error);
+    });
+  }
+}
+
+document.addEventListener('click', resumeAudioContext);
+document.addEventListener('keydown', resumeAudioContext);
+
+</script>
+</body>
+</html>

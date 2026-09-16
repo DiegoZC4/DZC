@@ -12,12 +12,7 @@ const HISTORY_SECONDS = 62;
 const NOTE_RELEASE_SECONDS = 0.09;
 const testParameters = new URLSearchParams(window.location.search);
 const SYNTHETIC_INPUT = testParameters.get("testInput") === "sine";
-const syntheticNoteParameter = testParameters.get("testNote");
-const SYNTHETIC_NOTE = syntheticNoteParameter === null ? NaN : Number(syntheticNoteParameter);
-const syntheticLevelParameter = Number(testParameters.get("testLevel"));
-const SYNTHETIC_LEVEL = Number.isFinite(syntheticLevelParameter) && syntheticLevelParameter > 0
-  ? clamp(syntheticLevelParameter, 0.0001, 0.5)
-  : 0.08;
+const SYNTHETIC_NOTE = Number(testParameters.get("testNote"));
 const embeddedWorkletUrls = globalThis.__HARMONIZER_WORKLET_URLS__ || {};
 const $ = (selector) => document.querySelector(selector);
 
@@ -60,7 +55,7 @@ const ui = {
 const controls = {
   blend: { input: $("#blend"), min: 0, max: 100, step: 1, value: 100, suffix: "%" },
   gain: { input: $("#gain"), min: 0, max: 24, step: 1, value: 6, suffix: " dB" },
-  gate: { input: $("#gate"), min: 0.0002, max: 0.04, step: 0.0001, value: 0.001, digits: 4 },
+  gate: { input: $("#gate"), min: 0.001, max: 0.04, step: 0.0005, value: 0.01, digits: 4 },
   stability: { input: $("#stability"), min: 0.2, max: 2, step: 0.05, value: 1, suffix: " st", digits: 2 },
   keyboardOctave: { input: $("#keyboard-octave"), min: 0, max: 5, step: 1, value: 3 },
   timeSpan: { input: $("#time-span"), min: 1, max: 60, step: 0.5, value: 12, suffix: " s", digits: 1 },
@@ -116,22 +111,11 @@ function storeSetting(key, value) {
 
 function migrateStoredSettings() {
   try {
-    const blendMigrationKey = "harmonizer.public.v2.fullWetDefault";
-    if (!localStorage.getItem(blendMigrationKey)) {
-      const blendKey = "harmonizer.public.v1.blend";
-      if (localStorage.getItem(blendKey) === "56") localStorage.setItem(blendKey, "100");
-      localStorage.setItem(blendMigrationKey, "1");
-    }
-
-    const gateMigrationKey = "harmonizer.public.v3.lowGateDefault";
-    if (!localStorage.getItem(gateMigrationKey)) {
-      const gateKey = "harmonizer.public.v1.gate";
-      const savedGate = localStorage.getItem(gateKey);
-      if (savedGate === null || Math.abs(Number(savedGate) - 0.01) < 1.0e-9) {
-        localStorage.setItem(gateKey, "0.001");
-      }
-      localStorage.setItem(gateMigrationKey, "1");
-    }
+    const migrationKey = "harmonizer.public.v2.fullWetDefault";
+    if (localStorage.getItem(migrationKey)) return;
+    const blendKey = "harmonizer.public.v1.blend";
+    if (localStorage.getItem(blendKey) === "56") localStorage.setItem(blendKey, "100");
+    localStorage.setItem(migrationKey, "1");
   } catch {}
 }
 
@@ -457,7 +441,7 @@ async function openMicrophone(deviceId = "") {
     const oscillator = audio.context.createOscillator();
     const gain = audio.context.createGain();
     oscillator.frequency.value = 220;
-    gain.gain.value = SYNTHETIC_LEVEL;
+    gain.gain.value = 0.08;
     oscillator.connect(gain);
     gain.connect(audio.inputMeter);
     gain.connect(audio.inputGain);
@@ -1077,9 +1061,7 @@ function rebuildComputerKeyboardMap(octave = 3) {
 }
 
 function isTypingTarget(target) {
-  return target instanceof Element && Boolean(
-    target.closest("input:not([type='checkbox']), textarea, [contenteditable='true']"),
-  );
+  return target instanceof Element && Boolean(target.closest("input, select, button, textarea, [contenteditable='true']"));
 }
 
 function handleMidiMessage(event) {
@@ -1320,7 +1302,7 @@ ui.testToneButton.addEventListener("click", () => {
   oscillator.frequency.value = 440;
   gain.gain.setValueAtTime(0.08, audio.context.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.0001, audio.context.currentTime + 0.35);
-  oscillator.connect(gain).connect(audio.master);
+  oscillator.connect(gain).connect(audio.context.destination);
   oscillator.start();
   oscillator.stop(audio.context.currentTime + 0.36);
 });

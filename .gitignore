@@ -1,1 +1,5 @@
 .DS_Store
+
+# Managed manually on the server; git cannot deliver it (an untracked
+# copy on the host blocks git pull). Reference copy: docs/htaccess-reference.txt
+.htaccess

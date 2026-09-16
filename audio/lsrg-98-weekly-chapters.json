@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and johnswentworth",
+  "title": "#98 - Group Selection",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for September 15, 2026.",
+  "fileName": "lsrg-98-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 736.679184,
+      "title": "The Tragedy of Group Selectionism",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/QsMJQSFj7WfoTMNgW"
+    },
+    {
+      "startTime": 736.679184,
+      "endTime": 1079.379592,
+      "title": "Fake Optimization Criteria",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/i6fKszWY6gLZSX2Ey"
+    },
+    {
+      "startTime": 1079.379592,
+      "endTime": 1464.964853,
+      "title": "Adaptation-Executers, not Fitness-Maximizers",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/XPErvb8m9FapXCjhA"
+    },
+    {
+      "startTime": 1464.964853,
+      "endTime": 2062.688753,
+      "title": "Evolutionary Psychology",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/epZLSoNvjW53tqNj9"
+    },
+    {
+      "startTime": 2062.688753,
+      "endTime": 2646.057007,
+      "title": "(Optional) Why Motivated Reasoning?",
+      "url": "https://www.lesswrong.com/posts/GnatTWjdfCNn6hrFM/why-motivated-reasoning"
+    }
+  ]
+}

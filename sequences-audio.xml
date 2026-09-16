@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 31 Aug 2026 22:21:51 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 14 Sep 2026 21:06:07 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -31,6 +31,71 @@
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
     <item>
+      <title>#98 - Group Selection</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-98</link>
+      <guid isPermaLink="false">urn:lsrg:98:weekly</guid>
+      <pubDate>Mon, 14 Sep 2026 21:06:07 +0000</pubDate>
+      <description><![CDATA[
+0:00 - The Tragedy of Group Selectionism by Eliezer Yudkowsky
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/QsMJQSFj7WfoTMNgW
+
+12:17 - Fake Optimization Criteria by Eliezer Yudkowsky
+
+17:59 - Adaptation-Executers, not Fitness-Maximizers by Eliezer Yudkowsky
+
+24:25 - Evolutionary Psychology by Eliezer Yudkowsky
+
+34:23 - (Optional) Why Motivated Reasoning? by johnswentworth
+https://www.lesswrong.com/posts/GnatTWjdfCNn6hrFM/why-motivated-reasoning
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-98
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and johnswentworth</itunes:author>
+      <itunes:episode>98</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2646</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-98-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-98-weekly.m4a" length="16262655" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#97 - Selection and Slack</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-97</link>
+      <guid isPermaLink="false">urn:lsrg:97:l2</guid>
+      <pubDate>Tue, 08 Sep 2026 00:35:34 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Evolutions Are Stupid (But Work Anyway) by Eliezer Yudkowsky
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/jAToJHtg39AMTAuJo
+
+9:19 - No Evolutions for Corporations or Nanodevices by Eliezer Yudkowsky
+
+21:57 - Evolving to Extinction by Eliezer Yudkowsky
+
+35:26 - (Optional) Studies on Slack by Scott Alexander
+https://www.lesswrong.com/posts/GZSzMqr8hAB2dR8pk/studies-on-slack
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-97
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast
+https://sscpodcast.libsyn.com/studies-on-slack
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>97</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4930</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-97-l2-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
+    </item>
+    <item>
       <title>#96 - Evolution</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-96</link>
       <guid isPermaLink="false">urn:lsrg:96:l1</guid>
@@ -39,9 +104,9 @@
 0:00 - An Alien God by Eliezer Yudkowsky
 https://www.lesswrong.com/lw/kr/an_alien_god/
 
-18:05 - The Wonder of Evolution by Eliezer Yudkowsky
+18:00 - The Wonder of Evolution by Eliezer Yudkowsky
 
-27:14 - (Optional) Meditations on Moloch by Scott Alexander
+27:09 - (Optional) Meditations on Moloch by Scott Alexander
 https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch
 
 Read along: https://diegozc.com/sequences-audio.html#lsrg-96
@@ -56,10 +121,10 @@ https://sscpodcast.libsyn.com/meditations-on-moloch
       <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
       <itunes:episode>96</itunes:episode>
       <itunes:episodeType>full</itunes:episodeType>
-      <itunes:duration>8041</itunes:duration>
+      <itunes:duration>7964</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="50131502" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
     </item>
     <item>
       <title>#95 - Minds and Intelligence</title>
@@ -87,7 +152,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>3386</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-95-book3-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
     </item>
     <item>
       <title>#94 - Letting Go</title>
@@ -120,7 +185,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
       <itunes:duration>4227</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
     </item>
     <item>
       <title>#93 - Oops</title>
@@ -158,7 +223,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2363</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
     </item>
     <item>
       <title>#92 - Conformity</title>
@@ -193,7 +258,7 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
       <itunes:duration>3700</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-92-j5-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
     </item>
     <item>
       <title>#91 - Guardians</title>
@@ -228,7 +293,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/
       <itunes:duration>2946</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-90-j4-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
     </item>
   </channel>
 </rss>

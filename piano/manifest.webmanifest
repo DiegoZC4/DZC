@@ -1,0 +1,20 @@
+{
+  "name": "Pocket Piano",
+  "short_name": "Piano",
+  "description": "A multi-touch mobile piano with adjustable rows, range, and key width.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#0b0e10",
+  "theme_color": "#0b0e10",
+  "icons": [
+    {
+      "src": "./piano-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

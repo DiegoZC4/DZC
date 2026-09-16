@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aurebesh Typing Trainer</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔠</text></svg>">
 <style>
-/* --- load the local .otf file --- */
 @font-face {
   font-family: "Aurebesh";
   src: url("AurebeshAF/AurebeshAF-Canon.otf") format("opentype");
@@ -13,81 +13,399 @@
   font-style: normal;
 }
 
-/* --- basic layout --- */
-html,
-body {
-  height: 100%;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  background: #000;
-  color: #0f0;
-  font-family: system-ui, sans-serif;
-}
-h1 {
-  font-family: "Aurebesh", sans-serif;
-  font-size: 6rem;
-  margin: 0;
-  letter-spacing: 0.25em;
-  user-select: none;
+:root {
+  --bg: #04070d;
+  --panel: rgba(10, 20, 34, 0.82);
+  --panel-strong: rgba(16, 30, 48, 0.92);
+  --line: rgba(116, 214, 255, 0.22);
+  --text: #eaf5ff;
+  --muted: #90a7bd;
+  --accent: #7be7ff;
+  --accent-2: #9ea4ff;
+  --tile: rgba(255, 255, 255, 0.04);
+  --tile-off: rgba(255, 255, 255, 0.015);
 }
 
-#legend{
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(76, 124, 255, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(123, 231, 255, 0.14), transparent 28%),
+    linear-gradient(180deg, #06101d 0%, var(--bg) 58%);
+  color: var(--text);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.app {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--panel-strong));
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.hero {
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  max-width: 48rem;
+  line-height: 1.55;
+}
+
+.glyph-frame {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(123, 231, 255, 0.18);
+  background:
+    radial-gradient(circle at center, rgba(123, 231, 255, 0.13), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  padding: 24px;
+}
+
+h1 {
+  font-family: "Aurebesh", sans-serif;
+  font-size: clamp(4rem, 16vw, 10rem);
+  margin: 0;
+  letter-spacing: 0.18em;
+  user-select: none;
+  color: #f3fbff;
+  text-shadow: 0 0 24px rgba(123, 231, 255, 0.22);
+}
+
+.status {
   display: flex;
   flex-wrap: wrap;
-  padding: 5px;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.control {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  padding: 9px 13px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.control:hover {
+  transform: translateY(-1px);
+  border-color: rgba(123, 231, 255, 0.35);
+  background: rgba(255,255,255,0.07);
+}
+
+.control[aria-pressed="true"] {
+  color: #041018;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+}
+
+#legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+#legend.qwerty {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  --key-u: min(8.8vw, 72px);
+}
+
+.key-row {
+  display: flex;
+  gap: 9px;
+  justify-content: center;
+  margin-left: calc(var(--row-offset, 0) * var(--key-u));
+}
+
+#legend.qwerty .pair {
+  flex: 0 0 var(--key-u);
 }
 
 .pair {
-  min-width: 40px; /* gives each pair a minimum width */
+  min-width: 40px;
   text-align: center;
-  padding: 10px;
-  margin: 10px;
-  border: 1px solid lightgray; /* for visualization */
+  color: inherit;
+  padding: 12px 8px 11px;
+  border: 1px solid rgba(123, 231, 255, 0.12);
+  border-radius: 16px;
+  background: var(--tile);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, opacity 120ms ease;
+  user-select: none;
 }
 
-.aur{
+.pair:hover {
+  transform: translateY(-1px);
+  border-color: rgba(123, 231, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pair.off {
+  opacity: 0.38;
+  background: var(--tile-off);
+  border-color: rgba(255,255,255,0.08);
+}
+
+.aur {
   font-family: "Aurebesh", sans-serif;
   font-size: 2rem;
+  color: var(--text);
 }
 
-.lat{
-  font-family: "Times New Roman", serif;
-  font-size: 1rem;
+.lat {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 0.08em;
+}
+
+body.hide-aurebesh .pair .aur {
+  display: none;
+}
+
+body.hide-aurebesh .pair {
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+}
+
+body.hide-aurebesh .lat {
+  margin-top: 0;
+  color: var(--text);
+  font-size: 1.35rem;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 16px 12px 28px;
+  }
+
+  .hero {
+    padding: 16px;
+  }
+
+  .glyph-frame {
+    min-height: 220px;
+  }
+
+  #legend {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  #legend.qwerty {
+    --key-u: calc((100vw - 42px) / 10.75);
+    gap: 6px;
+  }
+
+  .key-row {
+    gap: 5px;
+    margin-left: calc(var(--row-offset, 0) * var(--key-u));
+  }
+
+  .pair {
+    border-radius: 13px;
+    padding: 9px 4px;
+  }
+
+  .aur {
+    font-size: 1.55rem;
+  }
+
+  .lat {
+    font-size: 0.85rem;
+  }
 }
 </style>
 </head>
 <body>
-  <h1 id="glyph">?</h1>
-  <br>
-  <div id="legend"></div>
+  <main class="app">
+    <section class="panel hero">
+      <div class="eyebrow">Galactic Alphabet Drill</div>
+      <p class="lead">Type or tap the matching Latin letter for the Aurebesh glyph. Long-press or right-click a key to temporarily remove it from the rotation.</p>
+      <div class="glyph-frame">
+        <h1 id="glyph">?</h1>
+      </div>
+      <div class="status">
+        <div class="badge">Tap or type</div>
+        <div class="badge"><span id="activeCount">26</span> active glyphs</div>
+      </div>
+      <div class="controls" aria-label="On-screen keyboard controls">
+        <button class="control" id="glyphToggle" type="button" aria-pressed="false">Hide Aurebesh keys</button>
+        <button class="control" id="layoutToggle" type="button" aria-pressed="false">QWERTY layout</button>
+      </div>
+      <div id="legend"></div>
+    </section>
+  </main>
 
 <script>
 const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const QWERTY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+const STORAGE_KEY = "aurebeshTrainerSettings";
 const legend = document.getElementById("legend");
-
-for (const ch of pool){
-  legend.insertAdjacentHTML(
-    "beforeend",
-    `<div class="pair" onmousedown="toggle('${ch}',this)">
-      <div class="aur">${ch}</div>
-      <div class="lat">${ch}</div>
-    </div>`
-  );
-}
+const activeCount = document.getElementById("activeCount");
+const glyphToggle = document.getElementById("glyphToggle");
+const layoutToggle = document.getElementById("layoutToggle");
+let pressTimer = null;
+let longPressed = false;
 
 const glyph = document.getElementById("glyph");
 let current = "";
-const excluded = []
+let prev = "";
+const excluded = [];
+const settings = loadSettings();
+let showAurebeshKeys = settings.showAurebeshKeys;
+let qwertyLayout = settings.qwertyLayout;
+excluded.push(...settings.excluded);
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return {
+      showAurebeshKeys: saved.showAurebeshKeys !== false,
+      qwertyLayout: saved.qwertyLayout === true,
+      excluded: Array.isArray(saved.excluded)
+        ? [...new Set(saved.excluded.filter((letter) => pool.includes(letter)))]
+        : []
+    };
+  } catch {
+    return { showAurebeshKeys: true, qwertyLayout: false, excluded: [] };
+  }
+}
+
+function saveSettings() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    showAurebeshKeys,
+    qwertyLayout,
+    excluded
+  }));
+}
+
+function renderLegend() {
+  legend.innerHTML = "";
+  legend.classList.toggle("qwerty", qwertyLayout);
+  if (qwertyLayout) {
+    QWERTY_ROWS.forEach((row, index) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "key-row";
+      rowEl.style.setProperty("--row-offset", index === 1 ? ".25" : index === 2 ? ".75" : "0");
+      for (const ch of row) rowEl.append(createKey(ch));
+      legend.append(rowEl);
+    });
+    return;
+  }
+  for (const ch of pool) legend.append(createKey(ch));
+}
+
+function createKey(ch) {
+  const key = document.createElement("button");
+  key.className = "pair";
+  key.type = "button";
+  key.dataset.letter = ch;
+  key.setAttribute("aria-label", `${ch}${excluded.includes(ch) ? " excluded" : ""}`);
+  key.classList.toggle("off", excluded.includes(ch));
+  key.innerHTML = `<div class="aur">${ch}</div><div class="lat">${ch}</div>`;
+  key.addEventListener("click", () => {
+    if (longPressed) {
+      longPressed = false;
+      return;
+    }
+    submit(ch);
+  });
+  key.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    toggle(ch, key);
+  });
+  key.addEventListener("pointerdown", () => {
+    pressTimer = window.setTimeout(() => {
+      pressTimer = null;
+      longPressed = true;
+      toggle(ch, key);
+    }, 520);
+  });
+  key.addEventListener("pointerup", clearPressTimer);
+  key.addEventListener("pointercancel", clearPressTimer);
+  key.addEventListener("pointerleave", clearPressTimer);
+  return key;
+}
+
+function clearPressTimer() {
+  if (!pressTimer) return;
+  window.clearTimeout(pressTimer);
+  pressTimer = null;
+}
+
+function updateControls() {
+  document.body.classList.toggle("hide-aurebesh", !showAurebeshKeys);
+  glyphToggle.textContent = showAurebeshKeys ? "Hide Aurebesh keys" : "Show Aurebesh keys";
+  glyphToggle.setAttribute("aria-pressed", String(!showAurebeshKeys));
+  layoutToggle.textContent = qwertyLayout ? "Alphabet layout" : "QWERTY layout";
+  layoutToggle.setAttribute("aria-pressed", String(qwertyLayout));
+}
+
+function updateActiveCount() {
+  activeCount.textContent = pool.length - excluded.length;
+}
 
 function next() {
   if (excluded.length >= pool.length-1) {
     console.log('no options')
     return
   }
-  prev = current
+  prev = current;
   current = pool[Math.floor(Math.random() * pool.length)];
   while (excluded.includes(current) || current == prev){
     current = pool[Math.floor(Math.random() * pool.length)];
@@ -95,24 +413,46 @@ function next() {
   glyph.textContent = current;
 }
 
-next();
-
-function toggle(c, el){
+function toggle(c, el = document.querySelector(`[data-letter="${c}"]`)){
   const index = excluded.indexOf(c);
   if (index > -1) {
     excluded.splice(index, 1)
-    el.style.opacity = 1
+    if (el) el.classList.remove("off");
   }
   else {
     excluded.push(c)
-    el.style.opacity = .5
+    if (el) el.classList.add("off");
   }
+  if (el) el.setAttribute("aria-label", `${c}${excluded.includes(c) ? " excluded" : ""}`);
+  updateActiveCount();
+  saveSettings();
 }
+
+function submit(c) {
+  if (c === current) next();
+}
+
+glyphToggle.addEventListener("click", () => {
+  showAurebeshKeys = !showAurebeshKeys;
+  updateControls();
+  saveSettings();
+});
+
+layoutToggle.addEventListener("click", () => {
+  qwertyLayout = !qwertyLayout;
+  updateControls();
+  renderLegend();
+  saveSettings();
+});
 
 window.addEventListener("keydown", (e) => {
   if (e.key.toUpperCase() === current) next();
-  console.log(e.key)
 });
+
+renderLegend();
+updateControls();
+next();
+updateActiveCount();
 </script>
 </body>
 </html>

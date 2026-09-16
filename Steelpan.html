@@ -7,11 +7,13 @@
   <label id="wavelabel"> Waveform </label>
   <select id="wave"></select><p></p>
   <div id="keyboard"></div><p></p>
-  <div id="hues">Hues<br></div>
 
 <style>
 button {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   width:50px;
   height:50px;
@@ -91,8 +93,6 @@ const octave  = new NumSlider(0,  7,  2, 'Octave')
 const volume  = new NumSlider(0,100, 15, 'Volume')
 const decay   = new NumSlider(0, 10,  1, 'Decay (seconds)', step=0.1);
 
-const hueSliders = Array.from({length:12},(_,i)=>new NumSlider(0,350,i*30,i,10,'hues'))
-
 const audioContext = new (window.AudioContext || window.webkitAudioContext)()
 const masterGain = audioContext.createGain()
 masterGain.gain.value = volume.value()/100
@@ -104,10 +104,6 @@ volume.on('input', () => {
   masterGain.gain.value = volume.value()/100
 })
 
-const upSaturation = '50%'
-const downSaturation = '100%'
-const upLightness = '50%'
-const downLightness = '75%'
 const pitches = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']
 function freq2Pitch(freq) {
   const C0 = 16.35; // Frequency of C0
@@ -120,14 +116,21 @@ function freq2Pitch(freq) {
   return `${pitches[noteIndex]}${octave}${cents ? (cents < 0 ? "" : "+") + cents: ''}`;
 }
 
+function pitchClassColor(pitchClass, down=false) {
+  const hue = (pitchClass * 360 / 12 + 20) % 360
+  const chroma = down ? 0.25 : 0.18
+  const lightness = down ? 0.78 : 0.68
+  return `oklch(${lightness} ${chroma} ${hue})`
+}
+
 class Key{
-  constructor(key, freq, hue){
+  constructor(key, freq, pitchClass){
     this.freq = freq
     
     let b = document.createElement('button')
     b.textContent = key
     this.button = b
-    this.hue = hue
+    this.pitchClass = pitchClass
     this.setColor()
     b.addEventListener('mousedown',(e)=>{
       e.preventDefault()
@@ -155,15 +158,12 @@ class Key{
     this.button.title = `${Math.round(freq)}Hz ${freq2Pitch(freq)}`
   }
   setWaveform(wave){this.osc.type = wave}
-  setHue(hue){
-    this.hue=hue
+  setPitchClass(pitchClass){
+    this.pitchClass = pitchClass
     this.setColor()
   }
   setColor(down=false){
-    this.button.style.background = 
-    `hsl(${this.hue},
-    ${down?downSaturation:upSaturation},
-    ${down? downLightness: upLightness})`
+    this.button.style.background = pitchClassColor(this.pitchClass, down)
   }
   press(){
     this.setColor(true)
@@ -206,16 +206,16 @@ keys.forEach((key,i)=>{
 
 function updateKeys(){
   keys.forEach((k,i)=>{
+    const pitchClass = (5*i + transpose.value()) % 12
     k.setWaveform(wave.value)
-    k.setFrequency(16.352*Math.pow(2,octave.value()+Math.floor(i/12)+((5*i)%12+transpose.value())/12))
-    k.setHue(hueSliders[(5*i)%12].value())
+    k.setFrequency(16.352*Math.pow(2,octave.value()+Math.floor(i/12)+pitchClass/12))
+    k.setPitchClass(pitchClass)
   })
 }
 
 wave.addEventListener('input',updateKeys)
 octave.on('input',updateKeys)
 transpose.on('input',updateKeys)
-hueSliders.forEach(hs=>hs.on('input',updateKeys))
 window.addEventListener('resize',updateKeys)
 
 updateKeys()

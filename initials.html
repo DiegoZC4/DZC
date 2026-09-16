@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Logo</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>©</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <!--<body style="background-color:white;">-->
 <div id="svg"></div>
@@ -13,19 +13,34 @@ html, body {
   padding: 0;
   overflow-x: hidden; /* hides horizontal scrollbar */
   width: 100%;
+  background: transparent;
 }
 svg {
   fill: none;
-  stroke: black;
+  stroke: var(--logo-light, #C8D3F5);
   stroke-width: 30;
   stroke-linecap: round;
   stroke-linejoin: round;
   dominant-baseline: middle;
   text-anchor: middle;
   font: bold 0px sans-serif;
+  pointer-events: none;
+}
+.logo-hit {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+.logo-text {
+  cursor: pointer;
+  pointer-events: painted;
 }
 </style>
 <script>
+const params = new URLSearchParams(window.location.search);
+const logoDark = params.get('dark') || '#0E1117';
+const logoLight = params.get('light') || '#C8D3F5';
+document.documentElement.style.setProperty('--logo-light', logoLight);
+
 function svg(tagName, attrs, textContent) {
   var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
   for (var key in attrs) el.setAttribute(key, attrs[key]);
@@ -60,8 +75,16 @@ var canvas = svg('svg', {
   preserveAspectRatio: "xMidYMid meet"
 });
 document.getElementById('svg').append(canvas);
-canvas.addEventListener('mousedown',retract2Middle)
 const strokes = []
+
+function makeClickable(el) {
+  el.classList.add(el.localName === 'text' ? 'logo-text' : 'logo-hit');
+  el.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    retract2Middle();
+  });
+}
 
 // Z
 const Z = svg('path',
@@ -71,6 +94,7 @@ h${zWidth} l${-zWidth},${2*R} h${zWidth}
 l${-zWidth/4},${-R/2}
 `})
 strokes.push(Z)
+makeClickable(Z)
 canvas.append(Z)
 
 for (i of [-1,1]){
@@ -78,25 +102,28 @@ for (i of [-1,1]){
   centralAngle = 90+i*90;
   const a240 = arc(W/2+i*charSpacing, H/2,R,centralAngle-angle,centralAngle+angle)
   strokes.push(a240)
+  makeClickable(a240)
   canvas.append(a240)
   
   const vert = svg('path',
   {d:`M${W/2+i*charSpacing},${H/2-R/2} 
   v${R}`})
   strokes.push(vert)
+  makeClickable(vert)
   canvas.append(vert)
 
 }
 const name = [];
 [...'DIEGO'].forEach((x,i)=>{
-  const props = {x:W/2 + (i-2)*R, y:H/2, stroke:'none', fill:'white','stroke-width':'3px'}
+  const props = {x:W/2 + (i-2)*R, y:H/2, stroke:'none', fill:logoDark,'stroke-width':'3px'}
   if (i==2){
-    props['fill'] = 'black'
-    props['stroke'] = 'white'
+    props['fill'] = logoLight
+    props['stroke'] = logoDark
     // props['stroke-width'] = '1px';
   }
   const letter = svg('text',props,x)
   name.push(letter)
+  makeClickable(letter)
   canvas.append(letter)
 })
 

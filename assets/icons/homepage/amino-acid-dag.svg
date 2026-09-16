@@ -1,0 +1,145 @@
+<svg class="amino-dag-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    .amino-dag-icon{--amino-cycle:9s;color:#171512}
+    .amino-box{fill:#fffdf8;stroke:#d7cec0;stroke-width:1.2;vector-effect:non-scaling-stroke}
+    .amino-viewport,.amino-sprite{animation-duration:var(--amino-cycle);animation-iteration-count:infinite;animation-direction:alternate;animation-timing-function:linear;animation-fill-mode:both;animation-play-state:paused}
+    .amino-viewport{animation-name:amino-zoom;transform-origin:0 0}
+    .amino-sprite{opacity:0}
+    .sprite-g{animation-name:amino-glycine}
+    .sprite-a{animation-name:amino-alanine}
+    .sprite-f{animation-name:amino-phenylalanine}
+    .sprite-y{animation-name:amino-tyrosine}
+    .amino-dag-icon:hover .amino-viewport,
+    .amino-dag-icon:hover .amino-sprite,
+    .showcase-link:hover .amino-dag-icon .amino-viewport,
+    .showcase-link:hover .amino-dag-icon .amino-sprite,
+    .showcase-link:focus-visible .amino-dag-icon .amino-viewport,
+    .showcase-link:focus-visible .amino-dag-icon .amino-sprite{animation-play-state:running}
+    .mol2d .bond{stroke:#171512;stroke-width:2;stroke-linecap:round}
+    .mol2d .double{stroke-width:2}
+    .mol2d .atom{stroke:none}
+    .atom-c{fill:#444}
+    .atom-o{fill:#e53935}
+    .atom-n{fill:#315cff}
+    @keyframes amino-zoom{
+      0%,21%{transform:translate(13.7px,15.4px) scale(.58)}
+      29%,43%{transform:translate(12.6px,17.5px) scale(.52)}
+      51%,67%{transform:translate(10.8px,23.2px) scale(.36)}
+      75%,100%{transform:translate(10.4px,25px) scale(.31)}
+    }
+    @keyframes amino-glycine{
+      0%,21%{opacity:1}
+      29%,100%{opacity:0}
+    }
+    @keyframes amino-alanine{
+      0%,21%{opacity:0}
+      29%,43%{opacity:1}
+      51%,100%{opacity:0}
+    }
+    @keyframes amino-phenylalanine{
+      0%,43%{opacity:0}
+      51%,67%{opacity:1}
+      75%,100%{opacity:0}
+    }
+    @keyframes amino-tyrosine{
+      0%,67%{opacity:0}
+      75%,100%{opacity:1}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .amino-viewport,.amino-sprite{animation:none}
+      .amino-viewport{transform:translate(10.4px,25px) scale(.31)}
+      .sprite-y{opacity:1}
+    }
+  </style>
+  <rect class="amino-box" x="9" y="9" width="54" height="54" rx="10"/>
+  <g class="amino-viewport">
+    <g class="amino-sprite sprite-g mol2d">
+      <line class="bond double" x1="28.60" y1="33.65" x2="16.10" y2="12.00"/>
+      <line class="bond double" x1="23.40" y1="36.65" x2="10.90" y2="15.00"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="13.50" y2="56.80"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="51.00" y2="35.15"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="63.50" y2="56.80"/>
+      <circle class="atom atom-c" cx="26.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="51.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-n" cx="63.50" cy="56.80" r="7.5"/>
+    </g>
+    <g class="amino-sprite sprite-a mol2d">
+      <line class="bond double" x1="28.60" y1="33.65" x2="16.10" y2="12.00"/>
+      <line class="bond double" x1="23.40" y1="36.65" x2="10.90" y2="15.00"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="13.50" y2="56.80"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="51.00" y2="35.15"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="63.50" y2="56.80"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="76.00" y2="35.15"/>
+      <circle class="atom atom-c" cx="26.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="51.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-n" cx="63.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="76.00" cy="35.15" r="7.5"/>
+    </g>
+    <g class="amino-sprite sprite-f mol2d">
+      <line class="bond double" x1="28.60" y1="33.65" x2="16.10" y2="12.00"/>
+      <line class="bond double" x1="23.40" y1="36.65" x2="10.90" y2="15.00"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="13.50" y2="56.80"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="51.00" y2="35.15"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="63.50" y2="56.80"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="76.00" y2="35.15"/>
+      <line class="bond" x1="76.00" y1="35.15" x2="88.50" y2="13.50"/>
+      <line class="bond double" x1="88.50" y1="16.50" x2="113.50" y2="16.50"/>
+      <line class="bond double" x1="88.50" y1="10.50" x2="113.50" y2="10.50"/>
+      <line class="bond" x1="113.50" y1="13.50" x2="126.00" y2="35.15"/>
+      <line class="bond double" x1="123.40" y1="33.65" x2="110.90" y2="55.30"/>
+      <line class="bond double" x1="128.60" y1="36.65" x2="116.10" y2="58.30"/>
+      <line class="bond" x1="113.50" y1="56.80" x2="88.50" y2="56.80"/>
+      <line class="bond double" x1="91.10" y1="55.30" x2="78.60" y2="33.65"/>
+      <line class="bond double" x1="85.90" y1="58.30" x2="73.40" y2="36.65"/>
+      <line class="bond" x1="76.00" y1="35.15" x2="88.50" y2="13.50"/>
+      <circle class="atom atom-c" cx="26.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="51.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-n" cx="63.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="76.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-c" cx="88.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-c" cx="113.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-c" cx="126.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-c" cx="113.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="88.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="76.00" cy="35.15" r="7.5"/>
+    </g>
+    <g class="amino-sprite sprite-y mol2d">
+      <line class="bond double" x1="28.60" y1="33.65" x2="16.10" y2="12.00"/>
+      <line class="bond double" x1="23.40" y1="36.65" x2="10.90" y2="15.00"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="13.50" y2="56.80"/>
+      <line class="bond" x1="26.00" y1="35.15" x2="51.00" y2="35.15"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="63.50" y2="56.80"/>
+      <line class="bond" x1="51.00" y1="35.15" x2="76.00" y2="35.15"/>
+      <line class="bond" x1="76.00" y1="35.15" x2="88.50" y2="13.50"/>
+      <line class="bond double" x1="88.50" y1="16.50" x2="113.50" y2="16.50"/>
+      <line class="bond double" x1="88.50" y1="10.50" x2="113.50" y2="10.50"/>
+      <line class="bond" x1="113.50" y1="13.50" x2="126.00" y2="35.15"/>
+      <line class="bond double" x1="123.40" y1="33.65" x2="110.90" y2="55.30"/>
+      <line class="bond double" x1="128.60" y1="36.65" x2="116.10" y2="58.30"/>
+      <line class="bond" x1="113.50" y1="56.80" x2="88.50" y2="56.80"/>
+      <line class="bond double" x1="91.10" y1="55.30" x2="78.60" y2="33.65"/>
+      <line class="bond double" x1="85.90" y1="58.30" x2="73.40" y2="36.65"/>
+      <line class="bond" x1="76.00" y1="35.15" x2="88.50" y2="13.50"/>
+      <line class="bond" x1="126.00" y1="35.15" x2="151.00" y2="35.15"/>
+      <circle class="atom atom-c" cx="26.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-o" cx="13.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="51.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-n" cx="63.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="76.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-c" cx="88.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-c" cx="113.50" cy="13.50" r="7.5"/>
+      <circle class="atom atom-c" cx="126.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-c" cx="113.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="88.50" cy="56.80" r="7.5"/>
+      <circle class="atom atom-c" cx="76.00" cy="35.15" r="7.5"/>
+      <circle class="atom atom-o" cx="151.00" cy="35.15" r="7.5"/>
+    </g>
+  </g>
+</svg>

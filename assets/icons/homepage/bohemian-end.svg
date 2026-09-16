@@ -1,0 +1,32 @@
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    svg{color:#8bc0ff}
+    .mark-bg{fill:rgba(126,184,247,0.08);stroke:rgba(126,184,247,0.18);stroke-width:1.4}
+    .mark-bg-square{vector-effect:non-scaling-stroke}
+    .mark-art{transform-box:fill-box;transform-origin:center}
+    .mark-line{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+    .mark-fill{fill:currentColor;stroke:none}
+    .mark-soft{fill:rgba(139,192,255,0.22);stroke:none}
+    .risk-stem,.risk-eye-dot{fill:#111}
+  </style>
+              <defs>
+                <linearGradient id="bohemian-vinyl" x1="18" y1="18" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#222a39"/>
+                  <stop offset=".48" stop-color="#080b12"/>
+                  <stop offset="1" stop-color="#394b68"/>
+                </linearGradient>
+                <linearGradient id="bohemian-label" x1="29" y1="27" x2="45" y2="45" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#ffd897"/>
+                  <stop offset="1" stop-color="#ff8d36"/>
+                </linearGradient>
+              </defs>
+              <rect class="mark-bg-square" x="9" y="9" width="54" height="54" rx="10" fill="#10151f" stroke="rgba(126,184,247,0.18)" stroke-width="1.4"/>
+              <circle cx="36" cy="36" r="22" fill="url(#bohemian-vinyl)" stroke="#d5e7ff" stroke-opacity=".22" stroke-width="1.1"/>
+              <circle cx="36" cy="36" r="8.2" fill="url(#bohemian-label)"/>
+              <circle cx="36" cy="36" r="2.3" fill="#10151f"/>
+              <g fill="none" stroke="#d5e7ff" stroke-linecap="round" opacity=".32">
+                <circle cx="36" cy="36" r="14" stroke-width=".9"/>
+                <circle cx="36" cy="36" r="18.2" stroke-width=".75"/>
+              </g>
+              <path d="M22 50c3.8-7 8.1-9.5 14-7.8c4.3 1.2 7.5 0.6 14-5.2" fill="none" stroke="#8bc0ff" stroke-width="2.6" stroke-linecap="round"/>
+            </svg>

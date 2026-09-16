@@ -1,0 +1,36 @@
+<svg class="toddle-time-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    .toddle-time-icon{--toddle-minute-cycle:4.8s;--toddle-hour-cycle:57.6s;color:#8bc0ff}
+    .toddle-time-icon .mark-bg-square{vector-effect:non-scaling-stroke}
+    .toddle-time-icon .toddle-clock-static{display:none}
+    .toddle-time-icon .toddle-minute-hand,.toddle-time-icon .toddle-hour-hand{transform-box:view-box;transform-origin:52.9px 36px}
+    .toddle-time-icon .toddle-minute-hand{animation:toddle-minute-spin var(--toddle-minute-cycle) linear infinite paused}
+    .toddle-time-icon .toddle-hour-hand{animation:toddle-hour-spin var(--toddle-hour-cycle) linear infinite paused}
+    .toddle-time-icon:hover .toddle-minute-hand,
+    .toddle-time-icon:hover .toddle-hour-hand,
+    .showcase-link:hover .toddle-time-icon .toddle-minute-hand,
+    .showcase-link:hover .toddle-time-icon .toddle-hour-hand,
+    .showcase-link:focus-visible .toddle-time-icon .toddle-minute-hand,
+    .showcase-link:focus-visible .toddle-time-icon .toddle-hour-hand{animation-play-state:running}
+    @keyframes toddle-minute-spin{to{transform:rotate(360deg)}}
+    @keyframes toddle-hour-spin{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){
+      .toddle-time-icon .toddle-minute-hand,.toddle-time-icon .toddle-hour-hand{animation:none}
+    }
+  </style>
+  <rect class="mark-bg-square" x="9" y="9" width="54" height="54" rx="10" fill="#f4ead8" stroke="#d9c8ad" stroke-width="1.4"/>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="25" font-weight="300">
+    <text x="14" y="45" fill="#d93b32">A</text>
+    <text x="29" y="45" fill="#245dd8">B</text>
+    <text x="44" y="45" fill="#e7a900">C</text>
+  </g>
+  <g class="toddle-clock-static">
+    <path d="M52.9 36V30.4M52.9 36l4.6 2.7" fill="none" stroke="#111" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="52.9" cy="36" r="1.05" fill="#111"/>
+  </g>
+  <g class="toddle-clock-motion">
+    <path class="toddle-minute-hand" d="M52.9 36V30.4" fill="none" stroke="#111" stroke-width="1.35" stroke-linecap="round"/>
+    <path class="toddle-hour-hand" d="M52.9 36l4.6 2.7" fill="none" stroke="#111" stroke-width="1.35" stroke-linecap="round"/>
+    <circle cx="52.9" cy="36" r="1.05" fill="#111"/>
+  </g>
+</svg>

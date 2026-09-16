@@ -1,0 +1,24 @@
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    svg{color:#8bc0ff}
+    .mark-bg{fill:rgba(126,184,247,0.08);stroke:rgba(126,184,247,0.18);stroke-width:1.4}
+    .mark-bg-square{vector-effect:non-scaling-stroke}
+    .mark-art{transform-box:fill-box;transform-origin:center}
+    .mark-line{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+    .mark-fill{fill:currentColor;stroke:none}
+    .mark-soft{fill:rgba(139,192,255,0.22);stroke:none}
+    .risk-stem,.risk-eye-dot{fill:#111}
+  </style>
+            <rect class="mark-bg" x="9" y="9" width="54" height="54" rx="10"/>
+            <rect x="18" y="18" width="36" height="36" rx="4" fill="rgba(139,192,255,0.1)" stroke="currentColor" stroke-width="2.4"/>
+            <g stroke="rgba(139,192,255,0.32)" stroke-width="1">
+              <line x1="27" y1="18" x2="27" y2="54"/>
+              <line x1="36" y1="18" x2="36" y2="54"/>
+              <line x1="45" y1="18" x2="45" y2="54"/>
+              <line x1="18" y1="27" x2="54" y2="27"/>
+              <line x1="18" y1="36" x2="54" y2="36"/>
+              <line x1="18" y1="45" x2="54" y2="45"/>
+            </g>
+            <path d="M35 18c-6 6 5 9-1 15s3 10-4 21" fill="none" stroke="#f97316" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M42 20l7 7M48 20l-7 7" stroke="#d7def5" stroke-width="2" stroke-linecap="round"/>
+          </svg>

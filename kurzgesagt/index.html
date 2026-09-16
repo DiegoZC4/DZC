@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111316">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f6f8">
+  <meta name="description" content="One question, mostly blanks. Pass to uncover a word or guess the answer. Both cost a round, and your score is how many rounds it took.">
+  <meta name="robots" content="noindex">
+  <title>Kurzgesagt · One question at a time</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=1">
+  <script src="app.js?v=1" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <a class="home" href="/">diegozc.com <span>/ kurzgesagt</span></a>
+      <nav class="tabs" id="tabs" aria-label="Screens">
+        <a class="tab" id="tab-guess" href="#guess">Play</a>
+        <a class="tab" id="tab-mask" href="#mask">Mask</a>
+        <a class="tab" id="tab-write" href="#write">Write one →</a>
+      </nav>
+    </header>
+
+    <section id="screen-write" class="screen" hidden aria-label="Write a question">
+      <div class="screen-head">
+        <div class="eyebrow">01 / WRITE</div>
+        <h1>Write one<span class="period">.</span></h1>
+        <p class="lede">A question and its answer, straight into the shared pool. Someone else decides which words show first.</p>
+      </div>
+      <form id="write-form" class="card">
+        <div class="field-group">
+          <div class="field-line"><label for="question">Question</label><span class="fine" id="write-words">0 / 40 words</span></div>
+          <textarea id="question" name="question" maxlength="400" autocomplete="off" placeholder="Which planet in our solar system is famous for its rings" required></textarea>
+        </div>
+        <div class="field-group">
+          <label for="answer">Answer</label>
+          <input id="answer" name="answer" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Saturn" required>
+          <p class="fine">Separate alternatives with <code>|</code>. Only the first one is ever shown.</p>
+        </div>
+        <div class="actions">
+          <button class="primary" id="write-submit" type="submit">Add to the pool</button>
+          <span class="fine" id="write-state"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="screen-mask" class="screen" hidden aria-label="Mask a question">
+      <div class="screen-head">
+        <div class="eyebrow">02 / MASK</div>
+        <h1>Mask one<span class="period">.</span></h1>
+        <p class="lede">Pick a question, then click its words in the order they should be uncovered. Click the harmless ones.</p>
+      </div>
+      <div class="mask-layout">
+        <div class="card pool">
+          <div class="pool-top">
+            <input id="pool-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search questions" aria-label="Search the question pool">
+            <button id="pool-random" type="button">Pick random</button>
+          </div>
+          <p class="fine" id="pool-status">Loading the pool…</p>
+          <div class="pool-list" id="pool-list" aria-live="polite"></div>
+          <p class="fine" id="pool-recent"></p>
+        </div>
+        <div class="mask-side">
+          <p class="waiting" id="mask-empty">Pick a question on the left. Newly written ones appear here on their own.</p>
+          <div class="card" id="mask-editor" hidden>
+            <p class="answer-line">Answer: <strong id="mask-answer"></strong></p>
+            <div class="clue" id="mask-words"></div>
+            <div class="preview">
+              <div class="eyebrow">ROUND 0 · WHAT THEY SEE</div>
+              <div class="clue tight" id="mask-preview"></div>
+            </div>
+            <div class="actions">
+              <button class="primary" id="mask-publish" type="button">Publish</button>
+              <button id="mask-clear" type="button">Clear order</button>
+              <span class="fine" id="mask-count"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-guess" class="screen" hidden aria-label="Play a puzzle">
+      <div class="play-surface">
+        <div class="stage-top">
+          <div>
+            <div class="eyebrow" id="guess-kicker">03 / GUESS</div>
+            <h2 id="guess-title">Loading…</h2>
+          </div>
+          <div class="run-score" id="guess-round" aria-label="Rounds used" hidden>0</div>
+        </div>
+        <p class="fine" id="guess-summary"></p>
+        <div class="clue" id="guess-board"></div>
+        <p class="fine" id="guess-free"></p>
+        <form id="guess-form" hidden>
+          <label class="sr-only" for="guess-input">Your answer</label>
+          <div class="guess-row">
+            <input id="guess-input" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Take your best shot…">
+            <button class="primary" id="guess-submit" type="submit">Guess · 1</button>
+          </div>
+        </form>
+        <div class="actions" id="guess-actions"></div>
+        <p class="fine" id="guess-tried"></p>
+        <div id="guess-done" hidden>
+          <p class="reveal-question" id="done-question"></p>
+          <div class="reveal-answer" id="done-answer"></div>
+          <p class="outcome" id="done-outcome"></p>
+          <form id="name-form" class="guess-row" hidden>
+            <label class="sr-only" for="name-input">Add a name for the board</label>
+            <input id="name-input" maxlength="24" autocomplete="nickname" placeholder="Add a name for the board?">
+            <button id="name-submit" type="submit">Save</button>
+          </form>
+          <ol class="ladder" id="ladder"></ol>
+          <p class="fine">No accounts, so no anti-cheat. Scores are honour system.</p>
+        </div>
+      </div>
+      <div class="actions" id="guess-footer"></div>
+    </section>
+
+    <p class="notice" id="notice" role="status" hidden></p>
+    <noscript>This game needs JavaScript: the board, the rounds and the answer all live on the server.</noscript>
+    <footer class="credit">A homemade one-question puzzle. Write one, mask one, share the link.</footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#93 - Oops",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for August 11, 2026.",
+  "fileName": "lsrg-93-k1.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 313.104,
+      "title": "The Importance of Saying “Oops”",
+      "url": "https://www.lesswrong.com/lw/i9/the_importance_of_saying_oops/"
+    },
+    {
+      "startTime": 313.104,
+      "endTime": 605.466,
+      "title": "The Crackpot Offer",
+      "url": "https://www.lesswrong.com/lw/j8/the_crackpot_offer/"
+    },
+    {
+      "startTime": 605.466,
+      "endTime": 758.015,
+      "title": "Just Lose Hope Already",
+      "url": "https://www.lesswrong.com/lw/gx/just_lose_hope_already/"
+    },
+    {
+      "startTime": 758.015,
+      "endTime": 1111.401,
+      "title": "The Proper Use of Doubt",
+      "url": "https://www.lesswrong.com/lw/ib/the_proper_use_of_doubt/"
+    },
+    {
+      "startTime": 1111.401,
+      "endTime": 1144.123,
+      "title": "You Can Face Reality",
+      "url": "https://www.lesswrong.com/lw/id/you_can_face_reality/"
+    },
+    {
+      "startTime": 1144.123,
+      "endTime": 1592.01,
+      "title": "The Meditation on Curiosity",
+      "url": "https://www.lesswrong.com/lw/jz/the_meditation_on_curiosity/"
+    },
+    {
+      "startTime": 1592.01,
+      "endTime": 1941.341,
+      "title": "No One Can Exempt You From Rationality’s Laws",
+      "url": "https://www.lesswrong.com/lw/k1/no_one_can_exempt_you_from_rationalitys_laws/"
+    },
+    {
+      "startTime": 1941.341,
+      "endTime": 2363.008,
+      "title": "(Optional) The Cowpox of Doubt",
+      "url": "https://slatestarcodex.com/2014/04/15/the-cowpox-of-doubt/"
+    }
+  ]
+}

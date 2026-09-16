@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+  xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>Lighthaven Sequences Reading Group Audio</title>
+    <link>https://diegozc.com/sequences-audio.html</link>
+    <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
+    <language>en-us</language>
+    <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
+    <lastBuildDate>Mon, 31 Aug 2026 22:21:51 +0000</lastBuildDate>
+    <generator>Sequences audio feed builder</generator>
+    <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
+    <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
+    <itunes:type>episodic</itunes:type>
+    <itunes:explicit>false</itunes:explicit>
+    <itunes:image href="https://diegozc.com/sequences-audio-cover.png?v=20260720c" />
+    <itunes:category text="Education">
+      <itunes:category text="Courses" />
+    </itunes:category>
+    <itunes:category text="Society &amp; Culture">
+      <itunes:category text="Philosophy" />
+    </itunes:category>
+    <podcast:guid>4228f871-823a-5d5f-99c0-1adbc4bf37fa</podcast:guid>
+    <podcast:medium>podcast</podcast:medium>
+    <image>
+      <url>https://diegozc.com/sequences-audio-cover.png?v=20260720c</url>
+      <title>Lighthaven Sequences Reading Group Audio</title>
+      <link>https://diegozc.com/sequences-audio.html</link>
+    </image>
+    <item>
+      <title>#96 - Evolution</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-96</link>
+      <guid isPermaLink="false">urn:lsrg:96:l1</guid>
+      <pubDate>Mon, 31 Aug 2026 22:21:51 +0000</pubDate>
+      <description><![CDATA[
+0:00 - An Alien God by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/kr/an_alien_god/
+
+18:05 - The Wonder of Evolution by Eliezer Yudkowsky
+
+27:14 - (Optional) Meditations on Moloch by Scott Alexander
+https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-96
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast, narrated by Jeremiah
+https://sscpodcast.libsyn.com/meditations-on-moloch
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>96</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>8041</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-96-l1.m4a" length="50131502" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#95 - Minds and Intelligence</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-95</link>
+      <guid isPermaLink="false">urn:lsrg:95:book3</guid>
+      <pubDate>Tue, 25 Aug 2026 01:41:29 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Minds: An Introduction by Rob Bensinger
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/8GhSZzsQmusCN9is7
+
+10:26 - The Power of Intelligence by Eliezer Yudkowsky
+
+18:58 - (Optional) The ‘Breaking’ News: The OpenAI–Hugging Face Incident by Eric Wallace and Michael Dalton
+https://www.youtube.com/watch?v=87DyyMV0kCY
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-95
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Rob Bensinger, Eliezer Yudkowsky, Eric Wallace, and Michael Dalton</itunes:author>
+      <itunes:episode>95</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3386</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-95-book3-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#94 - Letting Go</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-94</link>
+      <guid isPermaLink="false">urn:lsrg:94:k2</guid>
+      <pubDate>Mon, 17 Aug 2026 17:00:00 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Leave a Line of Retreat by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/o4/leave_a_line_of_retreat/
+
+7:48 - Crisis of Faith by Eliezer Yudkowsky
+
+24:29 - The Ritual by Eliezer Yudkowsky
+
+33:42 - (Optional) Crony Beliefs by Kevin Simler
+https://meltingasphalt.com/crony-beliefs/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-94
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Second Enumerations, narrated by Grognor
+http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Kevin Simler</itunes:author>
+      <itunes:episode>94</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4227</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#93 - Oops</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-93</link>
+      <guid isPermaLink="false">urn:lsrg:93:k1</guid>
+      <pubDate>Mon, 10 Aug 2026 17:00:00 +0000</pubDate>
+      <description><![CDATA[
+0:00 - The Importance of Saying “Oops” by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/i9/the_importance_of_saying_oops/
+
+5:13 - The Crackpot Offer by Eliezer Yudkowsky
+
+10:05 - Just Lose Hope Already by Eliezer Yudkowsky
+
+12:38 - The Proper Use of Doubt by Eliezer Yudkowsky
+
+18:31 - You Can Face Reality by Eliezer Yudkowsky
+
+19:04 - The Meditation on Curiosity by Eliezer Yudkowsky
+
+26:32 - No One Can Exempt You From Rationality’s Laws by Eliezer Yudkowsky
+
+32:21 - (Optional) The Cowpox of Doubt by Scott Alexander
+https://slatestarcodex.com/2014/04/15/the-cowpox-of-doubt/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-93
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>93</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2363</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
+    </item>
+    <item>
+      <title>#92 - Conformity</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-92</link>
+      <guid isPermaLink="false">urn:lsrg:92:j5</guid>
+      <pubDate>Thu, 23 Jul 2026 17:41:26 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Asch’s Conformity Experiment by Eliezer Yudkowsky
+https://www.lesswrong.com/lw/m9/aschs_conformity_experiment/
+
+7:47 - On Expressing Your Concerns by Eliezer Yudkowsky
+
+13:38 - Lonely Dissent by Eliezer Yudkowsky
+
+22:10 - Cultish Countercultishness by Eliezer Yudkowsky
+
+41:42 - (Optional) Asches to Asches by Scott Alexander
+https://www.lesswrong.com/s/B384FrQNrxSq4hZoS/p/pfmZ5cYQCahABGZzi
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-92
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+UNSONG Audiobook Version, narrated by Matt Arnold
+https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>92</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3700</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-92-j5-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
+    </item>
+    <item>
+      <title>#91 - Guardians</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-90</link>
+      <guid isPermaLink="false">urn:lsrg:90:j4</guid>
+      <pubDate>Mon, 20 Jul 2026 01:00:57 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Guardians of the Truth by Eliezer Yudkowsky
+https://www.lesswrong.com/posts/etBrzxdfNop3DqJvA/guardians-of-the-truth
+
+9:04 - Guardians of the Gene Pool by Eliezer Yudkowsky
+
+11:05 - Guardians of Ayn Rand by Eliezer Yudkowsky
+
+22:24 - Two Cult Koans by Eliezer Yudkowsky
+
+26:31 - (Optional) Cargo Cult Science by Richard Feynman
+https://calteches.library.caltech.edu/51/2/CargoCult.htm
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-90
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Nullius in Verba podcast
+https://nulliusinverba.podbean.com/e/cargo-cult-science/
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Richard Feynman</itunes:author>
+      <itunes:episode>91</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2946</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-90-j4-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
+    </item>
+  </channel>
+</rss>

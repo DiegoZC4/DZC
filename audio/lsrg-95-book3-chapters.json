@@ -1,0 +1,28 @@
+{
+  "version": "1.2.0",
+  "author": "Rob Bensinger, Eliezer Yudkowsky, Eric Wallace, and Michael Dalton",
+  "title": "#95 - Minds and Intelligence",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for August 25, 2026.",
+  "fileName": "lsrg-95-book3.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 625.931,
+      "title": "Minds: An Introduction",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/8GhSZzsQmusCN9is7"
+    },
+    {
+      "startTime": 625.931,
+      "endTime": 1138.067,
+      "title": "The Power of Intelligence",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/aiQabnugDhcrFtr9n"
+    },
+    {
+      "startTime": 1138.067,
+      "endTime": 3385.7,
+      "title": "(Optional) The ‘Breaking’ News: The OpenAI–Hugging Face Incident",
+      "url": "https://www.youtube.com/watch?v=87DyyMV0kCY"
+    }
+  ]
+}

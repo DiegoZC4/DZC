@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homepage Priority</title>
+  <style>
+    :root {
+      --bg: #10151d;
+      --bg-2: #182231;
+      --card: rgba(244, 239, 226, 0.94);
+      --card-2: #fffaf0;
+      --ink: #17202c;
+      --muted: #667180;
+      --line: rgba(23, 32, 44, 0.16);
+      --accent: #d98533;
+      --accent-2: #375f8c;
+      --good: #2f6f52;
+      --bad: #8a4d56;
+      --shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font: 16px/1.45 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      background:
+        radial-gradient(circle at 14% 10%, rgba(217, 133, 51, 0.24), transparent 24rem),
+        radial-gradient(circle at 86% 0%, rgba(82, 132, 174, 0.28), transparent 28rem),
+        linear-gradient(145deg, var(--bg), var(--bg-2));
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 22px 0 32px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 16px;
+      color: #f6efe3;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.6rem);
+      line-height: 0.92;
+      letter-spacing: -0.055em;
+    }
+
+    .lede {
+      max-width: 58ch;
+      margin: 10px 0 0;
+      color: rgba(246, 239, 227, 0.74);
+      font-size: 0.98rem;
+    }
+
+    .header-actions,
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    button,
+    .button-link {
+      min-height: 36px;
+      border: 1px solid rgba(23, 32, 44, 0.18);
+      border-radius: 999px;
+      padding: 0 14px;
+      color: var(--ink);
+      background: #f9efe0;
+      cursor: pointer;
+      font: 700 0.88rem/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      text-decoration: none;
+      transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    button:hover,
+    .button-link:hover {
+      background: #fff8ed;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+      transform: translateY(-1px);
+    }
+
+    button:focus-visible,
+    .button-link:focus-visible {
+      outline: 3px solid rgba(217, 133, 51, 0.5);
+      outline-offset: 2px;
+    }
+
+    .button-dark {
+      color: #f8efe3;
+      background: #1f2c3d;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .button-dark:hover {
+      background: #293a51;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.46fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 24px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+
+    .panel-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 250, 240, 0.68);
+    }
+
+    .counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .counter strong {
+      color: var(--ink);
+      font-size: 1.14rem;
+    }
+
+    .priority-list {
+      display: grid;
+      gap: 6px;
+      min-height: 340px;
+      margin: 0;
+      padding: 10px;
+      list-style: none;
+    }
+
+    .priority-list.drop-after {
+      padding-bottom: 34px;
+    }
+
+    .page-row,
+    .cutoff-row {
+      position: relative;
+      display: grid;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card-2);
+    }
+
+    .page-row {
+      grid-template-columns: 48px 54px minmax(0, 1fr) auto;
+      gap: 10px;
+      min-height: 70px;
+      padding: 8px 10px;
+    }
+
+    .page-row[draggable="true"],
+    .cutoff-row[draggable="true"] {
+      cursor: grab;
+    }
+
+    .page-row:active,
+    .cutoff-row:active {
+      cursor: grabbing;
+    }
+
+    .page-row.is-hidden {
+      background: rgba(255, 250, 240, 0.68);
+      opacity: 0.74;
+    }
+
+    .page-row.is-dragging,
+    .cutoff-row.is-dragging {
+      opacity: 0.38;
+    }
+
+    .page-row.drop-before::before,
+    .cutoff-row.drop-before::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: 14px;
+      right: 14px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217, 133, 51, 0.18);
+    }
+
+    .drag-handle {
+      display: grid;
+      place-items: center;
+      align-self: stretch;
+      border-radius: 12px;
+      color: rgba(23, 32, 44, 0.58);
+      background:
+        linear-gradient(90deg, transparent 0 42%, rgba(23, 32, 44, 0.12) 42% 46%, transparent 46% 54%, rgba(23, 32, 44, 0.12) 54% 58%, transparent 58%),
+        rgba(23, 32, 44, 0.04);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .icon-box {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(23, 32, 44, 0.08);
+      border-radius: 14px;
+      background: #111925;
+      overflow: hidden;
+    }
+
+    .icon-box img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .page-title {
+      display: block;
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      font-weight: 800;
+      line-height: 1.08;
+    }
+
+    .page-meta {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font: 700 0.74rem/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rank-pill {
+      min-width: 82px;
+      justify-self: end;
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: #f8efe3;
+      background: var(--good);
+      font: 800 0.78rem/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .is-hidden .rank-pill {
+      color: #fff4f4;
+      background: var(--bad);
+    }
+
+    .cutoff-row {
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 10px;
+      min-height: 56px;
+      padding: 9px 10px;
+      border-color: rgba(217, 133, 51, 0.44);
+      background:
+        linear-gradient(90deg, rgba(217, 133, 51, 0.22), rgba(55, 95, 140, 0.12)),
+        #fff6e8;
+    }
+
+    .cutoff-title {
+      display: block;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .cutoff-subtitle {
+      display: block;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .side-body {
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-size: 0.72rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      color: #f8efe3;
+      background: #10151d;
+      font: 0.78rem/1.38 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .toast {
+      min-height: 22px;
+      color: var(--accent-2);
+      font-weight: 800;
+    }
+
+    .error {
+      color: #ffc7c7;
+      background: rgba(86, 20, 25, 0.72);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    @media (max-width: 860px) {
+      header,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .header-actions,
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .page-row {
+        grid-template-columns: 42px 48px minmax(0, 1fr);
+      }
+
+      .rank-pill {
+        grid-column: 2 / -1;
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Homepage Priority</h1>
+        <p class="lede">Drag pages into the order you want. Drag the cutoff marker to decide what is published on the homepage.</p>
+      </div>
+      <div class="header-actions">
+        <a class="button-link button-dark" href="index.html">Open homepage</a>
+        <button id="reset-button" type="button">Reset</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <section class="panel" aria-labelledby="priority-heading">
+        <div class="panel-head">
+          <div>
+            <strong id="priority-heading">Publication order</strong>
+        <div class="counter"><strong id="visible-count">0</strong> visible <span id="total-count">0</span> total</div>
+          </div>
+          <div class="actions">
+            <button id="show-less-button" type="button">Show fewer</button>
+            <button id="show-more-button" type="button">Show more</button>
+          </div>
+        </div>
+        <ol id="priority-list" class="priority-list" aria-label="Homepage publication priority"></ol>
+      </section>
+
+      <aside class="panel" aria-labelledby="export-heading">
+        <div class="panel-head">
+          <strong id="export-heading">Generated JSON</strong>
+          <div class="actions">
+            <button id="copy-button" type="button">Copy</button>
+            <button id="download-button" type="button">Download</button>
+            <button id="save-button" type="button">Save JSON</button>
+            <button id="rebuild-button" type="button">Rebuild homepage</button>
+          </div>
+        </div>
+        <div class="side-body">
+          <p class="hint">Rows above the cutoff get `visible: true`; rows below it stay in the manifest with `visible: false`.</p>
+          <p class="hint">Rebuild homepage saves this manifest and regenerates `index.html` through `tools/build_homepage.py` on the local PHP server.</p>
+          <p class="hint">Legacy `art` and `science` ranks are preserved in `sorts` for later experiments.</p>
+          <div class="field">
+            <label for="manifest-output">homepage-manifest.json</label>
+            <textarea id="manifest-output" spellcheck="false" readonly></textarea>
+          </div>
+          <div id="toast" class="toast" aria-live="polite"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const CUTOFF_ID = "__homepage_cutoff__";
+      const list = document.getElementById("priority-list");
+      const output = document.getElementById("manifest-output");
+      const toast = document.getElementById("toast");
+      const visibleCountEl = document.getElementById("visible-count");
+      const totalCountEl = document.getElementById("total-count");
+      const copyButton = document.getElementById("copy-button");
+      const downloadButton = document.getElementById("download-button");
+      const saveButton = document.getElementById("save-button");
+      const rebuildButton = document.getElementById("rebuild-button");
+      const resetButton = document.getElementById("reset-button");
+      const showLessButton = document.getElementById("show-less-button");
+      const showMoreButton = document.getElementById("show-more-button");
+      let pages = [];
+      let pageById = new Map();
+      let visibleCount = 0;
+      let draggingId = null;
+      let dragHandlersAttached = false;
+      let pointerDrag = null;
+
+      function normalize(value) {
+        return String(value || "").trim().replace(/\s+/g, " ");
+      }
+
+      function slug(value) {
+        return normalize(value)
+          .toLowerCase()
+          .replace(/&/g, "and")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "page";
+      }
+
+      function sequence() {
+        const ids = pages.map((page) => page.id);
+        ids.splice(visibleCount, 0, CUTOFF_ID);
+        return ids;
+      }
+
+      function applySequence(nextSequence) {
+        visibleCount = nextSequence.indexOf(CUTOFF_ID);
+        pages = nextSequence
+          .filter((id) => id !== CUTOFF_ID)
+          .map((id) => pageById.get(id))
+          .filter(Boolean);
+        render();
+      }
+
+      function numericSorts(page) {
+        return Object.fromEntries(Object.entries(page.sorts || {})
+          .map(([key, value]) => [key, Number(value)])
+          .filter(([, value]) => Number.isFinite(value)));
+      }
+
+      function generatedManifest() {
+        const manifest = {
+          version: 1,
+          visibilityCutoff: visibleCount,
+          pages: pages.map((page, index) => {
+            const nextPage = {
+              id: page.id,
+              title: page.title,
+              href: page.href,
+              icon: page.icon,
+              visible: index < visibleCount,
+              priority: index + 1
+            };
+            if (page.type) nextPage.type = page.type;
+            const sorts = numericSorts(page);
+            if (Object.keys(sorts).length) nextPage.sorts = sorts;
+            return nextPage;
+          })
+        };
+        return `${JSON.stringify(manifest, null, 2)}\n`;
+      }
+
+      function readManifest(text) {
+        const manifest = JSON.parse(text);
+        if (!manifest || !Array.isArray(manifest.pages)) {
+          throw new Error("homepage-manifest.json must contain a pages array.");
+        }
+        return manifest;
+      }
+
+      function mergeManifestPage(page, fallback = {}, index = 0) {
+        return {
+          id: page.id || fallback.id || slug(page.title || fallback.title),
+          title: normalize(page.title || fallback.title),
+          href: page.href || fallback.href || "",
+          icon: page.icon || fallback.icon || "",
+          type: page.type || fallback.type || "",
+          visible: page.visible !== false,
+          priority: Number(page.priority) || index + 1,
+          sorts: { ...(fallback.sorts || {}), ...(page.sorts || {}) },
+          domIndex: fallback.domIndex ?? 10000 + index
+        };
+      }
+
+      function statusText(index) {
+        return index < visibleCount ? `live ${index + 1}` : "hidden";
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(() => {
+          toast.textContent = "";
+        }, 2600);
+      }
+
+      function clearDropMarks() {
+        list.classList.remove("drop-after");
+        [...list.children].forEach((child) => child.classList.remove("drop-before"));
+      }
+
+      function markDropIndex(index) {
+        clearDropMarks();
+        const child = list.children[index];
+        if (child) {
+          child.classList.add("drop-before");
+        } else {
+          list.classList.add("drop-after");
+        }
+      }
+
+      function dropIndexFromEvent(event) {
+        const children = [...list.children];
+        const y = event.clientY;
+        for (let index = 0; index < children.length; index += 1) {
+          const rect = children[index].getBoundingClientRect();
+          if (y < rect.top + rect.height / 2) return index;
+        }
+        return children.length;
+      }
+
+      function moveDraggedTo(dropIndex) {
+        if (!draggingId) return;
+        const nextSequence = sequence();
+        const fromIndex = nextSequence.indexOf(draggingId);
+        if (fromIndex < 0) return;
+        nextSequence.splice(fromIndex, 1);
+        const adjustedDropIndex = dropIndex > fromIndex ? dropIndex - 1 : dropIndex;
+        nextSequence.splice(Math.max(0, Math.min(adjustedDropIndex, nextSequence.length)), 0, draggingId);
+        applySequence(nextSequence);
+      }
+
+      function makePageRow(page, index) {
+        const row = document.createElement("li");
+        row.className = `page-row ${index < visibleCount ? "is-visible" : "is-hidden"}`;
+        row.draggable = true;
+        row.dataset.dragId = page.id;
+        row.innerHTML = `
+          <span class="drag-handle" aria-hidden="true">drag</span>
+          <span class="icon-box"><img src="${page.icon}" alt=""></span>
+          <span>
+            <span class="page-title"></span>
+            <span class="page-meta"></span>
+          </span>
+          <span class="rank-pill"></span>
+        `;
+        row.querySelector(".page-title").textContent = page.title;
+        row.querySelector(".page-meta").textContent = page.href || "homepage audio card";
+        row.querySelector(".rank-pill").textContent = statusText(index);
+        return row;
+      }
+
+      function makeCutoffRow() {
+        const row = document.createElement("li");
+        row.className = "cutoff-row";
+        row.draggable = true;
+        row.dataset.dragId = CUTOFF_ID;
+        row.innerHTML = `
+          <span class="drag-handle" aria-hidden="true">drag</span>
+          <span>
+            <span class="cutoff-title">Homepage cutoff</span>
+            <span class="cutoff-subtitle">Published above, hidden below.</span>
+          </span>
+          <span class="rank-pill">${visibleCount} live</span>
+        `;
+        return row;
+      }
+
+      function render() {
+        list.innerHTML = "";
+        const ids = sequence();
+        ids.forEach((id) => {
+          if (id === CUTOFF_ID) {
+            list.appendChild(makeCutoffRow());
+            return;
+          }
+          const page = pageById.get(id);
+          list.appendChild(makePageRow(page, pages.indexOf(page)));
+        });
+        visibleCountEl.textContent = String(visibleCount);
+        totalCountEl.textContent = String(pages.length);
+        showLessButton.disabled = visibleCount <= 0;
+        showMoreButton.disabled = visibleCount >= pages.length;
+        output.value = generatedManifest();
+      }
+
+      function attachDragHandlers() {
+        if (dragHandlersAttached) return;
+        dragHandlersAttached = true;
+
+        list.addEventListener("pointerdown", (event) => {
+          const handle = event.target.closest(".drag-handle");
+          const row = event.target.closest("[data-drag-id]");
+          if (!handle || !row || event.button !== 0) return;
+          event.preventDefault();
+          draggingId = row.dataset.dragId;
+          pointerDrag = { pointerId: event.pointerId, startY: event.clientY };
+          row.classList.add("is-dragging");
+          row.setPointerCapture?.(event.pointerId);
+        });
+
+        list.addEventListener("pointermove", (event) => {
+          if (!pointerDrag || event.pointerId !== pointerDrag.pointerId || !draggingId) return;
+          event.preventDefault();
+          markDropIndex(dropIndexFromEvent(event));
+        });
+
+        list.addEventListener("pointerup", (event) => {
+          if (!pointerDrag || event.pointerId !== pointerDrag.pointerId || !draggingId) return;
+          event.preventDefault();
+          const dropIndex = dropIndexFromEvent(event);
+          pointerDrag = null;
+          clearDropMarks();
+          moveDraggedTo(dropIndex);
+          draggingId = null;
+          [...list.children].forEach((child) => child.classList.remove("is-dragging"));
+        });
+
+        list.addEventListener("pointercancel", () => {
+          pointerDrag = null;
+          draggingId = null;
+          clearDropMarks();
+          [...list.children].forEach((child) => child.classList.remove("is-dragging"));
+        });
+
+        list.addEventListener("dragstart", (event) => {
+          const row = event.target.closest("[data-drag-id]");
+          if (!row) return;
+          draggingId = row.dataset.dragId;
+          row.classList.add("is-dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", draggingId);
+        });
+
+        list.addEventListener("dragend", () => {
+          draggingId = null;
+          clearDropMarks();
+          [...list.children].forEach((child) => child.classList.remove("is-dragging"));
+        });
+
+        list.addEventListener("dragover", (event) => {
+          if (!draggingId) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          markDropIndex(dropIndexFromEvent(event));
+        });
+
+        list.addEventListener("dragleave", (event) => {
+          if (!list.contains(event.relatedTarget)) clearDropMarks();
+        });
+
+        list.addEventListener("drop", (event) => {
+          if (!draggingId) return;
+          event.preventDefault();
+          const dropIndex = dropIndexFromEvent(event);
+          clearDropMarks();
+          moveDraggedTo(dropIndex);
+        });
+      }
+
+      function loadState(manifestText) {
+        const manifest = readManifest(manifestText);
+        const manifestPages = manifest.pages.map((page, index) => {
+          return mergeManifestPage(page, {}, index);
+        });
+        pages = manifestPages;
+        const fallbackVisibleCount = pages.filter((page) => page.visible).length;
+        visibleCount = Number.isInteger(manifest.visibilityCutoff)
+          ? Math.max(0, Math.min(manifest.visibilityCutoff, pages.length))
+          : fallbackVisibleCount;
+        pageById = new Map(pages.map((page) => [page.id, page]));
+        render();
+      }
+
+      async function init() {
+        attachDragHandlers();
+        if (!("showSaveFilePicker" in window)) {
+          saveButton.hidden = true;
+        }
+        try {
+          const manifestResponse = await fetch("homepage-manifest.json", { cache: "no-store" });
+          if (!manifestResponse.ok) throw new Error(`Could not load homepage-manifest.json: ${manifestResponse.status}`);
+          loadState(await manifestResponse.text());
+        } catch (error) {
+          list.innerHTML = `<li class="error">${error.message}</li>`;
+        }
+      }
+
+      copyButton.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(output.value);
+        showToast("Copied JSON.");
+      });
+
+      downloadButton.addEventListener("click", () => {
+        const url = URL.createObjectURL(new Blob([output.value], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "homepage-manifest.json";
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast("Downloaded JSON.");
+      });
+
+      saveButton.addEventListener("click", async () => {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "homepage-manifest.json",
+            types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(output.value);
+          await writable.close();
+          showToast("Saved JSON.");
+        } catch (error) {
+          if (error.name !== "AbortError") showToast(`Save failed: ${error.message}`);
+        }
+      });
+
+      rebuildButton.addEventListener("click", async () => {
+        rebuildButton.disabled = true;
+        try {
+          const response = await fetch("homepage-build.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: output.value
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok !== true) {
+            throw new Error(payload.error || `Rebuild failed with HTTP ${response.status}`);
+          }
+          showToast(payload.output || `Rebuilt index.html with ${payload.visibleCards} cards.`);
+        } catch (error) {
+          showToast(`${error.message} Run: python3 tools/build_homepage.py`);
+        } finally {
+          rebuildButton.disabled = false;
+        }
+      });
+
+      resetButton.addEventListener("click", init);
+      showLessButton.addEventListener("click", () => {
+        visibleCount = Math.max(0, visibleCount - 1);
+        render();
+      });
+      showMoreButton.addEventListener("click", () => {
+        visibleCount = Math.min(pages.length, visibleCount + 1);
+        render();
+      });
+
+      init();
+    })();
+  </script>
+</body>
+</html>

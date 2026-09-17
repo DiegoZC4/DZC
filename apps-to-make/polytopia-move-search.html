@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Polytopia Move Search</title><link rel="stylesheet" href="draft.css">
+  <style>
+    .stage{display:grid;place-items:center}.board{width:min(78dvh,90vw,820px);aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:8px;border-radius:18px;background:#263735;box-shadow:var(--shadow);touch-action:none}
+    .tile{position:relative;border:0;border-radius:4px;padding:0;display:grid;place-items:center;font-size:clamp(.75rem,2.6vmin,1.45rem);transition:filter .15s,transform .15s}.tile:hover{transform:none;filter:brightness(1.08)}
+    .plain{background:#9aba6d}.forest{background:#3f7653}.mountain{background:#9a8770}.water{background:#5d9daf}.road::after{content:"";position:absolute;width:115%;height:18%;background:#d7bd79;transform:rotate(-35deg);box-shadow:0 0 0 1px #77613c55}
+    .reachable{box-shadow:inset 0 0 0 4px #fff9}.path{box-shadow:inset 0 0 0 4px #ffd84d}.unit::before{content:"◆";z-index:2;color:#fff;text-shadow:0 2px 2px #0008}.enemy::before{content:"⬢";z-index:2;color:#bd352d;text-shadow:0 1px #fff}.target::before{content:"×";z-index:3;font-size:1.7em;color:#251f1b}.tile span{position:absolute;z-index:4;right:3px;bottom:2px;font:10px monospace;color:#17211caa}
+    .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:.35rem}.legend button{border-radius:8px;text-align:left}.legend button.active{background:var(--ink);color:var(--paper)}
+    .result{padding:.8rem;border-left:4px solid var(--accent);background:#fff8}
+  </style>
+</head>
+<body><main class="app"><header class="topbar"><h1>Polytopia Move Search</h1><span class="kicker">movement graph draft</span></header><div class="workspace">
+  <aside class="sidebar stack">
+    <div class="eyebrow">Paint board</div><div class="legend" id="tools">
+      <button class="active" data-tool="plain">Plain</button><button data-tool="forest">Forest</button><button data-tool="mountain">Mountain</button><button data-tool="water">Water</button><button data-tool="road">Road</button><button data-tool="unit">Your unit</button><button data-tool="enemy">Enemy</button><button data-tool="target">Target</button>
+    </div>
+    <div class="split"><label>Unit<select id="unitType"><option value="warrior">Warrior</option><option value="rider">Rider</option><option value="knight">Knight</option></select></label><label>Movement<input id="movement" type="number" min="1" max="6" value="1"></label></div>
+    <label><span><input id="climb" type="checkbox" style="width:auto"> Climbing researched</span></label><label><span><input id="sailing" type="checkbox" style="width:auto"> Sailing researched</span></label>
+    <button class="primary" id="search">Search move</button><div class="result" id="result">Paint a unit and target, then search.</div><div class="row"><button id="reset">Example</button><button id="clear">Clear marks</button></div>
+    <p class="muted">Draft rules: roads cost ½, forests and mountains cost 2, water requires Sailing, and entering an enemy zone of control ends movement. Combat and unit-specific abilities are not modeled yet.</p>
+  </aside><section class="stage"><div class="board" id="board" aria-label="Editable Polytopia board"></div></section>
+</div></main><script>
+const N=9,KEY='appsToMake.polytopiaMove.v1',$=id=>document.getElementById(id);let tool='plain',grid=[],unit=10,target=70,enemies=new Set([44,53]),reachable=new Map(),path=[];
+function example(){grid=Array.from({length:N*N},(_,i)=>({terrain:(i%17===0||i%23===0)?'water':(i%11===0?'mountain':(i%7===0?'forest':'plain')),road:i%10===0}));unit=10;target=70;enemies=new Set([44,53]);reachable.clear();path=[];save();render()}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.grid?.length===N*N){grid=s.grid;unit=s.unit;target=s.target;enemies=new Set(s.enemies||[]);return}}catch{}example()}
+function save(){localStorage.setItem(KEY,JSON.stringify({grid,unit,target,enemies:[...enemies]}))}
+function render(){
+  $('board').replaceChildren(...grid.map((cell,i)=>{const b=document.createElement('button');b.className=`tile ${cell.terrain}${cell.road?' road':''}${i===unit?' unit':''}${enemies.has(i)?' enemy':''}${i===target?' target':''}${reachable.has(i)?' reachable':''}${path.includes(i)?' path':''}`;b.dataset.i=i;if(reachable.has(i)){const s=document.createElement('span');s.textContent=reachable.get(i).cost.toFixed(1);b.append(s)}return b}));
+}
+function paint(i){if(['plain','forest','mountain','water'].includes(tool)){grid[i].terrain=tool;if(tool==='water')grid[i].road=false}else if(tool==='road')grid[i].road=!grid[i].road;else if(tool==='unit'){unit=i;enemies.delete(i)}else if(tool==='enemy'){i===unit?null:(enemies.has(i)?enemies.delete(i):enemies.add(i))}else if(tool==='target')target=i;reachable.clear();path=[];save();render()}
+$('tools').addEventListener('click',e=>{if(!e.target.dataset.tool)return;tool=e.target.dataset.tool;[...$('tools').children].forEach(b=>b.classList.toggle('active',b===e.target))});$('board').addEventListener('pointerdown',e=>{const i=Number(e.target.closest('.tile')?.dataset.i);if(Number.isInteger(i))paint(i)});
+function neighbors(i){const x=i%N,y=Math.floor(i/N),out=[];if(x)out.push(i-1);if(x<N-1)out.push(i+1);if(y)out.push(i-N);if(y<N-1)out.push(i+N);return out}
+function inZone(i){return neighbors(i).some(n=>enemies.has(n))}
+function stepCost(i){const c=grid[i];if(c.terrain==='water'&&!$('sailing').checked)return Infinity;if(c.terrain==='mountain'&&!$('climb').checked)return Infinity;if(c.road)return .5;if(c.terrain==='forest'||c.terrain==='mountain')return 2;return 1}
+function search(){
+  reachable=new Map([[unit,{cost:0,prev:null}]]);const queue=[unit],limit=Number($('movement').value)||1;
+  while(queue.length){queue.sort((a,b)=>reachable.get(a).cost-reachable.get(b).cost);const here=queue.shift(),base=reachable.get(here).cost;if(here!==unit&&inZone(here))continue;
+    for(const next of neighbors(here)){if(enemies.has(next))continue;const cost=base+stepCost(next);if(cost>limit)continue;if(!reachable.has(next)||cost<reachable.get(next).cost){reachable.set(next,{cost,prev:here});queue.push(next)}}
+  }
+  path=[];if(reachable.has(target)){let p=target;while(p!==null){path.unshift(p);p=reachable.get(p).prev}$('result').textContent=`Reachable in ${reachable.get(target).cost.toFixed(1)} movement: ${path.length-1} step(s).`}else $('result').textContent=`Target is not reachable this turn. ${reachable.size-1} destination(s) are legal.`;render();
+}
+$('search').onclick=search;$('reset').onclick=example;$('clear').onclick=()=>{reachable.clear();path=[];render()};$('unitType').onchange=()=>{$('movement').value={warrior:1,rider:2,knight:3}[$('unitType').value]};load();render();
+</script></body></html>

@@ -1,0 +1,326 @@
+[
+  {
+    "channel": "80,000 Hours",
+    "url": "https://www.youtube.com/@eightythousandhours",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/fAFGIAiCKhyVWSfTjBNECUpiZAojk1tuhJbx6Gp2agBIh2L4tM1WXfyFPgbYIu29TkDDiADQKA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "12tone",
+    "url": "https://www.youtube.com/@12tone",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_l4A_KOVUSDJ-UVeT0siIXWLc5CKn1Ei0jQtbZ5jDsFow=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "3Blue1Brown",
+    "url": "https://www.youtube.com/@3blue1brown",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_nFzZFPLxPZRHcE3SSwzdrbuWqfoWYwLAu0_2iO6blQYAU=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Adam Neely",
+    "url": "https://www.youtube.com/@AdamNeely",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/584RoBu_Mr3Ocp2I-GAomClNWH6ZeuVWeDpFAhFqziYIyTjMEoHHWzmyg8XtIN8v73eJa-19kTA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Adam Ragusea",
+    "url": "https://www.youtube.com/@aragusea",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_k1Qk7novhk1zSZqL-Ws8Xp3cFPPtvzdhroHp1DMMOO1Go=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "BarryHarrisVideos",
+    "url": "https://www.youtube.com/@BarryHarrisVideos",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_mBYN-zgG9rjbBOdj67jA1RJphOVmAuDlJazjYsidwQHg=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Binging with Babish",
+    "url": "https://www.youtube.com/@bingingwithbabish",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/AlCRk3X8JvmNqHC7R3c7yVDQaGyUvMAd3GXY77vTgzGS1Qa_vlVFY0ZNSH56otpeBKDq3gF-yw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Bill Burr",
+    "url": "https://www.youtube.com/@BillBurrOfficial",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ipS-_0KrwBJfTDzui0YwqC93EA8e8rdUUhWAqOlQrSDIDg_MVbWuYltlDUh2Ib8KUm1WcerQGg=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Bo Burnham",
+    "url": "https://www.youtube.com/@boburnham",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/_qf9dNroAvwcNUXw2cSrauA2wWDUkVK4IHj2H0dP2wbpp88u1CD6T0Uw14Muuy8UER5JgYzGpVc=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Bret Weinstein",
+    "url": "https://www.youtube.com/@DarkHorsePod",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/7nhQOqOQ2kXgd1YZyJO8GS6T6fshCW1qw6M2r-dxjbCdNYUIJvyXckuDBMSidqujnrqTgjWp=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "BroScienceLife",
+    "url": "https://www.youtube.com/@BroScienceLife",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_laMSE3QIC7C4MXfq72qCoR081H-QWLXa5uyVoOm7NzWM4=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Cape Falcon Kayak",
+    "url": "https://www.youtube.com/@capefalconkayak",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/NzXGQU1a-x4wjQk2Z05m4m2XxYcDrlSAEjn99My-PGCn0zrsGa9WccTP2BbiI6peRUz1vg-cxA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Destiny",
+    "url": "https://www.youtube.com/@destiny",
+    "enabled": true,
+    "include_title_regex": "(?i)(mrgirl|israel)",
+    "avatar_url": "https://yt3.googleusercontent.com/tecmayBItTkHHuJQiu1WQ5XCBRXYFOcmTh2KLD0b5RTbgI5gRLUyhmZ54MF5QZMC2EFzOkq0=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Dwarkesh Patel",
+    "url": "https://www.youtube.com/@DwarkeshPatel",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/lG-z7sTfhFIW2Ne1oXMHvXMXyZSaA02_I17gUel0GAEj7OypsSHQ7PE91Vp4bTbpm3PTIAWJdko=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Ear Biscuits",
+    "url": "https://www.youtube.com/@earbiscuits",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/4qgUDPm6zUIc5__FllLFsPDwdffsx2W8NbZZ5OfY2M-dRCKNKfBznqUSBSJP4yvPEkNzHuSw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Eric Weinstein",
+    "url": "https://www.youtube.com/@EricWeinsteinPhD",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_nCpY_Hy000rz1khybZINfQbUCqh0rXW_ZuMjmKQ3dPLg=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Henry Segerman",
+    "url": "https://www.youtube.com/@henryseg",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ApsbLToZvKX8b_EXpf84EUf4-Axu3HCDyWbImAeFnoVKqbe4vYYMSuNyq8CvC7WaZiaO-Pdm2Q=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Robert Sapolsky",
+    "url": "https://www.youtube.com/@stanford",
+    "enabled": false,
+    "avatar_url": "https://yt3.googleusercontent.com/F8EWZI1AxI_zj8iEg8TKl70L8WBD8yhFYSKI0OY2YNJxXKaPYH2cmpDyUUCr6cAq7KwAtlvlrA=s900-c-k-c0x00ffffff-no-rj",
+    "note": "Static Stanford course archive; keep disabled unless the broader Stanford channel should be refreshed."
+  },
+  {
+    "channel": "Jake and Amir",
+    "url": "https://www.youtube.com/@jakeandamir",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/eq2f9UCP-nFLJiW9u3SNpJtuHp81tg8X2KYbvN79XIRTlo62IaezccjzpJ2Is0tvVEqnfVbnS4s=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Jacob Collier",
+    "url": "https://www.youtube.com/@jacobcollier",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/YtwCGWA55mA3BJpPTch2-yiHnKRf7QsG0jjULvaXI_Jsbex4YiRPmXeOce7iL5MosDr5d5obPw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "JennaMarbles",
+    "url": "https://www.youtube.com/@JennaMarbles",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_ktMIhV5uHjINJssJhibfIzlzTR9VfOejOVRdhUtJYOr7c=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "JREG",
+    "url": "https://www.youtube.com/@JREG",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/0vOPkz48aDWr9WidZGZQGZj8LywzXtxooQX70091mkplnDaw9C9lEWOvzHRink3KC5fxtC_u=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Jordan B Peterson",
+    "url": "https://www.youtube.com/@JordanBPeterson",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/EjQNRQGTldnH7kUHaRRWa_yOa6Po-GODJN0xqJEmsji96cAVBdLggAgHlw2DbKSvomyo3xm2CX0=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Jonathan Pageau",
+    "url": "https://www.youtube.com/@JonathanPageau",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_mFDyFCEFErvubwxd6QhTegKLx3aWFnc0lZXGSXnnqTJQc=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "June Lee",
+    "url": "https://www.youtube.com/@JuneLee",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_lnafN20bcqXj-kgzXaUGeSw6qXz9gGbTu4a30egNQwOi4=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Key & Peele",
+    "url": "https://www.youtube.com/@KeyAndPeele",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_kWanecPuRopibAAKfMfmgB757dK65WD7lXvYHrGnToag=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Lex Fridman",
+    "url": "https://www.youtube.com/@lexfridman",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_ljfMy9kUR1PH9VRf-XsTsPqFMgORC_zodOQVEAm4hx36lC=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "LifeAccordingToJimmy",
+    "url": "https://www.youtube.com/@LifeAccordingToJimmy",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/h6eKf8T16UjXkyIdTGkAY10qVxO4Xe8He3l6ijjBS4S8H29IhHcFrK-bF6tCfqJ68w6iGzZ8MA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Lil Dicky",
+    "url": "https://www.youtube.com/@LilDickyRap",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/n5ioMBJbOUWyMrNAFUEdag6dyFwfYVBnTQj1ohpewcQILipSdd3zjJ7LHX7FnuDRZmk2e84xiw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Mathologer",
+    "url": "https://www.youtube.com/@Mathologer",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_mtp7Rl1Cp7-jl86BU-G093pGxvoZbDSElKgg7rkKDrK6U=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Matan Even",
+    "url": "https://www.youtube.com/@matanevenoff",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/7sDkJw6011NeETPhn68B8npQ7198pvYiXKIoGNGZWUM-e5fqoMgGD4_yjqC4bBx-7CTpezt9hA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "mrgirlreturns Twitch Archive",
+    "url": "https://www.youtube.com/@mrgirlreturnstwitcharchive1944",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_nSJAHRroX76yQW5ezi4fMtRLrUsGNVf08JvmH_SnDNU9NFB_WfBwS0tezeJxAKUUlBoA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Numberphile",
+    "url": "https://www.youtube.com/@numberphile",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_nmbQSAGKk1OZCBBf_sPJqLoFfYOVDWRDzALocBjGQtHeI=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Peter Attia MD",
+    "url": "https://www.youtube.com/@PeterAttiaMD",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/zT1Gb5jp3qkDrtFTNUL2fWJC1I5OddFUGvJhk_frSuSQGVm6yr_ikpNO-4pXZERDHwqgX_0tLw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Practical Engineering",
+    "url": "https://www.youtube.com/@PracticalEngineeringChannel",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_m1Y4p9FzWjJBIhIwbVt6Z1qGKa8eWUTzE3kizORZMFKf4=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Rick & Esther Have A Time",
+    "url": "https://www.youtube.com/@HaveATime",
+    "enabled": false,
+    "avatar_url": "https://yt3.googleusercontent.com/bydPXNkvl4nSbmRAeEr5nnORGVTokgemJwmj0RSBPu9B7Kkc5Y-AJmt79vwWE0iVUkn1GkWWRg=s900-c-k-c0x00ffffff-no-rj",
+    "note": "Small static archive; enable only if this channel should be refreshed."
+  },
+  {
+    "channel": "Rick Beato",
+    "url": "https://www.youtube.com/@RickBeato",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ZfDOigTWKzMkwaokreALniSPfAzaAq4v2T9hawgoFmjX4mHULaVyCcySqKjmvcBqvoPyWX7gsg=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Rick Glassman",
+    "url": "https://www.youtube.com/@rickglassman",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_lwSzHt2F6D8eO5rKbo3MldpX-j4tFkwLUOjMlWexyFAw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Robert Miles AI Safety",
+    "url": "https://www.youtube.com/@RobertMilesAI",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/GGawj89iTBKDsysEEfpeTHXoQW553Oi9k6eieq1D2D727z_FOav8vwnJOia1-HgOZJ3L2A4gKQ=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Sam Harris",
+    "url": "https://www.youtube.com/@samharrisorg",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/r0qRdq0UlBBOSTsgvSfkXfduqBR_LApB_VfSRXW25sXFXEz7N_HR9fgkW19B3cuZb2_2-RikgA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "SmarterEveryDay",
+    "url": "https://www.youtube.com/@smartereveryday",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_l59Ewmp0DHZBRWbY9dVqjd2_mWwvrn8ad0bJfmdbMRYcA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Starting Strength",
+    "url": "https://www.youtube.com/@startingstrength",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_lJLKuH_rEdEXyHWLGbawj3giuDOoudhv_QaCCP5T8GQ6M=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Stand-up Maths",
+    "url": "https://www.youtube.com/@standupmaths",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_kH1XY27N-S65HtyJ97eLeiYGSqanZuuVP2NgTzBt081h4=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Steve Mould",
+    "url": "https://www.youtube.com/@SteveMould",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/iX-akiHlJYuPDq4YVBO83cfjWW0aQefdewmI326XVhZkzxnS3MrqNVi49J33jLBw5LR_ZVyKFA=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Stromae",
+    "url": "https://www.youtube.com/@stromae",
+    "enabled": true,
+    "sub_langs": "^fr$",
+    "avatar_url": "https://yt3.googleusercontent.com/gpe4ud6Ub2Zsi07HLpH-eYe0LPsJe2gRNo0J1EeKoitnmPf5qsZuOKjOGCkLioIX825t5mPPPFk=s900-c-k-c0x00ffffff-no-rj",
+    "note": "French/original captions only; do not import English translations."
+  },
+  {
+    "channel": "Supergood",
+    "url": "https://www.youtube.com/@SupergoodStudios",
+    "enabled": false,
+    "avatar_url": "https://yt3.googleusercontent.com/wViic1Vn8BNtkwJBCB1BbKrwEiCERlgE15b8yM6kZOGwW-dLPgsJYV_65Y2hxxApZILxMv1j3g=s900-c-k-c0x00ffffff-no-rj",
+    "note": "Static archive; enable only if this channel should be refreshed."
+  },
+  {
+    "channel": "Tech Ingredients",
+    "url": "https://www.youtube.com/@TechIngredients",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_mzq6irD39wBGK8RcBWl9VpHP4bLhzccVbFxeUm9AMtiQ=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Technology Connections",
+    "url": "https://www.youtube.com/@TechnologyConnections",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_lG8iUz4mpHBrzJSDYEKT0qe2XmhZUUUzhzcJbz9cE3rQ=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "The Fighter and The Kid",
+    "url": "https://www.youtube.com/@TheFighterAndTheKid",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/FjnFcSn38l_vyiWv5TQGmFtIA_k1l1mLgYrq-honyXiiobWjsdrhSQX9KqChNIQOvbSgT6Ss=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "The Tim Dillon Show",
+    "url": "https://www.youtube.com/@TimDillonShow",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/awE13_riBuBCga5mtqP9vqNaJ1gvZ-M0HQqxZUDgis7iJE2IyugqZh6GQSzx3jCznaS_BfaTFw=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Theo Von",
+    "url": "https://www.youtube.com/@TheoVon",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/ytc/AIdro_k6UKS6KWK5qYyoipdDAfb8ayhKQiQUJmDAQR5rNGASXTc=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "TigerBelly",
+    "url": "https://www.youtube.com/@TigerBelly",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/_uJ2n_Z-UTYa08fSlNDUicsOqckcz4Fjnut2unG1frlSKLlQguOuZEXvAExatakTnpkElLYj6A=s900-c-k-c0x00ffffff-no-rj"
+  },
+  {
+    "channel": "Veritasium",
+    "url": "https://www.youtube.com/@veritasium",
+    "enabled": true,
+    "avatar_url": "https://yt3.googleusercontent.com/7vCbvtCqtjQ3YLgsJt7Y952MQV1sBvhllSCSxHP8_sVZdcPCBrITfhkN2RdyCuwPnsByq-1GoA=s900-c-k-c0x00ffffff-no-rj"
+  }
+]

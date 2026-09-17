@@ -1,0 +1,318 @@
+[
+  {
+    "order": 1,
+    "idea": "gym input, CSV save, Obsidian sync, partner loading calculator",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Ego/public_html/weightup.html"],
+    "preview": "../weightup.html",
+    "reason": "WeightUp is already a substantial workout logger with CSV import/export, remote sync, and partner-loading calculations."
+  },
+  {
+    "order": 2,
+    "idea": "reading question CLI",
+    "status": "drafted",
+    "paths": ["apps-to-make/reading-question-cli/reading_questions.py"],
+    "reason": "New dependency-free CLI: scans an Obsidian vault, extracts explicit questions, supplies reflection prompts, avoids recent cards, filters notes, and logs answers as JSONL."
+  },
+  {
+    "order": 3,
+    "idea": "Worm: load fast, name search/highlight",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Read/Worm/Worm.html", "/Users/diego/Desktop/Read/Worm/worm.py"],
+    "reason": "A dedicated Worm reader and build script already exist, including search/highlighting behavior."
+  },
+  {
+    "order": 4,
+    "idea": "Guess My Rule (2, 4, 6)",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Puzzle/guessMyRule.html"],
+    "reason": "A working rule-guessing page already exists."
+  },
+  {
+    "order": 5,
+    "idea": "parallel parking",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Games/parallelParking.html"],
+    "reason": "A working interactive parking simulator already exists."
+  },
+  {
+    "order": 6,
+    "idea": "improve Soroban",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Ego/public_html/soroban.html", "/Users/diego/Desktop/Games/soroban(codex).html"],
+    "preview": "../soroban.html",
+    "reason": "Soroban has multiple active implementations and is already under iterative polish."
+  },
+  {
+    "order": 7,
+    "idea": "perfect pitch",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Ego/public_html/PerfectPitch.html", "/Users/diego/Desktop/Music/PerfectPitch.html"],
+    "preview": "../PerfectPitch.html",
+    "reason": "A standalone trainer with practice logs already exists."
+  },
+  {
+    "order": 8,
+    "idea": "MIDI practice display",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Music/midi-practice-app/index.html", "/Users/diego/Desktop/Music/midi-practice-app/app.js"],
+    "reason": "A dedicated MIDI practice app already exists."
+  },
+  {
+    "order": 9,
+    "idea": "Rubik's tracker convolutional kite detector",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Puzzle/OpticalCubingTracker"],
+    "reason": "OpticalCubingTracker already contains a video pipeline, frame browser, and dataset-review tooling."
+  },
+  {
+    "order": 10,
+    "idea": "Rumble PC/PC",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Games/rumble/rumble.txt"],
+    "reason": "The Godot multiplayer/gameplay implementation has already been started."
+  },
+  {
+    "order": 11,
+    "idea": "torus, Klein bottle, fundamental polygon",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Games/Topology/fundamental_polygon.html"],
+    "reason": "The Fundamental Polygon Visualizer already includes torus/Klein identifications and procedural 3D surfaces."
+  },
+  {
+    "order": 12,
+    "idea": "chess opening spaced repetition",
+    "status": "drafted",
+    "paths": ["apps-to-make/chess-opening-srs.html"],
+    "preview": "chess-opening-srs.html",
+    "reason": "New FEN-based opening cards, answer checking, custom card entry, and locally persisted spaced scheduling."
+  },
+  {
+    "order": 13,
+    "idea": "optical latitude/longitude locator",
+    "status": "drafted",
+    "paths": ["apps-to-make/optical-lat-long.html"],
+    "preview": "optical-lat-long.html",
+    "reason": "New photo calibration surface that derives Sun altitude/azimuth and solves a geometric solar position from UTC time."
+  },
+  {
+    "order": 14,
+    "idea": "Polytopia move-search algorithm",
+    "status": "drafted",
+    "paths": ["apps-to-make/polytopia-move-search.html"],
+    "preview": "polytopia-move-search.html",
+    "reason": "New editable board and movement-graph search with terrain cost, roads, research gates, and enemy zones of control."
+  },
+  {
+    "order": 15,
+    "idea": "tendon research",
+    "status": "drafted",
+    "paths": ["apps-to-make/tendon-research.html"],
+    "preview": "tendon-research.html",
+    "reason": "New local evidence matrix with study fields, filters, effect/quality labels, and CSV export; starts without invented citations."
+  },
+  {
+    "order": 16,
+    "idea": "Kepler/Brahe research",
+    "status": "drafted",
+    "paths": ["apps-to-make/kepler-brahe-research.html"],
+    "preview": "kepler-brahe-research.html",
+    "reason": "New interactive observation-to-model timeline with event-specific source notes and Markdown export."
+  },
+  {
+    "order": 17,
+    "idea": "YouTube transcript search, index, and updater",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Ego/public_html/youtube-transcripts/index.html", "/Users/diego/Desktop/Ego/public_html/youtube-transcripts/refresh/refresh_transcripts.py"],
+    "preview": "../youtube-transcripts/index.html",
+    "reason": "The searchable transcript site, channel index, database build, and refresh scripts already exist."
+  },
+  {
+    "order": 18,
+    "idea": "lunisolar calendar",
+    "status": "drafted",
+    "paths": ["apps-to-make/lunisolar-calendar.html"],
+    "preview": "lunisolar-calendar.html",
+    "reason": "New month calendar showing computed lunar age, illumination, lunation number, and position in the solar year."
+  },
+  {
+    "order": 19,
+    "idea": "Antikythera mechanism",
+    "status": "drafted",
+    "paths": ["apps-to-make/antikythera.html"],
+    "preview": "antikythera.html",
+    "reason": "New animated ratio bench for solar, synodic, Metonic, and Saros cycles."
+  },
+  {
+    "order": 20,
+    "idea": "HPMOR HTML book",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Read/Eliezer Yudkowsky/HPMOR/HPMOR.html", "/Users/diego/Desktop/Read/Eliezer Yudkowsky/HPMOR/build_hpmor.py"],
+    "reason": "A built HTML book and dedicated build script already exist."
+  },
+  {
+    "order": 21,
+    "idea": "Got Rhythm C++: polyrhythm, tuplet, and tempo practice",
+    "status": "drafted",
+    "paths": ["apps-to-make/rhythm-practice.html", "apps-to-make/rhythm-practice-cli/rhythm_practice.cpp"],
+    "preview": "rhythm-practice.html",
+    "reason": "New Web Audio visual trainer plus a compiled C++ steady-clock timing engine with polyrhythm and tuplet modes."
+  },
+  {
+    "order": 22,
+    "idea": "mobile accelerometer strobe display",
+    "status": "drafted",
+    "paths": ["apps-to-make/accelerometer-strobe.html"],
+    "preview": "accelerometer-strobe.html",
+    "reason": "New permission-gated mobile motion scope with fixed, acceleration-driven, and jerk-driven strobe modes."
+  },
+  {
+    "order": 23,
+    "idea": "free Life360-style location history",
+    "status": "drafted",
+    "paths": ["apps-to-make/location-history.html"],
+    "preview": "location-history.html",
+    "reason": "New local-only geolocation recorder with IndexedDB history, track metrics, and GeoJSON import/export."
+  },
+  {
+    "order": 24,
+    "idea": "wood snake through cube",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Math/Hamiltonian/wooden_snake_paths.py"],
+    "reason": "A dedicated wooden-snake path solver already exists."
+  },
+  {
+    "order": 25,
+    "idea": "Spaced Omission: Obsidian random-page surfacer",
+    "status": "drafted",
+    "paths": ["apps-to-make/spaced-omission-obsidian/manifest.json", "apps-to-make/spaced-omission-obsidian/main.js"],
+    "reason": "New installable Obsidian plugin draft with age-weighted surfacing, exclusions, commands, and persisted exposure history."
+  },
+  {
+    "order": 26,
+    "idea": "diameter of the 15-puzzle state graph",
+    "status": "drafted",
+    "paths": ["apps-to-make/fifteen-puzzle-diameter.html"],
+    "preview": "fifteen-puzzle-diameter.html",
+    "reason": "New Web Worker BFS bench computes exact graph layers for tractable sliding puzzles and quantifies why exact 4×4 enumeration needs a stronger representation."
+  },
+  {
+    "order": 27,
+    "idea": "Hadwiger–Nelson visualization",
+    "status": "existing",
+    "paths": ["/Users/diego/Desktop/Math/HadwigerNelson/parts_graph_509_jump_tester.html", "/Users/diego/Desktop/Math/HadwigerNelson/build_playground_html.py"],
+    "reason": "A generated graph playground and supporting Voronoi/build tools already exist."
+  },
+  {
+    "order": 28,
+    "idea": "procedural feline walk HTML",
+    "status": "drafted",
+    "paths": ["apps-to-make/procedural-feline-walk.html"],
+    "preview": "procedural-feline-walk.html",
+    "reason": "New SVG quadruped with per-frame two-bone IK and adjustable walk, trot, pace, stride, lift, and body height."
+  },
+  {
+    "order": 29,
+    "idea": "edge-tone simulator",
+    "status": "drafted",
+    "paths": ["apps-to-make/edge-tone-simulator.html"],
+    "preview": "edge-tone-simulator.html",
+    "reason": "New staged Strouhal frequency model, animated jet/edge display, and Web Audio tone/noise synthesis."
+  },
+  {
+    "order": 30,
+    "idea": "Rubik's Cube from scratch with group theory",
+    "status": "drafted",
+    "paths": ["apps-to-make/rubiks-group-lab.html"],
+    "preview": "rubiks-group-lab.html",
+    "reason": "New corner-permutation generator lab with sequence parsing, inverses, commutators, cycle notation, parity, and element order."
+  },
+  {
+    "order": 31,
+    "idea": "itemized receipt logger",
+    "status": "drafted",
+    "paths": ["apps-to-make/receipt-logger.html"],
+    "preview": "receipt-logger.html",
+    "reason": "New line-item receipt editor with total reconciliation, history filters, local persistence, and normalized CSV export."
+  },
+  {
+    "order": 32,
+    "idea": "weekday calculation practice for arbitrary dates (Doomsday)",
+    "status": "drafted",
+    "paths": ["apps-to-make/doomsday-practice.html"],
+    "preview": "doomsday-practice.html",
+    "reason": "New randomized weekday trainer with configurable year range, scoring, and a complete Doomsday breakdown after each answer."
+  },
+  {
+    "order": 33,
+    "idea": "matchmaking 1/e rule under a given distribution",
+    "status": "drafted",
+    "paths": ["apps-to-make/matchmaking-stopping.html"],
+    "preview": "matchmaking-stopping.html",
+    "reason": "New secretary-strategy simulator across four continuous distributions with single-run views and Monte Carlo success curves."
+  },
+  {
+    "order": 34,
+    "idea": "better Pinyin",
+    "status": "drafted",
+    "paths": ["apps-to-make/better-pinyin.html"],
+    "preview": "better-pinyin.html",
+    "reason": "New numbered-tone composer with correct diacritic placement, custom tone contours, and a small pronunciation practice deck."
+  },
+  {
+    "order": 35,
+    "idea": "Tower of Hanoi UI",
+    "status": "drafted",
+    "paths": ["apps-to-make/hanoi.html"],
+    "preview": "hanoi.html",
+    "reason": "New interactive SVG puzzle with legal-move enforcement, undo, move accounting, and adjustable-speed optimal recursion."
+  },
+  {
+    "order": 36,
+    "idea": "Celsius/Fahrenheit practice",
+    "status": "drafted",
+    "paths": ["apps-to-make/temperature-practice.html"],
+    "preview": "temperature-practice.html",
+    "reason": "New bidirectional mental-conversion trainer using the exact 2C + 32 − 2C/10 shortcut, with error and streak tracking."
+  },
+  {
+    "order": 37,
+    "idea": "spaced-repetition Street View bubbles for Berkeley/Oakland shortcuts",
+    "status": "drafted",
+    "paths": ["apps-to-make/streetview-shortcuts.html"],
+    "preview": "streetview-shortcuts.html",
+    "reason": "New route-card deck that opens API-key-free Street View action URLs and schedules locally graded shortcut recall."
+  },
+  {
+    "order": 38,
+    "idea": "juggling robot",
+    "status": "drafted",
+    "paths": ["apps-to-make/juggling-robot.html"],
+    "preview": "juggling-robot.html",
+    "reason": "New ballistic cascade simulator deriving flight time, release cadence, and horizontal/vertical velocity from robot geometry."
+  },
+  {
+    "order": 39,
+    "idea": "ERG key solver: MIDI input to optional grid tuning",
+    "status": "drafted",
+    "paths": ["apps-to-make/erg-key-solver.html"],
+    "preview": "erg-key-solver.html",
+    "reason": "New dependency-free MIDI parser and tuning search over start note/row step, optimizing pitch coverage before finger travel."
+  },
+  {
+    "order": 40,
+    "idea": "map TV/movie science fiction to earliest book equivalents and measure lag",
+    "status": "drafted",
+    "paths": ["apps-to-make/scifi-text-screen-lag.html"],
+    "preview": "scifi-text-screen-lag.html",
+    "reason": "New sourced data desk separating direct adaptations from inferred precursors and computing lag summaries/visualizations."
+  },
+  {
+    "order": 41,
+    "idea": "violin simulator with MIDI and expressive controls",
+    "status": "drafted",
+    "paths": ["apps-to-make/violin-simulator.html"],
+    "preview": "violin-simulator.html",
+    "reason": "New Web MIDI/computer keyboard synth with bow pressure/position, vibrato depth/rate, envelopes, and live control traces."
+  }
+]

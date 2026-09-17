@@ -25,6 +25,10 @@ main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .controls { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .metric-button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 10px; }
 .metric-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+.metric-button:disabled { cursor: wait; opacity: 0.65; }
+.refresh-button { background: #15803d; border-color: #15803d; color: white; margin-left: 6px; }
+.refresh-button:hover:not(:disabled) { background: #166534; border-color: #166534; }
+.refresh-button:disabled { background: #86efac; border-color: #86efac; color: #14532d; }
 .summary { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 .stat strong { display: block; font-size: 18px; line-height: 1.15; }
@@ -35,26 +39,26 @@ main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .pie text { fill: var(--ink); font-size: 11px; font-weight: 850; pointer-events: none; }
 .legend { align-content: start; display: grid; gap: 7px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .legend-row { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; grid-template-columns: 13px 24px minmax(0, 1fr) auto; min-width: 0; padding: 7px 8px; }
+.run-histogram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; grid-column: 1 / -1; padding: 10px; }
+.run-histogram-title { font-size: 13px; font-weight: 900; }
+.run-histogram-note { color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.35; }
+.run-bar-group { display: grid; gap: 6px; }
+.run-bar-row { align-items: center; display: grid; gap: 8px; grid-template-columns: 54px minmax(0, 1fr) 108px; }
+.run-bar-row[data-expandable="true"] { border-radius: 7px; cursor: pointer; padding: 2px; }
+.run-bar-row[data-expandable="true"]:hover { background: #fafafa; }
+.run-bar-label, .run-bar-value { color: var(--muted); font-size: 12px; font-weight: 850; white-space: nowrap; }
+.run-bar-value { text-align: right; }
+.run-bar-track { background: #f1f1ec; border: 1px solid var(--line); border-radius: 999px; height: 13px; overflow: hidden; }
+.run-bar-fill { background: var(--accent); border-radius: inherit; height: 100%; min-width: 2px; }
+.run-links { border-left: 2px solid var(--line); display: grid; gap: 5px; margin: -2px 0 2px 26px; padding-left: 10px; }
+.run-link { color: var(--accent); font-size: 12px; font-weight: 850; line-height: 1.3; overflow-wrap: anywhere; text-decoration: none; }
+.run-link:hover { text-decoration: underline; }
 .swatch { border-radius: 50%; height: 13px; width: 13px; }
 .avatar { border-radius: 50%; height: 24px; object-fit: cover; width: 24px; }
 .avatar-fallback { align-items: center; background: #e2e8f0; color: #475569; display: inline-flex; font-size: 10px; font-weight: 950; justify-content: center; }
 .legend-name { font-size: 13px; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .legend-value { color: var(--muted); font-size: 12px; font-weight: 800; white-space: nowrap; }
 .note { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0 0 12px; }
-.resolution-section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin: 0 0 14px; padding: 12px; }
-.resolution-head { align-items: start; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; margin-bottom: 8px; }
-.resolution-head h2 { font-size: 15px; line-height: 1.2; margin: 0 0 4px; }
-.resolution-head p { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0; max-width: 820px; }
-.resolution-summary { display: grid; gap: 5px; grid-template-columns: repeat(3, max-content); }
-.resolution-summary div { border-left: 1px solid var(--line); padding-left: 10px; }
-.resolution-summary strong { display: block; font-size: 15px; line-height: 1.15; }
-.resolution-summary span { color: var(--muted); display: block; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; }
-.resolution-chart { display: block; height: 280px; width: 100%; }
-.resolution-chart .axis { stroke: var(--line); stroke-width: 1; }
-.resolution-chart .grid { stroke: #ecebe4; stroke-width: 1; }
-.resolution-chart .line { fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
-.resolution-chart .point { fill: var(--accent); stroke: white; stroke-width: 1.5; }
-.resolution-chart text { fill: var(--muted); font-size: 11px; font-weight: 800; }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border-bottom: 1px solid var(--line); padding: 8px 7px; text-align: right; white-space: nowrap; }
@@ -67,9 +71,6 @@ th:first-child, td:first-child { text-align: left; }
 @media (max-width: 780px) {
   .viz { grid-template-columns: 1fr; }
   .pie { height: min(86vw, 360px); width: min(86vw, 360px); }
-  .resolution-head { grid-template-columns: 1fr; }
-  .resolution-summary { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
-  .resolution-summary div { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-top: 7px; }
 }
 </style>
 </head>
@@ -93,20 +94,10 @@ th:first-child, td:first-child { text-align: left; }
       <div class="legend" id="legend"></div>
     </div>
   </section>
-  <section class="resolution-section" aria-labelledby="resolutionTitle">
-    <div class="resolution-head">
-      <div>
-        <h2 id="resolutionTitle">Temporal Resolution</h2>
-        <p>Greedy per-video thinning: keep the first cue, then keep the next cue only when it is at least N seconds after the last kept cue. The curve shows segment rows eliminated, not total DB bytes.</p>
-      </div>
-      <div class="resolution-summary" id="resolutionSummary"></div>
-    </div>
-    <svg class="resolution-chart" id="resolutionChart" viewBox="0 0 760 280" role="img" aria-label="Percentage of segment cues eliminated by minimum cue spacing"></svg>
-  </section>
   <section class="table-wrap">
     <table>
       <thead>
-        <tr>
+        <tr id="tableHead">
           <th>Channel</th>
           <th>Runtime</th>
           <th>Transcript</th>
@@ -126,69 +117,55 @@ const METRICS = [
   { key: 'video_count', label: 'Video Count', format: formatCount, note: 'Video count is the number of imported videos per channel.' },
   { key: 'estimated_db_bytes', label: 'DB Storage Est.', format: formatBytes, note: 'DB storage is estimated by apportioning the SQLite file size by each channel raw text payload.' },
   { key: 'payload_bytes', label: 'Raw Payload', format: formatBytes, note: 'Raw payload is transcript/title/id/source/import text, before SQLite and FTS overhead.' },
-  { key: 'segment_count', label: 'Segments', format: formatCount, note: 'Segments are transcript timestamp anchors used for search result links.' }
+  { key: 'segment_count', label: 'Segments', format: formatCount, note: 'Segments are transcript timestamp anchors used for search result links.' },
+  { key: 'censored_words', label: 'Censored Words', format: formatCount, note: 'Censored words groups staged decensor candidates case-insensitively and includes unpatched [ __ ] markers.' }
 ];
 const COLORS = ['#cc241d', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#0d9488', '#4f46e5', '#c2410c', '#64748b', '#b91c1c', '#047857', '#9333ea', '#0369a1', '#be123c', '#854d0e', '#4338ca'];
-const SEGMENT_STORAGE_BYTES = 1030926336;
-const SEGMENT_THINNING = [
-  { seconds: 1, removed: 0, removed_percent: 0, kept: 19071333 },
-  { seconds: 2, removed: 2999310, removed_percent: 15.7268, kept: 16072023 },
-  { seconds: 3, removed: 7445720, removed_percent: 39.0414, kept: 11625613 },
-  { seconds: 4, removed: 9736129, removed_percent: 51.0511, kept: 9335204 },
-  { seconds: 5, removed: 11329029, removed_percent: 59.4034, kept: 7742304 },
-  { seconds: 6, removed: 12463613, removed_percent: 65.3526, kept: 6607720 },
-  { seconds: 7, removed: 13294334, removed_percent: 69.7085, kept: 5776999 },
-  { seconds: 8, removed: 13935574, removed_percent: 73.0708, kept: 5135759 },
-  { seconds: 9, removed: 14447291, removed_percent: 75.754, kept: 4624042 },
-  { seconds: 10, removed: 14864905, removed_percent: 77.9437, kept: 4206428 },
-  { seconds: 11, removed: 15214829, removed_percent: 79.7785, kept: 3856504 },
-  { seconds: 12, removed: 15511406, removed_percent: 81.3336, kept: 3559927 },
-  { seconds: 13, removed: 15765357, removed_percent: 82.6652, kept: 3305976 },
-  { seconds: 14, removed: 15984162, removed_percent: 83.8125, kept: 3087171 },
-  { seconds: 15, removed: 16176197, removed_percent: 84.8194, kept: 2895136 },
-  { seconds: 16, removed: 16345700, removed_percent: 85.7082, kept: 2725633 },
-  { seconds: 17, removed: 16496758, removed_percent: 86.5003, kept: 2574575 },
-  { seconds: 18, removed: 16631165, removed_percent: 87.205, kept: 2440168 },
-  { seconds: 19, removed: 16752596, removed_percent: 87.8418, kept: 2318737 },
-  { seconds: 20, removed: 16862300, removed_percent: 88.417, kept: 2209033 },
-  { seconds: 21, removed: 16961911, removed_percent: 88.9393, kept: 2109422 },
-  { seconds: 22, removed: 17053045, removed_percent: 89.4172, kept: 2018288 },
-  { seconds: 23, removed: 17136707, removed_percent: 89.8558, kept: 1934626 },
-  { seconds: 24, removed: 17213582, removed_percent: 90.2589, kept: 1857751 },
-  { seconds: 25, removed: 17284441, removed_percent: 90.6305, kept: 1786892 },
-  { seconds: 26, removed: 17350120, removed_percent: 90.9749, kept: 1721213 },
-  { seconds: 27, removed: 17411154, removed_percent: 91.2949, kept: 1660179 },
-  { seconds: 28, removed: 17467862, removed_percent: 91.5922, kept: 1603471 },
-  { seconds: 29, removed: 17521018, removed_percent: 91.871, kept: 1550315 },
-  { seconds: 30, removed: 17570680, removed_percent: 92.1314, kept: 1500653 }
-];
-const state = { metric: 'runtime_seconds', stats: null };
+const state = { metric: 'runtime_seconds', stats: null, refreshing: false };
 const meta = document.getElementById('meta');
 const controls = document.getElementById('controls');
 const summary = document.getElementById('summary');
 const pie = document.getElementById('pie');
 const legend = document.getElementById('legend');
+const tableHead = document.getElementById('tableHead');
 const rows = document.getElementById('rows');
 const note = document.getElementById('note');
-const resolutionChart = document.getElementById('resolutionChart');
-const resolutionSummary = document.getElementById('resolutionSummary');
 
 init();
 
 async function init() {
   renderControls();
+  await loadStats();
+}
+
+async function loadStats({ refresh = false } = {}) {
+  const hadStats = Boolean(state.stats);
+  state.refreshing = refresh;
+  renderControls();
+  if (!hadStats) {
+    meta.textContent = refresh ? 'Refreshing stats...' : 'Loading cached stats...';
+  } else if (refresh) {
+    meta.textContent = `${baseStatsMeta(state.stats)} · refreshing stats...`;
+  }
   try {
-    const payload = await getJson('api.php?action=stats');
+    const payload = await getJson(`api.php?action=stats${refresh ? '&refresh=1' : ''}`);
     state.stats = payload.stats;
     render();
   } catch (error) {
-    meta.textContent = error.message;
-    document.querySelector('.viz').innerHTML = '<div class="empty">Could not load stats.</div>';
+    if (hadStats) {
+      meta.textContent = `${baseStatsMeta(state.stats)} · refresh failed: ${error.message}`;
+    } else {
+      meta.textContent = error.message;
+      document.querySelector('.viz').innerHTML = '<div class="empty">Could not load stats.</div>';
+    }
+  } finally {
+    state.refreshing = false;
+    renderControls();
   }
 }
 
 function renderControls() {
-  controls.replaceChildren(...METRICS.map(metric => {
+  const buttons = METRICS.map(metric => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'metric-button';
@@ -200,22 +177,63 @@ function renderControls() {
       render();
     });
     return button;
-  }));
+  });
+  const refreshButton = document.createElement('button');
+  refreshButton.type = 'button';
+  refreshButton.className = 'metric-button refresh-button';
+  refreshButton.textContent = state.refreshing ? 'Refreshing...' : 'Refresh Stats';
+  refreshButton.disabled = state.refreshing;
+  refreshButton.addEventListener('click', () => {
+    loadStats({ refresh: true });
+  });
+  controls.replaceChildren(...buttons, refreshButton);
 }
 
 function render() {
   const stats = state.stats;
   if (!stats) return;
   const metric = METRICS.find(item => item.key === state.metric) || METRICS[0];
+  if (metric.key === 'censored_words') {
+    renderCensoredWords(stats, metric);
+    return;
+  }
   const channels = [...stats.channels].sort((a, b) => Number(b[metric.key] || 0) - Number(a[metric.key] || 0));
   const total = Number(stats.totals[metric.key] || 0);
-  meta.textContent = `${formatCount(stats.totals.video_count)} videos, ${formatCount(stats.totals.channels)} channels, ${formatBytes(stats.database_bytes)} SQLite DB`;
+  meta.textContent = baseStatsMeta(stats);
   note.textContent = metric.note;
   renderSummary(stats);
   renderPie(channels, metric, total);
   renderLegend(channels, metric, total);
   renderRows(channels);
-  renderResolutionChart();
+}
+
+function renderCensoredWords(stats, metric) {
+  meta.textContent = baseStatsMeta(stats);
+  note.textContent = metric.note;
+  const censored = stats.censored;
+  if (!censored) {
+    summary.replaceChildren(emptyBlock('Censored word stats are not in this cache yet. Click Refresh Stats once to generate them.'));
+    pie.replaceChildren();
+    legend.replaceChildren();
+    renderTableHead(['Word', 'Patches', 'Share Proposed', 'Share All Censors']);
+    rows.replaceChildren();
+    return;
+  }
+
+  const total = Number(censored.total_markers || 0);
+  renderCensoredSummary(censored);
+  renderCensoredPie(censored, total);
+  renderCensoredLegend(censored, total);
+  renderCensoredRows(censored, total);
+}
+
+function baseStatsMeta(stats) {
+  const cacheFlags = [];
+  if (stats.cache?.generated_at) cacheFlags.push(`cached ${formatCacheTime(stats.cache.generated_at)}`);
+  if (stats.cache?.missing) cacheFlags.push('cache missing');
+  if (stats.cache?.stale) cacheFlags.push('needs refresh');
+  const cache = cacheFlags.length ? ` · ${cacheFlags.join(' · ')}` : '';
+  return `${formatCount(stats.totals.video_count)} videos, ${formatCount(stats.totals.channels)} channels, ${formatBytes(stats.database_bytes)} SQLite DB${cache}`;
 }
 
 function renderSummary(stats) {
@@ -233,6 +251,43 @@ function renderSummary(stats) {
     div.querySelector('span').textContent = label;
     return div;
   }));
+}
+
+function renderCensoredSummary(censored) {
+  const items = [
+    ['Censored markers', formatCount(censored.total_markers)],
+    ['Proposed patches', formatCount(censored.proposed_markers)],
+    ['No proposal', formatCount(censored.unpatched_markers)],
+    ['Distinct words', formatCount(censored.distinct_words)],
+    ['Adjacent runs', formatCount(censored.consecutive_runs?.total_runs)],
+    ['Markers in runs', formatCount(censored.consecutive_runs?.markers_in_runs)]
+  ];
+  const stt = censored.stt?.aggregate || null;
+  if (stt && Number(stt.measured_records || 0) > 0) {
+    items.push(
+      ['STT measured videos', formatCount(stt.measured_records)],
+      ['STT sec/marker', formatSecondsMetric(stt.seconds_per_marker)],
+      ['STT sec/window', formatSecondsMetric(stt.seconds_per_window)],
+      ['Whisper RTF', formatRtfMetric(stt.whisper_rtf)]
+    );
+  } else {
+    items.push(['STT metrics', 'Not recorded']);
+  }
+  summary.replaceChildren(...items.map(([label, value]) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = '<strong></strong><span></span>';
+    div.querySelector('strong').textContent = value;
+    div.querySelector('span').textContent = label;
+    return div;
+  }));
+}
+
+function emptyBlock(text) {
+  const div = document.createElement('div');
+  div.className = 'empty';
+  div.textContent = text;
+  return div;
 }
 
 function renderPie(channels, metric, total) {
@@ -281,7 +336,133 @@ function renderLegend(channels, metric, total) {
   }));
 }
 
+function renderCensoredPie(censored, total) {
+  pie.replaceChildren();
+  if (!total) return;
+  const slices = pieSlices(censoredSlices(censored), 'value', total);
+  for (const slice of slices) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', describeArc(120, 120, 95, slice.start, slice.end));
+    path.setAttribute('fill', slice.color);
+    path.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'title')).textContent = `${slice.label}: ${formatCount(slice.value)} (${formatPercent(slice.value / total)})`;
+    pie.appendChild(path);
+  }
+  const hole = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  hole.setAttribute('cx', '120');
+  hole.setAttribute('cy', '120');
+  hole.setAttribute('r', '52');
+  hole.setAttribute('fill', '#f7f7f4');
+  pie.appendChild(hole);
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', '120');
+  label.setAttribute('y', '115');
+  label.setAttribute('text-anchor', 'middle');
+  label.textContent = 'Censored';
+  pie.appendChild(label);
+  const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  value.setAttribute('x', '120');
+  value.setAttribute('y', '133');
+  value.setAttribute('text-anchor', 'middle');
+  value.textContent = formatCount(total);
+  pie.appendChild(value);
+}
+
+function renderCensoredLegend(censored, total) {
+  const items = censoredSlices(censored);
+  const histogram = renderCensoredRunHistogram(censored.consecutive_runs || {});
+  legend.replaceChildren(histogram, ...items.map((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'legend-row';
+    row.innerHTML = '<span class="swatch"></span><span class="avatar avatar-fallback"></span><div class="legend-name"></div><div class="legend-value"></div>';
+    row.querySelector('.swatch').style.background = COLORS[index % COLORS.length];
+    row.querySelector('.avatar').textContent = item.label === 'No proposed patch' ? 'NP' : item.label.slice(0, 2).toUpperCase();
+    row.querySelector('.legend-name').textContent = item.label;
+    row.querySelector('.legend-value').textContent = `${formatCount(item.value)} · ${formatPercent(Number(item.value || 0) / total)}`;
+    return row;
+  }));
+}
+
+function renderCensoredRunHistogram(runs) {
+  const wrapper = document.createElement('section');
+  wrapper.className = 'run-histogram';
+  const title = document.createElement('div');
+  title.className = 'run-histogram-title';
+  title.textContent = 'Adjacent censored-marker runs';
+  const note = document.createElement('div');
+  note.className = 'run-histogram-note';
+  note.textContent = 'Counts runs of 2+ [ __ ] markers separated only by whitespace or punctuation across the full transcript text, ignoring cue boundaries.';
+  wrapper.append(title, note);
+
+  const rows = runs.histogram || [];
+  if (!rows.length) {
+    wrapper.appendChild(emptyBlock('No adjacent censored-marker runs found in this cache.'));
+    return wrapper;
+  }
+  const maxCount = Math.max(...rows.map(item => Number(item.count || 0)), 1);
+  for (const item of rows) {
+    const count = Number(item.count || 0);
+    const links = item.runs || [];
+    const group = document.createElement('div');
+    group.className = 'run-bar-group';
+    const row = document.createElement('div');
+    row.className = 'run-bar-row';
+    row.innerHTML = '<div class="run-bar-label"></div><div class="run-bar-track"><div class="run-bar-fill"></div></div><div class="run-bar-value"></div>';
+    row.querySelector('.run-bar-label').textContent = `${formatCount(item.length)}x`;
+    row.querySelector('.run-bar-fill').style.width = `${Math.max(2, (count / maxCount) * 100)}%`;
+    row.querySelector('.run-bar-value').textContent = `${formatCount(count)} run${count === 1 ? '' : 's'}`;
+    group.appendChild(row);
+    if (links.length) {
+      row.dataset.expandable = 'true';
+      row.tabIndex = 0;
+      row.setAttribute('role', 'button');
+      row.setAttribute('aria-expanded', 'false');
+      row.title = 'Show timestamped links';
+      const detail = document.createElement('div');
+      detail.className = 'run-links';
+      detail.hidden = true;
+      detail.replaceChildren(...links.map(link => {
+        const anchor = document.createElement('a');
+        anchor.className = 'run-link';
+        anchor.href = link.url;
+        anchor.target = '_blank';
+        anchor.rel = 'noreferrer';
+        anchor.textContent = `${link.timestamp} · ${link.channel} · ${link.title}`;
+        return anchor;
+      }));
+      const toggle = () => {
+        detail.hidden = !detail.hidden;
+        row.setAttribute('aria-expanded', detail.hidden ? 'false' : 'true');
+      };
+      row.addEventListener('click', toggle);
+      row.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        toggle();
+      });
+      group.appendChild(detail);
+    }
+    wrapper.appendChild(group);
+  }
+  return wrapper;
+}
+
+function renderCensoredRows(censored, total) {
+  const proposedTotal = Number(censored.proposed_markers || 0);
+  const least = [...(censored.least_frequent || [])];
+  renderTableHead(['Word', 'Patches', 'Share Proposed', 'Share All Censors']);
+  rows.replaceChildren(...least.map(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td></td><td></td><td></td><td></td>';
+    tr.children[0].textContent = item.word;
+    tr.children[1].textContent = formatCount(item.count);
+    tr.children[2].textContent = formatPercent(Number(item.count || 0) / proposedTotal);
+    tr.children[3].textContent = formatPercent(Number(item.count || 0) / total);
+    return tr;
+  }));
+}
+
 function renderRows(channels) {
+  renderTableHead(['Channel', 'Runtime', 'Transcript', 'Videos', 'DB Est.', 'Segments']);
   rows.replaceChildren(...channels.map(channel => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -296,6 +477,14 @@ function renderRows(channels) {
     tr.children[4].textContent = formatBytes(channel.estimated_db_bytes);
     tr.children[5].textContent = formatCount(channel.segment_count);
     return tr;
+  }));
+}
+
+function renderTableHead(labels) {
+  tableHead.replaceChildren(...labels.map(label => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    return th;
   }));
 }
 
@@ -322,72 +511,16 @@ function pieSlices(items, key, total) {
   });
 }
 
-function renderResolutionChart() {
-  resolutionChart.replaceChildren();
-  const tenSecond = SEGMENT_THINNING.find(item => item.seconds === 10) || SEGMENT_THINNING[0];
-  const estimatedSaved = SEGMENT_STORAGE_BYTES * (tenSecond.removed / (tenSecond.removed + tenSecond.kept));
-  resolutionSummary.replaceChildren(
-    resolutionSummaryItem('10s removes', `${tenSecond.removed_percent.toFixed(2)}%`),
-    resolutionSummaryItem('Cues kept', formatCount(tenSecond.kept)),
-    resolutionSummaryItem('Segment storage est.', formatBytes(estimatedSaved))
-  );
-
-  const width = 760;
-  const height = 280;
-  const padding = { top: 18, right: 22, bottom: 42, left: 54 };
-  const plotWidth = width - padding.left - padding.right;
-  const plotHeight = height - padding.top - padding.bottom;
-  const x = seconds => padding.left + ((seconds - 1) / 29) * plotWidth;
-  const y = percent => padding.top + (1 - percent / 100) * plotHeight;
-  const ns = 'http://www.w3.org/2000/svg';
-
-  for (const tick of [0, 25, 50, 75, 100]) {
-    const line = svgEl('line', { class: 'grid', x1: padding.left, y1: y(tick), x2: width - padding.right, y2: y(tick) });
-    resolutionChart.appendChild(line);
-    const label = svgEl('text', { x: padding.left - 9, y: y(tick) + 4, 'text-anchor': 'end' });
-    label.textContent = `${tick}%`;
-    resolutionChart.appendChild(label);
+function censoredSlices(censored) {
+  const items = [];
+  const unpatched = Number(censored.unpatched_markers || 0);
+  if (unpatched > 0) {
+    items.push({ channel: 'No proposed patch', label: 'No proposed patch', value: unpatched });
   }
-  resolutionChart.appendChild(svgEl('line', { class: 'axis', x1: padding.left, y1: height - padding.bottom, x2: width - padding.right, y2: height - padding.bottom }));
-  resolutionChart.appendChild(svgEl('line', { class: 'axis', x1: padding.left, y1: padding.top, x2: padding.left, y2: height - padding.bottom }));
-
-  for (const tick of [1, 5, 10, 15, 20, 25, 30]) {
-    const label = svgEl('text', { x: x(tick), y: height - 15, 'text-anchor': 'middle' });
-    label.textContent = `${tick}s`;
-    resolutionChart.appendChild(label);
+  for (const word of censored.words || []) {
+    items.push({ channel: word.word, label: word.word, value: Number(word.count || 0) });
   }
-
-  const pathData = SEGMENT_THINNING.map((item, index) => `${index === 0 ? 'M' : 'L'} ${x(item.seconds).toFixed(2)} ${y(item.removed_percent).toFixed(2)}`).join(' ');
-  resolutionChart.appendChild(svgEl('path', { class: 'line', d: pathData }));
-  for (const item of SEGMENT_THINNING) {
-    const point = svgEl('circle', { class: 'point', cx: x(item.seconds), cy: y(item.removed_percent), r: item.seconds % 5 === 0 || item.seconds === 1 ? 4 : 2.5 });
-    point.appendChild(svgEl('title', {}, `${item.seconds}s spacing: ${item.removed_percent.toFixed(2)}% removed (${formatCount(item.removed)} rows), ${formatCount(item.kept)} kept`));
-    resolutionChart.appendChild(point);
-  }
-
-  const xLabel = svgEl('text', { x: padding.left + plotWidth / 2, y: height - 2, 'text-anchor': 'middle' });
-  xLabel.textContent = 'Minimum seconds between cue anchors';
-  resolutionChart.appendChild(xLabel);
-  const yLabel = svgEl('text', { x: 12, y: padding.top + plotHeight / 2, transform: `rotate(-90 12 ${padding.top + plotHeight / 2})`, 'text-anchor': 'middle' });
-  yLabel.textContent = 'Segment rows eliminated';
-  resolutionChart.appendChild(yLabel);
-
-  function svgEl(name, attrs = {}, text = '') {
-    const el = document.createElementNS(ns, name);
-    for (const [key, value] of Object.entries(attrs)) {
-      el.setAttribute(key, String(value));
-    }
-    if (text) el.textContent = text;
-    return el;
-  }
-}
-
-function resolutionSummaryItem(label, value) {
-  const div = document.createElement('div');
-  div.innerHTML = '<strong></strong><span></span>';
-  div.querySelector('strong').textContent = value;
-  div.querySelector('span').textContent = label;
-  return div;
+  return items;
 }
 
 function describeArc(cx, cy, r, startAngle, endAngle) {
@@ -447,15 +580,45 @@ function formatDuration(seconds) {
   return `${hours.toFixed(1)} h`;
 }
 
+function formatCacheTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'previously';
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
 function formatPercent(value) {
   return `${(Number(value || 0) * 100).toFixed(value >= 0.1 ? 1 : 2)}%`;
 }
 
+function formatSecondsMetric(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 'n/a';
+  return `${number.toFixed(number >= 10 ? 1 : 2)}s`;
+}
+
+function formatRtfMetric(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 'n/a';
+  return `${number.toFixed(number >= 10 ? 1 : 2)}x`;
+}
+
 async function getJson(url) {
   const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-  const payload = await response.json();
-  if (!payload.ok) throw new Error(payload.error || 'Request failed');
+  const text = await response.text();
+  if (!text.trim()) throw new Error(`Empty API response (${response.status})`);
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    const snippet = text.trim().replace(/\s+/g, ' ').slice(0, 140);
+    throw new Error(`Invalid API response (${response.status})${snippet ? `: ${snippet}` : ''}`);
+  }
+  if (!response.ok || !payload.ok) throw new Error(payload.error || `Request failed (${response.status})`);
   return payload;
 }
 </script>

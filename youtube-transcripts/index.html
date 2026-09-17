@@ -29,9 +29,35 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .subnav { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
 .subnav a { color: var(--accent); font-size: 13px; font-weight: 850; text-decoration: none; }
 .page-nav { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
-.recent-searches { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
-.recent-search { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; font-weight: 850; min-height: 30px; max-width: min(100%, 320px); overflow: hidden; padding: 0 10px; text-overflow: ellipsis; white-space: nowrap; }
-.recent-search:hover { border-color: #c9c8bf; color: var(--accent); }
+.result-limit { align-items: center; background: var(--panel); display: inline-flex; gap: 6px; min-height: 32px; min-width: 92px; padding: 0 10px; touch-action: none; user-select: none; }
+.result-limit strong { color: var(--accent); font-variant-numeric: tabular-nums; min-width: 3ch; text-align: right; }
+.result-limit[data-dragging="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204, 36, 29, 0.12); }
+.history-picker { position: relative; }
+.history-button { align-items: center; background: var(--panel); display: inline-flex; gap: 6px; min-height: 32px; padding: 0 10px; }
+.history-button:disabled { color: var(--muted); cursor: default; opacity: 0.58; }
+.history-menu { --history-field-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) minmax(0, 1fr); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12); display: none; max-height: calc(100dvh - 114px); min-width: min(96vw, 720px); overflow: auto; padding: 8px; position: absolute; right: 0; top: calc(100% + 8px); z-index: 6; }
+.history-picker[data-open="true"] .history-menu { display: grid; gap: 4px; }
+.history-menu-header { align-items: center; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; margin-bottom: 3px; padding: 0 2px 7px; }
+.history-menu-title { color: var(--muted); font-size: 12px; font-weight: 850; letter-spacing: 0; text-transform: uppercase; }
+.history-column-header { color: var(--muted); display: grid; font-size: 11px; font-weight: 850; gap: 8px; grid-template-columns: var(--history-field-columns) 30px; padding: 2px 8px 0; text-transform: uppercase; }
+.history-empty { color: var(--muted); font-size: 13px; padding: 10px; }
+.history-item { align-items: start; background: transparent; border: 1px solid transparent; border-radius: 7px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; padding: 8px; width: 100%; }
+.history-item:hover { background: #fbfbf8; border-color: var(--line); }
+.history-item-main { background: transparent; border: 0; border-radius: 0; color: inherit; cursor: pointer; display: grid; gap: 4px; font: inherit; justify-items: stretch; min-height: 0; padding: 0; text-align: left; width: 100%; }
+.history-item-main:hover { background: transparent; }
+.history-item-fields { color: var(--ink); display: grid; font-size: 13px; font-weight: 850; gap: 8px; grid-template-columns: var(--history-field-columns); line-height: 1.35; min-width: 0; }
+.history-field { min-width: 0; overflow-wrap: anywhere; }
+.history-field[data-empty="true"] { color: var(--muted); }
+.history-field-label { display: none; }
+.history-item-meta { color: var(--muted); font-size: 12px; font-weight: 700; }
+.history-clear-button, .history-delete-button { align-items: center; background: transparent; border: 1px solid transparent; color: var(--muted); display: inline-flex; justify-content: center; min-height: 28px; padding: 0; }
+.history-clear-button { border-radius: 999px; gap: 6px; font-size: 12px; font-weight: 850; padding: 0 8px; }
+.history-delete-button { border-radius: 7px; min-width: 30px; }
+.history-clear-button:hover, .history-delete-button:hover { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.history-trash-icon { fill: none; height: 15px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; width: 15px; }
+.history-filter-list { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.history-filter { background: var(--category-chip-bg, #f1f5f9); border: 1px solid var(--category-line, #cbd5e1); border-radius: 999px; color: var(--category-ink, #475569); display: inline-flex; font-size: 11px; font-weight: 850; line-height: 1.2; max-width: 100%; padding: 3px 7px; }
+.history-filter span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .channel-picker { min-width: 0; position: relative; }
 .channel-tokenbox { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; cursor: text; display: flex; flex-wrap: wrap; gap: 6px; min-height: 46px; min-width: 0; padding: 6px; }
 .channel-tokenbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204, 36, 29, 0.12); }
@@ -72,6 +98,11 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
   .searchbar { grid-template-columns: 1fr; }
   .subnav { align-items: flex-start; flex-direction: column; }
   .page-nav { justify-content: flex-start; }
+  .history-menu { left: 0; min-width: min(92vw, 440px); right: auto; }
+  .history-column-header { display: none; }
+  .history-item-fields { grid-template-columns: 1fr; gap: 3px; }
+  .history-field { display: grid; gap: 8px; grid-template-columns: 68px minmax(0, 1fr); }
+  .history-field-label { color: var(--muted); display: block; font-size: 11px; font-weight: 850; text-transform: uppercase; }
   .results { grid-template-columns: 1fr; }
   .channel-filter-input { flex-basis: 140px; }
   .video-result { grid-template-columns: 24px minmax(0, 1fr); }
@@ -96,11 +127,18 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
   <div class="subnav">
     <div class="channel-summary" id="channelSummary">Loading channels...</div>
     <div class="page-nav">
+      <button class="result-limit" id="resultLimitButton" type="button" role="spinbutton" aria-label="Results shown" aria-valuemin="10" aria-valuemax="200" aria-valuenow="60">
+        <span>Results</span>
+        <strong id="resultLimitValue">60</strong>
+      </button>
+      <div class="history-picker" id="historyPicker">
+        <button class="history-button" id="historyButton" type="button" aria-expanded="false" aria-haspopup="menu" disabled>History</button>
+        <div class="history-menu" id="recentSearches" role="menu"></div>
+      </div>
       <a href="patches.html">Patches</a>
       <a href="stats.html">Stats</a>
     </div>
   </div>
-  <div class="recent-searches" id="recentSearches" hidden></div>
   <div class="meta" id="meta"></div>
   <section class="results" id="results"></section>
 </main>
@@ -113,6 +151,10 @@ const channelTokenbox = document.getElementById('channelTokenbox');
 const channelFilterInput = document.getElementById('channelFilterInput');
 const channelOptions = document.getElementById('channelOptions');
 const channelSummary = document.getElementById('channelSummary');
+const resultLimitButton = document.getElementById('resultLimitButton');
+const resultLimitValue = document.getElementById('resultLimitValue');
+const historyPicker = document.getElementById('historyPicker');
+const historyButton = document.getElementById('historyButton');
 const recentSearches = document.getElementById('recentSearches');
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
@@ -122,8 +164,15 @@ let selectedFilters = [];
 let activeOptionIndex = -1;
 let activeCachedSearch = null;
 let hasRenderedSearch = false;
+let resultLimit = 60;
+let resultLimitDrag = null;
+let lastRenderedSearch = null;
 const SEARCH_CACHE_KEY = 'ytTranscriptSearches:v1';
-const MAX_CACHED_SEARCHES = 5;
+const MAX_CACHED_SEARCHES = 10;
+const DEFAULT_RESULT_LIMIT = 60;
+const MIN_RESULT_LIMIT = 10;
+const MAX_RESULT_LIMIT = 200;
+const RESULT_LIMIT_STEP = 10;
 const CATEGORY_STYLES = {
   AI: { accent: '#2563eb', bg: '#f4f8ff', soft: '#dbeafe', chip: '#eff6ff', ink: '#1d4ed8', line: '#bfdbfe' },
   Comedy: { accent: '#db2777', bg: '#fff5fa', soft: '#fce7f3', chip: '#fdf2f8', ink: '#be185d', line: '#fbcfe8' },
@@ -154,9 +203,20 @@ function init() {
     const button = event.target.closest('.channel-option');
     if (button) addFilter(button.dataset.type, button.dataset.value);
   });
+  historyButton.addEventListener('click', () => {
+    if (historyButton.disabled) return;
+    setHistoryOpen(historyPicker.dataset.open !== 'true');
+  });
+  resultLimitButton.addEventListener('pointerdown', startResultLimitDrag);
+  resultLimitButton.addEventListener('pointermove', updateResultLimitDrag);
+  resultLimitButton.addEventListener('pointerup', finishResultLimitDrag);
+  resultLimitButton.addEventListener('pointercancel', cancelResultLimitDrag);
+  resultLimitButton.addEventListener('keydown', handleResultLimitKeydown);
   document.addEventListener('mousedown', event => {
     if (!channelPicker.contains(event.target)) closeChannelOptions();
+    if (!historyPicker.contains(event.target)) setHistoryOpen(false);
   });
+  updateResultLimitControl();
   renderRecentSearches();
   restoreLatestSearch();
   loadChannels();
@@ -430,24 +490,57 @@ function readSearchCache() {
 
 function normalizeCachedSearch(entry) {
   if (!entry || typeof entry !== 'object') return null;
-  const channels = Array.isArray(entry.filters)
-    ? entry.filters.map(filter => filter?.value || filter?.label || '')
-    : entry.channels;
+  const channels = normalizeCachedFilters(Array.isArray(entry.filters) ? entry.filters : entry.channels);
   const title = entry.title ?? entry.titleFilter ?? '';
   const transcript = entry.transcript ?? entry.query ?? '';
   const payloadResults = Array.isArray(entry.payload?.results) ? entry.payload.results : [];
+  const limit = clampResultLimit(entry.limit ?? payloadResults.length ?? DEFAULT_RESULT_LIMIT);
   const videos = Array.isArray(entry.videoIds)
     ? entry.videoIds
     : Array.isArray(entry.videos)
       ? entry.videos
       : payloadResults.map(item => item.youtube_id);
   const normalized = {
-    channels: uniqueStrings(channels),
+    channels: uniqueFilters(channels),
     title: String(title || '').trim(),
     transcript: String(transcript || '').trim(),
-    videos: uniqueStrings(videos)
+    videos: uniqueStrings(videos),
+    limit,
+    createdAt: Number(entry.createdAt) || Date.now()
   };
+  if (entry.payload && Array.isArray(entry.payload.results)) {
+    normalized.payload = {
+      results: entry.payload.results.slice(0, limit),
+      timing: entry.payload.timing || null
+    };
+  }
   return normalized.title || normalized.transcript ? normalized : null;
+}
+
+function normalizeCachedFilters(filters) {
+  if (!Array.isArray(filters)) return [];
+  return filters.map(filter => {
+    if (filter && typeof filter === 'object') {
+      const type = filter.type === 'category' ? 'category' : 'channel';
+      const value = String(filter.value || filter.label || '').trim();
+      if (!value) return null;
+      return {
+        type,
+        value,
+        label: String(filter.label || value).trim(),
+        category: filter.category || (type === 'category' ? value : inferChannelCategory(value))
+      };
+    }
+    const value = String(filter || '').trim();
+    if (!value) return null;
+    const type = CATEGORY_STYLES[value] ? 'category' : 'channel';
+    return {
+      type,
+      value,
+      label: value,
+      category: type === 'category' ? value : inferChannelCategory(value)
+    };
+  }).filter(Boolean);
 }
 
 function uniqueStrings(values) {
@@ -455,12 +548,125 @@ function uniqueStrings(values) {
   const seen = new Set();
   const out = [];
   for (const value of values) {
-    const text = String(value || '').trim();
+    const text = String(value && typeof value === 'object' ? value.value : value || '').trim();
     if (!text || seen.has(text)) continue;
     seen.add(text);
     out.push(text);
   }
   return out;
+}
+
+function uniqueFilters(filters) {
+  const seen = new Set();
+  const out = [];
+  for (const filter of normalizeCachedFilters(filters)) {
+    const key = `${filter.type}:${filter.value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(filter);
+  }
+  return out;
+}
+
+function clampResultLimit(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_RESULT_LIMIT;
+  const stepped = Math.round(numeric / RESULT_LIMIT_STEP) * RESULT_LIMIT_STEP;
+  return Math.max(MIN_RESULT_LIMIT, Math.min(MAX_RESULT_LIMIT, stepped));
+}
+
+function setResultLimit(value) {
+  resultLimit = clampResultLimit(value);
+  updateResultLimitControl();
+}
+
+function updateResultLimitControl() {
+  resultLimitValue.textContent = String(resultLimit);
+  resultLimitButton.setAttribute('aria-valuenow', String(resultLimit));
+  resultLimitButton.setAttribute('aria-valuetext', `${resultLimit} results`);
+}
+
+function startResultLimitDrag(event) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  resultLimitDrag = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startLimit: resultLimit,
+    moved: false
+  };
+  resultLimitButton.dataset.dragging = 'true';
+  resultLimitButton.setPointerCapture(event.pointerId);
+}
+
+function updateResultLimitDrag(event) {
+  if (!resultLimitDrag || resultLimitDrag.pointerId !== event.pointerId) return;
+  const delta = event.clientX - resultLimitDrag.startX;
+  if (Math.abs(delta) > 3) resultLimitDrag.moved = true;
+  const stepDelta = Math.round(delta / 8) * RESULT_LIMIT_STEP;
+  setResultLimit(resultLimitDrag.startLimit + stepDelta);
+}
+
+function finishResultLimitDrag(event) {
+  if (!resultLimitDrag || resultLimitDrag.pointerId !== event.pointerId) return;
+  const previousLimit = resultLimitDrag.startLimit;
+  const moved = resultLimitDrag.moved;
+  resultLimitButton.releasePointerCapture(event.pointerId);
+  resultLimitButton.dataset.dragging = 'false';
+  resultLimitDrag = null;
+  if (moved) applyResultLimitChange(previousLimit, resultLimit);
+}
+
+function cancelResultLimitDrag(event) {
+  if (!resultLimitDrag || resultLimitDrag.pointerId !== event.pointerId) return;
+  setResultLimit(resultLimitDrag.startLimit);
+  resultLimitButton.dataset.dragging = 'false';
+  resultLimitDrag = null;
+}
+
+function handleResultLimitKeydown(event) {
+  const deltas = {
+    ArrowLeft: -RESULT_LIMIT_STEP,
+    ArrowDown: -RESULT_LIMIT_STEP,
+    ArrowRight: RESULT_LIMIT_STEP,
+    ArrowUp: RESULT_LIMIT_STEP,
+    PageDown: -50,
+    PageUp: 50
+  };
+  let next = resultLimit;
+  if (event.key in deltas) {
+    next = resultLimit + deltas[event.key];
+  } else if (event.key === 'Home') {
+    next = MIN_RESULT_LIMIT;
+  } else if (event.key === 'End') {
+    next = MAX_RESULT_LIMIT;
+  } else {
+    return;
+  }
+  event.preventDefault();
+  const previousLimit = resultLimit;
+  setResultLimit(next);
+  applyResultLimitChange(previousLimit, resultLimit);
+}
+
+function applyResultLimitChange(previousLimit, nextLimit) {
+  if (previousLimit === nextLimit) return;
+  const state = currentSearchState();
+  if (!state.title && !state.transcript) return;
+  if (
+    nextLimit < previousLimit &&
+    lastRenderedSearch &&
+    searchCacheKey(lastRenderedSearch.state) === searchCacheKey(state)
+  ) {
+    const payload = {
+      results: lastRenderedSearch.results.slice(0, nextLimit),
+      timing: lastRenderedSearch.timing ? { ...lastRenderedSearch.timing, cached: true } : { cached: true }
+    };
+    renderResults(payload.results, state.transcript, state.title, payload.timing);
+    saveSearchCache(state, payload);
+    return;
+  }
+  search({ limit: nextLimit });
 }
 
 function writeSearchCache(entries) {
@@ -482,7 +688,12 @@ function writeSearchCache(entries) {
 
 function currentSearchState() {
   return {
-    channels: selectedFilters.map(filter => filter.value),
+    channels: selectedFilters.map(filter => ({
+      type: filter.type,
+      value: filter.value,
+      label: filter.label,
+      category: filter.category
+    })),
     title: titleInput.value.trim(),
     transcript: queryInput.value.trim()
   };
@@ -490,7 +701,7 @@ function currentSearchState() {
 
 function searchCacheKey(state) {
   return JSON.stringify({
-    channels: [...(state.channels || [])].sort(),
+    channels: normalizeCachedFilters(state.channels || []).map(filter => `${filter.type}:${filter.value}`).sort(),
     title: state.title || '',
     transcript: state.transcript || ''
   });
@@ -499,10 +710,16 @@ function searchCacheKey(state) {
 function saveSearchCache(state, payload) {
   const results = Array.isArray(payload.results) ? payload.results : [];
   const entry = {
-    channels: uniqueStrings(state.channels || []),
+    channels: uniqueFilters(state.channels || []),
     title: state.title || '',
     transcript: state.transcript || '',
-    videos: uniqueStrings(results.map(item => item.youtube_id))
+    videos: uniqueStrings(results.map(item => item.youtube_id)),
+    limit: resultLimit,
+    createdAt: Date.now(),
+    payload: {
+      results,
+      timing: payload.timing || null
+    }
   };
   const entries = readSearchCache().filter(item => searchCacheKey(item) !== searchCacheKey(entry));
   entries.unshift(entry);
@@ -512,24 +729,192 @@ function saveSearchCache(state, payload) {
 
 function renderRecentSearches() {
   const entries = readSearchCache();
-  recentSearches.hidden = entries.length === 0;
-  recentSearches.replaceChildren(...entries.map(entry => {
+  historyButton.disabled = entries.length === 0;
+  historyButton.textContent = entries.length ? `History (${entries.length})` : 'History';
+  historyButton.setAttribute('aria-expanded', historyPicker.dataset.open === 'true' ? 'true' : 'false');
+  if (!entries.length) {
+    setHistoryOpen(false);
+    recentSearches.replaceChildren(historyEmptyElement());
+    return;
+  }
+  recentSearches.replaceChildren(historyMenuHeaderElement(entries.length), historyColumnHeaderElement(), ...entries.map(entry => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.setAttribute('role', 'none');
+
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'recent-search';
-    button.textContent = cachedSearchLabel(entry);
-    button.title = `${entry.videos?.length || 0} cached video${entry.videos?.length === 1 ? '' : 's'}`;
-    button.addEventListener('click', () => restoreCachedSearch(entry));
-    return button;
+    button.className = 'history-item-main';
+    button.setAttribute('role', 'menuitem');
+    button.title = historySummaryText(entry);
+    button.append(historyFieldsElement(entry), historyMetaElement(entry));
+    button.addEventListener('click', () => {
+      restoreCachedSearch(entry);
+      setHistoryOpen(false);
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'history-delete-button';
+    deleteButton.title = 'Delete this search';
+    deleteButton.setAttribute('aria-label', `Delete search: ${historySummaryText(entry)}`);
+    deleteButton.append(trashIconElement());
+    deleteButton.addEventListener('click', event => {
+      event.stopPropagation();
+      deleteSearchHistoryEntry(entry);
+    });
+
+    item.append(button, deleteButton);
+    return item;
   }));
 }
 
-function cachedSearchLabel(entry) {
-  const parts = [];
-  if (entry.title) parts.push(entry.title);
-  if (entry.transcript) parts.push(entry.transcript);
-  if (entry.channels?.length) parts.push(entry.channels.join(', '));
-  return parts.join(' · ') || 'Search';
+function historyMenuHeaderElement(count) {
+  const header = document.createElement('div');
+  header.className = 'history-menu-header';
+  const title = document.createElement('div');
+  title.className = 'history-menu-title';
+  title.textContent = `${count} recent search${count === 1 ? '' : 'es'}`;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'history-clear-button';
+  button.title = 'Clear search history';
+  button.setAttribute('aria-label', 'Clear search history');
+  button.append(trashIconElement(), document.createTextNode('Clear'));
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    clearSearchHistory();
+  });
+  header.append(title, button);
+  return header;
+}
+
+function historyColumnHeaderElement() {
+  const header = document.createElement('div');
+  header.className = 'history-column-header';
+  ['Channels', 'Videos', 'Search', ''].forEach(label => {
+    const cell = document.createElement('div');
+    cell.textContent = label;
+    header.appendChild(cell);
+  });
+  return header;
+}
+
+function historyFieldValues(entry) {
+  return {
+    channels: entry.channels?.length
+      ? entry.channels.map(filter => filter.label || filter.value).join(', ')
+      : 'All',
+    videos: entry.title || 'All',
+    search: entry.transcript || 'All'
+  };
+}
+
+function historySummaryText(entry) {
+  const values = historyFieldValues(entry);
+  return `Channels: ${values.channels} - Videos: ${values.videos} - Search: ${values.search}`;
+}
+
+function historyEmptyElement() {
+  const element = document.createElement('div');
+  element.className = 'history-empty';
+  element.textContent = 'No searches yet.';
+  return element;
+}
+
+function historyFieldsElement(entry) {
+  const values = historyFieldValues(entry);
+  const element = document.createElement('div');
+  element.className = 'history-item-fields';
+  element.append(
+    historyFieldElement('Channels', values.channels),
+    historyFieldElement('Videos', values.videos),
+    historyFieldElement('Search', values.search)
+  );
+  return element;
+}
+
+function historyFieldElement(label, value) {
+  const field = document.createElement('div');
+  field.className = 'history-field';
+  field.dataset.empty = value === 'All' ? 'true' : 'false';
+  field.title = value;
+  const labelElement = document.createElement('span');
+  labelElement.className = 'history-field-label';
+  labelElement.textContent = label;
+  const valueElement = document.createElement('span');
+  valueElement.className = 'history-field-value';
+  valueElement.textContent = value;
+  field.append(labelElement, valueElement);
+  return field;
+}
+
+function historyMetaElement(entry) {
+  const element = document.createElement('div');
+  element.className = 'history-item-meta';
+  const videos = entry.videos?.length || 0;
+  const resultCount = entry.payload?.results?.length || 0;
+  const when = entry.createdAt ? formatHistoryTime(entry.createdAt) : 'cached';
+  element.textContent = `${resultCount} result${resultCount === 1 ? '' : 's'} - ${videos} video${videos === 1 ? '' : 's'} - ${when}`;
+  return element;
+}
+
+function trashIconElement() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('history-trash-icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const paths = [
+    'M3 6h18',
+    'M8 6V4h8v2',
+    'M6 6l1 15h10l1-15',
+    'M10 11v6',
+    'M14 11v6'
+  ];
+  for (const d of paths) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  return svg;
+}
+
+function historyEntryKey(entry) {
+  const normalized = normalizeCachedSearch(entry);
+  if (!normalized) return '';
+  return `${searchCacheKey(normalized)}:${normalized.createdAt}`;
+}
+
+function deleteSearchHistoryEntry(entryToDelete) {
+  const targetKey = historyEntryKey(entryToDelete);
+  const entries = readSearchCache().filter(entry => historyEntryKey(entry) !== targetKey);
+  writeSearchCache(entries);
+  renderRecentSearches();
+}
+
+function clearSearchHistory() {
+  if (!window.confirm('Clear all search history?')) return;
+  writeSearchCache([]);
+  activeCachedSearch = null;
+  renderRecentSearches();
+}
+
+function formatHistoryTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'cached';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDiff = Math.round((today - target) / 86400000);
+  if (dayDiff === 0) return 'Today';
+  if (dayDiff === 1) return 'Yesterday';
+  if (dayDiff > 1 && dayDiff < 7) return `${dayDiff} days ago`;
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function setHistoryOpen(open) {
+  historyPicker.dataset.open = open ? 'true' : 'false';
+  historyButton.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 function restoreLatestSearch() {
@@ -541,30 +926,30 @@ function restoreCachedSearch(entry) {
   const normalized = normalizeCachedSearch(entry);
   if (!normalized) return;
   activeCachedSearch = normalized;
+  setResultLimit(normalized.limit || DEFAULT_RESULT_LIMIT);
   titleInput.value = normalized.title || '';
   queryInput.value = normalized.transcript || '';
-  selectedFilters = cachedChannelsToOptions(normalized.channels || []);
+  selectedFilters = cachedFiltersToOptions(normalized.channels || []);
   renderSelectedFilters();
   renderChannelOptions();
-  if (channelRows.length) {
+  if (normalized.payload && Array.isArray(normalized.payload.results)) {
+    const timing = normalized.payload.timing ? { ...normalized.payload.timing, cached: true } : { cached: true };
+    renderResults(normalized.payload.results, normalized.transcript, normalized.title, timing);
+  } else if (channelRows.length) {
     search({ cachedVideos: normalized.videos || [], cacheResults: false });
   } else {
     meta.textContent = `Restored cached search${normalized.videos?.length ? ` with ${normalized.videos.length} video id${normalized.videos.length === 1 ? '' : 's'}` : ''}`;
   }
 }
 
-function cachedChannelsToOptions(channels) {
+function cachedFiltersToOptions(filters) {
   const options = allFilterOptions();
-  return uniqueStrings(channels).map(value => {
-    const option = options.find(item => item.value === value);
+  return normalizeCachedFilters(filters).map(filter => {
+    const option = options.find(item => item.type === filter.type && item.value === filter.value);
     if (option) return option;
-    const type = CATEGORY_STYLES[value] ? 'category' : 'channel';
     return {
-      type,
-      value,
-      label: value,
-      category: type === 'category' ? value : inferChannelCategory(value),
-      detail: type === 'category' ? 'Category' : 'Channel'
+      ...filter,
+      detail: filter.type === 'category' ? 'Category' : 'Channel'
     };
   });
 }
@@ -626,7 +1011,9 @@ async function search(options = {}) {
   const state = currentSearchState();
   const titleFilter = state.title;
   const query = state.transcript;
+  setResultLimit(options.limit ?? resultLimit);
   if (!titleFilter && !query) {
+    lastRenderedSearch = null;
     results.innerHTML = '<div class="empty">Type a video title or transcript substring.</div>';
     return;
   }
@@ -636,7 +1023,7 @@ async function search(options = {}) {
   try {
     const params = new URLSearchParams({
       action: 'search',
-      limit: '60'
+      limit: String(resultLimit)
     });
     if (query) params.set('q', query);
     if (titleFilter) params.set('title_filter', titleFilter);
@@ -658,6 +1045,11 @@ async function search(options = {}) {
 
 function renderResults(items, query, titleFilter = '', timing = null) {
   hasRenderedSearch = true;
+  lastRenderedSearch = {
+    state: currentSearchState(),
+    results: Array.isArray(items) ? items.slice() : [],
+    timing
+  };
   const groups = groupResultsByVideo(items);
   const videoCount = groups.length;
   const titleOnly = titleFilter && !query;

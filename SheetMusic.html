@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sheet Music</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #fbf7ec;
+      --paper-deep: #eee1c8;
+      --ink: #17140f;
+      --muted: #736a5d;
+      --rule: rgba(70, 57, 39, .18);
+      --blue: #1d6f88;
+      --green: #4f7f4a;
+      --shadow: rgba(45, 33, 18, .18);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171614;
+        --paper-deep: #26221b;
+        --ink: #f7eedc;
+        --muted: #c6b9a2;
+        --rule: rgba(255, 238, 199, .18);
+        --blue: #78c7df;
+        --green: #9ad190;
+        --shadow: rgba(0, 0, 0, .35);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+      background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--blue) 16%, transparent), transparent 30rem),
+        radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--green) 18%, transparent), transparent 26rem),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2.2rem,
+          var(--rule) 2.25rem,
+          transparent 2.32rem
+        ),
+        linear-gradient(135deg, var(--paper), var(--paper-deep));
+    }
+
+    a {
+      color: inherit;
+    }
+
+    main {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: clamp(28px, 5vw, 58px) 0;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: clamp(26px, 5vw, 52px);
+    }
+
+    .home-link,
+    .file-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.45rem;
+      padding: .68rem .92rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--paper) 78%, transparent);
+      box-shadow: 0 10px 24px var(--shadow);
+      color: var(--ink);
+      font: 700 .82rem/1.1 "Avenir Next", "Trebuchet MS", sans-serif;
+      letter-spacing: .08em;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .home-link:hover,
+    .file-link:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--blue) 45%, var(--rule));
+      background: color-mix(in srgb, var(--paper) 92%, var(--blue) 8%);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(3.4rem, 10vw, 8.8rem);
+      line-height: .86;
+      letter-spacing: -.08em;
+      text-wrap: balance;
+    }
+
+    .accent {
+      color: color-mix(in srgb, var(--blue) 62%, var(--green));
+    }
+
+    .scores {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+      gap: clamp(14px, 2vw, 22px);
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .score-card {
+      position: relative;
+      min-height: 245px;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--paper) 92%, white 8%), color-mix(in srgb, var(--paper-deep) 70%, var(--paper))),
+        var(--paper);
+      box-shadow: 0 24px 70px var(--shadow);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .score-card {
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--paper) 82%, white 4%), color-mix(in srgb, var(--paper-deep) 82%, black 18%)),
+          var(--paper);
+      }
+    }
+
+    .score-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 1px, transparent 1px 100%),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0 25px,
+          color-mix(in srgb, var(--ink) 18%, transparent) 26px,
+          transparent 27px 34px
+        );
+      background-size: 100% 100%, 100% 136px;
+      opacity: .38;
+      pointer-events: none;
+    }
+
+    .score-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      min-height: 245px;
+      padding: 24px;
+      grid-template-rows: 1fr auto;
+      gap: 22px;
+    }
+
+    .score-title {
+      display: flex;
+      align-items: flex-end;
+      min-height: 7.6rem;
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: .86;
+      letter-spacing: -.055em;
+      text-wrap: balance;
+    }
+
+    .score-title.small {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      letter-spacing: -.045em;
+    }
+
+    .files {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .file-link {
+      min-height: 2.2rem;
+      padding: .6rem .78rem;
+      box-shadow: none;
+      background: color-mix(in srgb, var(--paper) 70%, transparent);
+      font-size: .74rem;
+    }
+
+    .blue-green {
+      background:
+        radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--green) 34%, transparent), transparent 11rem),
+        radial-gradient(circle at 18% 78%, color-mix(in srgb, var(--blue) 30%, transparent), transparent 13rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--paper) 88%, white 10%), color-mix(in srgb, var(--paper-deep) 74%, var(--paper)));
+    }
+
+    .blue-green .score-title {
+      color: color-mix(in srgb, var(--blue) 52%, var(--green));
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topline">
+      <h1>Sheet <span class="accent">Music</span></h1>
+      <a class="home-link" href="index.html">Home</a>
+    </div>
+
+    <ol class="scores">
+      <li class="score-card blue-green">
+        <article class="score-inner">
+          <h2 class="score-title">Blue in Green</h2>
+          <div class="files" aria-label="Blue in Green files">
+            <a class="file-link" href="assets/sheet-music/blue-in-green.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/blue-in-green.mscz" download>MSCZ</a>
+            <a class="file-link" href="https://www.youtube.com/watch?v=Ryj8TAsx2EY" target="_blank" rel="noopener">Recording</a>
+          </div>
+        </article>
+      </li>
+
+      <li class="score-card">
+        <article class="score-inner">
+          <h2 class="score-title">Top of the World</h2>
+          <div class="files" aria-label="Top of the World files">
+            <a class="file-link" href="assets/sheet-music/top-of-the-world.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/top-of-the-world.mscz" download>MSCZ</a>
+          </div>
+        </article>
+      </li>
+
+      <li class="score-card">
+        <article class="score-inner">
+          <h2 class="score-title">Handlebars</h2>
+          <div class="files" aria-label="Handlebars files">
+            <a class="file-link" href="assets/sheet-music/handlebars.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/handlebars.mscz" download>MSCZ</a>
+          </div>
+        </article>
+      </li>
+
+      <li class="score-card">
+        <article class="score-inner">
+          <h2 class="score-title small">Tres Bailecitos</h2>
+          <div class="files" aria-label="Tres Bailecitos files">
+            <a class="file-link" href="assets/sheet-music/tres-bailecitos.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/tres-bailecitos.mscz" download>MSCZ</a>
+          </div>
+        </article>
+      </li>
+
+      <li class="score-card">
+        <article class="score-inner">
+          <h2 class="score-title">We'll Meet Again</h2>
+          <div class="files" aria-label="We'll Meet Again files">
+            <a class="file-link" href="assets/sheet-music/well-meet-again.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/well-meet-again.mscz" download>MSCZ</a>
+            <a class="file-link" href="assets/sheet-music/well-meet-again.musicxml" download>MusicXML</a>
+          </div>
+        </article>
+      </li>
+
+      <li class="score-card">
+        <article class="score-inner">
+          <h2 class="score-title small">Monsters Inc.</h2>
+          <div class="files" aria-label="Monsters Inc. files">
+            <a class="file-link" href="assets/sheet-music/monsters-inc.pdf">PDF</a>
+            <a class="file-link" href="assets/sheet-music/monsters-inc.mscz" download>MSCZ</a>
+          </div>
+        </article>
+      </li>
+    </ol>
+  </main>
+</body>
+</html>

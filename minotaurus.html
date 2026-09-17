@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Minotaurus Board Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #12111a;
+      color: #ddd;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ─── Top bar ─── */
+    #topbar {
+      background: #1b1929;
+      border-bottom: 1px solid #2e2b42;
+      padding: 7px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #topbar h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c084fc;
+      letter-spacing: .04em;
+      margin-right: 4px;
+    }
+
+    .sep { width: 1px; height: 22px; background: #2e2b42; flex-shrink: 0; }
+
+    label.lbl { font-size: 11px; color: #888; }
+
+    input[type=number] {
+      width: 54px;
+      background: #0e0d17;
+      border: 1px solid #3a3659;
+      color: #ddd;
+      padding: 4px 6px;
+      border-radius: 5px;
+      font-size: 12px;
+      -moz-appearance: textfield;
+    }
+    input[type=number]::-webkit-inner-spin-button { display: none; }
+
+    .btn {
+      background: #1f1d30;
+      border: 1px solid #3a3659;
+      color: #ccc;
+      padding: 4px 11px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background .12s, color .12s, border-color .12s;
+      white-space: nowrap;
+    }
+    .btn:hover    { background: #2e2b42; border-color: #c084fc; color: #fff; }
+    .btn.active   { background: #3b2d5e; border-color: #c084fc; color: #c084fc; font-weight: 600; }
+    .btn.danger:hover { background: #4a1d1d; border-color: #f87171; color: #f87171; }
+
+    #topbar .spacer { flex: 1; }
+
+    /* ─── Main ─── */
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ─── Toolbar ─── */
+    #toolbar {
+      width: 130px;
+      background: #1b1929;
+      border-right: 1px solid #2e2b42;
+      padding: 10px 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .tsec {
+      font-size: 9px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 8px 4px 3px;
+      border-bottom: 1px solid #2e2b42;
+      margin-bottom: 2px;
+    }
+    .tsec:first-child { padding-top: 2px; }
+
+    .brush-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #bbb;
+      font-size: 11px;
+      transition: all .12s;
+      text-align: left;
+      width: 100%;
+    }
+    .brush-btn:hover  { background: #1f1d30; border-color: #3a3659; color: #ddd; }
+    .brush-btn.active { background: #2a2145; border-color: #c084fc; color: #fff; }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: monospace;
+      flex-shrink: 0;
+    }
+
+    /* ─── Player reference panel ─── */
+    .ref-hint {
+      font-size: 10px;
+      color: #555;
+      line-height: 1.7;
+      padding: 5px 4px 6px;
+    }
+
+    .player-ref {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 4px 0;
+    }
+
+    .player-chip {
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color .12s, background .12s;
+    }
+    .player-chip.active { border-color: #c084fc; background: #1a1730; }
+
+    .swatch.sm {
+      width: 16px;
+      height: 16px;
+      font-size: 8px;
+      border-radius: 3px;
+    }
+
+    .chip-name {
+      font-size: 11px;
+      color: #777;
+    }
+
+    /* ─── Library modal ─── */
+    #library-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #library-overlay.open { display: flex; }
+
+    #library-modal {
+      background: #1b1929;
+      border: 1px solid #2e2b42;
+      border-radius: 10px;
+      width: 700px;
+      max-width: 95vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+
+    .lib-header {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid #2e2b42;
+      flex-shrink: 0;
+    }
+    .lib-header h2 { font-size: 14px; font-weight: 600; color: #c084fc; flex: 1; margin: 0; }
+    .lib-close {
+      background: none; border: none; color: #666; font-size: 16px;
+      cursor: pointer; padding: 2px 8px; border-radius: 4px; line-height: 1;
+    }
+    .lib-close:hover { color: #fff; background: #2e2b42; }
+
+    .lib-save-row {
+      display: flex; gap: 8px; padding: 12px 18px;
+      border-bottom: 1px solid #2e2b42; align-items: center; flex-shrink: 0;
+    }
+    .lib-save-row input {
+      flex: 1; background: #0e0d17; border: 1px solid #3a3659;
+      color: #ddd; padding: 6px 10px; border-radius: 5px; font-size: 12px;
+    }
+    .lib-save-row input:focus { outline: none; border-color: #c084fc; }
+
+    .lib-body  { flex: 1; overflow-y: auto; padding: 14px 18px; }
+    .lib-section { margin-bottom: 18px; }
+    .lib-section-title {
+      font-size: 9px; text-transform: uppercase; letter-spacing: .1em;
+      color: #555; padding-bottom: 8px; border-bottom: 1px solid #1f1d30; margin-bottom: 10px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .preset-card {
+      background: #12111a; border: 2px solid #2e2b42; border-radius: 6px;
+      overflow: hidden; cursor: pointer; transition: border-color .12s; position: relative;
+    }
+    .preset-card:hover  { border-color: #c084fc; }
+    .preset-card canvas { width: 100%; display: block; image-rendering: pixelated; }
+    .preset-card .card-name {
+      padding: 4px 7px; font-size: 10px; color: #999;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #0e0d17;
+    }
+    .preset-card .del-btn {
+      position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,.8);
+      border: 1px solid #f87171; color: #f87171; font-size: 9px;
+      width: 16px; height: 16px; border-radius: 3px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .12s; line-height: 1;
+    }
+    .preset-card:hover .del-btn { opacity: 1; }
+    .lib-empty { color: #444; font-size: 11px; padding: 4px 0 12px; }
+    .lib-footer {
+      border-top: 1px solid #2e2b42; padding: 10px 18px;
+      display: flex; justify-content: flex-end; flex-shrink: 0;
+    }
+
+    /* ─── Tabs ─── */
+    .tab {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: #555; padding: 5px 16px; font-size: 13px; font-weight: 700;
+      letter-spacing: .03em; cursor: pointer; flex-shrink: 0;
+      transition: color .12s, border-color .12s;
+    }
+    .tab:hover { color: #999; }
+    .tab.active { color: #c084fc; border-bottom-color: #c084fc; }
+
+    /* ─── Play sidebar ─── */
+    #play-sidebar {
+      display: none; width: 220px; flex-shrink: 0;
+      background: #1b1929; border-right: 1px solid #2e2b42;
+      padding: 10px 10px; flex-direction: column; gap: 8px; overflow-y: auto;
+    }
+    #play-sidebar-resizer {
+      display: none; width: 5px; flex-shrink: 0;
+      background: transparent; cursor: col-resize; transition: background .15s;
+    }
+    #play-sidebar-resizer:hover, #play-sidebar-resizer.active {
+      background: rgba(192, 132, 252, .35);
+    }
+    .psec {
+      font-size: 9px; color: #555; text-transform: uppercase;
+      letter-spacing: .1em; padding: 8px 4px 3px;
+      border-bottom: 1px solid #2e2b42; margin-bottom: 4px;
+    }
+    .play-btn {
+      width: 100%; padding: 8px; border-radius: 6px;
+      border: 1px solid #3a3659; background: #1f1d30; color: #ccc;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .12s, border-color .12s, color .12s;
+    }
+    .play-btn:hover { background: #2e2b42; border-color: #c084fc; color: #fff; }
+    .play-btn.primary { background: #3b2d5e; border-color: #c084fc; color: #c084fc; }
+    .play-btn.primary:hover { background: #4e3a7e; color: #fff; }
+    .play-btn.danger { border-color: #f87171; color: #f87171; background: #1f1d30; }
+    .play-btn.danger:hover { background: #4a1d1d; }
+    .ruleset-ta {
+      width: 100%; height: 140px; background: #0e0d17;
+      border: 1px solid #3a3659; color: #ccc; font-family: monospace;
+      font-size: 12px; padding: 8px; border-radius: 5px; resize: vertical;
+    }
+    .ruleset-ta:focus { outline: none; border-color: #c084fc; }
+    .turn-indicator {
+      font-size: 13px; font-weight: 600; text-align: center;
+      padding: 6px; border-radius: 6px; border: 2px solid;
+    }
+    .roll-result { font-size: 11px; color: #888; text-align: center; min-height: 16px; }
+    .phase-prompt { font-size: 11px; color: #a78bfa; text-align: center; padding: 2px 0; }
+    .player-setup-list { display: flex; flex-direction: column; gap: 4px; }
+    .player-setup-chip {
+      display: flex; align-items: center; gap: 7px; padding: 5px 8px;
+      border-radius: 5px; cursor: pointer; border: 1px solid #2e2b42;
+      background: #12111a; transition: border-color .12s, background .12s;
+      font-size: 12px; color: #888;
+    }
+    .player-setup-chip.on { border-color: #c084fc; background: #1a1730; color: #ddd; }
+    .player-setup-chip.on.current-player { border-color: #a855f7; background: #2d1b5e; box-shadow: 0 0 0 1px #a855f7; }
+    .player-setup-chip.dragging { opacity: 0.35; }
+    .player-setup-chip.drag-over { border-color: #c084fc; background: #2a1f4e; }
+    .player-setup-chip .chip-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .drag-handle { color: #3a3659; font-size: 12px; cursor: grab; flex-shrink: 0; line-height: 1; }
+    .player-setup-chip:hover .drag-handle { color: #666; }
+    .alive-list { display: flex; flex-direction: column; gap: 3px; }
+    .alive-item { font-size: 11px; color: #888; padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+    .alive-item .alive-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .alive-item.dead { color: #444; text-decoration: line-through; }
+    .ruleset-desc { font-size: 10px; color: #555; line-height: 1.6; padding: 0 2px 4px; }
+    .lib-scroll-list {
+      display: flex; flex-direction: column; gap: 2px;
+      max-height: 120px; overflow-y: auto;
+      border: 1px solid #2a2740; border-radius: 5px; padding: 4px;
+      background: #110f1c;
+    }
+    .lib-scroll-item {
+      padding: 4px 8px; border-radius: 3px; cursor: pointer;
+      font-size: 11px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .lib-scroll-item:hover { background: #1e1a35; color: #ddd; }
+
+    /* ─── Ruleset modal ─── */
+    #ruleset-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.72); z-index: 101;
+      align-items: center; justify-content: center;
+    }
+    #ruleset-overlay.open { display: flex; }
+    #ruleset-modal {
+      background: #1b1929; border: 1px solid #2e2b42; border-radius: 10px;
+      width: 420px; max-width: 95vw; max-height: 80vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    .rs-save-row {
+      display: flex; gap: 8px; padding: 12px 18px;
+      border-bottom: 1px solid #2e2b42; align-items: center; flex-shrink: 0;
+    }
+    .rs-save-row input {
+      flex: 1; background: #0e0d17; border: 1px solid #3a3659;
+      color: #ddd; padding: 6px 10px; border-radius: 5px; font-size: 12px;
+    }
+    .rs-save-row input:focus { outline: none; border-color: #c084fc; }
+    .rs-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+    .rs-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border-radius: 6px; border: 1px solid #2e2b42; background: #12111a;
+      cursor: pointer; margin-bottom: 6px; transition: border-color .12s;
+    }
+    .rs-item:hover { border-color: #c084fc; }
+    .rs-item-info { flex: 1; min-width: 0; }
+    .rs-item-name { font-size: 12px; color: #ccc; font-weight: 600; }
+    .rs-item-preview { font-size: 10px; color: #555; font-family: monospace; white-space: pre; }
+    .rs-del {
+      background: none; border: 1px solid #f87171; color: #f87171;
+      font-size: 10px; padding: 2px 6px; border-radius: 3px; cursor: pointer;
+      opacity: 0; transition: opacity .12s; flex-shrink: 0;
+    }
+    .rs-item:hover .rs-del { opacity: 1; }
+    .rs-empty { color: #444; font-size: 11px; padding: 4px 0; }
+
+    /* ─── Toolbar resize handle ─── */
+    #toolbar-resizer {
+      width: 5px;
+      flex-shrink: 0;
+      background: transparent;
+      cursor: col-resize;
+      transition: background .15s;
+    }
+    #toolbar-resizer:hover, #toolbar-resizer.active {
+      background: rgba(192, 132, 252, .35);
+    }
+
+    /* ─── Canvas area ─── */
+    #canvas-wrap {
+      flex: 1;
+      overflow: auto;
+      background: #0d0c16;
+      padding: 18px;
+    }
+
+    #board-stage {
+      position: relative;
+      display: inline-block;
+    }
+
+    #board-canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    #line-controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .line-delete-btn {
+      position: absolute;
+      width: 18px; height: 18px; border-radius: 5px;
+      border: 1px solid #f87171; background: #2b1418; color: #fca5a5;
+      font-size: 13px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; pointer-events: auto; padding: 0;
+      transition: background .12s, color .12s, border-color .12s;
+    }
+    .line-delete-btn:hover { background: #4a1d1d; color: #fecaca; border-color: #fb7185; }
+    .line-delete-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .line-delete-btn.diag { border-color: #f59e0b; color: #fcd34d; background: #2e220d; }
+    .line-delete-btn.diag:hover { border-color: #fbbf24; color: #fde68a; background: #4a3614; }
+
+    /* ─── Status bar ─── */
+    #statusbar {
+      background: #1b1929;
+      border-top: 1px solid #2e2b42;
+      padding: 3px 14px;
+      font-size: 10px;
+      color: #555;
+      display: flex;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+    #statusbar span { color: #777; }
+    #statusbar .hi  { color: #a78bfa; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Top bar ═══ -->
+<div id="topbar">
+  <button class="tab active" id="tab-play" onclick="setTab('play')">Play</button>
+  <button class="tab"        id="tab-edit" onclick="setTab('edit')">Edit</button>
+  <h1>Minotaurus</h1>
+  <div id="edit-bar" style="display:contents">
+    <div class="sep"></div>
+
+    <!-- Grid type -->
+    <div style="display:flex;gap:4px">
+      <button class="btn active" id="btn-square" onclick="setGridType('square')">Square</button>
+      <button class="btn"        id="btn-hex"    onclick="setGridType('hex')">Hex</button>
+    </div>
+
+    <div class="sep"></div>
+
+    <!-- Size -->
+    <label class="lbl">Cols</label>
+    <input type="number" id="inp-cols" value="12" min="3" max="60">
+    <label class="lbl">Rows</label>
+    <input type="number" id="inp-rows" value="10" min="3" max="60">
+    <button class="btn" onclick="applySize()">Apply</button>
+
+    <div class="sep"></div>
+
+    <!-- Cell size -->
+    <label class="lbl">Zoom</label>
+    <button class="btn" style="padding:4px 8px" onclick="adjustZoom(-6)">−</button>
+    <button class="btn" style="padding:4px 8px" onclick="adjustZoom(+6)">+</button>
+
+    <div class="spacer"></div>
+
+    <!-- Actions -->
+    <button class="btn danger" onclick="clearBoard()">Clear</button>
+    <button class="btn" onclick="openLibrary()">Library</button>
+  </div>
+</div>
+
+<!-- ═══ Main ═══ -->
+<div id="main">
+
+  <!-- Play sidebar -->
+  <div id="play-sidebar"></div>
+  <div id="play-sidebar-resizer"></div>
+
+  <!-- Toolbar -->
+  <div id="toolbar"></div>
+  <div id="toolbar-resizer"></div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <div id="board-stage">
+      <canvas id="board-canvas"></canvas>
+      <div id="line-controls"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Status bar ═══ -->
+<div id="statusbar">
+  <span id="st-coord">—</span>
+  <span id="st-brush">Brush: Empty</span>
+  <span>LMB paint · RMB erase · Scroll zoom · Ctrl+Z undo · Ctrl+S library · Esc clear</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  BRUSH DEFINITIONS
+// ══════════════════════════════════════════════════
+const TERRAIN_BRUSHES = [
+  { k:'.', label:'Empty',    fill:'#1e1c2e', text:'#444',    sec:'Terrain' },
+  { k:'#', label:'Hedge',    fill:'#1a4a0f', text:'#6fcf60', sec:null      },
+  { k:'|', label:'Wall',     fill:'#3a2e20', text:'#b59a6a', sec:null      },
+  { k:'@', label:'Minotaur', fill:'#6b0000', text:'#ff7070', sec:'Special' },
+];
+
+// name, base key, start fill/text, end fill/text
+const PLAYER_COLORS = [
+  { name:'Red',     k:'r', sf:'#7f1d1d', st:'#fca5a5', ef:'#dc2626', et:'#fff' },
+  { name:'Amber',   k:'a', sf:'#78350f', st:'#fde68a', ef:'#d97706', et:'#fff' },
+  { name:'Orange',  k:'o', sf:'#7c2d12', st:'#fdba74', ef:'#ea580c', et:'#fff' },
+  { name:'Yellow',  k:'y', sf:'#713f12', st:'#fcd34d', ef:'#ca8a04', et:'#fff' },
+  { name:'Lime',    k:'l', sf:'#3a5c10', st:'#bef264', ef:'#84cc16', et:'#111' },
+  { name:'Green',   k:'g', sf:'#14532d', st:'#6ee7b7', ef:'#16a34a', et:'#fff' },
+  { name:'Teal',    k:'t', sf:'#134e4a', st:'#5eead4', ef:'#0d9488', et:'#fff' },
+  { name:'Cyan',    k:'c', sf:'#164e63', st:'#67e8f9', ef:'#0891b2', et:'#fff' },
+  { name:'Blue',    k:'b', sf:'#1e3a5f', st:'#93c5fd', ef:'#2563eb', et:'#fff' },
+  { name:'Indigo',  k:'i', sf:'#312e81', st:'#a5b4fc', ef:'#4f46e5', et:'#fff' },
+  { name:'Violet',  k:'v', sf:'#4a044e', st:'#f0abfc', ef:'#a21caf', et:'#fff' },
+  { name:'Purple',  k:'p', sf:'#4c1d95', st:'#d8b4fe', ef:'#7c3aed', et:'#fff' },
+  { name:'Magenta', k:'m', sf:'#500724', st:'#f9a8d4', ef:'#db2777', et:'#fff' },
+  { name:'Fuchsia', k:'f', sf:'#701a75', st:'#f0abfc', ef:'#c026d3', et:'#fff' },
+  { name:'White',   k:'w', sf:'#4b5563', st:'#e5e7eb', ef:'#d1d5db', et:'#111' },
+  { name:'Silver',  k:'s', sf:'#374151', st:'#d1d5db', ef:'#9ca3af', et:'#111' },
+  { name:'Black',   k:'k', sf:'#111',    st:'#888',    ef:'#333',    et:'#ccc' },
+];
+
+const BMAP = {};
+for (const b of TERRAIN_BRUSHES) BMAP[b.k] = b;
+for (const c of PLAYER_COLORS) {
+  BMAP[c.k]               = { k: c.k,               label: c.name + ' start', fill: c.sf, text: c.st };
+  BMAP[c.k.toUpperCase()] = { k: c.k.toUpperCase(), label: c.name + ' end',   fill: c.ef, text: c.et };
+}
+
+// Special-case mappings where the pressed key differs from the brush key
+const HOTKEYS = {
+  'e': '.', '0': '.',
+  'h': '#',   // h for Hedge
+  'm': '@',   // m for Minotaur
+};
+
+// Rulesets baked into this file. Shown at the top of the Rules list.
+const BAKED_RULESETS = [
+  { name: 'Standard', text: `3(J):1\n4:1\n5:1\n6:1\nM(6):1\nW(2):1` },
+];
+
+// Boards baked into this file. Export HTML merges these with your local saves.
+// { name: string, board: string }  — board is the multi-line TXT format.
+const BAKED_PRESETS = [
+  {
+    name: 'Minotaurus Classic',
+    board: `square 30 30
+yy..........................rr
+y............................r
+.....###..####..####..###.....
+..|..#....#........#....#..|..
+..|.......#........#.......|..
+........###........###........
+.....#.......#..#.......#.....
+..####.......#..#.......####..
+.....#..||..##..##..||..#.....
+..............................
+..............................
+..####..####..##..####..####..
+..#..#..#............#..#..#..
+..#..#..#....YYRR....#..#..#..
+...........#.Y.@R.#...........
+...........#.B..W.#...........
+..#..#..#....BBWW....#..#..#..
+..#..#..#............#..#..#..
+..####..####..##..####..####..
+..............................
+..............................
+.....#..||..##..##..||..#.....
+..####.......#..#.......####..
+.....#.......#..#.......#.....
+........###........###........
+..|.......#........#.......|..
+..|..#....#........#....#..|..
+.....###..####..####..###.....
+b............................w
+bb..........................ww`,
+  },
+  {
+    name: 'MiniTaurus',
+    board: `square 21 19
+yy.................rr
+y..##.####.####.##..r
+.|.#..#.......#..#.|.
+.....##.......##.....
+.###.....#.#.....###.
+...#.|..##.##..|.#...
+.....................
+.###.###..#..###.###.
+.#.#.#...YYR...#.#.#.
+.......#.B@R.#.......
+.#.#.#...BWW...#.#.#.
+.###.###..#..###.###.
+.....................
+...#.|..##.##..|.#...
+.###.....#.#.....###.
+.....##.......##.....
+.|.#..#.......#..#.|.
+b..##.####.####.##..w
+bb.................ww`,
+  },
+];
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+const S = {
+  gridType: 'square',
+  cols: 12,
+  rows: 10,
+  cellSize: 42,         // px – acts as "zoom level"
+  cells: {},            // "col,row" → brush key
+  brush: '.',
+  painting: false,
+  erasing: false,
+  history: [],          // undo stack (snapshots of cells)
+  maxHistory: 40,
+};
+
+// ══════════════════════════════════════════════════
+//  TOOLBAR
+// ══════════════════════════════════════════════════
+function buildToolbar() {
+  const tb = document.getElementById('toolbar');
+  tb.innerHTML = '';
+
+  // Terrain + Special: clickable buttons
+  for (const b of TERRAIN_BRUSHES) {
+    if (b.sec) {
+      const sec = document.createElement('div');
+      sec.className = 'tsec';
+      sec.textContent = b.sec;
+      tb.appendChild(sec);
+    }
+
+    const btn = document.createElement('button');
+    btn.className = 'brush-btn' + (S.brush === b.k ? ' active' : '');
+    btn.dataset.k = b.k;
+    btn.onclick = () => selectBrush(b.k);
+
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = b.fill;
+    sw.style.color = b.text;
+    sw.textContent = b.k;
+
+    btn.appendChild(sw);
+    btn.appendChild(document.createTextNode(b.label));
+    tb.appendChild(btn);
+  }
+
+  // Players: keyboard-shortcut reference panel
+  const psec = document.createElement('div');
+  psec.className = 'tsec';
+  psec.textContent = 'Players';
+  tb.appendChild(psec);
+
+  const hint = document.createElement('div');
+  hint.className = 'ref-hint';
+  hint.innerHTML = 'Key = color initial<br>lower&nbsp;=&nbsp;start&nbsp;<br>UPPER&nbsp;=&nbsp;end';
+  tb.appendChild(hint);
+
+  const ref = document.createElement('div');
+  ref.className = 'player-ref';
+
+  for (const c of PLAYER_COLORS) {
+    const chip = document.createElement('div');
+    chip.className = 'player-chip';
+    chip.dataset.k = c.k;
+
+    const swE = document.createElement('span');
+    swE.className = 'swatch sm';
+    swE.style.cssText = `background:${c.ef};color:${c.et};width:auto;padding:0 5px`;
+    swE.textContent = c.name;
+
+    chip.appendChild(swE);
+    ref.appendChild(chip);
+  }
+
+  tb.appendChild(ref);
+}
+
+function selectBrush(k) {
+  S.brush = k;
+  // Highlight terrain/special buttons
+  document.querySelectorAll('.brush-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.k === k);
+  });
+  // Highlight player chip (matches both start and end of same color)
+  document.querySelectorAll('.player-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.k === k.toLowerCase());
+  });
+  const b = BMAP[k];
+  document.getElementById('st-brush').textContent = b
+    ? `Brush: ${b.label} [${k}]`
+    : `Brush: ${k}`;
+}
+
+// ══════════════════════════════════════════════════
+//  GEOMETRY
+// ══════════════════════════════════════════════════
+function hexCenter(col, row) {
+  // Pointy-top, odd-r offset
+  const sz = S.cellSize / 2;
+  const w  = Math.sqrt(3) * sz;
+  const x  = w * (col + 0.5 * (row & 1)) + w * 0.5;
+  const y  = sz * (1 + 1.5 * row);
+  return [x + 1, y + 1];
+}
+
+function hexCorner(cx, cy, sz, i) {
+  const a = Math.PI / 180 * (60 * i - 30);  // pointy-top
+  return [cx + sz * Math.cos(a), cy + sz * Math.sin(a)];
+}
+
+function canvasSize() {
+  if (S.gridType === 'square') {
+    return [S.cols * S.cellSize + 2, S.rows * S.cellSize + 2];
+  }
+  const sz = S.cellSize / 2;
+  const w  = Math.sqrt(3) * sz;
+  const cw = Math.ceil(w * (S.cols + 0.5) + 2) + 2;
+  const ch = Math.ceil(sz * (2 + 1.5 * (S.rows - 1)) + 2) + 2;
+  return [cw, ch];
+}
+
+// ══════════════════════════════════════════════════
+//  RENDERING
+// ══════════════════════════════════════════════════
+const canvas      = document.getElementById('board-canvas');
+const ctx         = canvas.getContext('2d');
+const boardStage  = document.getElementById('board-stage');
+const lineControls = document.getElementById('line-controls');
+const MIN_BOARD_DIM = 3;
+const LINE_GUTTER_X = 74;   // extra width reserved for row-delete buttons
+const LINE_GUTTER_Y = 30;   // extra height reserved for col-delete buttons
+const MINOTAUR_SOURCE_CENTER_X = 24.135;
+const MINOTAUR_SOURCE_CENTER_Y = 110.3;
+const MINOTAUR_SOURCE_HEIGHT = 226.7;
+const MINOTAUR_HEAD_PATH = new Path2D(`M9.202,204.661C11.734,223.605 41.228,220.049 38.929,200.808C38.818,199.878 37.595,197.346 38.344,196.847C38.782,196.555 39.891,196.795 40.546,196.644C44.131,195.813 46.887,195.374 50.466,194.83C54.816,194.17 58.823,191.191 60.529,187.142C62.691,182.012 61.074,172.92 61.516,167.068C61.656,165.212 62.178,162.452 62.513,160.544C63.464,155.135 67.811,137.285 72.454,134.54C73.17,134.117 74.715,133.931 75.729,133.445C79.757,131.514 86.615,126.704 87.096,121.946C87.289,120.038 86.707,108.763 87.444,108.302C97.349,108.288 107.666,105.324 116.379,100.683C126.571,95.254 135.88,85.623 138.945,74.209C140.355,68.958 140.78,59.237 138.997,54.107C138.297,52.094 138.634,53.218 137.641,50.347C134.074,40.034 122.242,22.059 113.754,15.399C102.554,6.61 78.317,-3.059 64.154,0.922C58.656,2.468 59.631,5.678 62.717,9.131C72.616,20.207 92.496,28.989 99.869,41.787C103.388,47.896 100.583,52.063 94.397,54.031C82.868,57.698 69.37,55.359 57.455,60.413C56.364,60.876 53.205,63.018 52.645,63.125C48.472,63.923 34.36,62.068 31.745,63.285C30.797,63.726 30.397,64.935 28.43,64.337C28.43,64.337 28.432,63.131 28.432,63.131C28.432,63.131 0,63.131 0,63.131L48.27,63.131C48.27,63.131 19.838,63.131 19.838,63.131C19.838,63.131 19.84,64.337 19.84,64.337C17.873,64.935 17.473,63.726 16.525,63.285C13.91,62.068 -0.202,63.923 -4.375,63.125C-4.935,63.018 -8.094,60.876 -9.185,60.413C-21.1,55.359 -34.598,57.698 -46.127,54.031C-52.313,52.063 -55.118,47.896 -51.599,41.787C-44.226,28.989 -24.346,20.207 -14.447,9.131C-11.361,5.678 -10.386,2.468 -15.884,0.922C-30.047,-3.059 -54.284,6.61 -65.484,15.399C-73.972,22.059 -85.804,40.034 -89.371,50.347C-90.364,53.218 -90.027,52.094 -90.727,54.107C-92.51,59.237 -92.085,68.958 -90.675,74.209C-87.61,85.623 -78.301,95.254 -68.109,100.683C-59.396,105.324 -49.079,108.288 -39.174,108.302C-38.437,108.763 -39.019,120.038 -38.826,121.946C-38.345,126.704 -31.487,131.514 -27.459,133.445C-26.445,133.931 -24.9,134.117 -24.184,134.54C-19.541,137.285 -15.194,155.135 -14.243,160.544C-13.908,162.452 -13.386,165.212 -13.246,167.068C-12.804,172.92 -14.421,182.012 -12.259,187.142C-10.553,191.191 -6.546,194.17 -2.196,194.83C1.383,195.374 4.139,195.813 7.724,196.644C8.379,196.795 9.488,196.555 9.926,196.847C10.675,197.346 9.452,199.878 9.341,200.808C7.042,220.049 36.536,223.605 39.068,204.661Z`);
+const MINOTAUR_EYE_PATH = new Path2D(`M64.837,119.996c-0.61,2.745-2.503,5.444-4.267,7.627c-4.683,5.795-10.71,7.469-18.125,5.887 c-0.866-0.185-6.023-1.916-6.172-2.565c1.442-2.809,3.062-5.943,5.243-8.248c2.544-2.687,6.556-4.963,10.265-5.38 C56.2,116.82,60.717,118.682,64.837,119.996z`);
+const MINOTAUR_NOSTRIL_PATH = new Path2D(`M38.848,179.448c-2.356,1.965-7.071,3.906-7.942-0.402c-0.706-3.494,2.75-8.636,5.193-10.927 c3.82-3.583,9.436-4.411,8.208,2.8C43.855,173.572,40.896,177.74,38.848,179.448z`);
+const MINOTAUR_RING_GAP_PATH = new Path2D(`M16.528,197.717l15.214,0.35c3.066,4.446,0.612,11.187-4.522,12.929 C18.883,213.823,11.746,204.955,16.528,197.717`);
+
+function render() {
+  const [cw, ch] = canvasSize();
+  canvas.width  = cw;
+  canvas.height = ch;
+
+  boardStage.style.width  = `${cw + LINE_GUTTER_X}px`;
+  boardStage.style.height = `${ch + LINE_GUTTER_Y}px`;
+
+  ctx.fillStyle = '#0d0c16';
+  ctx.fillRect(0, 0, cw, ch);
+
+  for (let row = 0; row < S.rows; row++)
+    for (let col = 0; col < S.cols; col++) {
+      const type = S.cells[`${col},${row}`] || '.';
+      if (S.gridType === 'square') drawSquare(col, row, type);
+      else                          drawHex(col, row, type);
+    }
+
+  renderLineControls();
+}
+
+function drawSquare(col, row, type) {
+  const s   = S.cellSize;
+  const x   = col * s + 1;
+  const y   = row * s + 1;
+  const inn = s - 2;
+  const b   = BMAP[type] || BMAP['.'];
+
+  const fill = type === '@' ? BMAP['.'].fill : b.fill;
+  ctx.fillStyle = fill;
+  ctx.fillRect(x, y, inn, inn);
+
+  ctx.strokeStyle = 'rgba(0,0,0,.45)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + .5, y + .5, inn - 1, inn - 1);
+
+  if (type === '@') {
+    drawMinotaurHead(ctx, x + inn / 2, y + inn / 2, inn * 0.86, fill);
+  } else if (type !== '.') {
+    ctx.fillStyle   = b.text;
+    ctx.font        = `bold ${Math.max(10, Math.floor(s * .38))}px monospace`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(type, x + inn / 2, y + inn / 2);
+  }
+}
+
+function drawHex(col, row, type) {
+  const sz = S.cellSize / 2;
+  const [cx, cy] = hexCenter(col, row);
+  const b  = BMAP[type] || BMAP['.'];
+
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const [px, py] = hexCorner(cx, cy, sz - 1, i);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  const fill = type === '@' ? BMAP['.'].fill : b.fill;
+  ctx.fillStyle   = fill;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.5)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+
+  if (type === '@') {
+    drawMinotaurHead(ctx, cx, cy, sz * 1.45, fill);
+  } else if (type !== '.') {
+    ctx.fillStyle    = b.text;
+    ctx.font         = `bold ${Math.max(9, Math.floor(sz * .65))}px monospace`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(type, cx, cy);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PLAY-MODE RENDERING
+// ══════════════════════════════════════════════════
+function drawSquarePlay(col, row, type) {
+  const s = S.cellSize, x = col*s+1, y = row*s+1, inn = s-2;
+  let fill, border;
+  if      (type === '#') { fill = '#14532d'; border = '#15803d'; }
+  else if (type === '|') { fill = '#7b5230'; border = '#9e7248'; }
+  else if (type === '@') { fill = BMAP['.'].fill; border = 'rgba(0,0,0,0.1)'; }
+  else { const b = BMAP[type] || BMAP['.']; fill = b.fill; border = type === '.' ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.25)'; }
+  ctx.fillStyle = fill; ctx.fillRect(x, y, inn, inn);
+  ctx.strokeStyle = border; ctx.lineWidth = 1; ctx.strokeRect(x+.5, y+.5, inn-1, inn-1);
+  if (PLAYER_COLORS.some(c => c.k.toUpperCase() === type)) {
+    const cx2 = x+inn/2, cy2 = y+inn/2, r = inn*0.28;
+    ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = Math.max(1.5, s*0.07); ctx.stroke();
+  }
+}
+
+function drawHexPlay(col, row, type) {
+  const sz = S.cellSize/2;
+  const [cx, cy] = hexCenter(col, row);
+  let fill, border;
+  if      (type === '#') { fill = '#14532d'; border = '#15803d'; }
+  else if (type === '|') { fill = '#7b5230'; border = '#9e7248'; }
+  else if (type === '@') { fill = BMAP['.'].fill; border = 'rgba(0,0,0,0.1)'; }
+  else { const b = BMAP[type] || BMAP['.']; fill = b.fill; border = type === '.' ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.25)'; }
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const [px, py] = hexCorner(cx, cy, sz-1, i);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = border; ctx.lineWidth = 1; ctx.stroke();
+  if (PLAYER_COLORS.some(c => c.k.toUpperCase() === type)) {
+    const r = sz * 0.48;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = Math.max(1.5, sz*0.12); ctx.stroke();
+  }
+}
+
+function drawPlayerPiece(col, row, player, isSelected, isSelectable) {
+  let cx, cy, r;
+  if (S.gridType === 'square') {
+    const cs = S.cellSize; cx = col*cs+1+cs/2; cy = row*cs+1+cs/2; r = cs*0.35;
+  } else { [cx, cy] = hexCenter(col, row); r = S.cellSize*0.28; }
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = player.ef; ctx.fill();
+  ctx.strokeStyle = isSelected ? '#fff' : isSelectable ? '#fde047' : 'rgba(0,0,0,0.45)';
+  ctx.lineWidth = isSelected ? 3 : isSelectable ? 2.5 : 1.5;
+  ctx.stroke();
+}
+
+function drawMinotaurHead(targetCtx, cx, cy, size, bgFill) {
+  const scale = size / MINOTAUR_SOURCE_HEIGHT;
+  targetCtx.save();
+  targetCtx.translate(cx, cy);
+  targetCtx.scale(scale, scale);
+  targetCtx.translate(-MINOTAUR_SOURCE_CENTER_X, -MINOTAUR_SOURCE_CENTER_Y);
+
+  targetCtx.fillStyle = '#050505';
+  targetCtx.fill(MINOTAUR_HEAD_PATH);
+
+  targetCtx.fillStyle = bgFill;
+  targetCtx.fill(MINOTAUR_RING_GAP_PATH);
+
+  targetCtx.fillStyle = '#dc2626';
+  targetCtx.fill(MINOTAUR_EYE_PATH);
+  targetCtx.save();
+  targetCtx.translate(48.27, 0);
+  targetCtx.scale(-1, 1);
+  targetCtx.fill(MINOTAUR_EYE_PATH);
+  targetCtx.restore();
+
+  targetCtx.fillStyle = '#aeb7c4';
+  targetCtx.fill(MINOTAUR_NOSTRIL_PATH);
+  targetCtx.save();
+  targetCtx.translate(48.27, 0);
+  targetCtx.scale(-1, 1);
+  targetCtx.fill(MINOTAUR_NOSTRIL_PATH);
+  targetCtx.restore();
+
+  targetCtx.restore();
+}
+
+function drawBull(cx, cy, r) {
+  drawMinotaurHead(ctx, cx, cy, r * 2.25, BMAP['.'].fill);
+}
+
+// ══════════════════════════════════════════════════
+//  COORDINATE CONVERSION
+// ══════════════════════════════════════════════════
+function pxToSquare(px, py) {
+  const col = Math.floor((px - 1) / S.cellSize);
+  const row = Math.floor((py - 1) / S.cellSize);
+  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return null;
+  return { col, row };
+}
+
+function pxToHex(px, py) {
+  const sz = S.cellSize / 2;
+  let best = null, bestD = Infinity;
+  for (let row = 0; row < S.rows; row++) {
+    for (let col = 0; col < S.cols; col++) {
+      const [cx, cy] = hexCenter(col, row);
+      const d = (px - cx) ** 2 + (py - cy) ** 2;
+      if (d < bestD) { bestD = d; best = { col, row }; }
+    }
+  }
+  return (best && bestD <= (sz * 1.1) ** 2) ? best : null;
+}
+
+function pxToCell(px, py) {
+  return S.gridType === 'square' ? pxToSquare(px, py) : pxToHex(px, py);
+}
+
+// ══════════════════════════════════════════════════
+//  PAINTING
+// ══════════════════════════════════════════════════
+function snapshot() {
+  S.history.push({ cells: { ...S.cells }, cols: S.cols, rows: S.rows, gridType: S.gridType });
+  if (S.history.length > S.maxHistory) S.history.shift();
+}
+
+function undo() {
+  if (S.history.length === 0) return;
+  const prev = S.history.pop();
+  S.cells    = prev.cells;
+  S.cols     = prev.cols;
+  S.rows     = prev.rows;
+  S.gridType = prev.gridType;
+  document.getElementById('inp-cols').value = S.cols;
+  document.getElementById('inp-rows').value = S.rows;
+  document.getElementById('btn-square').classList.toggle('active', S.gridType === 'square');
+  document.getElementById('btn-hex').classList.toggle('active',    S.gridType === 'hex');
+  render();
+  autoSave();
+}
+
+function paintAt(px, py, erase) {
+  const cell = pxToCell(px, py);
+  if (!cell) return;
+  const { col, row } = cell;
+  const key    = `${col},${row}`;
+  const newVal = erase ? '.' : S.brush;
+  const cur    = S.cells[key] || '.';
+  if (cur === newVal) return;
+
+  if (newVal === '.') delete S.cells[key];
+  else S.cells[key] = newVal;
+
+  // Redraw only affected cell
+  const type = newVal;
+  if (S.gridType === 'square') drawSquare(col, row, type);
+  else                          drawHex(col, row, type);
+
+  document.getElementById('st-coord').textContent = `Col ${col}, Row ${row}`;
+}
+
+function canvasPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('mousedown', e => {
+  if (currentTab === 'play') {
+    if (e.button === 0) handleGameClick(...canvasPos(e));
+    return;
+  }
+  e.preventDefault();
+  snapshot();
+  S.painting = true;
+  S.erasing  = e.button === 2;
+  const [px, py] = canvasPos(e);
+  paintAt(px, py, S.erasing);
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (currentTab === 'play') return;
+  const [px, py] = canvasPos(e);
+  if (S.painting) {
+    paintAt(px, py, S.erasing);
+  } else {
+    const cell = pxToCell(px, py);
+    if (cell) document.getElementById('st-coord').textContent = `Col ${cell.col}, Row ${cell.row}`;
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (currentTab === 'play') return;
+  if (S.painting) autoSave();
+  S.painting = false;
+  S.erasing  = false;
+});
+
+// Scroll-wheel zoom
+document.getElementById('canvas-wrap').addEventListener('wheel', e => {
+  e.preventDefault();
+  adjustZoom(e.deltaY > 0 ? -4 : 4);
+}, { passive: false });
+
+// ══════════════════════════════════════════════════
+//  GRID CONTROLS
+// ══════════════════════════════════════════════════
+function setGridType(t) {
+  S.gridType = t;
+  document.getElementById('btn-square').classList.toggle('active', t === 'square');
+  document.getElementById('btn-hex').classList.toggle('active',    t === 'hex');
+  render();
+}
+
+function applySize() {
+  const nc = parseInt(document.getElementById('inp-cols').value) || 12;
+  const nr = parseInt(document.getElementById('inp-rows').value) || 10;
+  S.cols = Math.max(MIN_BOARD_DIM, Math.min(60, nc));
+  S.rows = Math.max(MIN_BOARD_DIM, Math.min(60, nr));
+  for (const key of Object.keys(S.cells)) {
+    const [c, r] = key.split(',').map(Number);
+    if (c >= S.cols || r >= S.rows) delete S.cells[key];
+  }
+  render();
+  autoSave();
+}
+
+function adjustZoom(delta) {
+  S.cellSize = Math.max(14, Math.min(90, S.cellSize + delta));
+  render();
+}
+
+function clearBoard() {
+  if (!Object.keys(S.cells).length) return;
+  if (!confirm('Clear the entire board?')) return;
+  snapshot();
+  S.cells = {};
+  render();
+  autoSave();
+}
+
+// ─── Delete row / column / hex diagonal ───
+function commitBoardResize() {
+  document.getElementById('inp-cols').value = S.cols;
+  document.getElementById('inp-rows').value = S.rows;
+  render();
+  autoSave();
+}
+
+function deleteRow(row) {
+  if (row < 0 || row >= S.rows || S.rows <= MIN_BOARD_DIM) return;
+  snapshot();
+  const next = {};
+  for (const [key, val] of Object.entries(S.cells)) {
+    const [c, r] = key.split(',').map(Number);
+    if (r === row) continue;
+    next[`${c},${r > row ? r - 1 : r}`] = val;
+  }
+  S.cells = next;
+  S.rows -= 1;
+  commitBoardResize();
+}
+
+function deleteColumn(col) {
+  if (col < 0 || col >= S.cols || S.cols <= MIN_BOARD_DIM) return;
+  snapshot();
+  const next = {};
+  for (const [key, val] of Object.entries(S.cells)) {
+    const [c, r] = key.split(',').map(Number);
+    if (c === col) continue;
+    next[`${c > col ? c - 1 : c},${r}`] = val;
+  }
+  S.cells = next;
+  S.cols -= 1;
+  commitBoardResize();
+}
+
+// Hex has two diagonal axes in odd-r offset:
+//   "forward"  diag: d = c - r  (top-left → bottom-right)
+//   "backward" diag: d = c + r  (top-right → bottom-left, accounting for offset)
+function deleteHexDiagonal(type, diag) {
+  if (S.gridType !== 'hex' || S.cols <= MIN_BOARD_DIM) return;
+  snapshot();
+  const nextCols = S.cols - 1;
+  const next = {};
+  for (const [key, val] of Object.entries(S.cells)) {
+    const [c, r] = key.split(',').map(Number);
+    const d = type === 'fwd' ? c - r : c + r;
+    if (d === diag) continue;
+    const nc = d > diag ? c - 1 : c;
+    if (nc >= 0 && nc < nextCols) next[`${nc},${r}`] = val;
+  }
+  S.cells = next;
+  S.cols = nextCols;
+  commitBoardResize();
+}
+
+function placeDeleteButton(left, top, title, onClick, disabled, style) {
+  const btn = document.createElement('button');
+  btn.className = 'line-delete-btn' + (style === 'diag' ? ' diag' : '');
+  btn.style.left = `${Math.round(left)}px`;
+  btn.style.top  = `${Math.round(top)}px`;
+  btn.title = title;
+  btn.textContent = '−';
+  btn.disabled = disabled;
+  btn.onclick = onClick;
+  return btn;
+}
+
+function renderLineControls() {
+  if (!lineControls) return;
+  lineControls.innerHTML = '';
+  if (currentTab !== 'edit') return;
+
+  const cw = canvas.width, ch = canvas.height;
+  const canDelRows = S.rows > MIN_BOARD_DIM;
+  const canDelCols = S.cols > MIN_BOARD_DIM;
+
+  // Column delete buttons — below the canvas
+  for (let col = 0; col < S.cols; col++) {
+    const cx = S.gridType === 'square'
+      ? col * S.cellSize + S.cellSize * 0.5 - 9
+      : hexCenter(col, 0)[0] - 9;
+    lineControls.appendChild(placeDeleteButton(
+      cx, ch + 6, `Delete column ${col + 1}`, () => deleteColumn(col), !canDelCols
+    ));
+  }
+
+  // Row delete buttons — right of the canvas
+  for (let row = 0; row < S.rows; row++) {
+    const cy = S.gridType === 'square'
+      ? row * S.cellSize + S.cellSize * 0.5 - 9
+      : hexCenter(0, row)[1] - 9;
+    lineControls.appendChild(placeDeleteButton(
+      cw + 6, cy, `Delete row ${row + 1}`, () => deleteRow(row), !canDelRows
+    ));
+  }
+
+  // Hex diagonal delete buttons — two columns on the right
+  if (S.gridType === 'hex') {
+    const canDelDiag = S.cols > MIN_BOARD_DIM;
+    // Forward diagonals (c - r): range from -(rows-1) to cols-1
+    const fwdMin = -(S.rows - 1), fwdMax = S.cols - 1;
+    for (let d = fwdMin; d <= fwdMax; d++) {
+      const idx = d - fwdMin;
+      const total = fwdMax - fwdMin;
+      const y = total === 0 ? ch * 0.5 - 9 : (idx / total) * (ch - 18);
+      lineControls.appendChild(placeDeleteButton(
+        cw + 30, y, `Delete \\ diagonal ${d}`, () => deleteHexDiagonal('fwd', d), !canDelDiag, 'diag'
+      ));
+    }
+    // Backward diagonals (c + r): range from 0 to cols+rows-2
+    const bkMin = 0, bkMax = S.cols + S.rows - 2;
+    for (let d = bkMin; d <= bkMax; d++) {
+      const idx = d - bkMin;
+      const total = bkMax - bkMin;
+      const y = total === 0 ? ch * 0.5 - 9 : (idx / total) * (ch - 18);
+      lineControls.appendChild(placeDeleteButton(
+        cw + 54, y, `Delete / diagonal ${d}`, () => deleteHexDiagonal('bk', d), !canDelDiag, 'diag'
+      ));
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════════
+function download(filename, content, mime) {
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([content], { type: mime })),
+    download: filename,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function getBoardAsTXT() {
+  const lines = [`${S.gridType} ${S.cols} ${S.rows}`];
+  if (S.gridType === 'square') {
+    for (let row = 0; row < S.rows; row++) {
+      let line = '';
+      for (let col = 0; col < S.cols; col++)
+        line += S.cells[`${col},${row}`] || '.';
+      lines.push(line);
+    }
+  } else {
+    for (const [key, val] of Object.entries(S.cells))
+      lines.push(`${key}:${val}`);
+  }
+  return lines.join('\n');
+}
+
+function loadTXT(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const [gridType, colsStr, rowsStr] = lines[0].split(' ');
+  const cols = parseInt(colsStr), rows = parseInt(rowsStr);
+  const cells = {};
+
+  if (gridType === 'square') {
+    for (let row = 0; row < rows && row + 1 < lines.length; row++) {
+      const line = lines[row + 1];
+      for (let col = 0; col < cols && col < line.length; col++) {
+        const ch = line[col];
+        if (ch !== '.') cells[`${col},${row}`] = ch;
+      }
+    }
+  } else {
+    for (let i = 1; i < lines.length; i++) {
+      const [coords, val] = lines[i].split(':');
+      if (coords && val) cells[coords.trim()] = val.trim();
+    }
+  }
+
+  applyLoadedData(gridType, cols, rows, cells);
+}
+
+function applyLoadedData(gridType, cols, rows, cells) {
+  S.gridType = gridType || 'square';
+  S.cols     = Math.max(MIN_BOARD_DIM, Math.min(60, cols));
+  S.rows     = Math.max(MIN_BOARD_DIM, Math.min(60, rows));
+  S.cells    = cells || {};
+  S.history  = [];
+
+  document.getElementById('inp-cols').value = S.cols;
+  document.getElementById('inp-rows').value = S.rows;
+  document.getElementById('btn-square').classList.toggle('active', S.gridType === 'square');
+  document.getElementById('btn-hex').classList.toggle('active',    S.gridType === 'hex');
+  render();
+  // If loading while on the play tab, reinitialize the game from the new board
+  if (document.getElementById('play-sidebar').style.display !== 'none') {
+    initGame(); buildPlaySidebar(); renderGame();
+  }
+}
+
+// ─── Library ───
+function getLocalPresets() {
+  try { return JSON.parse(localStorage.getItem('minotaurus_presets') || '[]'); } catch { return []; }
+}
+
+function setLocalPresets(arr) {
+  localStorage.setItem('minotaurus_presets', JSON.stringify(arr));
+}
+
+function renderThumbnail(boardStr, width, height) {
+  const oc = document.createElement('canvas');
+  oc.width  = width;
+  oc.height = height;
+  const c2  = oc.getContext('2d');
+
+  const lines = boardStr.split('\n').map(l => l.trim()).filter(Boolean);
+  const [gt, cStr, rStr] = lines[0].split(' ');
+  const cols = parseInt(cStr), rows = parseInt(rStr);
+  const cells = {};
+  if (gt === 'square') {
+    for (let r = 0; r < rows && r + 1 < lines.length; r++) {
+      const ln = lines[r + 1];
+      for (let c = 0; c < cols && c < ln.length; c++)
+        if (ln[c] !== '.') cells[`${c},${r}`] = ln[c];
+    }
+  } else {
+    for (let i = 1; i < lines.length; i++) {
+      const [coords, val] = lines[i].split(':');
+      if (coords && val) cells[coords.trim()] = val.trim();
+    }
+  }
+
+  const cs = Math.min(width / cols, height / rows);
+  c2.fillStyle = '#0d0c16';
+  c2.fillRect(0, 0, width, height);
+  for (let row = 0; row < rows; row++)
+    for (let col = 0; col < cols; col++) {
+      const type = cells[`${col},${row}`] || '.';
+      const b = BMAP[type] || BMAP['.'];
+      const fill = type === '@' ? BMAP['.'].fill : b.fill;
+      c2.fillStyle = fill;
+      c2.fillRect(col * cs, row * cs, cs - 0.5, cs - 0.5);
+      if (type === '@' && cs >= 8) drawMinotaurHead(c2, col * cs + cs / 2, row * cs + cs / 2, cs * 0.82, fill);
+    }
+  return oc;
+}
+
+function makePresetCard(name, boardStr, onLoad, onDelete) {
+  const card = document.createElement('div');
+  card.className = 'preset-card';
+  card.appendChild(renderThumbnail(boardStr, 130, 90));
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'card-name';
+  nameEl.textContent = name;
+  card.appendChild(nameEl);
+
+  card.addEventListener('click', e => {
+    if (e.target.classList.contains('del-btn')) return;
+    onLoad();
+  });
+
+  if (onDelete) {
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.textContent = '✕';
+    del.title = 'Delete';
+    del.onclick = e => { e.stopPropagation(); onDelete(); };
+    card.appendChild(del);
+  }
+  return card;
+}
+
+function renderLibraryBody() {
+  const body = document.getElementById('lib-body');
+  body.innerHTML = '';
+
+  if (BAKED_PRESETS.length) {
+    const sec  = document.createElement('div'); sec.className = 'lib-section';
+    const titl = document.createElement('div'); titl.className = 'lib-section-title';
+    titl.textContent = 'Built-in'; sec.appendChild(titl);
+    const grid = document.createElement('div'); grid.className = 'preset-grid';
+    for (const p of BAKED_PRESETS) {
+      grid.appendChild(makePresetCard(p.name, p.board, () => {
+        loadTXT(p.board); autoSave(); closeLibrary();
+      }, null));
+    }
+    sec.appendChild(grid);
+    body.appendChild(sec);
+  }
+
+  const locals = getLocalPresets();
+  const sec2  = document.createElement('div'); sec2.className = 'lib-section';
+  const titl2 = document.createElement('div'); titl2.className = 'lib-section-title';
+  titl2.textContent = 'My Boards'; sec2.appendChild(titl2);
+
+  if (!locals.length) {
+    const empty = document.createElement('div'); empty.className = 'lib-empty';
+    empty.textContent = 'No saved boards yet — paint something and click "Save current".';
+    sec2.appendChild(empty);
+  } else {
+    const grid2 = document.createElement('div'); grid2.className = 'preset-grid';
+    locals.forEach((p, idx) => {
+      grid2.appendChild(makePresetCard(p.name, p.board, () => {
+        loadTXT(p.board); autoSave(); closeLibrary();
+      }, () => {
+        const arr = getLocalPresets(); arr.splice(idx, 1);
+        setLocalPresets(arr); renderLibraryBody();
+      }));
+    });
+    sec2.appendChild(grid2);
+  }
+  body.appendChild(sec2);
+}
+
+function openLibrary() {
+  document.getElementById('lib-name-input').value = '';
+  renderLibraryBody();
+  document.getElementById('library-overlay').classList.add('open');
+}
+
+function closeLibrary() {
+  document.getElementById('library-overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('library-overlay')) closeLibrary();
+}
+
+function savePreset() {
+  const inp  = document.getElementById('lib-name-input');
+  const name = inp.value.trim() || `Board ${new Date().toLocaleString()}`;
+  const presets = getLocalPresets();
+  presets.push({ name, board: getBoardAsTXT() });
+  setLocalPresets(presets);
+  inp.value = '';
+  renderLibraryBody();
+}
+
+function exportHTML() {
+  const all = [...BAKED_PRESETS, ...getLocalPresets()];
+  let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  html = html.replace(
+    /const BAKED_PRESETS = \[[\s\S]*?\];/,
+    'const BAKED_PRESETS = ' + JSON.stringify(all, null, 2) + ';'
+  );
+  download('minotaurus.html', html, 'text/html');
+}
+
+// ══════════════════════════════════════════════════
+//  TAB SYSTEM
+// ══════════════════════════════════════════════════
+let currentTab = 'play';
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-play').classList.toggle('active', tab === 'play');
+  document.getElementById('tab-edit').classList.toggle('active', tab === 'edit');
+  document.getElementById('edit-bar').style.display = tab === 'edit' ? 'contents' : 'none';
+  document.getElementById('toolbar').style.display = tab === 'edit' ? '' : 'none';
+  document.getElementById('toolbar-resizer').style.display = tab === 'edit' ? '' : 'none';
+  document.getElementById('play-sidebar').style.display = tab === 'play' ? 'flex' : 'none';
+  document.getElementById('play-sidebar-resizer').style.display = tab === 'play' ? '' : 'none';
+  if (tab === 'play') { initGame(); buildPlaySidebar(); renderGame(); }
+  else render();
+}
+
+// ══════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════
+const DEFAULT_RULESET = `3:1
+4:1
+5:1
+3(J):1
+M(4):1
+W(2):1`;
+
+const G = {
+  active: false,
+  boardCells: {}, boardCols: 30, boardRows: 30, boardGridType: 'square',
+  setupOrder: [],   // player keys in preferred turn order
+  players: [],      // [{name,k,ef,et,sf,st,pieces:[{pos,alive}],endKey,eliminated}]
+  minotaur: null,   // key or null
+  turnIdx: 0,
+  phase: 'roll',    // 'roll'|'move'|'minotaur-move'|'wall-edit'|'end'
+  ruleset: [],
+  lastRulesetText: '',
+  rollResult: null, // {label,action,steps,budget,jump}
+  selectedPiece: null,         // piece index within currentPlayer().pieces | null
+  highlights: new Set(),       // move targets / wall place spots (yellow)
+  wallDeleteHighlights: new Set(), // walls that can be deleted (amber)
+  wallDeleteBudget: 0,
+  wallPlaceBudget: 0,
+  winner: null,
+};
+
+function currentPlayer() { return G.players[G.turnIdx]; }
+
+// ══════════════════════════════════════════════════
+//  RULESET
+// ══════════════════════════════════════════════════
+function parseRuleset(text) {
+  const entries = [];
+  for (let line of text.split('\n')) {
+    line = line.trim();
+    if (!line || line.startsWith('#')) continue;
+    const idx = line.lastIndexOf(':');
+    if (idx < 0) continue;
+    const rawLabel = line.slice(0, idx).trim().toUpperCase();
+    const w = parseInt(line.slice(idx + 1).trim());
+    if (!rawLabel || isNaN(w) || w <= 0) continue;
+    // Parse BASE(MODIFIER) or just BASE
+    const m = rawLabel.match(/^([A-Z0-9]+)(?:\(([A-Z0-9]+)\))?$/);
+    if (!m) continue;
+    const base = m[1], mod = m[2] || null;
+    let action, steps = 1, budget = 1, jump = false;
+    if (base === 'W') {
+      action = 'wall';
+      budget = mod && /^\d+$/.test(mod) ? Math.max(1, parseInt(mod)) : 1;
+    } else if (base === 'M' || /^M\d+$/.test(base)) {
+      action = 'minotaur';
+      if (mod && /^\d+$/.test(mod)) steps = Math.max(1, parseInt(mod));
+      else if (/^M(\d+)$/.test(base))  steps = parseInt(base.slice(1)); // old M4 syntax
+      else steps = 1;
+    } else if (/^\d+$/.test(base)) {
+      action = 'move'; steps = parseInt(base);
+      if (mod === 'J') jump = true;
+    } else { action = 'skip'; steps = 0; }
+    entries.push({ label: rawLabel, action, steps, budget, jump, weight: w });
+  }
+  return entries;
+}
+
+function weightedRoll(ruleset) {
+  const total = ruleset.reduce((s, e) => s + e.weight, 0);
+  if (!total) return ruleset[0] || null;
+  let r = Math.random() * total;
+  for (const e of ruleset) { r -= e.weight; if (r <= 0) return e; }
+  return ruleset[ruleset.length - 1];
+}
+
+function getRulesetLib() {
+  try { return JSON.parse(localStorage.getItem('minotaurus_rulesets') || '[]'); } catch { return []; }
+}
+function setRulesetLib(arr) { localStorage.setItem('minotaurus_rulesets', JSON.stringify(arr)); }
+
+// ══════════════════════════════════════════════════
+//  BOARD DETECTION
+// ══════════════════════════════════════════════════
+function detectBoardEntities() {
+  const playerMap = {};
+  let minotaurPos = null;
+  for (const [key, val] of Object.entries(S.cells)) {
+    if (val === '@') { minotaurPos = key; continue; }
+    const lo = val.toLowerCase();
+    const c = PLAYER_COLORS.find(p => p.k === lo);
+    if (!c) continue;
+    if (!playerMap[lo]) playerMap[lo] = { startKeys: [] };
+    if (val === lo) playerMap[lo].startKeys.push(key);
+    else            playerMap[lo].endKey = key;
+  }
+  const detected = [];
+  for (const c of PLAYER_COLORS) {
+    const pm = playerMap[c.k];
+    if (!pm || !pm.startKeys.length || !pm.endKey) continue;
+    detected.push({ name: c.name, k: c.k, ef: c.ef, et: c.et, sf: c.sf, st: c.st,
+      startKeys: pm.startKeys, endKey: pm.endKey });
+  }
+  return { detected, minotaurPos };
+}
+
+// ══════════════════════════════════════════════════
+//  GAME BFS
+// ══════════════════════════════════════════════════
+function squareNeighbors(c, r, cols, rows) {
+  const res = [];
+  if (c > 0)        res.push(`${c-1},${r}`);
+  if (c < cols - 1) res.push(`${c+1},${r}`);
+  if (r > 0)        res.push(`${c},${r-1}`);
+  if (r < rows - 1) res.push(`${c},${r+1}`);
+  return res;
+}
+
+function hexNeighbors(c, r, cols, rows) {
+  const odd = r & 1;
+  const offsets = odd
+    ? [[-1,0],[1,0],[0,-1],[1,-1],[0,1],[1,1]]
+    : [[-1,0],[1,0],[-1,-1],[0,-1],[-1,1],[0,1]];
+  return offsets.map(([dc,dr]) => [c+dc, r+dr])
+    .filter(([nc,nr]) => nc >= 0 && nc < cols && nr >= 0 && nr < rows)
+    .map(([nc,nr]) => `${nc},${nr}`);
+}
+
+function gridNeighbors(c, r) {
+  return G.boardGridType === 'hex'
+    ? hexNeighbors(c, r, G.boardCols, G.boardRows)
+    : squareNeighbors(c, r, G.boardCols, G.boardRows);
+}
+
+function bfsReachable(fromKey, maxSteps, blocked) {
+  const dist = new Map([[fromKey, 0]]);
+  const queue = [fromKey];
+  while (queue.length) {
+    const key = queue.shift();
+    const d = dist.get(key);
+    if (d >= maxSteps) continue;
+    const [c, r] = key.split(',').map(Number);
+    for (const nk of gridNeighbors(c, r)) {
+      if (dist.has(nk)) continue;
+      if (blocked.includes(G.boardCells[nk] || '.')) continue;
+      dist.set(nk, d + 1);
+      queue.push(nk);
+    }
+  }
+  return dist;
+}
+
+// ══════════════════════════════════════════════════
+//  GAME RENDERING
+// ══════════════════════════════════════════════════
+function renderGame() {
+  const savedCells = S.cells, savedCols = S.cols, savedRows = S.rows, savedGrid = S.gridType;
+  if (G.active) {
+    S.cells = G.boardCells; S.cols = G.boardCols; S.rows = G.boardRows; S.gridType = G.boardGridType;
+  }
+  // Size canvas and draw background via normal render, then overdraw cells in play style
+  render();
+  for (let row = 0; row < S.rows; row++)
+    for (let col = 0; col < S.cols; col++) {
+      const type = S.cells[`${col},${row}`] || '.';
+      if (S.gridType === 'square') drawSquarePlay(col, row, type);
+      else                          drawHexPlay(col, row, type);
+    }
+
+  if (G.active) {
+    // Wall delete highlights (amber)
+    for (const key of G.wallDeleteHighlights) {
+      const [col, row] = key.split(',').map(Number);
+      drawHighlightCell(col, row, 'rgba(251,146,60,0.35)', '#fb923c');
+    }
+    // Move / place highlights (yellow)
+    for (const key of G.highlights) {
+      const [col, row] = key.split(',').map(Number);
+      drawHighlightCell(col, row, 'rgba(250,204,21,0.28)', '#fbbf24');
+    }
+    // Player pieces (all alive pieces for all players)
+    const cp = currentPlayer();
+    for (const p of G.players) {
+      if (p.eliminated) continue;
+      for (let si = 0; si < p.pieces.length; si++) {
+        const pc = p.pieces[si];
+        if (!pc.alive) continue;
+        const [col, row] = pc.pos.split(',').map(Number);
+        const isSelected  = p === cp && G.selectedPiece === si;
+        const isSelectable = p === cp && G.phase === 'move' && G.selectedPiece === null;
+        drawPlayerPiece(col, row, p, isSelected, isSelectable);
+      }
+    }
+    // Minotaur
+    if (G.minotaur) {
+      const [col, row] = G.minotaur.split(',').map(Number);
+      let cx, cy, r;
+      if (S.gridType === 'square') {
+        const cs = S.cellSize; cx = col*cs+1+cs/2; cy = row*cs+1+cs/2; r = cs*0.38;
+      } else { [cx, cy] = hexCenter(col, row); r = S.cellSize*0.3; }
+      drawBull(cx, cy, r);
+    }
+  }
+
+  if (G.active) {
+    S.cells = savedCells; S.cols = savedCols; S.rows = savedRows; S.gridType = savedGrid;
+  }
+}
+
+function drawHighlightCell(col, row, fill, stroke) {
+  if (S.gridType === 'square') {
+    const cs = S.cellSize, x = col * cs + 1, y = row * cs + 1, inn = cs - 2;
+    ctx.fillStyle = fill; ctx.fillRect(x, y, inn, inn);
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, inn - 2, inn - 2);
+  } else {
+    const [cx, cy] = hexCenter(col, row), sz = S.cellSize / 2;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const [px, py] = hexCorner(cx, cy, sz - 1, i);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
+  }
+}
+
+
+// ══════════════════════════════════════════════════
+//  PLAY SIDEBAR UI
+// ══════════════════════════════════════════════════
+function buildPlaySidebar() {
+  const sb = document.getElementById('play-sidebar');
+  sb.innerHTML = '';
+
+  // ── Header: turn state ──
+  if (!G.active) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'padding:12px 4px;color:#555;font-size:12px;line-height:1.5';
+    msg.textContent = 'No players found on the board. Add player squares in the Edit tab.';
+    sb.appendChild(msg);
+  } else if (G.phase === 'end') {
+    const hdr = document.createElement('div'); hdr.className = 'turn-indicator';
+    if (G.winner) {
+      hdr.style.cssText = `background:${G.winner.ef}22;border-color:${G.winner.ef};color:${G.winner.ef}`;
+      hdr.textContent = `${G.winner.name} wins!`;
+    } else {
+      hdr.style.cssText = 'background:#1a000022;border-color:#7f1d1d;color:#f87171';
+      hdr.textContent = 'Minotaur wins!';
+    }
+    sb.appendChild(hdr);
+    const againBtn = document.createElement('button');
+    againBtn.className = 'play-btn primary'; againBtn.textContent = 'Play Again';
+    againBtn.onclick = () => { initGame(); buildPlaySidebar(); renderGame(); };
+    sb.appendChild(againBtn);
+  } else {
+    const p = currentPlayer();
+    const ind = document.createElement('div'); ind.className = 'turn-indicator';
+    ind.style.cssText = `background:${p.ef}22;border-color:${p.ef};color:#fff`;
+    ind.textContent = `${p.name}'s turn`;
+    sb.appendChild(ind);
+    if (G.phase === 'roll') {
+      const rollBtn = document.createElement('button');
+      rollBtn.className = 'play-btn primary'; rollBtn.textContent = 'Roll!';
+      rollBtn.onclick = rollDie;
+      sb.appendChild(rollBtn);
+    } else {
+      const rrDiv = document.createElement('div'); rrDiv.className = 'roll-result';
+      rrDiv.textContent = `Rolled: ${G.rollResult?.label || ''}`;
+      sb.appendChild(rrDiv);
+      const ppDiv = document.createElement('div'); ppDiv.className = 'phase-prompt';
+      if (G.phase === 'move')
+        ppDiv.textContent = G.selectedPiece !== null ? 'Click destination to move' : 'Click one of your pieces';
+      else if (G.phase === 'minotaur-move')
+        ppDiv.textContent = 'Click to place the minotaur';
+      else if (G.phase === 'wall-edit')
+        ppDiv.textContent = `Delete: ${G.wallDeleteBudget}  ·  Place: ${G.wallPlaceBudget}`;
+      sb.appendChild(ppDiv);
+      if (G.phase === 'wall-edit') {
+        const doneBtn = document.createElement('button');
+        doneBtn.className = 'play-btn'; doneBtn.textContent = 'Done with walls';
+        doneBtn.onclick = () => {
+          G.highlights.clear(); G.wallDeleteHighlights.clear();
+          G.wallDeleteBudget = 0; G.wallPlaceBudget = 0; G.rollResult = null;
+          nextTurn(); buildPlaySidebar(); renderGame();
+        };
+        sb.appendChild(doneBtn);
+      }
+    }
+  }
+
+  // ── Turn Order (always shown) ──
+  playSec(sb, 'Turn Order');
+  buildTurnOrderUI(sb);
+
+  // ── Ruleset (always shown) ──
+  playSec(sb, 'Ruleset');
+  const desc = document.createElement('div'); desc.className = 'ruleset-desc';
+  desc.innerHTML = 'Format: <b>STEPS:WEIGHT</b> or <b>LABEL(MOD):WEIGHT</b><br>Numbers = move steps<br><b>J</b> = jump over walls<br><b>M(n)</b> = minotaur moves n steps<br><b>W(n)</b> = wall budget n';
+  sb.appendChild(desc);
+  const ta = document.createElement('textarea');
+  ta.className = 'ruleset-ta';
+  ta.value = (G.lastRulesetText || DEFAULT_RULESET).split('\n').filter(l => !l.trim().startsWith('#')).join('\n').trim();
+  ta.oninput = () => { G.lastRulesetText = ta.value; G.ruleset = parseRuleset(ta.value); };
+  sb.appendChild(ta);
+  const libBtn = document.createElement('button');
+  libBtn.className = 'play-btn'; libBtn.textContent = 'Save to Library';
+  libBtn.onclick = () => { G.lastRulesetText = ta.value; openRulesetLibrary(); };
+  sb.appendChild(libBtn);
+
+  // ── Maps ──
+  playSec(sb, 'Maps');
+  buildMapsUI(sb);
+
+  // ── Rules ──
+  playSec(sb, 'Rules');
+  buildRulesUI(sb);
+
+  // ── Bottom actions ──
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'play-btn'; resetBtn.style.marginTop = 'auto';
+  resetBtn.textContent = 'Reset Pieces';
+  resetBtn.onclick = () => { initGame(); buildPlaySidebar(); renderGame(); };
+  sb.appendChild(resetBtn);
+}
+
+function playSec(parent, text) {
+  const d = document.createElement('div');
+  d.className = 'psec'; d.textContent = text; parent.appendChild(d);
+}
+
+function buildTurnOrderUI(sb) {
+  const { detected } = detectBoardEntities();
+  const detectedKeys = detected.map(p => p.k);
+  G.setupOrder = G.setupOrder.filter(k => detectedKeys.includes(k));
+  for (const k of detectedKeys) if (!G.setupOrder.includes(k)) G.setupOrder.push(k);
+  const sorted = G.setupOrder.map(k => detected.find(p => p.k === k)).filter(Boolean);
+  if (!sorted.length) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:11px;color:#555;padding:4px';
+    msg.textContent = 'No players found.';
+    sb.appendChild(msg); return;
+  }
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:10px;color:#444;padding:2px 4px 4px';
+  hint.textContent = 'Drag to reorder turns.';
+  sb.appendChild(hint);
+  const list = document.createElement('div'); list.className = 'player-setup-list';
+  for (const p of sorted) {
+    const isCurrent = G.active && G.players[G.turnIdx]?.k === p.k && G.phase !== 'end';
+    const gamePlayer = G.players.find(pl => pl.k === p.k);
+    const chip = document.createElement('div');
+    chip.className = 'player-setup-chip on' + (isCurrent ? ' current-player' : '');
+    chip.draggable = true; chip.dataset.key = p.k;
+    const dead = gamePlayer?.eliminated;
+    chip.innerHTML = `<span class="drag-handle">⠿</span><span class="chip-dot" style="background:${p.ef}"></span>${p.name}${dead ? ' ✕' : ''}`;
+    if (dead) chip.style.opacity = '0.4';
+    chip.addEventListener('dragstart', e => {
+      chip.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', p.k);
+    });
+    chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+    chip.addEventListener('dragover', e => { e.preventDefault(); chip.classList.add('drag-over'); });
+    chip.addEventListener('dragleave', () => chip.classList.remove('drag-over'));
+    chip.addEventListener('drop', e => {
+      e.preventDefault(); chip.classList.remove('drag-over');
+      const from = e.dataTransfer.getData('text/plain');
+      if (from === p.k) return;
+      const fi = G.setupOrder.indexOf(from), ti = G.setupOrder.indexOf(p.k);
+      G.setupOrder.splice(fi, 1); G.setupOrder.splice(ti, 0, from);
+      if (G.active) {
+        const currentK = G.players[G.turnIdx]?.k;
+        G.players.sort((a, b) => G.setupOrder.indexOf(a.k) - G.setupOrder.indexOf(b.k));
+        G.turnIdx = G.players.findIndex(pl => pl.k === currentK);
+      }
+      buildPlaySidebar(); renderGame();
+    });
+    list.appendChild(chip);
+  }
+  sb.appendChild(list);
+}
+
+function buildMapsUI(sb) {
+  const all = [...BAKED_PRESETS, ...getLocalPresets()];
+  if (!all.length) {
+    const none = document.createElement('div');
+    none.style.cssText = 'font-size:11px;color:#444;padding:3px';
+    none.textContent = 'No saved maps yet.';
+    sb.appendChild(none); return;
+  }
+  const list = document.createElement('div'); list.className = 'lib-scroll-list';
+  for (const p of all) {
+    const item = document.createElement('div'); item.className = 'lib-scroll-item';
+    item.textContent = p.name;
+    item.onclick = () => { loadTXT(p.board); autoSave(); };
+    list.appendChild(item);
+  }
+  sb.appendChild(list);
+}
+
+function buildRulesUI(sb) {
+  const all = [...BAKED_RULESETS, ...getRulesetLib()];
+  if (!all.length) {
+    const none = document.createElement('div');
+    none.style.cssText = 'font-size:11px;color:#444;padding:3px';
+    none.textContent = 'No saved rulesets yet.';
+    sb.appendChild(none); return;
+  }
+  const list = document.createElement('div'); list.className = 'lib-scroll-list';
+  for (const r of all) {
+    const item = document.createElement('div'); item.className = 'lib-scroll-item';
+    item.textContent = r.name;
+    item.onclick = () => {
+      G.lastRulesetText = r.text;
+      G.ruleset = parseRuleset(r.text);
+      buildPlaySidebar();
+    };
+    list.appendChild(item);
+  }
+  sb.appendChild(list);
+}
+
+// ══════════════════════════════════════════════════
+//  GAME LOGIC
+// ══════════════════════════════════════════════════
+function initGame() {
+  const rsText = G.lastRulesetText || DEFAULT_RULESET;
+  G.ruleset = parseRuleset(rsText);
+  if (!G.ruleset.length) G.ruleset = parseRuleset(DEFAULT_RULESET);
+
+  const { detected, minotaurPos } = detectBoardEntities();
+
+  // Sync setupOrder
+  const detectedKeys = detected.map(p => p.k);
+  G.setupOrder = G.setupOrder.filter(k => detectedKeys.includes(k));
+  for (const k of detectedKeys) if (!G.setupOrder.includes(k)) G.setupOrder.push(k);
+  const sorted = G.setupOrder.map(k => detected.find(p => p.k === k)).filter(Boolean);
+
+  G.boardCells = { ...S.cells };
+  G.boardCols = S.cols; G.boardRows = S.rows; G.boardGridType = S.gridType;
+  G.players = sorted.map(p => ({
+    name: p.name, k: p.k, ef: p.ef, et: p.et, sf: p.sf, st: p.st,
+    pieces: p.startKeys.map(sk => ({ pos: sk, alive: true })),
+    endKey: p.endKey, eliminated: false,
+  }));
+  G.minotaur = minotaurPos;
+  G.turnIdx = 0; G.phase = 'roll';
+  G.rollResult = null; G.selectedPiece = null;
+  G.highlights.clear(); G.wallDeleteHighlights.clear();
+  G.wallDeleteBudget = 0; G.wallPlaceBudget = 0;
+  G.winner = null; G.active = G.players.length > 0;
+}
+
+function rollDie() {
+  if (G.phase !== 'roll') return;
+  const entry = weightedRoll(G.ruleset);
+  if (!entry) return;
+  G.rollResult = entry;
+
+  if (entry.action === 'move') {
+    // Highlights computed on piece selection; just enter move phase
+    G.highlights.clear(); G.selectedPiece = null;
+    G.phase = 'move';
+  } else if (entry.action === 'minotaur') {
+    if (!G.minotaur) { nextTurn(); buildPlaySidebar(); renderGame(); return; }
+    const reachable = bfsReachable(G.minotaur, entry.steps, ['#']);
+    G.highlights.clear();
+    for (const [key] of reachable) {
+      if (key === G.minotaur) continue;
+      if ((G.boardCells[key] || '.') === '#') continue;
+      G.highlights.add(key);
+    }
+    G.phase = 'minotaur-move';
+  } else if (entry.action === 'wall') {
+    G.wallDeleteBudget = entry.budget;
+    G.wallPlaceBudget = entry.budget;
+    rebuildWallHighlights();
+    G.phase = 'wall-edit';
+  } else {
+    nextTurn(); buildPlaySidebar(); renderGame(); return;
+  }
+  buildPlaySidebar(); renderGame();
+}
+
+function rebuildWallHighlights() {
+  G.highlights.clear();
+  G.wallDeleteHighlights.clear();
+  if (G.wallDeleteBudget > 0) {
+    for (const [key, val] of Object.entries(G.boardCells))
+      if (val === '|') G.wallDeleteHighlights.add(key);
+  }
+}
+
+function handleGameClick(px, py) {
+  if (!G.active) return;
+  const savedCells = S.cells, savedCols = S.cols, savedRows = S.rows, savedGrid = S.gridType;
+  S.cells = G.boardCells; S.cols = G.boardCols; S.rows = G.boardRows; S.gridType = G.boardGridType;
+  const cell = pxToCell(px, py);
+  S.cells = savedCells; S.cols = savedCols; S.rows = savedRows; S.gridType = savedGrid;
+  if (!cell) return;
+  const key = `${cell.col},${cell.row}`;
+
+  if (G.phase === 'move') {
+    const p = currentPlayer();
+    // Click a piece to select it and compute its reachable highlights
+    const pieceIdx = p.pieces.findIndex(pc => pc.alive && pc.pos === key);
+    if (pieceIdx >= 0) {
+      G.selectedPiece = pieceIdx;
+      const entry = G.rollResult;
+      const occupied = new Set();
+      for (const pl of G.players)
+        for (let si = 0; si < pl.pieces.length; si++)
+          if (pl.pieces[si].alive && !(pl === p && si === pieceIdx)) occupied.add(pl.pieces[si].pos);
+      if (G.minotaur) occupied.add(G.minotaur);
+      const traversalBlocked = entry.jump ? [] : ['#', '|'];
+      const reachable = bfsReachable(p.pieces[pieceIdx].pos, entry.steps, traversalBlocked);
+      G.highlights.clear();
+      for (const [k] of reachable) {
+        if (k === p.pieces[pieceIdx].pos || occupied.has(k)) continue;
+        const cv = G.boardCells[k] || '.';
+        if (cv === '#' || cv === '|') continue;
+        G.highlights.add(k);
+      }
+      buildPlaySidebar(); renderGame();
+      return;
+    }
+    // Move selected piece to clicked highlight
+    if (G.selectedPiece !== null && G.highlights.has(key)) {
+      p.pieces[G.selectedPiece].pos = key;
+      G.highlights.clear(); G.rollResult = null; G.selectedPiece = null;
+      if (!checkWin(p)) { nextTurn(); buildPlaySidebar(); renderGame(); }
+    }
+  } else if (G.phase === 'minotaur-move') {
+    if (!G.highlights.has(key)) return;
+    G.minotaur = key; G.highlights.clear(); G.rollResult = null;
+    checkCaptures();
+    if (G.phase !== 'end') { nextTurn(); buildPlaySidebar(); renderGame(); }
+  } else if (G.phase === 'wall-edit') {
+    const cellVal = G.boardCells[key] || '.';
+    if (cellVal === '|' && G.wallDeleteHighlights.has(key) && G.wallDeleteBudget > 0) {
+      delete G.boardCells[key]; G.wallDeleteBudget--;
+      rebuildWallHighlights(); buildPlaySidebar(); renderGame();
+    } else if (cellVal === '.' && G.wallPlaceBudget > 0) {
+      const occ = new Set();
+      for (const p of G.players) for (const pc of p.pieces) if (pc.alive) occ.add(pc.pos);
+      if (G.minotaur) occ.add(G.minotaur);
+      if (!occ.has(key)) {
+        G.boardCells[key] = '|'; G.wallPlaceBudget--;
+        rebuildWallHighlights(); buildPlaySidebar(); renderGame();
+      }
+    }
+  }
+}
+
+function checkWin(player) {
+  if (!player.pieces.some(pc => pc.alive && pc.pos === player.endKey)) return false;
+  G.phase = 'end'; G.winner = player; G.active = false;
+  buildPlaySidebar(); renderGame(); return true;
+}
+
+function checkCaptures() {
+  for (const p of G.players)
+    for (const pc of p.pieces)
+      if (pc.alive && pc.pos === G.minotaur) pc.alive = false;
+  for (const p of G.players)
+    if (!p.pieces.some(pc => pc.alive)) p.eliminated = true;
+  if (!G.players.some(p => !p.eliminated)) {
+    G.phase = 'end'; G.winner = null; G.active = false;
+  }
+}
+
+function nextTurn() {
+  G.rollResult = null; G.selectedPiece = null;
+  G.highlights.clear(); G.wallDeleteHighlights.clear();
+  G.wallDeleteBudget = 0; G.wallPlaceBudget = 0;
+  const n = G.players.length;
+  let next = (G.turnIdx + 1) % n, tries = 0;
+  while (G.players[next].eliminated && tries < n) { next = (next + 1) % n; tries++; }
+  if (G.players[next].eliminated) {
+    G.phase = 'end'; G.winner = null; G.active = false; return;
+  }
+  G.turnIdx = next; G.phase = 'roll';
+}
+
+// ══════════════════════════════════════════════════
+//  RULESET LIBRARY
+// ══════════════════════════════════════════════════
+function openRulesetLibrary() { buildRulesetBody(); document.getElementById('ruleset-overlay').classList.add('open'); }
+function closeRulesetLibrary() { document.getElementById('ruleset-overlay').classList.remove('open'); }
+function rulesetOverlayClick(e) { if (e.target === document.getElementById('ruleset-overlay')) closeRulesetLibrary(); }
+
+function saveRuleset() {
+  const inp = document.getElementById('rs-name-input');
+  const name = inp.value.trim() || `Ruleset ${new Date().toLocaleString()}`;
+  const lib = getRulesetLib();
+  lib.push({ name, text: G.lastRulesetText || DEFAULT_RULESET });
+  setRulesetLib(lib); inp.value = ''; buildRulesetBody();
+}
+
+function buildRulesetBody() {
+  const body = document.getElementById('rs-body');
+  body.innerHTML = '';
+  const lib = getRulesetLib();
+  if (!lib.length) {
+    const e = document.createElement('div'); e.className = 'rs-empty';
+    e.textContent = 'No saved rulesets yet.'; body.appendChild(e); return;
+  }
+  lib.forEach((item, i) => {
+    const div = document.createElement('div'); div.className = 'rs-item';
+    const info = document.createElement('div'); info.className = 'rs-item-info';
+    const nameEl = document.createElement('div'); nameEl.className = 'rs-item-name'; nameEl.textContent = item.name;
+    const prev = document.createElement('div'); prev.className = 'rs-item-preview';
+    prev.textContent = item.text.split('\n').filter(l => l.trim() && !l.startsWith('#')).slice(0, 3).join('\n');
+    info.appendChild(nameEl); info.appendChild(prev); div.appendChild(info);
+    const del = document.createElement('button'); del.className = 'rs-del'; del.textContent = '✕';
+    del.onclick = e => { e.stopPropagation(); const a = getRulesetLib(); a.splice(i,1); setRulesetLib(a); buildRulesetBody(); };
+    div.appendChild(del);
+    div.addEventListener('click', e => {
+      if (e.target === del) return;
+      G.lastRulesetText = item.text; closeRulesetLibrary(); buildPlaySidebar();
+    });
+    body.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Escape always works (even in inputs): close modals or clear brush
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (document.getElementById('ruleset-overlay').classList.contains('open')) {
+      closeRulesetLibrary(); return;
+    }
+    if (document.getElementById('library-overlay').classList.contains('open')) {
+      closeLibrary(); return;
+    }
+    if (currentTab === 'edit') selectBrush('.');
+    return;
+  }
+
+  if (e.target.tagName === 'INPUT') return;
+
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault(); openLibrary(); return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault(); undo(); return;
+  }
+
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  // Direct key (handles shift via e.key giving uppercase letters)
+  if (HOTKEYS[e.key] !== undefined) {
+    selectBrush(HOTKEYS[e.key]);
+    e.preventDefault();
+  } else if (BMAP[e.key]) {
+    selectBrush(e.key);
+    e.preventDefault();
+  }
+});
+
+// ══════════════════════════════════════════════════
+//  PERSISTENCE  (localStorage draft + baked presets)
+// ══════════════════════════════════════════════════
+function autoSave() {
+  localStorage.setItem('minotaurus_draft', getBoardAsTXT());
+}
+
+// On open: restore last draft, else load first baked preset.
+function tryAutoLoad() {
+  const draft = localStorage.getItem('minotaurus_draft');
+  if (draft) { try { loadTXT(draft); return; } catch {} }
+  if (BAKED_PRESETS.length) { try { loadTXT(BAKED_PRESETS[0].board); } catch {} }
+}
+
+// ══════════════════════════════════════════════════
+//  TOOLBAR RESIZE
+// ══════════════════════════════════════════════════
+(function () {
+  const tb = document.getElementById('toolbar');
+  const rz = document.getElementById('toolbar-resizer');
+  let dragging = false, startX = 0, startW = 0;
+
+  rz.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startW = tb.offsetWidth;
+    rz.classList.add('active'); e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    tb.style.width = Math.max(80, Math.min(400, startW + e.clientX - startX)) + 'px';
+  });
+  window.addEventListener('mouseup', () => {
+    if (dragging) { dragging = false; rz.classList.remove('active'); }
+  });
+})();
+
+// ─── Play sidebar resize ───
+(function () {
+  const sb = document.getElementById('play-sidebar');
+  const rz = document.getElementById('play-sidebar-resizer');
+  let dragging = false, startX = 0, startW = 0;
+  rz.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startW = sb.offsetWidth;
+    rz.classList.add('active'); e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    sb.style.width = Math.max(120, Math.min(500, startW + e.clientX - startX)) + 'px';
+  });
+  window.addEventListener('mouseup', () => {
+    if (dragging) { dragging = false; rz.classList.remove('active'); }
+  });
+})();
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+buildToolbar();
+selectBrush('#');
+render();
+tryAutoLoad();
+setTab('play');
+</script>
+
+<!-- ═══ Ruleset library modal ═══ -->
+<div id="ruleset-overlay" onclick="rulesetOverlayClick(event)">
+  <div id="ruleset-modal">
+    <div class="lib-header">
+      <h2>Ruleset Library</h2>
+      <button class="lib-close" onclick="closeRulesetLibrary()">✕</button>
+    </div>
+    <div class="rs-save-row">
+      <input type="text" id="rs-name-input" placeholder="Ruleset name…" maxlength="48">
+      <button class="btn" onclick="saveRuleset()">Save current</button>
+    </div>
+    <div class="rs-body" id="rs-body"></div>
+  </div>
+</div>
+
+<!-- ═══ Library modal ═══ -->
+<div id="library-overlay" onclick="overlayClick(event)">
+  <div id="library-modal">
+    <div class="lib-header">
+      <h2>Board Library</h2>
+      <button class="lib-close" onclick="closeLibrary()">✕</button>
+    </div>
+    <div class="lib-save-row">
+      <input type="text" id="lib-name-input" placeholder="Board name…" maxlength="48">
+      <button class="btn" onclick="savePreset()">Save current</button>
+    </div>
+    <div class="lib-body" id="lib-body"></div>
+    <div class="lib-footer">
+      <button class="btn" onclick="exportHTML()">Export HTML</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

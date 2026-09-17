@@ -33,6 +33,12 @@ function chordus_schema(PDO $db): void {
     foreach (['prior', 'prior_label'] as $column) {
         if (!in_array($column, $columns, true)) $db->exec('ALTER TABLE reins ADD COLUMN ' . $column . ' TEXT NOT NULL DEFAULT \'\'');
     }
+    // What the choir actually saw, and who put it there. Only published state is
+    // recorded: an arrangement being polished before Krimpatul never reaches the
+    // Sing tab, so it is nobody's business but its author's. Cues are left out
+    // too — pointing is transient and would swamp the table.
+    $db->exec('CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, action TEXT NOT NULL, client TEXT NOT NULL, label TEXT NOT NULL, revision INTEGER, summary TEXT NOT NULL, changes TEXT, body TEXT)');
+    $db->exec('CREATE INDEX IF NOT EXISTS history_at ON history(at)');
 }
 function chordus_database(string $directory): PDO {
     $db = new PDO('sqlite:' . $directory . '/rehearsal.sqlite3', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -178,7 +184,54 @@ function chordus_reins(PDO $db): ?array {
 // can be handed straight back instead of the conductor having to watch for it.
 // One step only: after a hand-back the person who gave them up is the one to
 // hand them to, which is all this has to remember.
-function chordus_seize_reins(PDO $db, string $holder, string $label): array {
+// What changed between one published score and the next, in the terms the choir
+// would have noticed: the chords, the key, which labels were showing, and any
+// measure whose voicing moved.
+function chordus_score_changes(?array $before, array $after): array {
+    $changes = [];
+    if ($before === null) return [['field' => 'published', 'to' => $after['progression'] ?? '']];
+    foreach (['progression' => 'progression', 'key' => 'key', 'meter' => 'meter'] as $field => $name) {
+        $was = $before[$field] ?? null; $now = $after[$field] ?? null;
+        if ($was !== $now) $changes[] = ['field' => $name, 'from' => $was, 'to' => $now];
+    }
+    foreach (['hand', 'roman', 'name'] as $row) {
+        $was = $before['display'][$row] ?? null; $now = $after['display'][$row] ?? null;
+        if ($was !== $now) $changes[] = ['field' => 'show ' . $row, 'from' => $was, 'to' => $now];
+    }
+    $old = $before['chords'] ?? []; $new = $after['chords'] ?? [];
+    foreach ($new as $index => $chord) {
+        $previous = $old[$index] ?? null;
+        if ($previous === null) continue;
+        if (($previous['notes'] ?? null) !== ($chord['notes'] ?? null)) {
+            $changes[] = ['field' => 'voicing', 'measure' => $index + 1,
+                'symbol' => $chord['symbol'] ?? '',
+                'from' => $previous['notes'] ?? [], 'to' => $chord['notes'] ?? []];
+        }
+    }
+    return $changes;
+}
+// One line a person could read, so the table is useful without a tool.
+function chordus_change_summary(array $changes): string {
+    if (!$changes) return 'republished unchanged';
+    $parts = [];
+    foreach ($changes as $change) {
+        if ($change['field'] === 'voicing') { $parts[] = 'voicing in bar ' . $change['measure']; continue; }
+        if ($change['field'] === 'published') { $parts[] = 'first publish: ' . $change['to']; continue; }
+        $parts[] = $change['field'] . ' ' . json_encode($change['from']) . ' to ' . json_encode($change['to']);
+    }
+    $parts = array_values(array_unique($parts));
+    $shown = array_slice($parts, 0, 4);
+    if (count($parts) > count($shown)) $shown[] = '+' . (count($parts) - count($shown)) . ' more';
+    return implode('; ', $shown);
+}
+function chordus_record(PDO $db, string $action, string $client, string $label,
+                        ?int $revision, string $summary, ?array $changes = null, ?array $body = null): void {
+    $q = $db->prepare('INSERT INTO history(at,action,client,label,revision,summary,changes,body) VALUES(?,?,?,?,?,?,?,?)');
+    $q->execute([time(), $action, $client, $label, $revision, $summary,
+        $changes === null ? null : json_encode($changes, JSON_UNESCAPED_UNICODE),
+        $body === null ? null : json_encode($body, JSON_UNESCAPED_UNICODE)]);
+}
+function chordus_seize_reins(PDO $db, string $holder, string $label, string $action = 'seize'): array {
     $label = trim($label) === '' ? 'A device' : mb_substr(trim($label), 0, 40);
     chordus_require(preg_match('/^[\p{L}\p{N} .·-]+$/u', $label) === 1, 'Invalid device name.');
     $now = time();
@@ -186,6 +239,8 @@ function chordus_seize_reins(PDO $db, string $holder, string $label): array {
     $prior = $held !== null && $held['holder'] !== $holder ? $held : null;
     $q = $db->prepare('INSERT INTO reins(id,holder,label,since,seen,prior,prior_label) VALUES(1,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET holder=excluded.holder, label=excluded.label, since=excluded.since, seen=excluded.seen, prior=excluded.prior, prior_label=excluded.prior_label');
     $q->execute([$holder, $label, $now, $now, $prior['holder'] ?? '', $prior['label'] ?? '']);
+    chordus_record($db, $action, $holder, $label, null,
+        $prior === null ? 'took the reins' : 'took the reins from ' . $prior['label']);
     return chordus_reins($db);
 }
 // Handing them back. Only the current holder may, and only when somebody had
@@ -194,7 +249,7 @@ function chordus_return_reins(PDO $db, string $holder): array {
     $held = chordus_reins($db);
     chordus_require($held !== null && $held['holder'] === $holder, 'Only the device conducting can hand the reins back.', 409);
     chordus_require($held['prior'] !== '', 'Nobody had the reins before this device.');
-    return chordus_seize_reins($db, $held['prior'], $held['priorLabel']);
+    return chordus_seize_reins($db, $held['prior'], $held['priorLabel'], 'return');
 }
 // A device names itself on every request. Anything that is not a name falls back
 // rather than failing the request it rode in on.
@@ -265,6 +320,10 @@ function chordus_publish(PDO $db, array $score, int $expected, array $seed, mixe
         $q = $db->prepare('INSERT INTO score(id,revision,body) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision, body=excluded.body');
         $q->execute([$revision, json_encode($score, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
         chordus_store_cue($db,$cue,$revision);
+        $changes = chordus_score_changes($current['score'] ?? null, $score);
+        $held = chordus_reins($db);
+        chordus_record($db, 'publish', $holder, $held['label'] ?? 'A device', $revision,
+            chordus_change_summary($changes), $changes, $score);
         $db->exec('COMMIT');
         return ['revision' => $revision, 'score' => $score];
     } catch (Throwable $error) { $db->exec('ROLLBACK'); throw $error; }

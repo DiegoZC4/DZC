@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="is-waiting">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -545,9 +545,26 @@ header nav #theme-toggle{margin-left:auto}
 @media print{main.has-imported-song #signs-panel{display:none!important}main.has-imported-song #sing-panel,main.has-imported-song #lyrics-panel{display:block!important}main.has-imported-song :is(.rehearsal-toolbar,.cue-measure-fill,.cue-voice-fill){display:none!important}main.has-imported-song #rehearsal-score{margin-top:0}main.has-imported-song .soloist-lyrics{break-before:page;margin:0}}
 .rehearsal-chord{cursor:pointer;touch-action:pan-y pinch-zoom}.rehearsal-chord:hover .progression-roman,.rehearsal-chord.playing .progression-roman{fill:var(--accent)}.rehearsal-chord:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* Until the first status lands the page holds its content back: it ships with a
+   seed score engraved in, and showing that first made every load look like the
+   score changing under you. A single quiet mark stands in, and it only ever
+   appears on a cold load — a warm one settles before the fade begins. */
+#waiting{display:none}
+.is-waiting #waiting{display:grid;place-items:center;min-height:50vh}
+.is-waiting .app-panel,.is-waiting header nav{visibility:hidden}
+.waiting-mark{width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--line);border-top-color:var(--accent);
+  animation:waiting-turn 700ms linear infinite,waiting-in 240ms ease both}
+@keyframes waiting-turn{to{transform:rotate(360deg)}}
+@keyframes waiting-in{from{opacity:0}to{opacity:.85}}
+@media(prefers-reduced-motion:reduce){
+  .waiting-mark{animation:waiting-in 240ms ease both;border-top-color:var(--line)}
+}
+
 </style>
 </head>
 <body><main id="app">
+<div id="waiting" aria-hidden="true"><span class="waiting-mark"></span></div>
 <header>
   <nav aria-label="Views">
     <div class="pill-toggle-group tab-list" id="tab-list" role="tablist" aria-label="Views" data-count="3">
@@ -5455,6 +5472,17 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     }
     controls();
   }
+  // Shown once, when the first status settles. A reload that is already warm
+  // never sees it; a cold one sees the mark rather than a wrong score.
+  let waiting=true;
+  function settled(){
+    if(!waiting)return;
+    waiting=false;
+    document.documentElement.classList.remove('is-waiting');
+  }
+  // If the network never answers at all, do not hold the page hostage.
+  if(typeof setTimeout==='function')setTimeout(settled,4000);
+
   async function poll(){
     if(stopped||polling||fileMode||document.hidden)return;
     polling=true;pollController=new AbortController();
@@ -5464,6 +5492,12 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
       if(!configured){localOnly=true;controls();}
     }finally{
       clearTimeout(timeout);pollController=null;polling=false;
+      // The page ships with a seed score engraved into it, so it can draw before
+      // the network answers — but what it draws is not what the choir is reading,
+      // and swapping one for the other looked like a fault. Hold the score back
+      // until the first answer lands, whether that answer is the live session or
+      // a failure that means this device is on its own.
+      settled();
       if(!stopped&&!document.hidden)void flushCue();
       if(!stopped&&!document.hidden)pollTimer=setTimeout(poll,configured?1000:5000);
     }

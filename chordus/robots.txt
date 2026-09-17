@@ -1,0 +1,4 @@
+# The live session is open to whoever has the address, so the address stays
+# out of search results.
+User-agent: *
+Disallow: /

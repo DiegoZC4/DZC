@@ -29,32 +29,52 @@ try {
     }
 
     if ($action === 'channels') {
+        $channels = yt_channels($db);
+        $videoCount = array_sum(array_map(static fn (array $row): int => (int)$row['video_count'], $channels));
         ytscripts_json([
             'ok' => true,
             'version' => YT_API_VERSION,
-            'channels' => yt_channels($db),
-            'database' => yt_database_info($db),
-            'stats' => yt_stats($db),
+            'channels' => $channels,
+            'database' => [
+                'path' => yt_db_path(),
+                'exists' => is_file(yt_db_path()),
+                'bytes' => is_file(yt_db_path()) ? filesize(yt_db_path()) : 0,
+                'ready' => $videoCount > 0,
+            ],
+            'stats' => [
+                'videos' => $videoCount,
+                'segments' => null,
+                'channels' => count($channels),
+            ],
         ]);
     }
 
     if ($action === 'search') {
         yt_require_data($db);
         $channels = ytscripts_request_channels();
-        ytscripts_json([
-            'ok' => true,
-            'version' => YT_API_VERSION,
-            'query' => $query,
-            'channel' => count($channels) === 1 ? $channels[0] : '',
-            'channels' => $channels,
-            'video_id' => (string)($_GET['video_id'] ?? ''),
-            'results' => yt_search(
+        $titleFilter = (string)($_GET['title_filter'] ?? ($_GET['title'] ?? ''));
+        $timings = [];
+        $results = trim($query) === ''
+            ? yt_title_search($db, $titleFilter, $channels, (int)($_GET['limit'] ?? 50), $timings)
+            : yt_search(
                 $db,
                 $query,
                 $channels,
                 (int)($_GET['limit'] ?? 50),
-                (string)($_GET['video_id'] ?? '')
-            ),
+                (string)($_GET['video_id'] ?? ''),
+                $titleFilter,
+                $timings
+            );
+        ytscripts_json([
+            'ok' => true,
+            'version' => YT_API_VERSION,
+            'query' => $query,
+            'title_filter' => $titleFilter,
+            'channel' => count($channels) === 1 ? $channels[0] : '',
+            'channels' => $channels,
+            'video_id' => (string)($_GET['video_id'] ?? ''),
+            'timing' => $timings,
+            'results' => $results,
         ]);
     }
 

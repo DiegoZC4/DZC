@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" aria-hidden="true">
+  <style>
+    .back{fill:#dde8ef}
+    .arrow{fill:#07101d}
+  </style>
+  <rect class="back" x="9" y="9" width="54" height="54" rx="10"/>
+  <g transform="translate(36 36) scale(.72) translate(-36 -36)">
+    <path class="arrow" d="M22 14 L53 44 L39.8 45.6 L48.4 61.3 L40.4 65.6 L31.8 49.7 L21.2 61.4 Z"/>
+  </g>
+</svg>

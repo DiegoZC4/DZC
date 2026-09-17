@@ -1,0 +1,19 @@
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    svg{color:#8bc0ff}
+    .mark-bg{fill:rgba(126,184,247,0.08);stroke:rgba(126,184,247,0.18);stroke-width:1.4}
+    .mark-bg-square{vector-effect:non-scaling-stroke}
+    .mark-art{transform-box:fill-box;transform-origin:center}
+    .mark-line{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+    .mark-fill{fill:currentColor;stroke:none}
+    .mark-soft{fill:rgba(139,192,255,0.22);stroke:none}
+    .risk-stem,.risk-eye-dot{fill:#111}
+  </style>
+            <rect class="mark-bg-square" x="9" y="9" width="54" height="54" rx="10" fill="#f4ede1" stroke="#d7cec0" stroke-width="1.4"/>
+            <g transform="translate(20 12) scale(.09537)" fill="none" stroke="#111" stroke-miterlimit="10" stroke-width="20">
+              <circle cx="288.79" cy="46.66" r="45.24"/>
+              <path d="M35.44,243.68c128.31,7.62,226.52-130.76,196.38-158.28-23.98-21.9-180.9,109.59-144.24,197.25"/>
+              <path d="M11.89,334.09c27.31-60.88,234.08-92.71,238.35-56.2,5.55,47.48-263.18,50.72-248.22-8.4,9.75-38.55,69.02-33.7,85.56,13.16"/>
+              <path d="M219.16,501.77c-60.65-2.51-82.17-34.48-115.29-31.08-19.55,2.01-30.15,27.83-2.51,31.08,42.61,5.01,95.97-219.12,124.94-237.92"/>
+            </g>
+          </svg>

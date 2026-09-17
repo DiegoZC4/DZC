@@ -1,0 +1,14 @@
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    svg{color:#8bc0ff}
+    .mark-bg{fill:rgba(126,184,247,0.08);stroke:rgba(126,184,247,0.18);stroke-width:1.4}
+    .mark-bg-square{vector-effect:non-scaling-stroke}
+    .mark-art{transform-box:fill-box;transform-origin:center}
+    .mark-line{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+    .mark-fill{fill:currentColor;stroke:none}
+    .mark-soft{fill:rgba(139,192,255,0.22);stroke:none}
+    .risk-stem,.risk-eye-dot{fill:#111}
+  </style>
+            <rect class="mark-bg" x="10" y="10" width="52" height="52" rx="8"/>
+            <path class="mark-line" d="M20 20h10v10H20zM42 20h10v10H42zM31 31h10v10H31zM20 42h10v10H20zM42 42h10v10H42z"/>
+          </svg>

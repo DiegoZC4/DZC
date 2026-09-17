@@ -1,0 +1,15 @@
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <style>
+    @font-face{font-family:"Noto Serif Hebrew Local";src:url("../../../fonts/NotoSerifHebrew-Variable.ttf") format("truetype");font-display:swap}
+    svg{color:#8bc0ff}
+    .mark-bg{fill:rgba(126,184,247,0.08);stroke:rgba(126,184,247,0.18);stroke-width:1.4}
+    .mark-bg-square{vector-effect:non-scaling-stroke}
+    .mark-art{transform-box:fill-box;transform-origin:center}
+    .mark-line{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+    .mark-fill{fill:currentColor;stroke:none}
+    .mark-soft{fill:rgba(139,192,255,0.22);stroke:none}
+    .risk-stem,.risk-eye-dot{fill:#111}
+  </style>
+            <rect class="mark-bg-square" x="9" y="9" width="54" height="54" rx="10" fill="#fffdf8" stroke="#d7cec0" stroke-width="1.4"/>
+            <text x="36" y="49" text-anchor="middle" fill="#245dd8" font-family="Noto Serif Hebrew Local, Noto Serif Hebrew, serif" font-size="42" font-weight="700">א</text>
+          </svg>

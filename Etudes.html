@@ -1,13 +1,6 @@
-<!doctype html>
 <html>
 <head><title>Superstring Etude</title><meta charset="UTF-8"/>
-  <style>
-    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:18px;background:#f7f3ea;color:#1e293b}
-    button,select,input{font:inherit}
-    .controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:12px 0}
-    .status{color:#475569;font-size:.95rem;min-height:1.4em}
-    #etude{display:block;background:#fffaf0;border:1px solid #d8ccb8;border-radius:10px;max-width:100%;min-height:65vh}
-  </style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧶</text></svg>">
 </head>
 <body>
 <p>Practice every sequence of a given length on 5 fingers (omitting immediately repeated fingers).</p>
@@ -15,34 +8,24 @@
 <p>Left Hand: Space f d s a</p>
 <p>Right Hand: Space j k l ;</p>
 <p>G/H to change handedness</p>
-<div id="inputs"></div>
-<div class="controls">
-  <label>
-    Hand
-    <select id="hand">
-      <option value="g">Left (G)</option>
-      <option value="h" selected>Right (H)</option>
-    </select>
-  </label>
-  <label>
-    Pattern Length
-    <select id="substringLength">
-      <option selected value="4">4</option>
-      <option value="5">5</option>
-    </select>
-  </label>
-  <label>
-    Saved Etude
-    <select id="savedEtude"></select>
-  </label>
-  <button id="generateEtude" type="button">Generate + Save Etude</button>
-  <button id="profileEtude" type="button">Profile 5/1/4</button>
-</div>
-<div class="status" id="generatorStatus"></div>
+<div id="inputs"></div><p></p>
+<select id="hand">
+  <option value="g">Left (G)</option>
+  <option value="h" selected>Right (H)</option>
+</select>
+<label for="hand">Hand</label>
+<p></p>
+<label for="substringLength">Substring Length</label>
+<select id="substringLength">
+  <option selected value="10414130421341431423413210434013243040120324131412404203434121303423143030143424324210340234202321312101231040432301042410142420412010230240312412304302043130124343212124240212324014034103203134214212020134041020243123403031404020304134310241401013023120423032141420121432021320403234301313232313103101030210214024232014104">
+    4</option>
+  <option value="20121014032014214234032430123402041414034102143014103234240141431023103202031201412143243241432141410120123031302324314340420202120313234104230134304104130102430343130431042132424210104024141312024312042014320103131310103240323213412321231203013230104302343402102034341412404314040214240212302410404132312323432131242414023130310312104313123141321212343030403213020130340302124212430402024134203023043204212040303142042323131432302032303032120104240301013024204101014231421343231040310432124010414203404034024243403134234314232420240314031240343010341314142302104203214202340430131021214043232401304143021320210343203101313214313413434204324024342432103024323401021313013014021340121202130120232104014342130302043401404140120412342304042140304304342313204303203041341404231241421210241231340342321402402342103141203420214123041242341424313241241313431030301430420401341031024040401012324103012412020424302020124020303414341013421410434121321012130424121241020231213103401312121342420314312142102302314303123014201320320413104120431234124310124343242320134023232304210410342123202301214130401242012032421434343024012310141340412103210210132434132404242303231402010102341303241302140132132320341201314010304234201020404343124320242310201401424101431410242131424240410232040230342413">
+    5</option>
+</select>
 <h1 id="best">Best: 0</h1>
 <h1 id="streak">Score: 0</h1>
 <p></p>
-<button id="playPause" type="button" onclick="togglePlaying()">Pause (P)</button>
+<button onclick="togglePlaying()">Pause (P)</button>
 <p></p>
 <svg id="etude" height="100%"></svg>
 <script>
@@ -106,51 +89,32 @@ const fingers = 5
 const etude = document.getElementById('etude')
 etude.setAttribute('width',pitch*(fingers))
 
-const repLag = 1
-const STORAGE_KEY = 'superstring_etudes_v1'
 const substringLength = document.getElementById('substringLength')
-const savedEtudeSelect = document.getElementById('savedEtude')
-const generateEtudeButton = document.getElementById('generateEtude')
-const profileEtudeButton = document.getElementById('profileEtude')
-const generatorStatus = document.getElementById('generatorStatus')
-const playPauseButton = document.getElementById('playPause')
-let notes = []
-let savedEtudes = loadSavedEtudes()
+substringLength.addEventListener('input',setSuperstring)
+let notes;
 
-let playing = false
+let playing = true
 let duration_ms = 0
+
+setSuperstring()
 
 const streakCounter = document.getElementById('streak')
 let streak = 0
 const bestCounter = document.getElementById('best')
-let best = 0
+best = 0
 
 etude.append(svg('path',{stroke:'black',d:Array.from({length:fingers}).map((_,i)=>`M${pitch + 3*pitch*i},0 v${window.innerHeight}`).join(' ')}))
 
 const hands = {'h':' jkl;', 'g':'asdf '}
 const handSelect = document.getElementById('hand')
 handSelect.addEventListener('change',()=>{
+  console.log('hi')
   keyMap = hands[handSelect.value];
   handSelect.selectedIndex = handSelect.value=='g'?0:1
 })
 let keyMap = hands['h']
 let hitCount = 0
-
-substringLength.addEventListener('input',()=>{
-  refreshSavedEtudeSelect()
-  setSuperstring()
-})
-savedEtudeSelect.addEventListener('input',setSuperstring)
-generateEtudeButton.addEventListener('click',()=>{
-  const entry = generateAndSaveEtude(Number(substringLength.value))
-  refreshSavedEtudeSelect(entry.id)
-  setSuperstring()
-})
-profileEtudeButton.addEventListener('click',()=>profileEtudeGenerator())
-
-refreshSavedEtudeSelect()
-setSuperstring()
-updatePlayLabel()
+togglePlaying()
 
 document.onkeydown = function (e) {
   e = e || window.event
@@ -167,8 +131,7 @@ document.onkeydown = function (e) {
     return
   }
   if ('45'.indexOf(key) > -1){
-    substringLength.value = key
-    refreshSavedEtudeSelect()
+    substringLength.selectedIndex = key=='4'?0:1
     setSuperstring()
     return
   }
@@ -195,22 +158,14 @@ document.onkeydown = function (e) {
 }
 
 function togglePlaying(){
-  if (!notes.length) return
   notes.forEach(n => playing ? n.animation.pause(): n.animation.play())
   playing = !playing
-  updatePlayLabel()
-}
-
-function updatePlayLabel(){
-  playPauseButton.textContent = playing ? 'Pause (P)' : 'Play (P)'
 }
 
 function changeSpeed(){
-  if (!notes.length) return
-  const wasPlaying = playing
+  if (playing && notes[0].animation) togglePlaying()
   duration_ms = notes.length/4/bpm.value()*60000
   notes.forEach((n,i) => {
-    if (n.animation && n.animation.cancel) n.animation.cancel()
     const animation = n.note.animate(
       [{y:notes.length*pitch-pitch},{y:-pitch}],
       { duration: duration_ms, 
@@ -219,264 +174,27 @@ function changeSpeed(){
       }
     )
     animation.currentTime = (notes.length-i-1) / notes.length * animation.effect.getTiming().duration;
-    if (!wasPlaying) animation.pause()
+    animation.pause()
     n.note.setAttribute('visibility','visible')
     n.animation = animation
   })
-  playing = wasPlaying
-  updatePlayLabel()
 }
 
 function setSuperstring(){
   if (notes) notes.forEach(n=>n.note.remove())
-  const entry = getSelectedEtude()
-  const sequence = entry.value
-  notes = [...sequence].map((n,i)=>{
+  notes = [...substringLength.value].map((n,i)=>{
     const note = svg('rect',{
       x:Number(n)*pitch, 
       width:pitch, 
       height:pitch,
-      fill:`hsl(${Number(n)*58+205} 72% 58%)`,
       visibility:'visible'
     })
-    const animation = null
+    const animation = ''
     etude.append(note)
     return {note, animation, finger:Number(n)}
   })
   changeSpeed()
-  setStatus(`${entry.label}: ${sequence.length} notes, covers ${entry.covered}/${entry.sequenceCount} patterns.`)
 }
-
-function setStatus(text){
-  generatorStatus.textContent = text
-}
-
-function loadSavedEtudes(){
-  try{
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    return Array.isArray(parsed) ? parsed.filter(e=>e && typeof e.value === 'string') : []
-  }catch(e){
-    return []
-  }
-}
-
-function saveEtudes(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedEtudes))
-  }catch(e){
-    setStatus('Could not save etudes to localStorage.')
-  }
-}
-
-function refreshSavedEtudeSelect(preferredId){
-  const length = Number(substringLength.value)
-  if (!savedEtudes.some(e=>e.fingers===fingers && e.repLag===repLag && e.length===length)) {
-    const entry = generateEtudeEntry(length, 'Generated seed')
-    savedEtudes.push(entry)
-    saveEtudes()
-    preferredId = entry.id
-  }
-
-  const options = savedEtudes
-    .filter(e=>e.fingers===fingers && e.repLag===repLag && e.length===length)
-    .sort((a,b)=>b.createdAt-a.createdAt)
-
-  savedEtudeSelect.innerHTML = ''
-  for (const entry of options) {
-    const option = document.createElement('option')
-    option.value = entry.id
-    option.textContent = entry.label
-    savedEtudeSelect.append(option)
-  }
-  if (preferredId && options.some(e=>e.id===preferredId)) savedEtudeSelect.value = preferredId
-}
-
-function getSelectedEtude(){
-  const id = savedEtudeSelect.value
-  return savedEtudes.find(e=>e.id===id) || savedEtudes[0]
-}
-
-function generateAndSaveEtude(length){
-  generateEtudeButton.disabled = true
-  try{
-    const entry = generateEtudeEntry(length, 'Generated')
-    savedEtudes.push(entry)
-    saveEtudes()
-    setStatus(`Generated and saved ${entry.label}.`)
-    return entry
-  }finally{
-    generateEtudeButton.disabled = false
-  }
-}
-
-function generateEtudeEntry(length, prefix){
-  const c = makeEtudeConfig({fingers, repLag, length})
-  const found = findEtude(c)
-  const covered = countCoveredPatterns(found.sequence, c)
-  if (covered !== c.sequenceCount) throw new Error(`Generated etude covered ${covered}/${c.sequenceCount} patterns.`)
-  const createdAt = Date.now()
-  return {
-    id: `${createdAt.toString(36)}-${Math.random().toString(36).slice(2,8)}`,
-    fingers,
-    repLag,
-    length,
-    value: found.sequence,
-    createdAt,
-    attempts: found.attempts,
-    ms: found.ms,
-    covered,
-    sequenceCount: c.sequenceCount,
-    label: `${prefix} ${length}-note · ${found.ms.toFixed(2)} ms · ${found.attempts} tries`
-  }
-}
-
-function makeEtudeConfig({fingers, repLag, length}){
-  const fingerBits = Math.max(1, Math.ceil(Math.log2(fingers)))
-  const keyBits = fingerBits * (length - 1)
-  let sequenceCount = 1
-  for (let i=0; i<length; i++) sequenceCount *= i<repLag ? fingers-i : fingers-repLag
-  return {
-    fingers,
-    repLag,
-    length,
-    fingerBits,
-    keyBits,
-    sequenceCount,
-    minSuperPermLength: sequenceCount + length - 1
-  }
-}
-
-function generateGraph(c){
-  const graph = new Map()
-  const fingerMask = (1 << c.fingerBits) - 1
-  function rec(current, currentLen){
-    if (currentLen === c.length) {
-      const key = current >> c.fingerBits
-      const continuation = current & fingerMask
-      graph.set(key, (graph.get(key) || 0) | (1 << continuation))
-      return
-    }
-    for (let next=0; next<c.fingers; next++) {
-      let allowed = true
-      const checkLimit = Math.min(c.repLag, currentLen)
-      for (let i=0; i<checkLimit; i++) {
-        const previous = (current >> (i * c.fingerBits)) & fingerMask
-        if (previous === next) {
-          allowed = false
-          break
-        }
-      }
-      if (allowed) rec((current << c.fingerBits) | next, currentLen + 1)
-    }
-  }
-  rec(0, 0)
-  return graph
-}
-
-function popcount(n){
-  let count = 0
-  while (n) {
-    n &= n - 1
-    count++
-  }
-  return count
-}
-
-function kthSetBit(n, k){
-  for (let i=0; i<31; i++) {
-    if (((n >> i) & 1) && --k === 0) return i
-  }
-  return 0
-}
-
-function trySuperpermutation(baseGraph, c){
-  const graph = new Map(baseGraph)
-  const keys = [...graph.keys()]
-  const fingerMask = (1 << c.fingerBits) - 1
-  const keyMask = (1 << c.keyBits) - 1
-  let key = keys[Math.floor(Math.random() * keys.length)]
-  const out = []
-
-  for (let i=c.length-2; i>=0; i--) {
-    out.push((key >> (i * c.fingerBits)) & fingerMask)
-  }
-
-  while (true) {
-    const continuations = graph.get(key) || 0
-    if (!continuations) break
-    const continuation = kthSetBit(continuations, 1 + Math.floor(Math.random() * popcount(continuations)))
-    out.push(continuation)
-    graph.set(key, continuations ^ (1 << continuation))
-    key = ((key << c.fingerBits) | continuation) & keyMask
-  }
-
-  return out.length === c.minSuperPermLength ? out.join('') : ''
-}
-
-function findEtude(c, maxAttempts=10000){
-  const started = performance.now()
-  const baseGraph = generateGraph(c)
-  for (let attempts=1; attempts<=maxAttempts; attempts++) {
-    const sequence = trySuperpermutation(baseGraph, c)
-    if (sequence) return {sequence, attempts, ms: performance.now() - started}
-  }
-  throw new Error(`No etude found after ${maxAttempts} attempts.`)
-}
-
-function validPattern(pattern, c){
-  for (let i=0; i<pattern.length; i++) {
-    for (let j=1; j<=c.repLag && i-j>=0; j++) {
-      if (pattern[i] === pattern[i-j]) return false
-    }
-  }
-  return true
-}
-
-function countCoveredPatterns(sequence, c){
-  const seen = new Set()
-  for (let i=0; i<=sequence.length-c.length; i++) {
-    const pattern = sequence.slice(i, i+c.length)
-    if (validPattern(pattern, c)) seen.add(pattern)
-  }
-  return seen.size
-}
-
-function profileEtudeGenerator(runs=100){
-  const c = makeEtudeConfig({fingers:5, repLag:1, length:4})
-  const results = []
-  for (let i=0; i<runs; i++) results.push(findEtude(c))
-  const byMs = [...results].sort((a,b)=>a.ms-b.ms)
-  const byAttempts = [...results].sort((a,b)=>a.attempts-b.attempts)
-  const pick = (arr, p) => arr[Math.min(arr.length-1, Math.floor(arr.length*p))]
-  const avgMs = results.reduce((s,r)=>s+r.ms,0)/runs
-  const avgAttempts = results.reduce((s,r)=>s+r.attempts,0)/runs
-  const summary = {
-    runs,
-    config: {fingers:5, repLag:1, length:4},
-    sequenceCount: c.sequenceCount,
-    outputLength: c.minSuperPermLength,
-    ms: {
-      min: byMs[0].ms,
-      median: pick(byMs,.5).ms,
-      p95: pick(byMs,.95).ms,
-      max: byMs[byMs.length-1].ms,
-      avg: avgMs
-    },
-    attempts: {
-      min: byAttempts[0].attempts,
-      median: pick(byAttempts,.5).attempts,
-      p95: pick(byAttempts,.95).attempts,
-      max: byAttempts[byAttempts.length-1].attempts,
-      avg: avgAttempts
-    }
-  }
-  console.table(summary.ms)
-  console.table(summary.attempts)
-  setStatus(`Profiled ${runs} length-4 runs: median ${summary.ms.median.toFixed(2)} ms, p95 ${summary.ms.p95.toFixed(2)} ms, max ${summary.ms.max.toFixed(2)} ms.`)
-  return summary
-}
-
-window.profileEtudeGenerator = profileEtudeGenerator
 
 </script>
 </body>

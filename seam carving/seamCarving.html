@@ -1,947 +1,392 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Seam Carving</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Crect x='10' y='10' width='52' height='52' rx='10' fill='%23101918'/%3E%3Cpath d='M22 18h28v36H22z' fill='none' stroke='%23d7efe5' stroke-width='3'/%3E%3Cpath d='M36 18c-7 7 6 10-1 17s4 10-5 19' fill='none' stroke='%23f97316' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #101918;
-      --panel: rgba(247, 239, 222, 0.94);
-      --ink: #1c2724;
-      --muted: #65716d;
-      --line: rgba(28, 39, 36, 0.16);
-      --accent: #f59e42;
-      --accent-2: #3dd6b3;
-      --danger: #ef5350;
-      --paper: #f7efde;
-      --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
-      font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--paper);
-      background:
-        radial-gradient(circle at 10% 8%, rgba(61, 214, 179, 0.18), transparent 26rem),
-        radial-gradient(circle at 86% 8%, rgba(245, 158, 66, 0.18), transparent 25rem),
-        linear-gradient(180deg, #172321, var(--bg));
-    }
-
-    button,
-    input,
-    select {
-      font: inherit;
-      min-width: 0;
-    }
-
-    .app {
-      width: min(1440px, calc(100vw - 24px));
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 18px 0;
-      display: grid;
-      grid-template-columns: 310px minmax(0, 1fr);
-      gap: 42px;
-      align-items: start;
-    }
-
-    .panel {
-      border: 1px solid rgba(247, 239, 222, 0.16);
-      border-radius: 22px;
-      background: var(--panel);
-      color: var(--ink);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .controls {
-      position: sticky;
-      top: 14px;
-      min-width: 0;
-      padding: 16px;
-      display: grid;
-      gap: 14px;
-    }
-
-    .control-group {
-      min-width: 0;
-      max-width: 100%;
-      display: grid;
-      gap: 10px;
-      padding: 13px;
-      border: 1px solid var(--line);
-      border-radius: 17px;
-      background: rgba(255, 252, 244, 0.58);
-    }
-
-    .control-group > *,
-    label {
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .group-title {
-      color: #735738;
-      font-size: 0.74rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
-    label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 0.86rem;
-      font-weight: 800;
-    }
-
-    input[type="file"] {
-      width: 100%;
-      max-width: 100%;
-      font-size: 0.78rem;
-    }
-
-    select,
-    input[type="number"] {
-      width: 100%;
-      min-height: 38px;
-      border: 1px solid rgba(28, 39, 36, 0.18);
-      border-radius: 12px;
-      padding: 0 10px;
-      color: var(--ink);
-      background: #fffaf0;
-    }
-
-    .toggle {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      color: var(--ink);
-    }
-
-    .button-grid {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-      gap: 8px;
-    }
-
-    button {
-      width: 100%;
-      min-height: 38px;
-      border: 1px solid rgba(28, 39, 36, 0.18);
-      border-radius: 12px;
-      padding: 0 10px;
-      color: var(--ink);
-      background: #fffaf0;
-      cursor: pointer;
-      font-weight: 900;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      transition: transform 90ms ease, border-color 90ms ease, background 90ms ease;
-    }
-
-    .button-grid button {
-      padding: 0 6px;
-      font-size: 0.84rem;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      border-color: rgba(28, 39, 36, 0.36);
-    }
-
-    button.primary {
-      color: #10201b;
-      border-color: rgba(245, 158, 66, 0.35);
-      background: linear-gradient(180deg, #ffc15f, #ed9a32);
-    }
-
-    button:disabled {
-      opacity: 0.52;
-      cursor: not-allowed;
-    }
-
-    #cancelBtn {
-      color: #fff6ef;
-      border-color: rgba(239, 83, 80, 0.42);
-      background: var(--danger);
-    }
-
-    .status {
-      min-height: 58px;
-      padding: 11px 12px;
-      border: 1px dashed rgba(28, 39, 36, 0.2);
-      border-radius: 15px;
-      color: var(--muted);
-      background: rgba(255, 252, 244, 0.56);
-      font-size: 0.88rem;
-      line-height: 1.35;
-    }
-
-    .viewer {
-      min-width: 0;
-      padding: 16px;
-      display: grid;
-      gap: 14px;
-    }
-
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      color: #dbe9e3;
-      font-size: 0.88rem;
-    }
-
-    .pill {
-      border: 1px solid rgba(247, 239, 222, 0.15);
-      border-radius: 999px;
-      padding: 7px 10px;
-      background: rgba(247, 239, 222, 0.08);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .canvas-frame {
-      min-height: 320px;
-      overflow: auto;
-      border: 1px solid rgba(247, 239, 222, 0.14);
-      border-radius: 22px;
-      background:
-        linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%),
-        linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%),
-        rgba(7, 12, 11, 0.42);
-      background-position: 0 0, 14px 14px;
-      background-size: 28px 28px;
-    }
-
-    .canvas-stack {
-      position: relative;
-      width: 1px;
-      height: 1px;
-    }
-
-    canvas {
-      display: block;
-      image-rendering: auto;
-    }
-
-    #imageCanvas,
-    #seamCanvas {
-      position: absolute;
-      inset: 0;
-      transform-origin: top left;
-    }
-
-    #seamCanvas {
-      pointer-events: none;
-    }
-
-    .diagnostics {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .diagnostics[hidden] {
-      display: none;
-    }
-
-    figure {
-      margin: 0;
-      padding: 12px;
-      border: 1px solid rgba(247, 239, 222, 0.14);
-      border-radius: 18px;
-      background: rgba(247, 239, 222, 0.07);
-    }
-
-    figure canvas {
-      width: 100%;
-      height: auto;
-      border-radius: 12px;
-      background: #0a0f0e;
-    }
-
-    figcaption {
-      margin-top: 8px;
-      color: #dbe9e3;
-      font-size: 0.82rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    @media (max-width: 860px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        position: static;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .app {
-        width: min(100vw - 12px, 1440px);
-        padding: 8px 0;
-      }
-
-      .diagnostics,
-      .button-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Seam Carving</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪡</text></svg>">
+  </head>
+<style>
+  canvas{left: 0; top: 0; display: block;}
+</style>
 <body>
-  <main class="app">
-    <aside class="panel controls">
-      <div class="control-group">
-        <div class="group-title">Image</div>
-        <label>
-          Load image
-          <input id="load" type="file" accept="image/*">
-        </label>
-        <button id="resetBtn" type="button">Reset to Original</button>
-      </div>
+  <label for="load">Load Image</label>
+  <input type="file" id="load" accept="image/*">
+  <p>
+    Remove
+    <button id="minVS">Lowest Energy</button>
+    <button id="maxVS">Highest Energy</button>
+    Vertical Seam
+  </p>
+  <p>
+    Remove
+    <button id="minHS">Lowest Energy</button>
+    <button id="maxHS">Highest Energy</button>
+    Horizontal Seam
+  </p>
+  <p>
+    <input id="seamToggle" type="checkbox" checked onchange="toggleSeams()"></input>
+    Show Seams
+  </p>
+  <div id="canvases"></div>
+<script>
+const file = document.getElementById('load')
+const canvasDiv = document.getElementById('canvases')
 
-      <div class="control-group">
-        <div class="group-title">Seam Target</div>
-        <label>
-          Energy
-          <select id="energyMode">
-            <option value="min">Lowest energy</option>
-            <option value="max">Highest energy</option>
-          </select>
-        </label>
-        <label>
-          Direction
-          <select id="direction">
-            <option value="vertical">Vertical seam</option>
-            <option value="horizontal">Horizontal seam</option>
-          </select>
-        </label>
-        <label>
-          Batch size
-          <input id="batchSize" type="number" min="1" max="500" step="1" value="12">
-        </label>
-        <div class="button-grid">
-          <button id="removeOneBtn" class="primary" type="button">Remove 1</button>
-          <button id="removeBatchBtn" class="primary" type="button">Remove Batch</button>
-        </div>
-        <button id="cancelBtn" type="button" disabled>Stop Worker Job</button>
-      </div>
+const canvases = Array.from({length:7}).map(i=>createCanvas())
+const content = canvases.map(c=>c[0])
+const seams = canvases.map(c=>c[1])
 
-      <div class="control-group">
-        <div class="group-title">Display</div>
-        <label class="toggle">
-          <input id="showSeam" type="checkbox" checked>
-          Preview next selected seam
-        </label>
-        <label class="toggle">
-          <input id="showDiagnostics" type="checkbox">
-          Downsampled diagnostics
-        </label>
-      </div>
+file.addEventListener('change', (event) => {
+  const file = event.target.files[0]; // Get the selected file
+  if (!file) return
+  const reader = new FileReader();
 
-      <div class="status" id="status">Loading default image.</div>
-    </aside>
+  // When the file is loaded, set the image source
+  reader.onload = e=>loadImage(e.target.result)
 
-    <section class="viewer">
-      <div class="meta">
-        <span class="pill" id="dimensions">0 x 0</span>
-        <span class="pill" id="lastTiming">Worker idle</span>
-      </div>
-      <div class="canvas-frame" id="canvasFrame">
-        <div class="canvas-stack" id="canvasStack">
-          <canvas id="imageCanvas"></canvas>
-          <canvas id="seamCanvas"></canvas>
-        </div>
-      </div>
-      <div class="diagnostics" id="diagnostics" hidden>
-        <figure>
-          <canvas id="grayCanvas"></canvas>
-          <figcaption>Grayscale preview</figcaption>
-        </figure>
-        <figure>
-          <canvas id="energyCanvas"></canvas>
-          <figcaption>Energy preview</figcaption>
-        </figure>
-      </div>
-    </section>
-  </main>
+  reader.readAsDataURL(file); // Read the file as a Data URL
+});
 
-  <script>
-  (() => {
-    const els = {
-      load: document.getElementById("load"),
-      resetBtn: document.getElementById("resetBtn"),
-      energyMode: document.getElementById("energyMode"),
-      direction: document.getElementById("direction"),
-      batchSize: document.getElementById("batchSize"),
-      removeOneBtn: document.getElementById("removeOneBtn"),
-      removeBatchBtn: document.getElementById("removeBatchBtn"),
-      cancelBtn: document.getElementById("cancelBtn"),
-      showSeam: document.getElementById("showSeam"),
-      showDiagnostics: document.getElementById("showDiagnostics"),
-      status: document.getElementById("status"),
-      dimensions: document.getElementById("dimensions"),
-      lastTiming: document.getElementById("lastTiming"),
-      canvasFrame: document.getElementById("canvasFrame"),
-      canvasStack: document.getElementById("canvasStack"),
-      imageCanvas: document.getElementById("imageCanvas"),
-      seamCanvas: document.getElementById("seamCanvas"),
-      diagnostics: document.getElementById("diagnostics"),
-      grayCanvas: document.getElementById("grayCanvas"),
-      energyCanvas: document.getElementById("energyCanvas")
-    };
+let original, gray, sobel;
+let minVS, minHS, maxVS, maxHS;
 
-    const imageCtx = els.imageCanvas.getContext("2d");
-    const seamCtx = els.seamCanvas.getContext("2d");
-    let worker = createWorker();
-    let busy = false;
-    let original = null;
-    let width = 0;
-    let height = 0;
-    let latestJob = 0;
+function loadImage(file){
+  const img = new Image();
+  img.src = file;
 
-    function seamWorker() {
-      let width = 0;
-      let height = 0;
-      let pixels = null;
-      let job = null;
+  img.onload = () => {
+    original = img
+    W = img.width
+    H = img.height
+    seamCarve()
+  };
+}
 
-      self.onmessage = (event) => {
-        const message = event.data;
-        try {
-          if (message.type === "init") {
-            width = message.width;
-            height = message.height;
-            pixels = new Uint8ClampedArray(message.pixels);
-            postDisplay();
-            sendPreview(message);
-            self.postMessage({ type: "ready", width, height });
-          } else if (message.type === "preview") {
-            sendPreview(message);
-          } else if (message.type === "carve") {
-            startJob(message);
-          } else if (message.type === "cancel" && job) {
-            job.cancelled = true;
+loadImage('balloons_small.jpg')
+// loadImage('EY.jpg')
+// loadImage('pixel_art.png')
+
+let [W,H] = [0,0]
+
+function Grayscale(canvas){
+  const { width, height, data } = canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0, canvas.width, canvas.height);
+  const grayscale = new Float32Array(width * height);
+  
+  // Convert to grayscale (brightness)
+  for (let i = 0; i < data.length; i += 4) {
+    const brightness = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    // const brightness = (data[i]+data[i + 1]+data[i + 2])/3;
+    grayscale[i / 4] = brightness;
+  }
+  return grayscale
+}
+
+function Sobel(gray) {
+  const [width, height] = [W,H]
+  const sobel = new Float32Array(width * height);
+
+  // Sobel kernels
+  const Gx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+  const Gy = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+  let maxEnergy = 0
+  let minEnergy = 255
+
+  // Compute gradients
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let gx = 0, gy = 0;
+
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const pixel = gray[(y + ky) * width + (x + kx)];
+          const kernelIdx = (ky + 1) * 3 + (kx + 1);
+          gx += pixel * Gx[kernelIdx];
+          gy += pixel * Gy[kernelIdx];
+        }
+      }
+      // normalize to 255
+      const energy = Math.sqrt(gx ** 2 + gy ** 2)//*0.2236;
+      // maxEnergy = Math.max(energy, maxEnergy)
+      // minEnergy = Math.min(energy, minEnergy)
+      const idx = (y * width + x);
+      sobel[idx] = energy;
+    }
+  }
+  // console.log(maxEnergy, minEnergy)  
+  return sobel
+}
+
+function energyFlow(sobel, vertical=true, min=true){
+  let [width, height] = vertical ? [W,H]: [H,W]
+
+  const minEnergy = new Float32Array(width * height);
+  // let maxEnergy = 0
+
+  for (let y = height-1; y >= 0; y--) {
+    for (let x = 0; x < width; x++) {
+      const idx = (vertical ? y*width+x: x*height+y);
+      if (y==height-1) {
+        minEnergy[idx] = sobel[idx]
+        continue
+      }
+      const LN = lowerNeighborIndices(idx,vertical).map(i=>minEnergy[i])
+      minEnergy[idx] = sobel[idx] + (min ? 
+      Math.min(...LN): 
+      Math.max(...LN))
+
+      // maxEnergy = Math.max(minEnergy[idx], maxEnergy)
+    }
+  }
+  // console.log(maxEnergy)
+  return minEnergy
+}
+
+function drawGray(gray, canvas) {
+  // Create an ImageData object
+  const ctx = canvas.getContext('2d',{willReadFrequently:true})
+  const imageData = ctx.createImageData(W,H);
+
+  const max = gray.reduce((acc,e)=>Math.max(acc,e),0)
+
+  // Fill the ImageData object with grayscale values
+  for (let i = 0; i < gray.length; i++) {
+    const grayValue = gray[i]/max*255;
+    const pixelIndex = i * 4; // Each pixel has 4 values (R, G, B, A)
+    imageData.data[pixelIndex] = grayValue;       // Red
+    imageData.data[pixelIndex + 1] = grayValue;   // Green
+    imageData.data[pixelIndex + 2] = grayValue;   // Blue
+    imageData.data[pixelIndex + 3] = 255;         // Alpha
+  }
+
+  // Draw the ImageData onto the canvas
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function findSeam(data, vertical=true, min=true){
+  let [width, height] = vertical ? [W,H]: [H,W]
+  const firstRow = vertical ? data.slice(0,width): data.filter((e, i) => i % height == 0);
+  const path = [firstRow.reduce((maxIdx, val, idx, arr) => (min ? val < arr[maxIdx]: val > arr[maxIdx]) ? idx : maxIdx, 0)*(vertical ? 1: W)]
+  // if (!vertical && min){
+  //   console.log(path)
+  // }
+  for (x=1; x<height; x++){
+    const LN = lowerNeighborIndices(path[path.length-1], vertical)
+    LN.sort((a,b)=>min ? data[a]-data[b]: data[b]-data[a])
+    path.push(LN[0])
+  }
+  return path
+}
+
+function lowerNeighborIndices(idx, vertical=true){
+  const next = (vertical ? Math.floor(idx/W): idx%W) + 1
+  return [1,0,-1]
+  .map(i=>idx + (vertical ? W+i: 1+W*i))
+  .filter(x=>(vertical ? Math.floor(x/W): x%W)==next && x<W*H && x>=0)
+}
+
+function drawSeam(path, canvas, min=true){
+  // Create an ImageData object
+  const ctx = canvas.getContext('2d', {willReadFrequently:true})
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  // Fill the ImageData object with grayscale values
+  path.forEach(idx=>{
+    const pixelIndex = idx * 4; // Each pixel has 4 values (R, G, B, A)
+    imageData.data[pixelIndex] = min ? 255: 0;     // Red
+    imageData.data[pixelIndex + 1] = min ? 0: 255;   // Green
+    imageData.data[pixelIndex + 2] = 0;   // Blue
+    imageData.data[pixelIndex + 3] = 255; // Alpha
+  })
+
+  // Draw the ImageData onto the canvas
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function createCanvas(){
+  const div = document.createElement('div')
+  div.style.position = "relative"
+  div.style.display = "inline-block"
+  const back = document.createElement('canvas')
+  back.style.zIndex = 0
+  const front = document.createElement('canvas')
+  front.style.position = "absolute"
+  front.style.zIndex = 1
+  div.append(back)
+  div.append(front)
+  canvasDiv.append(div)
+  return [back,front]
+}
+
+const seamToggle = document.getElementById('seamToggle')
+
+document.onkeydown = e => {
+  if ('vsc'.indexOf(e.key) > -1) {
+    seamToggle.checked = !seamToggle.checked
+    toggleSeams()
+  }
+}
+
+function toggleSeams(){
+  const show = seamToggle.checked
+  seams.forEach(s=>{
+    s.style.visibility = show ? 'visible':'hidden'
+  })
+}
+
+function findAllSeams(sobel){
+  const minEV = energyFlow(sobel)
+  drawGray(minEV, content[3])
+  const minEH = energyFlow(sobel, false)
+  drawGray(minEH, content[4])
+  
+  const maxEV = energyFlow(sobel, true, false)
+  drawGray(maxEV, content[5])
+  const maxEH = energyFlow(sobel, false, false)
+  drawGray(maxEH, content[6])
+
+  minVS = findSeam(minEV)
+  minHS = findSeam(minEH,false)
+  maxVS = findSeam(maxEV, true, false)
+  maxHS = findSeam(maxEH,false,false)
+  id2Seam = {
+  'minVS':minVS,
+  'maxVS':maxVS,
+  'minHS':minHS,
+  'maxHS':maxHS
+  }
+  // console.log(minHS)//.map(x=>x%W))
+  seams.forEach((s,i)=>{
+    s.getContext('2d',{willReadFrequently:true}).clearRect(0,0,s.width, s.height)
+    if (i!=3 && i!=5) {
+      drawSeam(minHS,s)
+      drawSeam(maxHS,s,false)
+    }
+    if (i!=4 && i!=6) {
+      drawSeam(minVS,s)
+      drawSeam(maxVS,s,false)
+    }
+  })
+}
+
+function seamCarve(seam, vertical=true){
+  if (!seam){
+    canvases.forEach(([back,front])=>{
+      back.width = W
+      back.height = H
+      front.width = W
+      front.height = H
+    })
+    content[0].getContext('2d',{willReadFrequently:true}).drawImage(original, 0, 0);
+  
+    gray = Grayscale(content[0])
+    drawGray(gray, content[1])
+  
+    sobel = Sobel(gray)
+    drawGray(sobel, content[2])
+  
+    findAllSeams(sobel)
+    return
+  }
+  [gray,sobel] = [gray,sobel].map(array=>{
+    const carved = new Float32Array(array.length - seam.length);
+    let seamIdx = 0
+    if (vertical){
+      for (let i=0; i<array.length; i++){
+        if (seam[seamIdx] == i){
+          seamIdx++
+          continue
+        }
+        carved[i-seamIdx] = array[i]
+      }
+    } else {
+      for (let col=0; col<W; col++){
+        let found = 0
+        for (let row=0; row<H; row++){
+          let idx = row*W+col
+          if (seam[seamIdx]==idx){
+            found = 1
+            seamIdx++
+            continue
           }
-        } catch (error) {
-          self.postMessage({ type: "error", message: error.message || String(error) });
+          carved[idx-found*W] = array[idx]
         }
-      };
-
-      function startJob(message) {
-        if (!pixels) throw new Error("No image loaded.");
-        if (job) job.cancelled = true;
-        job = {
-          id: message.jobId,
-          direction: message.direction,
-          mode: message.mode,
-          remaining: Math.max(1, message.count | 0),
-          total: Math.max(1, message.count | 0),
-          removed: 0,
-          updateEvery: Math.max(1, message.updateEvery | 0),
-          preview: !!message.preview,
-          debug: !!message.debug,
-          maxDiagnostic: message.maxDiagnostic || 360,
-          cancelled: false,
-          startedAt: performance.now()
-        };
-        stepJob();
-      }
-
-      function stepJob() {
-        if (!job) return;
-        const chunk = Math.min(job.remaining, job.updateEvery);
-        for (let i = 0; i < chunk; i += 1) {
-          if (job.cancelled) break;
-          if (!carveOne(job.direction, job.mode)) {
-            job.remaining = 0;
-            break;
-          }
-          job.remaining -= 1;
-          job.removed += 1;
-        }
-
-        postDisplay();
-        self.postMessage({
-          type: "progress",
-          jobId: job.id,
-          removed: job.removed,
-          total: job.total,
-          width,
-          height
-        });
-
-        if (job.cancelled || job.remaining <= 0) {
-          const finished = job;
-          job = null;
-          if (finished.preview || finished.debug) sendPreview(finished);
-          self.postMessage({
-            type: "done",
-            jobId: finished.id,
-            cancelled: finished.cancelled,
-            removed: finished.removed,
-            width,
-            height,
-            elapsed: performance.now() - finished.startedAt
-          });
-          return;
-        }
-
-        setTimeout(stepJob, 0);
-      }
-
-      function carveOne(direction, mode) {
-        if ((direction === "vertical" && width <= 2) || (direction === "horizontal" && height <= 2)) return false;
-        const gray = computeGray(pixels, width, height);
-        const energy = computeEnergy(gray, width, height);
-        const preferMin = mode !== "max";
-        const seam = direction === "vertical"
-          ? findVerticalSeam(energy, width, height, preferMin)
-          : findHorizontalSeam(energy, width, height, preferMin);
-        if (direction === "vertical") removeVerticalSeam(seam);
-        else removeHorizontalSeam(seam);
-        return true;
-      }
-
-      function computeGray(source, w, h) {
-        const gray = new Uint8ClampedArray(w * h);
-        for (let src = 0, dst = 0; dst < gray.length; src += 4, dst += 1) {
-          gray[dst] = 0.299 * source[src] + 0.587 * source[src + 1] + 0.114 * source[src + 2];
-        }
-        return gray;
-      }
-
-      function computeEnergy(gray, w, h) {
-        const energy = new Float32Array(w * h);
-        for (let y = 0; y < h; y += 1) {
-          const yUp = y > 0 ? y - 1 : y;
-          const yDown = y + 1 < h ? y + 1 : y;
-          const row = y * w;
-          const upRow = yUp * w;
-          const downRow = yDown * w;
-          for (let x = 0; x < w; x += 1) {
-            const xLeft = x > 0 ? x - 1 : x;
-            const xRight = x + 1 < w ? x + 1 : x;
-            const dx = gray[row + xRight] - gray[row + xLeft];
-            const dy = gray[downRow + x] - gray[upRow + x];
-            energy[row + x] = dx * dx + dy * dy;
-          }
-        }
-        return energy;
-      }
-
-      function better(candidate, best, preferMin) {
-        return preferMin ? candidate < best : candidate > best;
-      }
-
-      function findVerticalSeam(energy, w, h, preferMin) {
-        const flow = new Float32Array(w * h);
-        const parent = new Int8Array(w * h);
-        for (let x = 0; x < w; x += 1) flow[x] = energy[x];
-        for (let y = 1; y < h; y += 1) {
-          const row = y * w;
-          const prev = row - w;
-          for (let x = 0; x < w; x += 1) {
-            let best = flow[prev + x];
-            let offset = 0;
-            if (x > 0 && better(flow[prev + x - 1], best, preferMin)) {
-              best = flow[prev + x - 1];
-              offset = -1;
-            }
-            if (x + 1 < w && better(flow[prev + x + 1], best, preferMin)) {
-              best = flow[prev + x + 1];
-              offset = 1;
-            }
-            flow[row + x] = energy[row + x] + best;
-            parent[row + x] = offset;
-          }
-        }
-        let bestX = 0;
-        const last = (h - 1) * w;
-        for (let x = 1; x < w; x += 1) {
-          if (better(flow[last + x], flow[last + bestX], preferMin)) bestX = x;
-        }
-        const seam = new Int32Array(h);
-        let x = bestX;
-        for (let y = h - 1; y >= 0; y -= 1) {
-          seam[y] = x;
-          x += parent[y * w + x];
-        }
-        return seam;
-      }
-
-      function findHorizontalSeam(energy, w, h, preferMin) {
-        const flow = new Float32Array(w * h);
-        const parent = new Int8Array(w * h);
-        for (let y = 0; y < h; y += 1) flow[y * w] = energy[y * w];
-        for (let x = 1; x < w; x += 1) {
-          for (let y = 0; y < h; y += 1) {
-            const idx = y * w + x;
-            const prev = idx - 1;
-            let best = flow[prev];
-            let offset = 0;
-            if (y > 0 && better(flow[prev - w], best, preferMin)) {
-              best = flow[prev - w];
-              offset = -1;
-            }
-            if (y + 1 < h && better(flow[prev + w], best, preferMin)) {
-              best = flow[prev + w];
-              offset = 1;
-            }
-            flow[idx] = energy[idx] + best;
-            parent[idx] = offset;
-          }
-        }
-        let bestY = 0;
-        const lastX = w - 1;
-        for (let y = 1; y < h; y += 1) {
-          if (better(flow[y * w + lastX], flow[bestY * w + lastX], preferMin)) bestY = y;
-        }
-        const seam = new Int32Array(w);
-        let y = bestY;
-        for (let x = w - 1; x >= 0; x -= 1) {
-          seam[x] = y;
-          y += parent[y * w + x];
-        }
-        return seam;
-      }
-
-      function removeVerticalSeam(seam) {
-        const nextWidth = width - 1;
-        const next = new Uint8ClampedArray(nextWidth * height * 4);
-        for (let y = 0; y < height; y += 1) {
-          const skip = seam[y];
-          const srcRow = y * width * 4;
-          const dstRow = y * nextWidth * 4;
-          const leftBytes = skip * 4;
-          next.set(pixels.subarray(srcRow, srcRow + leftBytes), dstRow);
-          next.set(
-            pixels.subarray(srcRow + leftBytes + 4, srcRow + width * 4),
-            dstRow + leftBytes
-          );
-        }
-        pixels = next;
-        width = nextWidth;
-      }
-
-      function removeHorizontalSeam(seam) {
-        const nextHeight = height - 1;
-        const next = new Uint8ClampedArray(width * nextHeight * 4);
-        for (let x = 0; x < width; x += 1) {
-          const skip = seam[x];
-          let dstY = 0;
-          for (let y = 0; y < height; y += 1) {
-            if (y === skip) continue;
-            const src = (y * width + x) * 4;
-            const dst = (dstY * width + x) * 4;
-            next[dst] = pixels[src];
-            next[dst + 1] = pixels[src + 1];
-            next[dst + 2] = pixels[src + 2];
-            next[dst + 3] = pixels[src + 3];
-            dstY += 1;
-          }
-        }
-        pixels = next;
-        height = nextHeight;
-      }
-
-      function sendPreview(options) {
-        if (!pixels || (!options.preview && !options.debug)) return;
-        const gray = computeGray(pixels, width, height);
-        const energy = computeEnergy(gray, width, height);
-        if (options.preview) {
-          const preferMin = options.mode !== "max";
-          const seam = options.direction === "vertical"
-            ? findVerticalSeam(energy, width, height, preferMin)
-            : findHorizontalSeam(energy, width, height, preferMin);
-          self.postMessage({
-            type: "preview",
-            jobId: options.jobId || 0,
-            direction: options.direction,
-            mode: options.mode,
-            width,
-            height,
-            seam: seam.buffer
-          }, [seam.buffer]);
-        }
-        if (options.debug) sendDiagnostics(gray, energy, options.maxDiagnostic || 360);
-      }
-
-      function sendDiagnostics(gray, energy, maxDimension) {
-        const grayPreview = scalarPreview(gray, width, height, maxDimension, 255);
-        let maxEnergy = 0;
-        for (let i = 0; i < energy.length; i += 1) if (energy[i] > maxEnergy) maxEnergy = energy[i];
-        const energyPreview = scalarPreview(energy, width, height, maxDimension, maxEnergy || 1);
-        self.postMessage({
-          type: "debug",
-          gray: grayPreview,
-          energy: energyPreview
-        }, [grayPreview.pixels, energyPreview.pixels]);
-      }
-
-      function scalarPreview(values, w, h, maxDimension, normalizer) {
-        const step = Math.max(1, Math.ceil(Math.max(w, h) / maxDimension));
-        const previewWidth = Math.ceil(w / step);
-        const previewHeight = Math.ceil(h / step);
-        const rgba = new Uint8ClampedArray(previewWidth * previewHeight * 4);
-        for (let y = 0; y < previewHeight; y += 1) {
-          const srcY = Math.min(h - 1, y * step);
-          for (let x = 0; x < previewWidth; x += 1) {
-            const srcX = Math.min(w - 1, x * step);
-            const value = Math.max(0, Math.min(255, values[srcY * w + srcX] / normalizer * 255));
-            const dst = (y * previewWidth + x) * 4;
-            rgba[dst] = value;
-            rgba[dst + 1] = value;
-            rgba[dst + 2] = value;
-            rgba[dst + 3] = 255;
-          }
-        }
-        return { width: previewWidth, height: previewHeight, pixels: rgba.buffer };
-      }
-
-      function postDisplay() {
-        if (!pixels) return;
-        const copy = new Uint8ClampedArray(pixels);
-        self.postMessage({ type: "display", width, height, pixels: copy.buffer }, [copy.buffer]);
       }
     }
-
-    function createWorker() {
-      const source = `(${seamWorker.toString()})()`;
-      const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
-      const nextWorker = new Worker(url);
-      URL.revokeObjectURL(url);
-      nextWorker.onmessage = handleWorkerMessage;
-      return nextWorker;
+    return carved
+  })
+  
+  const ctx = content[0].getContext('2d', {willReadFrequently: true})
+  const old = ctx.getImageData(0,0,W,H);
+  const imageData = ctx.createImageData(W-(vertical?1:0), H-(vertical?0:1));
+  let seamIdx = 0
+  if (vertical){
+    for (let i=0; i<W*H; i++){
+      if (seam[seamIdx] == i){
+        seamIdx++
+        continue
+      }
+      const rgbaIdx = (i-seamIdx)*4
+      for (let channel=0; channel<4; channel++)
+      imageData.data[rgbaIdx+channel] = old.data[i*4+channel]
     }
-
-    function handleWorkerMessage(event) {
-      const message = event.data;
-      if (message.type === "display") {
-        width = message.width;
-        height = message.height;
-        drawImage(message.pixels, width, height);
-        updateDimensions();
-      } else if (message.type === "preview") {
-        drawSeam(new Int32Array(message.seam), message.direction, message.mode, message.width, message.height);
-      } else if (message.type === "debug") {
-        drawDiagnostic(els.grayCanvas, message.gray);
-        drawDiagnostic(els.energyCanvas, message.energy);
-      } else if (message.type === "progress") {
-        setStatus(`Worker carving ${message.removed} / ${message.total} seams. Current size: ${message.width} x ${message.height}.`);
-      } else if (message.type === "done") {
-        busy = false;
-        setControlsEnabled(true);
-        els.cancelBtn.disabled = true;
-        const word = message.cancelled ? "Stopped after" : "Removed";
-        setStatus(`${word} ${message.removed} seams. Current size: ${message.width} x ${message.height}.`);
-        els.lastTiming.textContent = `${message.removed} seams in ${message.elapsed.toFixed(1)} ms`;
-      } else if (message.type === "ready") {
-        setControlsEnabled(true);
-        requestPreview();
-        setStatus(`Loaded ${message.width} x ${message.height}. Worker idle.`);
-      } else if (message.type === "error") {
-        busy = false;
-        setControlsEnabled(true);
-        els.cancelBtn.disabled = true;
-        setStatus(`Error: ${message.message}`);
+  } else {
+    for (let col=0; col<W; col++){
+      let found = 0
+      for (let row=0; row<H; row++){
+        let idx = row*W+col
+        if (seam[seamIdx]==idx){
+          found = 1
+          seamIdx++
+          continue
+        }
+        const rgbaIdxO = idx*4
+        const rgbaIdxN = (idx-found*W)*4
+        for (let channel=0; channel<4; channel++)
+        imageData.data[rgbaIdxN+channel] = old.data[rgbaIdxO+channel]
       }
     }
+  }
 
-    function setStatus(text) {
-      els.status.textContent = text;
-    }
+  if (seam==minVS || seam==maxVS) {W--} else {H--}
+  if (seam==maxHS || seam==maxVS) {sobel = Sobel(gray)}
 
-    function setControlsEnabled(enabled) {
-      [els.load, els.resetBtn, els.energyMode, els.direction, els.batchSize, els.removeOneBtn, els.removeBatchBtn, els.showSeam, els.showDiagnostics].forEach((node) => {
-        node.disabled = !enabled;
-      });
-      els.cancelBtn.disabled = enabled;
-    }
+  // console.log(W,H, gray.length, sobel.length)
+  canvases.forEach(([back,front])=>{
+    back.width = W
+    back.height = H
+    front.width = W
+    front.height = H
+  })
+  drawGray(gray, content[1])  
+  drawGray(sobel, content[2])
+  findAllSeams(sobel)
+  
+  ctx.putImageData(imageData, 0, 0);
+}
 
-    function drawImage(buffer, w, h) {
-      const data = new Uint8ClampedArray(buffer);
-      [els.imageCanvas, els.seamCanvas].forEach((canvas) => {
-        canvas.width = w;
-        canvas.height = h;
-      });
-      imageCtx.putImageData(new ImageData(data, w, h), 0, 0);
-      fitCanvas();
-    }
+[...document.getElementsByTagName('button')].forEach(b=>{
+  b.addEventListener('mouseup', stopRepeat)
+  b.addEventListener('mouseleave', stopRepeat)
+  b.addEventListener('mousedown',e=>removeSeam(e))
+})
 
-    function drawSeam(seam, direction, mode, w, h) {
-      seamCtx.clearRect(0, 0, els.seamCanvas.width, els.seamCanvas.height);
-      if (!els.showSeam.checked || !seam.length) return;
-      seamCtx.save();
-      seamCtx.lineWidth = Math.max(2, Math.round(Math.max(w, h) / 420));
-      seamCtx.strokeStyle = mode === "max" ? "#41ff6a" : "#ff334d";
-      seamCtx.shadowColor = "rgba(0,0,0,0.8)";
-      seamCtx.shadowBlur = seamCtx.lineWidth * 2;
-      seamCtx.beginPath();
-      if (direction === "vertical") {
-        seamCtx.moveTo(seam[0] + 0.5, 0.5);
-        for (let y = 1; y < seam.length; y += 1) seamCtx.lineTo(seam[y] + 0.5, y + 0.5);
-      } else {
-        seamCtx.moveTo(0.5, seam[0] + 0.5);
-        for (let x = 1; x < seam.length; x += 1) seamCtx.lineTo(x + 0.5, seam[x] + 0.5);
-      }
-      seamCtx.stroke();
-      seamCtx.restore();
-    }
+let repeatInterval; // To store the interval ID
+let id2Seam = {}
 
-    function drawDiagnostic(canvas, preview) {
-      const ctx = canvas.getContext("2d");
-      const data = new Uint8ClampedArray(preview.pixels);
-      canvas.width = preview.width;
-      canvas.height = preview.height;
-      ctx.putImageData(new ImageData(data, preview.width, preview.height), 0, 0);
-    }
+// Start the repeat action
+function removeSeam(e){
+  const id = e.target.id
+  const vertical = id.indexOf('V') > -1
+  // console.log(id, id2Seam[id])
+  seamCarve(id2Seam[id], vertical)
 
-    function updateDimensions() {
-      els.dimensions.textContent = `${width} x ${height}`;
-    }
+  // Set up a repeating interval
+  repeatInterval = setInterval(() => {
+    seamCarve(id2Seam[id], vertical);
+  }, 0);
+}
 
-    function fitCanvas() {
-      if (!width || !height) return;
-      const rect = els.canvasFrame.getBoundingClientRect();
-      const availableWidth = Math.max(240, rect.width - 2);
-      const availableHeight = Math.max(260, window.innerHeight - rect.top - 28);
-      const scale = Math.min(1, availableWidth / width, availableHeight / height);
-      const displayWidth = Math.max(1, Math.round(width * scale));
-      const displayHeight = Math.max(1, Math.round(height * scale));
-      els.canvasStack.style.width = `${displayWidth}px`;
-      els.canvasStack.style.height = `${displayHeight}px`;
-      [els.imageCanvas, els.seamCanvas].forEach((canvas) => {
-        canvas.style.width = `${displayWidth}px`;
-        canvas.style.height = `${displayHeight}px`;
-      });
-    }
-
-    async function loadImageSource(src) {
-      setControlsEnabled(false);
-      setStatus("Decoding image.");
-      const img = new Image();
-      img.decoding = "async";
-      img.src = src;
-      await img.decode();
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = new Uint8ClampedArray(imageData.data);
-      original = {
-        width: canvas.width,
-        height: canvas.height,
-        pixels: new Uint8ClampedArray(pixels)
-      };
-      initWorkerWith(pixels, canvas.width, canvas.height);
-    }
-
-    function initWorkerWith(pixels, w, h) {
-      seamCtx.clearRect(0, 0, els.seamCanvas.width, els.seamCanvas.height);
-      width = w;
-      height = h;
-      worker.postMessage({
-        type: "init",
-        width: w,
-        height: h,
-        pixels: pixels.buffer,
-        preview: els.showSeam.checked,
-        debug: els.showDiagnostics.checked,
-        direction: els.direction.value,
-        mode: els.energyMode.value,
-        maxDiagnostic: 360
-      }, [pixels.buffer]);
-    }
-
-    function resetToOriginal() {
-      if (!original || busy) return;
-      setControlsEnabled(false);
-      setStatus("Resetting original image.");
-      initWorkerWith(new Uint8ClampedArray(original.pixels), original.width, original.height);
-    }
-
-    function requestPreview() {
-      if (!width || !height || busy) return;
-      els.diagnostics.hidden = !els.showDiagnostics.checked;
-      if (!els.showSeam.checked) seamCtx.clearRect(0, 0, els.seamCanvas.width, els.seamCanvas.height);
-      if (!els.showSeam.checked && !els.showDiagnostics.checked) return;
-      worker.postMessage({
-        type: "preview",
-        preview: els.showSeam.checked,
-        debug: els.showDiagnostics.checked,
-        direction: els.direction.value,
-        mode: els.energyMode.value,
-        maxDiagnostic: 360
-      });
-    }
-
-    function removeSeams(count) {
-      if (!width || !height || busy) return;
-      latestJob += 1;
-      busy = true;
-      setControlsEnabled(false);
-      els.cancelBtn.disabled = false;
-      seamCtx.clearRect(0, 0, els.seamCanvas.width, els.seamCanvas.height);
-      const updateEvery = Math.max(1, Math.min(12, Math.ceil(count / 8)));
-      setStatus(`Worker carving ${count} seam${count === 1 ? "" : "s"}.`);
-      worker.postMessage({
-        type: "carve",
-        jobId: latestJob,
-        direction: els.direction.value,
-        mode: els.energyMode.value,
-        count,
-        updateEvery,
-        preview: els.showSeam.checked,
-        debug: els.showDiagnostics.checked,
-        maxDiagnostic: 360
-      });
-    }
-
-    els.load.addEventListener("change", () => {
-      const file = els.load.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      loadImageSource(url)
-        .catch((error) => setStatus(`Could not load image: ${error.message}`))
-        .finally(() => URL.revokeObjectURL(url));
-    });
-
-    els.resetBtn.addEventListener("click", resetToOriginal);
-    els.removeOneBtn.addEventListener("click", () => removeSeams(1));
-    els.removeBatchBtn.addEventListener("click", () => removeSeams(Math.max(1, Number(els.batchSize.value) || 1)));
-    els.cancelBtn.addEventListener("click", () => {
-      worker.postMessage({ type: "cancel" });
-      setStatus("Stopping after the current worker chunk.");
-    });
-    [els.energyMode, els.direction, els.showSeam, els.showDiagnostics].forEach((input) => {
-      input.addEventListener("input", requestPreview);
-      input.addEventListener("change", requestPreview);
-    });
-    window.addEventListener("resize", fitCanvas);
-
-    setControlsEnabled(false);
-    loadImageSource("balloons.jpg").catch((error) => {
-      setStatus(`Could not load default image: ${error.message}`);
-      setControlsEnabled(true);
-    });
-  })();
-  </script>
-</body>
-</html>
+// Stop the repeat action
+function stopRepeat() {
+  clearInterval(repeatInterval);
+}
+</script></body></html>

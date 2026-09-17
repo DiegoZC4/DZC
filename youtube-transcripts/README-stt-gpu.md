@@ -97,7 +97,7 @@ TypeError: Cannot convert a MPS Tensor to float64 dtype as the MPS framework doe
 
 The CLI catches that error, prints `Skipping ...`, exits successfully, and writes no JSON. That is why the patcher saw "Whisper did not write ...json" when trying `--device mps` with word timestamps.
 
-The cue-bounded censor patcher maps `[ __ ]` to YouTube cue times through `segments.char_index`; local STT only needs to recover the replacement text inside that cue. Word timestamps stay enabled by default because they let the script ignore spillover when a chunk contains multiple nearby cues.
+The cue-bounded censor patcher does not need STT word timestamps. It already maps `[ __ ]` to YouTube cue times through `segments.char_index`; local STT only needs to recover the replacement text inside that cue.
 
 ## Current Patcher Usage
 
@@ -109,8 +109,7 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   refresh/stt_patch_censored.py \
   --backend mlx \
   --mlx-model mlx-community/whisper-large-v3-mlx \
-  --pad-seconds 0 \
-  --audio-mode auto \
+  --pad-seconds 5 \
   --word-timestamps \
   --video-id VIDEO_ID \
   --cookies-from-browser ''
@@ -124,8 +123,7 @@ cd "/Users/diego/Desktop/Read/YouTube Channel Transcripts"
   refresh/stt_patch_censored.py \
   --backend mlx \
   --mlx-model mlx-community/whisper-large-v3-mlx \
-  --pad-seconds 0 \
-  --audio-mode auto \
+  --pad-seconds 5 \
   --word-timestamps \
   --all-censored \
   --limit-videos 25 \
@@ -139,12 +137,11 @@ Important:
 
 - Run this outside the Codex sandbox for Metal access.
 - Use the venv Python path above, not plain `./refresh/stt_patch_censored.py`, so `mlx_whisper` imports from `Whisper/.venv`.
-- Do not force `yt-dlp --js-runtimes node`; current `yt-dlp` defaults work better here.
-- `--audio-mode auto` streams tiny jobs, but downloads the full source audio once for marker-heavy videos and then seeks locally for each cue. This avoids re-streaming the YouTube URL for every window.
-- Keep `--word-timestamps` on. The patcher uses timestamps to limit candidate extraction back to the original YouTube cue bounds when chunks contain adjacent cues.
+- The patcher passes `--js-runtimes node` to `yt-dlp`; this has been more reliable than Deno-only extraction for recent YouTube player challenges.
+- Keep `--word-timestamps` on for padded cue runs. The patcher uses timestamps to limit candidate extraction back to the original YouTube cue bounds after giving Whisper 5 seconds of audio context on each side.
 - Keep `--max-replacement-tokens 1` for conservative candidate generation. Multi-word replacements should stay review-only until proven safe.
-- Reruns replace existing `decensor_candidates` rows for the same processed marker unless `--keep-existing-candidates` is passed.
-- Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos that already have rows in `decensor_candidates`.
+- Reruns replace existing `uncensored` candidates for the same processed marker unless `--keep-existing-candidates` is passed.
+- Use `--all-censored --limit-videos N` for incremental bulk passes. `--start-after VIDEO_ID` can resume by YouTube id, and `--skip-successful` skips videos that already have rows in `uncensored`.
 
 ## Scale Estimate
 
@@ -165,9 +162,9 @@ For fixing thousands of videos:
 1. Use MLX, not OpenAI Whisper MPS.
 2. Keep one Python worker process alive so the model stays loaded.
 3. Download audio once per video, not once per cue.
-4. Cut or pass all censored cue windows for that video through the loaded MLX model. Defaults use cue-bounded windows with no extra context; overlapping windows are merged up to 30 seconds so they do not duplicate audio.
+4. Cut or pass all censored cue windows for that video through the loaded MLX model. Defaults use cue windows with 5 seconds of context on each side; overlapping padded windows are merged so they do not duplicate audio.
 5. Keep word timestamps enabled and filter candidate words back to the original YouTube cue time bounds before aligning against the YouTube cue text.
 6. Delete downloaded audio immediately after the video's cues finish.
-7. Commit replacement rows in batches to `decensor_candidates(video_id, start_char, replacement, confidence)`. `start_char` points at the six-character `[ __ ]` marker and `confidence` is the normalized alignment score. Do not apply them to `videos.transcript` until the pipeline is trusted.
+7. Commit replacement rows in batches to `uncensored(video_id, start_char, end_char, replacement)`. Do not apply them to `videos.transcript` until the pipeline is trusted.
 
 The patcher supports a bulk MLX pass with `--all-censored`, so one Python process can keep MLX imported and reuse the model across videos. The next optimization beyond that is avoiding a separate `ffmpeg` cut per cue by cutting one per-video audio file and slicing in-process.

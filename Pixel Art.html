@@ -1,959 +1,283 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Pixel Art</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="assets/icons/vailur-rogue.svg">
-  <style>
-    :root {
-      color-scheme: light;
-      --bg: #f3efe4;
-      --panel: #fffaf1;
-      --ink: #2b241c;
-      --accent: #b55239;
-      --accent-soft: #f2d3c8;
-      --line: #d3c3ad;
-      --shadow: 0 12px 30px rgba(70, 46, 22, 0.14);
+<!DOCTYPE html> <html lang="en"> 
+  <head><meta charset="UTF-8"> 
+    <title>Pixel Art</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖌️</text></svg>">
+  </head>
+<style>
+input{width:50px}
+button{width:200px; height: 30px}
+canvas{left: 0; top: 0; display: block; margin: 10px 0;}
+</style>
+<body> 
+<h4>Initialize</h4>
+<label><input type="number" id="w" min="1" step="1" value=16> Width</label><br>
+<label><input type="number" id="h" min="1" step="1" value=32> Height</label><br>
+<button onclick="newCanvas()">New</button><br><br>
+
+<input type="file" id="fileInput" accept="application/JSON" style="width:200px"><br>
+<button onclick="load()">Load</button><br>
+<button onclick="save()">Save</button><br>
+
+<input type="checkbox" id="bgcolor" onchange="fillBackground()">White Background</input>
+
+<h4>Palette</h4>
+<button onclick="addColor()">Add Color</button>
+<ol start="0">
+  <li id="eraser" style="width:50px">Eraser</li>
+  <div id="palette"></div>
+</ol>
+
+<h4>Canvas</h4>
+<div style="position: relative; display: inline-block">
+  <canvas id="background" style="z-index: 0;"></canvas>
+  <canvas id="canvas" style="position:absolute; z-index: 1;"></canvas>
+</div>
+<br>
+<button onclick="download()">Download</button>
+<canvas id="exportCanvas" style="display: none;"></canvas>
+
+<script>
+
+let history = []
+let undoIndex = 1
+const startDrawing = (e)=>{isDrawing = true; draw(event);}
+const stopDrawing = (e)=>{
+  isDrawing = false
+  if (undoIndex>1) history.splice(1-undoIndex)
+  undoIndex = 1
+  history.push(pixels.map(row => row.slice()))
+};
+
+function draw(event) {
+  if (!isDrawing) return
+  const rect = canvas.getBoundingClientRect()
+  const [canvasX,canvasY] = [event.clientX - rect.left, event.clientY - rect.top]
+  const [x,y] = [Math.floor(canvasX/pixelSize), Math.floor(canvasY/pixelSize)]
+  if (x<0 || y<0 || y>=pixels.length || x>=pixels[0].length) return
+  pixels[y][x] = pen
+  updateCanvas()
+}
+  
+const background = document.getElementById('background')
+const canvas = document.getElementById('canvas')
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseout', ()=>isDrawing=false);
+
+const paletteList = document.getElementById('palette')
+const eraser = document.getElementById('eraser')
+
+let brush, pixelSize
+let isDrawing = false
+let pixels = []
+let palette = []
+let pen = 0
+
+function newCanvas(){
+  let [w,h] = ['w','h'].map(dim=>Number(document.getElementById(dim).value))
+  pixels = Array.from({length: h}, () => new Array(w).fill(0))
+  brush = canvas.getContext("2d")
+  pixelSize = Math.min(800/w, 400/h)
+  canvas.width  = w*pixelSize
+  canvas.height = h*pixelSize
+  background.width  = w*pixelSize
+  background.height = h*pixelSize
+  stopDrawing()
+  fillBackground()
+  updatePalette()
+}
+
+function fillBackground(){
+  let white = document.getElementById('bgcolor').checked
+  let bgBrush = background.getContext("2d")
+  bgBrush.fillStyle = white?"white":"DarkGrey";
+  bgBrush.fillRect(0,0,canvas.width, canvas.height)
+  if (white) return
+  bgBrush.fillStyle = "DimGrey";
+  let bgRes = 5;
+  for (let j=0; j<canvas.height; j+=bgRes) {
+    for (let i=(j/bgRes)%2 * bgRes; i<canvas.width;  i+=bgRes*2){
+      bgBrush.fillRect(i,j,bgRes, bgRes)
     }
+  }
+}
+addColor()
+function addColor(c='#000000'){
+  let color = document.createElement("input")
+  color.setAttribute("type", "color")
+  color.value = c
+  color.addEventListener('change',updateCanvas)
+  let listItem = document.createElement('li')
+  listItem.appendChild(color)
+  paletteList.appendChild(listItem)
+  palette.push(color)
+  pen = palette.length
+  updatePalette()
+  return color
+}
 
-    * { box-sizing: border-box; }
+function updateCanvas(){
+  brush.clearRect(0,0,canvas.width,canvas.height)
+  pixels.forEach((_,j)=>_.forEach((px,i)=>{
+    if (px==0) return
+    brush.fillStyle = palette[Math.min(px-1,palette.length-1)].value
+    brush.fillRect(i*pixelSize, j*pixelSize, pixelSize+1, pixelSize+1)
+  }))
+}
 
-    body {
-      margin: 0;
-      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, #fffdf8 0, #fff4df 22%, transparent 45%),
-        linear-gradient(135deg, #efe4cf, #f7f3ea 42%, #e7dcc7 100%);
-      min-height: 100vh;
+document.onkeypress = function (e) {
+  e = e || window.event;
+  let key = e.key
+  let num = parseInt(key)
+  if (key=='e'|| num==0) pen = 0
+  if (num>=1  && num<=9) pen = Math.min(num,palette.length)
+  updatePalette()
+
+  if (key=='w') shiftPixels(0,-1)
+  if (key=='s') shiftPixels(0,1)
+  if (key=='a') shiftPixels(-1,0)
+  if (key=='d') shiftPixels(1,0)
+  if (key=='r') reflectPixels(1,0)
+  if (key=='f') reflectPixels(0,1)
+}
+
+document.addEventListener('keydown', function(event) {
+  // Check if the Command key (or Control key on Windows) is pressed
+  const isCmd = event.metaKey;  // 'metaKey' is true for Command (⌘) key on macOS
+  const isShift = event.shiftKey; // 'shiftKey' is true for Shift key
+  const key = event.key.toLowerCase();  // Normalize the key value
+
+  // Check for Cmd + Z (Undo)
+  if (isCmd && key === 'z' && !isShift) {
+    if (undoIndex<history.length) undoIndex++
+    pixels = history[history.length-undoIndex].map(row=>row.slice())
+    updateCanvas()
+    event.preventDefault();  // Prevent default browser behavior if necessary
+  }
+
+  // Check for Cmd + Shift + Z (Redo)
+  if (isCmd && isShift && key === 'z') {
+    if (undoIndex>1) undoIndex--
+    pixels = history[history.length-undoIndex].map(row=>row.slice())
+    updateCanvas()
+    event.preventDefault();  // Prevent default browser behavior if necessary
+  }
+});
+
+function updatePalette(){
+  eraser.style.outline = 'none'
+  palette.forEach(p => p.style.outline = 'none')
+  if (pen) {
+    palette[pen-1].style.outline = 'solid'
+  }
+  else {eraser.style.outline = 'solid'}
+}
+
+newCanvas()
+
+function shiftPixels(x,y){
+  const [R,C] = [pixels.length,pixels[0].length]
+  const shifted = new Array(R).fill().map(() => new Array(C));
+  for (let row = 0; row < R; row++) {
+    for (let col = 0; col < C; col++) {
+      shifted[(row+y+R)%R][(col+x+C)%C] = pixels[row][col];
     }
+  }
+  pixels = shifted;
+  updateCanvas()
+}
 
-    .app {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 20px;
-      padding: 20px;
+function reflectPixels(x,y){
+  const [R,C] = [pixels.length,pixels[0].length]
+  const shifted = new Array(R).fill().map(() => new Array(C));
+  for (let row = 0; row < R; row++) {
+    for (let col = 0; col < C; col++) {
+      shifted[x?(R-1-row):row][y?(C-1-col):col] = pixels[row][col];
     }
+  }
+  pixels = shifted;
+  updateCanvas()
+}
 
-    .panel, .stage {
-      background: var(--panel);
-      border: 1px solid rgba(111, 79, 45, 0.14);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
+
+function save() {
+  // Convert the object to a JSON string
+  const jsonString = JSON.stringify({palette:palette.map(p=>p.value),pixels:pixels})
+  .replaceAll('["', '[\n"')
+  .replaceAll(',"', ',\n"')
+  .replaceAll('[[', '[\n[')
+  .replaceAll(',[', ',\n[')
+
+  const blob = new Blob([jsonString], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vailur.json";
+
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+}
+
+load()
+function load(){
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    fetch('vailurRogue.json')
+      .then(res => res.json())
+      .then(data => processData(JSON.stringify(data)))
+      .catch(err => console.error('Error loading default file:', err));
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+      processData(e.target.result);
+    };
+  reader.onerror = function() {console.error('Could not read the file')};
+  reader.readAsText(file)
+}
+
+function processData(jsonString){
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.palette && data.pixels) {
+        ['w','h'].forEach((dim,i)=>document.getElementById(dim).value = i?data.pixels.length:data.pixels[0].length)
+        paletteList.innerHTML = ''
+        palette = []
+        palette = data.palette.map(c=>addColor(c))
+        newCanvas()
+        pixels = data.pixels
+        stopDrawing()
+        updateCanvas()
+      } else {console.error('Invalid JSON format.')}
+    } catch (error) {console.error('Error parsing JSON:', error)}
+}
+
+function download(){
+  const [w,h] = [pixels[0].length, pixels.length]
+  const exportCanvas = document.getElementById('exportCanvas');
+  const ctx = exportCanvas.getContext('2d');
+  exportCanvas.width = w;
+  exportCanvas.height = h;
+
+  // Draw the pixel art onto the canvas
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (pixels[y][x]==0) continue
+      ctx.fillStyle = palette[pixels[y][x]-1].value
+      ctx.fillRect(x, y, 1, 1);
     }
-
-    .panel {
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    h1, h2, h3, p { margin: 0; }
-    h1 { font-size: 28px; }
-    h2 {
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #76563e;
-    }
-
-    .muted { color: #7b6755; font-size: 13px; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .row > * { min-width: 0; }
-
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    input[type="number"],
-    input[type="text"],
-    button,
-    select {
-      font: inherit;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      padding: 10px 12px;
-      background: white;
-      color: var(--ink);
-    }
-
-    input[type="number"] { width: 100%; }
-    input[type="file"] { font: inherit; max-width: 100%; }
-
-    button {
-      cursor: pointer;
-      background: white;
-      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      border-color: #b0876a;
-    }
-
-    button.primary {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    button.active {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .tool-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .palette {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-      gap: 8px;
-    }
-
-    .swatch {
-      position: relative;
-      height: 42px;
-      border-radius: 12px;
-      border: 2px solid transparent;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .swatch.active { border-color: #111; }
-    .swatch input {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      padding: 0;
-      background: transparent;
-      cursor: pointer;
-    }
-
-    .stage {
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .canvas-shell {
-      position: relative;
-      align-self: start;
-      border-radius: 18px;
-      overflow: auto;
-      max-width: 100%;
-      background:
-        linear-gradient(45deg, #d1ccc2 25%, transparent 25%, transparent 75%, #d1ccc2 75%, #d1ccc2),
-        linear-gradient(45deg, #d1ccc2 25%, transparent 25%, transparent 75%, #d1ccc2 75%, #d1ccc2);
-      background-position: 0 0, 8px 8px;
-      background-size: 16px 16px;
-      border: 1px solid #d4c2a7;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
-    }
-
-    canvas {
-      display: block;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      touch-action: none;
-    }
-
-    #preview {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .statusbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      font-size: 13px;
-      color: #6e5848;
-    }
-
-    .hint-list {
-      display: grid;
-      gap: 6px;
-      font-size: 13px;
-      color: #6e5848;
-    }
-
-    @media (max-width: 980px) {
-      .app { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <aside class="panel">
-      <div>
-        <h1>Pixel Art</h1>
-      </div>
-
-      <section>
-        <h2>Canvas</h2>
-        <div class="row">
-          <label><span>Width</span><input type="number" id="widthInput" min="1" step="1" value="16"></label>
-          <label><span>Height</span><input type="number" id="heightInput" min="1" step="1" value="32"></label>
-        </div>
-        <div class="row">
-          <button class="primary" id="newCanvasBtn">New Canvas</button>
-          <button id="resizeBtn">Resize Keep Art</button>
-          <button id="clearBtn">Clear</button>
-        </div>
-      </section>
-
-      <section>
-        <h2>Tools</h2>
-        <div class="tool-grid" id="toolButtons"></div>
-        <div class="row">
-          <label><span>Zoom</span><input type="number" id="zoomInput" min="4" max="48" step="1" value="20"></label>
-          <label><span>Mirror</span>
-            <select id="mirrorMode">
-              <option value="none">None</option>
-              <option value="x">Horizontal</option>
-              <option value="y">Vertical</option>
-              <option value="xy">Both</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label><input type="checkbox" id="showGrid" checked> Show Grid</label>
-          <label><input type="checkbox" id="opaqueBg"> White Background</label>
-          <label><input type="checkbox" id="autosaveToggle" checked> Autosave</label>
-        </div>
-      </section>
-
-      <section>
-        <h2>Palette</h2>
-        <div class="row">
-          <button id="addColorBtn">Add Color</button>
-          <button id="removeColorBtn">Remove Color</button>
-        </div>
-        <div class="palette" id="palette"></div>
-      </section>
-
-      <section>
-        <h2>Transform</h2>
-        <div class="row">
-          <button id="shiftUpBtn">Shift Up</button>
-          <button id="shiftDownBtn">Shift Down</button>
-        </div>
-        <div class="row">
-          <button id="shiftLeftBtn">Shift Left</button>
-          <button id="shiftRightBtn">Shift Right</button>
-        </div>
-        <div class="row">
-          <button id="flipXBtn">Flip Horizontal</button>
-          <button id="flipYBtn">Flip Vertical</button>
-        </div>
-      </section>
-
-      <section>
-        <h2>Files</h2>
-        <div class="row">
-          <button id="saveJsonBtn">Save JSON</button>
-          <button id="loadJsonBtn">Load JSON</button>
-          <input type="file" id="jsonInput" accept="application/json,.json" hidden>
-        </div>
-        <div class="row">
-          <button id="downloadPngBtn">Download PNG</button>
-        </div>
-      </section>
-
-      <section class="hint-list">
-        <h2>Shortcuts</h2>
-        <div>`1-5` or `B/E/F/P/L` switches tools, `[` and `]` zoom, `Cmd/Ctrl+Z` undo, `Cmd/Ctrl+Shift+Z` redo</div>
-        <div>`WASD` shifts the art, `X` and `Y` flip, `G` toggles grid</div>
-      </section>
-    </aside>
-
-    <main class="stage">
-      <div class="statusbar">
-        <span id="statusText">Ready.</span>
-        <span id="cursorText">0, 0</span>
-      </div>
-      <div class="canvas-shell" id="canvasShell">
-        <canvas id="background"></canvas>
-        <canvas id="paint" style="position:absolute; inset:0;"></canvas>
-        <canvas id="preview"></canvas>
-      </div>
-    </main>
-  </div>
-
-  <script>
-    const STORAGE_KEY = 'pixel-art-autosave-v1';
-    const tools = [
-      { id: 'pen', label: '1 / B Pen', keys: ['1', 'b'] },
-      { id: 'eraser', label: '2 / E Eraser', keys: ['2', 'e'] },
-      { id: 'fill', label: '3 / F Fill', keys: ['3', 'f'] },
-      { id: 'picker', label: '4 / P Picker', keys: ['4', 'p'] },
-      { id: 'line', label: '5 / L Line', keys: ['5', 'l'] }
-    ];
-
-    const backgroundCanvas = document.getElementById('background');
-    const paintCanvas = document.getElementById('paint');
-    const previewCanvas = document.getElementById('preview');
-    const bg = backgroundCanvas.getContext('2d');
-    const paint = paintCanvas.getContext('2d');
-    const preview = previewCanvas.getContext('2d');
-
-    const statusText = document.getElementById('statusText');
-    const cursorText = document.getElementById('cursorText');
-    const paletteEl = document.getElementById('palette');
-    const toolButtonsEl = document.getElementById('toolButtons');
-
-    let pixels = [];
-    let history = [];
-    let historyIndex = -1;
-    let palette = ['#000000'];
-    let selectedColor = 0;
-    let tool = 'pen';
-    let pixelSize = 20;
-    let pointerDown = false;
-    let dragStart = null;
-    let lastPoint = null;
-
-    function createPixels(width, height, fill = 0) {
-      return Array.from({ length: height }, () => Array(width).fill(fill));
-    }
-
-    function clonePixels(input) {
-      return input.map((row) => row.slice());
-    }
-
-    function setStatus(text) {
-      statusText.textContent = text;
-    }
-
-    function getSize() {
-      return { width: pixels[0]?.length || 0, height: pixels.length || 0 };
-    }
-
-    function ensurePaletteIndex(index) {
-      selectedColor = Math.max(0, Math.min(index, palette.length - 1));
-    }
-
-    function pushHistory(reason) {
-      const snapshot = {
-        reason,
-        pixels: clonePixels(pixels),
-        palette: palette.slice(),
-        selectedColor,
-        width: pixels[0].length,
-        height: pixels.length
-      };
-      history = history.slice(0, historyIndex + 1);
-      history.push(snapshot);
-      historyIndex = history.length - 1;
-      autosave();
-    }
-
-    function restoreSnapshot(snapshot) {
-      palette = snapshot.palette.slice();
-      pixels = clonePixels(snapshot.pixels);
-      selectedColor = Math.min(snapshot.selectedColor, palette.length - 1);
-      document.getElementById('widthInput').value = snapshot.width;
-      document.getElementById('heightInput').value = snapshot.height;
-      redrawPalette();
-      syncCanvasSize();
-      drawAll();
-      autosave();
-      setStatus(snapshot.reason ? `Restored: ${snapshot.reason}` : 'Restored.');
-    }
-
-    function undo() {
-      if (historyIndex <= 0) return;
-      historyIndex -= 1;
-      restoreSnapshot(history[historyIndex]);
-    }
-
-    function redo() {
-      if (historyIndex >= history.length - 1) return;
-      historyIndex += 1;
-      restoreSnapshot(history[historyIndex]);
-    }
-
-    function syncCanvasSize() {
-      const { width, height } = getSize();
-      pixelSize = Number(document.getElementById('zoomInput').value);
-      [backgroundCanvas, paintCanvas, previewCanvas].forEach((canvas) => {
-        canvas.width = width * pixelSize;
-        canvas.height = height * pixelSize;
-        canvas.style.width = canvas.width + 'px';
-        canvas.style.height = canvas.height + 'px';
-      });
-      document.getElementById('canvasShell').style.width = backgroundCanvas.width + 'px';
-      document.getElementById('canvasShell').style.height = backgroundCanvas.height + 'px';
-    }
-
-    function drawBackground() {
-      const { width, height } = getSize();
-      const opaque = document.getElementById('opaqueBg').checked;
-      bg.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      if (opaque) {
-        bg.fillStyle = '#ffffff';
-        bg.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      } else {
-        bg.fillStyle = '#d7d1c6';
-        bg.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-        bg.fillStyle = '#eee9df';
-        for (let y = 0; y < height; y += 1) {
-          for (let x = (y % 2); x < width; x += 2) {
-            bg.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-          }
-        }
-      }
-
-      if (document.getElementById('showGrid').checked) {
-        bg.strokeStyle = 'rgba(0,0,0,0.12)';
-        bg.lineWidth = 1;
-        for (let x = 0; x <= width; x += 1) {
-          bg.beginPath();
-          bg.moveTo(x * pixelSize + 0.5, 0);
-          bg.lineTo(x * pixelSize + 0.5, backgroundCanvas.height);
-          bg.stroke();
-        }
-        for (let y = 0; y <= height; y += 1) {
-          bg.beginPath();
-          bg.moveTo(0, y * pixelSize + 0.5);
-          bg.lineTo(backgroundCanvas.width, y * pixelSize + 0.5);
-          bg.stroke();
-        }
-      }
-    }
-
-    function drawPixels(targetCtx, sourcePixels) {
-      targetCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
-      sourcePixels.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (!value) return;
-          targetCtx.fillStyle = palette[value - 1] || '#000000';
-          targetCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-        });
-      });
-    }
-
-    function drawAll() {
-      drawBackground();
-      drawPixels(paint, pixels);
-      preview.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    }
-
-    function redrawPalette() {
-      paletteEl.innerHTML = '';
-      palette.forEach((color, index) => {
-        const swatch = document.createElement('button');
-        swatch.className = 'swatch' + (index === selectedColor ? ' active' : '');
-        swatch.style.background = color;
-        swatch.title = `Color ${index + 1}`;
-        swatch.addEventListener('click', () => {
-          ensurePaletteIndex(index);
-          redrawPalette();
-          setStatus(`Selected color ${index + 1}.`);
-        });
-
-        const input = document.createElement('input');
-        input.type = 'color';
-        input.value = color;
-        input.addEventListener('input', (event) => {
-          palette[index] = event.target.value;
-          swatch.style.background = palette[index];
-          drawAll();
-          autosave();
-        });
-        input.addEventListener('click', (event) => event.stopPropagation());
-        swatch.appendChild(input);
-        paletteEl.appendChild(swatch);
-      });
-    }
-
-    function redrawTools() {
-      toolButtonsEl.innerHTML = '';
-      tools.forEach((item) => {
-        const button = document.createElement('button');
-        button.textContent = item.label;
-        button.className = item.id === tool ? 'active' : '';
-        button.addEventListener('click', () => {
-          tool = item.id;
-          redrawTools();
-          setStatus(`Tool: ${item.id}.`);
-        });
-        toolButtonsEl.appendChild(button);
-      });
-    }
-
-    function newCanvas(width, height, keep = false) {
-      const oldPixels = clonePixels(pixels);
-      const next = createPixels(width, height, 0);
-      if (keep && oldPixels.length) {
-        for (let y = 0; y < Math.min(height, oldPixels.length); y += 1) {
-          for (let x = 0; x < Math.min(width, oldPixels[0].length); x += 1) {
-            next[y][x] = oldPixels[y][x];
-          }
-        }
-      }
-      pixels = next;
-      syncCanvasSize();
-      drawAll();
-      pushHistory(keep ? 'resize' : 'new canvas');
-      setStatus(keep ? 'Canvas resized.' : 'New canvas created.');
-    }
-
-    function getPointFromEvent(event) {
-      const rect = paintCanvas.getBoundingClientRect();
-      const x = Math.floor((event.clientX - rect.left) / pixelSize);
-      const y = Math.floor((event.clientY - rect.top) / pixelSize);
-      const { width, height } = getSize();
-      if (x < 0 || y < 0 || x >= width || y >= height) return null;
-      return { x, y };
-    }
-
-    function updateCursor(point) {
-      if (!point) return;
-      cursorText.textContent = `${point.x}, ${point.y}`;
-    }
-
-    function getMirrorPoints(x, y) {
-      const { width, height } = getSize();
-      const mode = document.getElementById('mirrorMode').value;
-      const points = [{ x, y }];
-      if (mode.includes('x')) points.push({ x: width - 1 - x, y });
-      if (mode.includes('y')) points.push({ x, y: height - 1 - y });
-      if (mode === 'xy') points.push({ x: width - 1 - x, y: height - 1 - y });
-      return Array.from(new Map(points.map((point) => [`${point.x},${point.y}`, point])).values());
-    }
-
-    function setPixel(x, y, value) {
-      getMirrorPoints(x, y).forEach((point) => {
-        pixels[point.y][point.x] = value;
-      });
-    }
-
-    function strokeLine(a, b, value, target = pixels) {
-      let x0 = a.x;
-      let y0 = a.y;
-      const x1 = b.x;
-      const y1 = b.y;
-      const dx = Math.abs(x1 - x0);
-      const dy = -Math.abs(y1 - y0);
-      const sx = x0 < x1 ? 1 : -1;
-      const sy = y0 < y1 ? 1 : -1;
-      let error = dx + dy;
-      while (true) {
-        const points = target === pixels ? getMirrorPoints(x0, y0) : [{ x: x0, y: y0 }];
-        points.forEach((point) => { target[point.y][point.x] = value; });
-        if (x0 === x1 && y0 === y1) break;
-        const twice = 2 * error;
-        if (twice >= dy) { error += dy; x0 += sx; }
-        if (twice <= dx) { error += dx; y0 += sy; }
-      }
-    }
-
-    function floodFill(startX, startY, nextValue) {
-      const current = pixels[startY][startX];
-      if (current === nextValue) return false;
-      const stack = [[startX, startY]];
-      const { width, height } = getSize();
-      while (stack.length) {
-        const [x, y] = stack.pop();
-        if (x < 0 || y < 0 || x >= width || y >= height) continue;
-        if (pixels[y][x] !== current) continue;
-        pixels[y][x] = nextValue;
-        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-      }
-      return true;
-    }
-
-    function applyTool(point) {
-      if (!point) return false;
-      if (tool === 'picker') {
-        const value = pixels[point.y][point.x];
-        if (value > 0) {
-          selectedColor = value - 1;
-          redrawPalette();
-          setStatus(`Picked color ${value}.`);
-        } else {
-          setStatus('Picked transparency.');
-        }
-        return false;
-      }
-
-      if (tool === 'fill') {
-        const changed = floodFill(point.x, point.y, selectedColor + 1);
-        if (changed) {
-          drawAll();
-          pushHistory('fill');
-        }
-        return false;
-      }
-
-      if (tool === 'line') {
-        dragStart = point;
-        previewLine(point);
-        return false;
-      }
-
-      const value = tool === 'eraser' ? 0 : selectedColor + 1;
-      setPixel(point.x, point.y, value);
-      drawAll();
-      return true;
-    }
-
-    function previewLine(point) {
-      preview.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-      if (!dragStart || !point) return;
-      const temp = createPixels(pixels[0].length, pixels.length, 0);
-      strokeLine(dragStart, point, selectedColor + 1, temp);
-      drawPixels(preview, temp);
-    }
-
-    function commitLine(point) {
-      if (!dragStart || !point) return;
-      strokeLine(dragStart, point, selectedColor + 1);
-      dragStart = null;
-      preview.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-      drawAll();
-      pushHistory('line');
-    }
-
-    function shiftPixels(dx, dy) {
-      const { width, height } = getSize();
-      const next = createPixels(width, height, 0);
-      for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-          next[(y + dy + height) % height][(x + dx + width) % width] = pixels[y][x];
-        }
-      }
-      pixels = next;
-      drawAll();
-      pushHistory('shift');
-    }
-
-    function flip(horizontal) {
-      const { width, height } = getSize();
-      const next = createPixels(width, height, 0);
-      for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-          const tx = horizontal ? width - 1 - x : x;
-          const ty = horizontal ? y : height - 1 - y;
-          next[ty][tx] = pixels[y][x];
-        }
-      }
-      pixels = next;
-      drawAll();
-      pushHistory(horizontal ? 'flip x' : 'flip y');
-    }
-
-    function serialize() {
-      return {
-        version: 2,
-        width: pixels[0].length,
-        height: pixels.length,
-        palette: palette.slice(),
-        pixels: clonePixels(pixels),
-        options: {
-          opaqueBackground: document.getElementById('opaqueBg').checked,
-          showGrid: document.getElementById('showGrid').checked,
-          pixelSize,
-          mirrorMode: document.getElementById('mirrorMode').value
-        }
-      };
-    }
-
-    function loadState(state, reason = 'load') {
-      if (!state || !Array.isArray(state.palette) || !Array.isArray(state.pixels)) {
-        throw new Error('Invalid pixel art file.');
-      }
-      palette = state.palette.slice();
-      if (!palette.length) palette = ['#000000'];
-      pixels = clonePixels(state.pixels);
-      selectedColor = Math.min(selectedColor, palette.length - 1);
-      document.getElementById('widthInput').value = state.width || pixels[0].length;
-      document.getElementById('heightInput').value = state.height || pixels.length;
-      if (state.options) {
-        document.getElementById('opaqueBg').checked = !!state.options.opaqueBackground;
-        document.getElementById('showGrid').checked = state.options.showGrid !== false;
-        document.getElementById('zoomInput').value = state.options.pixelSize || pixelSize;
-        document.getElementById('mirrorMode').value = state.options.mirrorMode || 'none';
-      }
-      redrawPalette();
-      syncCanvasSize();
-      drawAll();
-      pushHistory(reason);
-      setStatus('Artwork loaded.');
-    }
-
-    function autosave() {
-      if (!document.getElementById('autosaveToggle').checked) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serialize()));
-    }
-
-    function downloadBlob(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function downloadPng() {
-      const { width, height } = getSize();
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = width;
-      exportCanvas.height = height;
-      const ctx = exportCanvas.getContext('2d');
-      if (document.getElementById('opaqueBg').checked) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-      }
-      pixels.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (!value) return;
-          ctx.fillStyle = palette[value - 1];
-          ctx.fillRect(x, y, 1, 1);
-        });
-      });
-      exportCanvas.toBlob((blob) => downloadBlob(blob, 'pixel-art.png'));
-    }
-
-    function saveJson() {
-      const pretty = JSON.stringify(serialize(), null, 2);
-      downloadBlob(new Blob([pretty], { type: 'application/json' }), 'pixel-art.json');
-    }
-
-    function addColor(color = '#000000') {
-      palette.push(color);
-      selectedColor = palette.length - 1;
-      redrawPalette();
-      drawAll();
-      pushHistory('palette add');
-    }
-
-    function removeColor() {
-      if (palette.length <= 1) return;
-      const removed = selectedColor + 1;
-      palette.splice(selectedColor, 1);
-      pixels = pixels.map((row) => row.map((value) => {
-        if (value === removed) return 0;
-        if (value > removed) return value - 1;
-        return value;
-      }));
-      ensurePaletteIndex(selectedColor - 1);
-      redrawPalette();
-      drawAll();
-      pushHistory('palette remove');
-    }
-
-    paintCanvas.addEventListener('pointerdown', (event) => {
-      const point = getPointFromEvent(event);
-      updateCursor(point);
-      if (!point) return;
-      paintCanvas.setPointerCapture(event.pointerId);
-      pointerDown = true;
-      lastPoint = point;
-      if (tool === 'line') {
-        applyTool(point);
-        return;
-      }
-      const changed = applyTool(point);
-      if (changed) pushHistory(tool);
-    });
-
-    paintCanvas.addEventListener('pointermove', (event) => {
-      const point = getPointFromEvent(event);
-      updateCursor(point);
-      if (!pointerDown || !point) {
-        if (tool === 'line') previewLine(point);
-        return;
-      }
-      if (tool === 'line') {
-        previewLine(point);
-        return;
-      }
-      if (lastPoint && point.x === lastPoint.x && point.y === lastPoint.y) return;
-      lastPoint = point;
-      const value = tool === 'eraser' ? 0 : selectedColor + 1;
-      if (tool === 'pen' || tool === 'eraser') {
-        setPixel(point.x, point.y, value);
-        drawAll();
-      }
-    });
-
-    paintCanvas.addEventListener('pointerup', (event) => {
-      const point = getPointFromEvent(event);
-      if (tool === 'line') commitLine(point);
-      else if (pointerDown && (tool === 'pen' || tool === 'eraser')) pushHistory(tool + ' stroke');
-      pointerDown = false;
-      lastPoint = null;
-      dragStart = null;
-      preview.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    });
-
-    paintCanvas.addEventListener('pointerleave', () => {
-      if (!pointerDown) preview.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    });
-
-    document.getElementById('newCanvasBtn').addEventListener('click', () => {
-      const width = Number(document.getElementById('widthInput').value);
-      const height = Number(document.getElementById('heightInput').value);
-      newCanvas(width, height, false);
-    });
-    document.getElementById('resizeBtn').addEventListener('click', () => {
-      const width = Number(document.getElementById('widthInput').value);
-      const height = Number(document.getElementById('heightInput').value);
-      newCanvas(width, height, true);
-    });
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      const { width, height } = getSize();
-      pixels = createPixels(width, height, 0);
-      drawAll();
-      pushHistory('clear');
-      setStatus('Canvas cleared.');
-    });
-
-    document.getElementById('zoomInput').addEventListener('input', () => {
-      syncCanvasSize();
-      drawAll();
-      autosave();
-    });
-    document.getElementById('showGrid').addEventListener('change', () => { drawAll(); autosave(); });
-    document.getElementById('opaqueBg').addEventListener('change', () => { drawAll(); autosave(); });
-    document.getElementById('mirrorMode').addEventListener('change', autosave);
-
-    document.getElementById('addColorBtn').addEventListener('click', () => addColor('#7a4a2a'));
-    document.getElementById('removeColorBtn').addEventListener('click', removeColor);
-    document.getElementById('shiftUpBtn').addEventListener('click', () => shiftPixels(0, -1));
-    document.getElementById('shiftDownBtn').addEventListener('click', () => shiftPixels(0, 1));
-    document.getElementById('shiftLeftBtn').addEventListener('click', () => shiftPixels(-1, 0));
-    document.getElementById('shiftRightBtn').addEventListener('click', () => shiftPixels(1, 0));
-    document.getElementById('flipXBtn').addEventListener('click', () => flip(true));
-    document.getElementById('flipYBtn').addEventListener('click', () => flip(false));
-    document.getElementById('saveJsonBtn').addEventListener('click', saveJson);
-    document.getElementById('downloadPngBtn').addEventListener('click', downloadPng);
-    document.getElementById('loadJsonBtn').addEventListener('click', () => document.getElementById('jsonInput').click());
-    document.getElementById('jsonInput').addEventListener('change', async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        loadState(JSON.parse(await file.text()), 'load');
-      } catch (error) {
-        alert(error.message);
-      }
-      event.target.value = '';
-    });
-
-    document.addEventListener('keydown', (event) => {
-      const tag = document.activeElement.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      const key = event.key.toLowerCase();
-      if ((event.metaKey || event.ctrlKey) && key === 'z' && !event.shiftKey) {
-        event.preventDefault();
-        undo();
-        return;
-      }
-      if ((event.metaKey || event.ctrlKey) && ((key === 'z' && event.shiftKey) || key === 'y')) {
-        event.preventDefault();
-        redo();
-        return;
-      }
-      if (key === '[') {
-        document.getElementById('zoomInput').stepDown();
-        syncCanvasSize();
-        drawAll();
-        return;
-      }
-      if (key === ']') {
-        document.getElementById('zoomInput').stepUp();
-        syncCanvasSize();
-        drawAll();
-        return;
-      }
-      if (key === 'g') {
-        const toggle = document.getElementById('showGrid');
-        toggle.checked = !toggle.checked;
-        drawAll();
-        autosave();
-        return;
-      }
-      if (key === 'x') return flip(true);
-      if (key === 'y') return flip(false);
-      if (key === 'w') return shiftPixels(0, -1);
-      if (key === 'a') return shiftPixels(-1, 0);
-      if (key === 's') return shiftPixels(0, 1);
-      if (key === 'd') return shiftPixels(1, 0);
-      const matchedTool = tools.find((item) => item.keys.includes(key));
-      if (matchedTool) {
-        tool = matchedTool.id;
-        redrawTools();
-        setStatus(`Tool: ${matchedTool.id}.`);
-      }
-    });
-
-    async function loadDefaultArtwork() {
-      const response = await fetch('vailurRogue.json');
-      if (!response.ok) throw new Error('Could not load default Vailur rogue art.');
-      const data = await response.json();
-      loadState({
-        width: data.pixels[0].length,
-        height: data.pixels.length,
-        palette: data.palette,
-        pixels: data.pixels,
-        options: {
-          opaqueBackground: false,
-          showGrid: true,
-          pixelSize: 20,
-          mirrorMode: 'none'
-        }
-      }, 'vailur rogue');
-      history[historyIndex].reason = 'default';
-      setStatus('Loaded Vailur rogue starter.');
-    }
-
-    async function init() {
-      redrawTools();
-      redrawPalette();
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          loadState(JSON.parse(saved), 'autosave');
-          history[historyIndex].reason = 'autosave';
-          setStatus('Recovered autosaved work.');
-          return;
-        } catch (error) {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      }
-      try {
-        await loadDefaultArtwork();
-      } catch (error) {
-        pixels = createPixels(16, 32, 0);
-        syncCanvasSize();
-        drawAll();
-        pushHistory('initial');
-        setStatus('New document ready.');
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+  }
+
+  // Create a link to download the canvas as a PNG
+  exportCanvas.toBlob((blob) => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'vailur.png';
+    link.click();
+  }, 'image/png');
+}
+</script></body></html>

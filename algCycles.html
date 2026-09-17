@@ -4,10 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Alg Cycles</title>
-  <link rel="icon" type="image/svg+xml" href="assets/icons/algcycles-superflip.svg">
   <style>
+pllControls { margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
 :root {
-      --bg: #0f1115;
+controls { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  --bg: #0f1115;
       --panel: rgba(15,23,42,.95);
       --border: #334155;
       --text: #e2e8f0;
@@ -740,21 +741,9 @@
   }
 }
   </script>
-  <script>
-    window.__algCyclesDeps = { errors: [] };
-    window.addEventListener('error', (event) => {
-      if (String(event.filename || '').includes('/assets/vendor/algcycles/')) {
-        window.__algCyclesDeps.errors.push({
-          filename: event.filename,
-          message: event.message,
-          lineno: event.lineno,
-          colno: event.colno
-        });
-      }
-    });
-  </script>
-  <script src="assets/vendor/algcycles/three.min.js"></script>
-  <script src="assets/vendor/algcycles/3d-force-graph.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <script>
     const OLL_APP = JSON.parse(document.getElementById('ollAppearanceJson').textContent || '{\"appearance\":{}}');
     const OLL_CYCLES = JSON.parse(document.getElementById('ollCyclesJson').textContent || '{\"cycles\":{}}');
@@ -884,8 +873,7 @@
       localStorage.setItem(UI_TAB_KEY, t);
     }
 
-    const savedTab = localStorage.getItem(UI_TAB_KEY);
-    const initialTab = savedTab === 'OLL' || savedTab === 'PLL' ? savedTab : 'PLL';
+    const initialTab = localStorage.getItem(UI_TAB_KEY) === 'PLL' ? 'PLL' : 'OLL';
     pllCyclesText.textContent = JSON.stringify(PLL_CYCLES, null, 2);
     tabOllBtn.addEventListener('click', () => setActiveTab('OLL'));
     tabPllBtn.addEventListener('click', () => setActiveTab('PLL'));
@@ -1300,66 +1288,7 @@ const PLL_ALG_BY_CASE = Object.fromEntries(
       return sprite;
     }
 
-    function makeGraphFallback(el) {
-      if (el) {
-        el.innerHTML = '<div style="height:100%;display:grid;place-items:center;padding:24px;color:#f8fafc;text-align:center"><div><strong>3D graph library failed to load.</strong><br><span style="color:#93a0b4">The controls and data loaded, but the force graph renderer is unavailable.</span></div></div>';
-      }
-      const fallback = {
-        _data: { nodes: [], links: [] },
-        backgroundColor() { return this; },
-        nodeId() { return this; },
-        nodeLabel() { return this; },
-        linkDirectionalArrowLength() { return this; },
-        linkDirectionalArrowRelPos() { return this; },
-        linkWidth() { return this; },
-        linkLabel() { return this; },
-        linkColor() { return this; },
-        linkCurvature() { return this; },
-        linkCurveRotation() { return this; },
-        linkOpacity() { return this; },
-        linkDirectionalParticles() { return this; },
-        nodeThreeObject() { return this; },
-        nodeThreeObjectExtend() { return this; },
-        nodeColor() { return this; },
-        nodeVal() { return this; },
-        numDimensions() { return this; },
-        d3VelocityDecay() { return this; },
-        d3Force() {
-          return {
-            strength() { return this; },
-            distance() { return this; }
-          };
-        },
-        graphData(next) {
-          if (arguments.length) {
-            this._data = next || { nodes: [], links: [] };
-            return this;
-          }
-          return this._data;
-        },
-        camera() {
-          return {
-            position: { x: 0, y: 0, z: 0 },
-            lookAt() {}
-          };
-        },
-        controls() {
-          return {
-            target: { x: 0, y: 0, z: 0 },
-            update() {}
-          };
-        }
-      };
-      return fallback;
-    }
-
-    function createGraph3d(el) {
-      if (typeof ForceGraph3D === 'function') return ForceGraph3D()(el);
-      console.error('ForceGraph3D failed to load.');
-      return makeGraphFallback(el);
-    }
-
-    const Graph = createGraph3d(document.getElementById('graph'))
+    const Graph = ForceGraph3D()(document.getElementById('graph'))
       .backgroundColor('#0f1115')
       .nodeId('id')
       .nodeLabel(() => '')

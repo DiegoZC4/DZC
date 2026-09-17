@@ -187,7 +187,6 @@
 
       drawAxes(width, height, margin, x, xDomain, swimY, runY, cycleY);
       series.forEach(s => drawSeries(s, x, yScaleForSeries(s, swimY, runY, cycleY)));
-      drawSportLabels(x, swimY, runY, cycleY);
     }
 
     function logScale(domain, range) {
@@ -254,6 +253,9 @@
       });
       yLabel.textContent = "meters per second";
       svg.appendChild(yLabel);
+      text(swimAxisX + 12, swimY(1.5), "🏊", "start", "emoji-label");
+      text(runAxisX - 40, runY(7.5), "🏃", "middle", "emoji-label");
+      text(cycleAxisX + 40, cycleY(15), "🚴", "middle", "emoji-label");
     }
 
     function yScaleForSeries(s, swimY, runY, cycleY) {
@@ -277,30 +279,6 @@
         c.addEventListener("mouseleave", hideTooltip);
         svg.appendChild(c);
       }
-    }
-
-    function drawSportLabels(x, swimY, runY, cycleY) {
-      const labels = {
-        "Swimming freestyle": { emoji: "🏊", y: swimY },
-        "Running": { emoji: "🏃", y: runY },
-        "Track cycling": { emoji: "🚴", y: cycleY }
-      };
-      for (const s of series) {
-        const first = s.rows[0];
-        const second = s.rows[1];
-        const label = labels[s.sport];
-        const labelDistance = first.distance * 1.18;
-        const labelSpeed = logInterpolate(first, second, labelDistance);
-        const xPos = x(labelDistance);
-        const yPos = label.y(labelSpeed);
-        text(xPos, yPos, label.emoji, "start", "emoji-label");
-      }
-    }
-
-    function logInterpolate(a, b, distance) {
-      if (!b) return a.speed;
-      const t = (Math.log(distance) - Math.log(a.distance)) / (Math.log(b.distance) - Math.log(a.distance));
-      return Math.exp(Math.log(a.speed) + t * (Math.log(b.speed) - Math.log(a.speed)));
     }
 
     function showTooltip(ev, d) {

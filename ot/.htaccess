@@ -1,8 +1,0 @@
-# PHP-FPM does not always populate PHP_AUTH_USER; forward the raw header so the
-# endpoint can read HTTP Basic credentials itself.
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{HTTP:Authorization} ^(.+)$
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
-</IfModule>
-Options -Indexes

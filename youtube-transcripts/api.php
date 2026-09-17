@@ -28,28 +28,25 @@ try {
     }
     if ($action === 'stats') {
         yt_require_data($db);
-        $stats = (string)($_GET['refresh'] ?? '') === '1'
-            ? yt_refresh_channel_stats($db)
-            : yt_channel_stats($db);
+        if ((string)($_GET['refresh'] ?? '') === '1') {
+            yt_refresh_channel_stats($db);
+        }
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
-            'stats' => $stats,
+            'stats' => yt_channel_stats($db),
         ]);
     }
     if ($action === 'patches') {
         yt_require_data($db);
-        $timings = [];
         yt_json([
             'ok' => true,
             'version' => YT_API_VERSION,
-            'patches' => yt_decensor_candidates(
+            'patches' => yt_uncensored_candidates(
                 $db,
                 (int)($_GET['limit'] ?? 200),
-                (string)($_GET['video_id'] ?? ''),
-                $timings
+                (string)($_GET['video_id'] ?? '')
             ),
-            'timing' => $timings,
         ]);
     }
     if ($action === 'search') {

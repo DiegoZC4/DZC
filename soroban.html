@@ -4,155 +4,39 @@
     <title>Soroban</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
   </head>
-<body>
+<body style="margin:0">
   <main id="container">
-  <details id="inputs" open>
-    <summary class="settings-toggle" aria-label="Settings" title="Settings">
-      <span class="settings-icon" aria-hidden="true">
-        <svg class="settings-slider-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
-          <line x1="7" x2="7" y1="6" y2="13"/>
-          <circle cx="7" cy="14.5" r="1.5"/>
-          <line x1="7" x2="7" y1="16" y2="18"/>
-          <line x1="12" x2="12" y1="6" y2="8"/>
-          <circle cx="12" cy="9.5" r="1.5"/>
-          <line x1="12" x2="12" y1="11" y2="18"/>
-          <line x1="17" x2="17" y1="6" y2="11"/>
-          <circle cx="17" cy="12.5" r="1.5"/>
-          <line x1="17" x2="17" y1="14" y2="18"/>
-        </svg>
-      </span>
-      <div id="header-session-controls" class="header-session-controls">
-        <button id="session-start" class="session-action session-start" type="button" aria-label="Start session" title="Start">
-          <svg class="session-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-        </button>
-        <div id="session-active-actions" class="session-active-actions" hidden>
-          <button id="session-pause" class="session-action session-pause" type="button" aria-label="Pause session" title="Pause">
-            <svg class="session-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M8 5h3v14H8zM13 5h3v14h-3z"/>
-            </svg>
-          </button>
-          <button id="session-stop" class="session-action session-stop" type="button" aria-label="Stop session" title="Stop">
-            <svg class="session-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M7 7h10v10H7z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <button id="clear-board" class="clear-board-button" type="button" aria-label="Clear board" title="Clear board">
-        <svg class="clear-board-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 287.41 279.34" aria-hidden="true" focusable="false">
-          <path d="M0,134.99v-11.44c.94-3.28-.48-12.75,4.27-13.47,3.46-.52,11.9,2.9,15.67,3.94,35.88,9.85,70.38,9.44,103.73-8.31,7.56-4.02,12.77-9.45,22.16-6.71,3.04.89,5.12,2.89,7.67,4.59,26.25-25.76,51.8-52.24,78.05-78,4.96-4.87,9.92-9.86,14.96-14.66,8.1-7.73,11.87-12.46,24.27-10.47s18.86,14.62,15.98,26.08c-.94,3.74-4.81,7.89-7.39,10.8-5.05,5.69-10.94,11.4-16.27,16.87-26.18,26.8-53.27,52.72-79.47,79.51,3.19,3.6,6.26,6.92,6.72,11.99.63,6.93-4.91,19.72-7.32,26.69-10.71,31.02-21.47,62.89-33.22,93.48-.81,2.12-3.6,10.12-4.92,11.21-2.56,2.09-12.6,2.4-15.99,2.22-24.49-1.26-50.97-16.67-69.2-32.28C27.32,219.29,2.01,178.49,0,134.99ZM274.94,27.33c5.94-7.59-.95-18.44-10.16-17.2-4.3.58-7.8,6.04-11.23,8.42l-92.81,92.54,14.66,14.68h.58M169.52,179.28c2.73-8.4,6.14-16.6,8.88-25,.52-1.61,2.08-5.58,1.92-7.04-.18-1.62-1.93-3.4-3.02-4.63-6.09-6.84-13.64-14.07-20.23-20.53-3.71-3.64-8.96-9.36-12.91-12.31-.8-.59-1.94-1.17-2.93-1.2-2.62-.09-9.98,4.89-12.75,6.34-5.33,2.79-10.84,5.24-16.43,7.48,14.52,15.9,30.23,30.68,45.31,46.05,3.74,2.97,6.73,6.8,10.42,9.82.27.22,1.51,1.25,1.76,1.02ZM113.51,266.09c6.28,1.97,12.09,2.51,18.64,2.63,1.46.03,4.45.72,5.55-.58,9.67-25.53,18.68-51.33,27.58-77.13l-64.68-64.67c-21.89,5.27-44.17,5.89-66.33,1.82-8.04-1.47-15.9-3.69-23.7-6.07-.42.38-.36,8.82-.31,10.13.09,2.75.29,7.96.97,10.47.57,2.11,2.65,2.15,4.56,2.48,9.81,1.68,24.79,1.37,34.81.38,2.46-.24,7.36-1.64,9.36-1.46,3.4.31,5.41,5.69,2.97,8.51-2.05,2.37-10.32,3.19-13.5,3.51-8.52.86-19.35,1.09-27.86.29-2.6-.24-5.19-.84-7.77-1.17-.82.83,3.09,12.47,3.73,14.3.4,1.14,2.98,8.36,3.49,8.53,6.22-.36,12.53-.17,18.73-.84,4.5-.49,15.63-3.82,19.17-2.74,2.87.88,3.31,6.52,1.07,8.31-3.68,2.95-18.67,4.79-23.76,5.28-2.29.22-7.77-.08-9.46.8-.32.17-.39-.02-.39.51,0,1.41,4.81,8.89,5.88,10.57,1.23,1.94,8.52,12.89,9.9,13.29,1.08.31,4.3-1.24,5.47-1.75,6.51-2.86,12.05-6.68,18.18-9.98,2.95-1.59,6.14-3.53,8.7-.09,3.46,4.64-2.26,8.33-5.6,10.53-6.04,3.99-12.99,7.28-19.63,10.15-.12.44.12.49.29.73,1.59,2.29,6.95,7.07,9.24,9.24,1.8,1.71,9.77,9.33,11.52,9.62s6.4-4.14,7.85-5.52c7.18-6.8,11.95-13.75,17.79-21.51,2.05-2.72,3.67-4.72,7.37-2.78,3.43,1.8,3.54,3.99,2.02,7.18-2.2,4.62-7.6,11.12-11.05,15.06-4.6,5.26-9.98,9.84-14.53,15.1,7.42,4.74,14.95,9.66,23.26,12.72,6.92-7.93,12.91-17.74,17.27-27.33,1.39-3.06,3.93-11.46,5.68-13.38,2.47-2.7,8.12-1.11,8.61,2.79.41,3.29-2.88,10.61-4.32,13.81-2.76,6.12-6.41,12.77-10.02,18.43-1.83,2.87-5.02,6.41-6.47,9.07-.13.24-.4.31-.28.75Z"/>
-        </svg>
-      </button>
-    </summary>
-    <div id="settings-body">
-      <div class="board-settings-row">
-        <div class="color-pair" aria-label="Theme colors">
-          <label class="color-swatch color-swatch-on">
-            <input type="color" id="on" aria-label="On color">
-          </label>
-          <label class="color-swatch color-swatch-off">
-            <input type="color" id="off" aria-label="Off color">
-          </label>
-          <span class="theme-label" aria-hidden="true">
-            <span class="theme-word">Theme</span>
-          </span>
-        </div>
-        <div class="pill-toggle" id="mode-toggle" role="group" aria-label="Practice mode">
-          <button type="button" data-mode="addsub" aria-label="Add and subtract">+</button>
-          <button type="button" data-mode="multiply" aria-label="Multiply">×</button>
-        </div>
-      </div>
-      <div class="practice-kind-row">
-        <button class="feature-toggle-button steps-toggle-button" id="error-toggle" type="button" aria-label="Step progress guidance" title="Steps" aria-pressed="false">
-          <svg class="steps-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path class="steps-toggle-check" d="m4.2 6.9 1.7 1.7 3.1-3.5M4.2 12.7l1.7 1.7 3.1-3.5M4.2 18.5l1.7 1.7 3.1-3.5"/>
-            <path class="steps-toggle-line" d="M12 7h7.5M12 12.8h7.5M12 18.6h7.5"/>
-          </svg>
-        </button>
-        <div class="number-control-slot" id="columns-control-slot" aria-label="Column count"></div>
-        <div class="number-control-slot" id="digits-control-slot" aria-label="Digit count"></div>
-      </div>
-      <div class="practice-session-panels">
-        <div class="session-panel session-panel-stack" data-practice-session-panel="sprint" hidden>
-          <div class="session-control-row sprint-control-row">
-            <div class="number-control-slot timer-control-slot" id="sprint-minutes-slot" aria-label="Sprint timer"></div>
-            <button class="session-action" id="sprint-start" type="button">Start</button>
-            <button class="session-action session-stop" id="sprint-stop" type="button" hidden>Stop</button>
-          </div>
-          <div class="session-score-row">
-            <span id="sprint-score" class="header-session-metric">0/0</span>
-          </div>
-        </div>
-        <div class="session-panel session-panel-stack" data-practice-session-panel="goal" hidden>
-          <div class="session-control-row">
-            <div class="number-control-slot goal-target-control-slot" id="goal-target-slot" aria-label="Goal progress"></div>
-            <button class="session-action" id="goal-start" type="button">Start</button>
-            <button class="session-action session-stop" id="goal-stop" type="button" hidden>Stop</button>
-          </div>
-          <div class="session-score-row">
-            <strong id="goal-time" class="header-session-metric">00:00</strong>
-          </div>
-        </div>
-      </div>
-      <div class="hidden-practice-state" aria-hidden="true">
-        <button id="numbers" onclick="this.textContent=0; rng()">0</button>
-        <button id="stopwatch" style="margin-left:-5px"></button>
-        <div id="buttons"></div>
-      </div>
-    </div>
-  </details>
-  <div id="board-area" data-prompt-layout="top">
-    <div id="practice-hud" aria-live="polite">
-      <strong id="practice-problem">+ 0</strong>
-      <div id="practice-progress" class="practice-progress" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" hidden></div>
-      <div id="multiplication-matrix" class="multiplication-matrix" hidden></div>
-    </div>
-    <svg id="svg" preserveAspectRatio="xMidYMid meet"></svg>
+  <div id="inputs" style="margin-bottom: 10px; width:270px;">
+    <button onclick="reset()">Reset  <span id="zodiac"></span></button>
+    <input type="color" id="on"> On</input>
+    <br>
+    <button onclick="streak.textContent = 0">Streak: <span id="streak">0</span></span></button>
+    <input type="color" id="off"> Off</input>
+    <br>
+    <button id="numbers" onclick="this.textContent=0; rng()">0</button>
+    <button id="stopwatch" style="margin-left:-5px"></button>
+    <div id="buttons"></div>
   </div>
+  <svg id="svg"></svg>
   </main>
 <style>
   :root {
     --on: red;
     --off: blue;
     --blank: white;
-    --ui-surface: #eeeeee;
-    --ui-rail: #b8b8b8;
-    --ui-active: #565656;
-    --ui-text: #1f1f1f;
-    --settings-radius: 21px;
-    --settings-button-size: 42px;
-    --settings-header-outer-gap: 6px;
-    --settings-header-control-gap: 4px;
-    --session-action-height: 32px;
-    --session-action-radius: calc(var(--session-action-height) / 2);
-    --session-action-width: calc(var(--session-action-radius) * 4);
-    --session-time-width: calc(5ch + 10px);
-    --session-goal-width: calc(3ch + 10px);
-    --settings-header-controls-width: calc(var(--session-time-width) + var(--session-goal-width) + var(--session-action-width) + var(--settings-header-control-gap) * 2);
-    --settings-panel-width: calc(var(--settings-button-size) * 2 + var(--settings-header-controls-width) + var(--settings-header-outer-gap) * 2);
-    --settings-icon-size: 31px;
-    --settings-icon-stroke-width: 2.2;
-  }
-  html,
-  body {
-    height: 100%;
-  }
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #f3eee3;
   }
   svg {
     touch-action: none;
-    width: 100%;
-    height: 100%;
-    display: block;
     overflow: visible;
+    /* width: 100%;
+    height: 100%; */
+    /* max-width: 100dvw;
+    max-height: calc(100dvh - 210px); */
     fill: var(--off);
     stroke:black;
     stroke-width: .05;
+    
+    flex-grow: 1;
     min-width: 0;
     min-height: 0;
   }
@@ -173,997 +57,31 @@
   #buttons button{
     width: 66.4px;
   }
-  .feature-toggle-button {
-    width: 100%;
-    min-height: 36px;
-    margin: 0;
-    border: 1px solid rgba(255,255,255,0.28);
-    border-radius: 12px;
-    background: var(--off);
-    color: white;
-    cursor: pointer;
-    font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-    user-select: none;
-  }
-
-  .feature-toggle-button.is-active {
-    background: var(--on);
-    color: white;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-  }
-
-  .practice-session-toggle {
-    --practice-session-index: 0;
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    min-height: 42px;
-    margin: 0 0 10px;
-    padding: 4px;
-    border: 1px solid rgba(0,0,0,0.2);
-    border-radius: 999px;
-    background: var(--ui-rail);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 1px 3px rgba(0,0,0,0.16);
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  .practice-session-thumb {
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc((100% - 8px) / 3);
-    border-radius: 999px;
-    background: var(--ui-active);
-    box-shadow: 0 1px 5px rgba(0,0,0,0.28);
-    transform: translateX(calc(var(--practice-session-index) * 100%));
-    transition: transform 180ms ease, background-color 120ms linear;
-  }
-
-  .practice-session-option {
-    position: relative;
-    z-index: 1;
-    width: auto;
-    min-height: 34px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--ui-text);
-    cursor: pointer;
-    font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-shadow: none;
-    transition: color 160ms ease, text-shadow 160ms ease;
-  }
-
-  .practice-session-option.is-active {
-    color: white;
-    text-shadow: none;
-  }
-
-  .color-pair {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
-    min-height: 44px;
-    margin: 0 0 10px;
-    border: 1px solid rgba(0,0,0,0.18);
-    border-radius: 999px;
-    overflow: hidden;
-    background: #ddd;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 3px rgba(0,0,0,0.14);
-    box-sizing: border-box;
-  }
-
-  .color-swatch {
-    position: relative;
-    display: grid;
-    place-items: center;
-    min-height: 44px;
-    cursor: pointer;
-    overflow: hidden;
-  }
-
-  .color-swatch-on {
-    background: var(--on);
-  }
-
-  .color-swatch-off {
-    background: var(--off);
-    border-left: 1px solid rgba(255,255,255,0.72);
-  }
-
-  .color-swatch input[type="color"] {
-    position: absolute;
-    inset: -8px;
-    width: calc(100% + 16px);
-    height: calc(100% + 16px);
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .theme-label {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    font: 800 17px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-
-  .theme-word {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
-  }
-
-  .board-settings-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    align-items: stretch;
-    margin: 0;
-  }
-
-  .practice-kind-row {
-    display: grid;
-    grid-template-columns: 42px repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    align-items: stretch;
-    margin: 0;
-  }
-
-  .pill-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    margin: 8px 0 6px;
-    padding: 3px;
-    border: 1px solid rgba(0,0,0,0.16);
-    border-radius: 999px;
-    background: var(--ui-rail);
-  }
-
-  #mode-toggle {
-    position: relative;
-    border-color: rgba(255,255,255,0.28);
-    background: var(--off);
-    overflow: hidden;
-    isolation: isolate;
-  }
-
-  #mode-toggle::before {
-    content: "";
-    position: absolute;
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    z-index: 0;
-    width: calc((100% - 8px) / 2);
-    border-radius: 999px;
-    background: var(--on);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-    transform: translateX(0);
-    transition: transform 180ms ease;
-    pointer-events: none;
-  }
-
-  #mode-toggle[data-mode="multiply"]::before {
-    transform: translateX(calc(100% + 2px));
-  }
-
-  .practice-kind-row .pill-toggle,
-  .board-settings-row .pill-toggle {
-    margin: 0;
-  }
-
-  .board-settings-row .color-pair {
-    margin: 0;
-  }
-
-  .pill-toggle button {
-    width: auto;
-    min-height: 32px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--ui-text);
-    cursor: pointer;
-    font: 700 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-shadow: none;
-  }
-
-  .pill-toggle button.is-active {
-    background: var(--ui-active);
-    color: white;
-    text-shadow: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  }
-
-  #mode-toggle button {
-    position: relative;
-    z-index: 1;
-    color: white;
-  }
-
-  #mode-toggle button.is-active {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  #buttons button[hidden] {
-    display: none;
-  }
   input[type="color"]{margin-left: -5px;}
-  .drag-number-control {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 42px;
-    margin: 6px 0;
-    padding: 0 10px;
-    border: 1px solid rgba(0,0,0,0.14);
-    border-radius: 8px;
-    background: var(--ui-surface);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 14px;
-    user-select: none;
-  }
-
-  .number-control-slot .drag-number-control {
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-    min-height: 42px;
-    margin: 0;
-    padding: 0 14px 0 8px;
-  }
-
-  .practice-kind-row .feature-toggle-button {
-    min-height: 38px;
-    border-radius: 8px;
-    font-size: 12px;
-  }
-
-  .steps-toggle-button {
-    display: grid;
-    place-items: center;
-    padding: 0;
-  }
-
-  .steps-toggle-icon {
-    width: 23px;
-    height: 23px;
-    overflow: visible;
-    fill: currentColor;
-  }
-
-  .steps-toggle-line,
-  .steps-toggle-check {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.1;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .practice-kind-row .number-control-slot .drag-number-control {
-    gap: 4px;
-    min-height: 38px;
-    padding: 0 6px;
-    font-size: 13px;
-  }
-
-  .practice-kind-row .number-control-slot .drag-number-value {
-    flex-basis: 36px;
-    width: 36px;
-    min-height: 30px;
-    font-size: 16px;
-  }
-
-  .number-control-slot .drag-number-control span {
-    flex: 0 0 auto;
-    color: #111;
-    font-weight: 700;
-  }
-
-  .number-control-slot .drag-number-value {
-    flex: 0 0 42px;
-    width: 42px;
-    border-color: rgba(255,255,255,0.28);
-    background: var(--ui-active);
-    color: white;
-    text-shadow: none;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-  }
-
-  .practice-session-panels {
-    display: none;
-    margin: 0;
-  }
-
-  .session-panel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 42px;
-    padding: 0 12px;
-    border: 1px solid rgba(0,0,0,0.14);
-    border-radius: 8px;
-    background: var(--ui-surface);
-    box-sizing: border-box;
-    color: #111;
-    font: 700 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    user-select: none;
-  }
-
-  .session-panel[hidden] {
-    display: none;
-  }
-
-  .session-panel strong {
-    font-size: 18px;
-  }
-
-  .session-panel-stack {
-    display: grid;
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .session-control-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 78px;
-    gap: 8px;
-    align-items: stretch;
-  }
-
-  .sprint-control-row {
-    grid-template-columns: minmax(86px, 1fr) 78px 62px;
-  }
-
-  .sprint-control-row:has(#sprint-stop[hidden]) {
-    grid-template-columns: minmax(86px, 1fr) 78px;
-  }
-
-  .session-action {
-    width: auto;
-    min-height: 42px;
-    margin: 0;
-    border: 1px solid rgba(255,255,255,0.28);
-    border-radius: 8px;
-    background: var(--ui-active);
-    color: white;
-    cursor: pointer;
-    font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-shadow: none;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-  }
-
-  .session-stop {
-    background: #777;
-  }
-
-  .session-score-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .hidden-practice-state {
-    display: none;
-  }
-
-  .drag-number-control span {
-    flex: 1 1 auto;
-  }
-
-  .number-control-slot .drag-number-control span {
-    flex: 0 0 auto;
-  }
-
-  .drag-number-value {
-    flex: 0 0 58px;
-    width: 58px;
-    min-height: 32px;
-    margin: 0;
-    border: 1px solid rgba(0,0,0,0.24);
-    border-radius: 6px;
-    background: white;
-    color: #111;
-    cursor: nesw-resize;
-    font: 700 18px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-align: center;
-    touch-action: none;
-  }
-
-  .timer-control-slot {
-    min-width: 86px;
-  }
-
-  .timer-control-slot .drag-number-control {
-    justify-content: center;
-  }
-
-  .timer-control-slot .drag-number-control,
-  .goal-target-control-slot .drag-number-control {
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .timer-control-slot .drag-number-control span,
-  .goal-target-control-slot .drag-number-control span {
-    display: none;
-  }
-
-  .timer-control-slot .drag-number-value {
-    flex: 0 0 72px;
-    width: 72px;
-    min-width: 72px;
-    border: 0;
-    background: var(--ui-active);
-    box-shadow: none;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .goal-target-control-slot .drag-number-control {
-    justify-content: center;
-  }
-
-  .goal-target-control-slot .drag-number-value {
-    flex: 0 0 82px;
-    width: 82px;
-    min-width: 82px;
-    border: 0;
-    background: var(--ui-active);
-    box-shadow: none;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .drag-number-value.is-locked {
-    cursor: default;
-  }
-
-  #board-area {
-    --hud-track: 0px;
-    --hud-font-size: 48px;
-    --board-gap-px: clamp(8px, 1.4vw, 16px);
-    display: grid;
-    min-width: 0;
-    min-height: 0;
-    gap: var(--board-gap-px);
-    align-items: stretch;
-    justify-items: stretch;
-  }
-
-  #board-area[data-prompt-layout="top"] {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, var(--hud-track)) minmax(0, 1fr);
-    grid-template-areas:
-      "hud"
-      "board";
-  }
-
-  #board-area[data-prompt-layout="side"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--hud-track));
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "board hud";
-  }
-
-  #board-area[data-prompt-layout="none"] {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "board";
-    gap: 0;
-  }
-
-  #practice-hud {
-    grid-area: hud;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 0;
-    gap: clamp(8px, 1.2vw, 16px);
-    color: #1f1f1f;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    user-select: none;
-  }
-
-  #practice-hud[hidden] {
-    display: none;
-  }
-
-  #board-area[data-prompt-layout="side"] #practice-hud {
-    flex-direction: column;
-  }
-
-  #practice-problem {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    overflow: hidden;
-    box-sizing: border-box;
-    color: #1f1f1f;
-    font-size: var(--hud-font-size);
-    font-weight: 900;
-    line-height: .9;
-    letter-spacing: 0;
-    text-align: center;
-    text-overflow: clip;
-    white-space: nowrap;
-  }
-
-  #practice-problem.is-checkpoint-control,
-  .multiplication-matrix.is-checkpoint-control {
-    cursor: pointer;
-  }
-
-  .practice-problem-symbol {
-    flex: 0 0 auto;
-    margin-right: .18em;
-  }
-
-  .practice-problem-digit {
-    flex: 0 0 auto;
-    color: #1f1f1f;
-    transition: color 120ms linear;
-  }
-
-  .practice-problem-digit.is-complete {
-    color: var(--off);
-  }
-
-  .practice-problem-digit.is-latest-complete {
-    color: var(--on);
-  }
-
-  #practice-hud.has-matrix {
-    gap: clamp(6px, 1vw, 12px);
-  }
-
-  #practice-hud.has-progress {
-    gap: 0;
-  }
-
-  #practice-hud.has-progress #practice-problem {
-    position: relative;
-    z-index: 1;
-    padding: clamp(8px, calc(var(--practice-progress-size, 72px) * .12), 18px);
-  }
-
-  #practice-hud.has-matrix #practice-problem {
-    flex: 0 0 clamp(42px, calc(var(--hud-font-size) * 1.08), 124px);
-    height: clamp(42px, calc(var(--hud-font-size) * 1.08), 124px);
-    min-height: 0;
-  }
-
-  #practice-hud .session-action {
-    flex: 0 0 auto;
-    min-height: min(42px, 100%);
-    padding: 0 16px;
-  }
-
-  .practice-progress {
-    position: relative;
-    --practice-progress-ratio: 0;
-    flex: 0 0 clamp(30px, 6dvh, 54px);
-    width: clamp(30px, 6dvh, 54px);
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: conic-gradient(var(--off) calc(var(--practice-progress-ratio) * 1turn), #b8b8b8 0);
-    overflow: hidden;
-  }
-
-  .practice-progress::after {
-    content: "";
-    position: absolute;
-    inset: 24%;
-    border-radius: 50%;
-    background: var(--blank);
-  }
-
-  .practice-progress[hidden] {
-    display: none;
-  }
-
-  #board-area[data-prompt-layout="side"] .practice-progress {
-    width: clamp(30px, min(6dvh, 24%), 54px);
-  }
-
-  #practice-hud.has-progress .practice-progress {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 0;
-    flex: none;
-    width: var(--practice-progress-size, clamp(54px, 18dvh, 150px));
-    max-width: calc(100% - 4px);
-    max-height: calc(100% - 4px);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-
-  #practice-hud.has-progress .practice-progress::after {
-    inset: clamp(5px, 8%, 11px);
-  }
-
-  .multiplication-matrix {
-    flex: 0 1 min(58%, 280px);
-    display: grid;
-    place-items: center;
-    width: min(86%, 320px);
-    min-width: min(110px, 82%);
-    min-height: 0;
-    max-height: min(40dvh, 320px);
-    aspect-ratio: 1;
-    user-select: none;
-  }
-
-  .multiplication-matrix[hidden] {
-    display: none;
-  }
-
-  #board-area[data-prompt-layout="side"] .multiplication-matrix {
-    width: min(92%, 190px);
-    max-height: min(54%, 240px);
-  }
-
-  .multiplication-matrix-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-    fill: none;
-    stroke: none;
-    touch-action: manipulation;
-  }
-
-  .partial-product-cell {
-    fill: white;
-    stroke: #111;
-    stroke-width: 1.25px;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-    cursor: default;
-    paint-order: fill stroke;
-    pointer-events: none;
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-  }
-
-  .partial-product-cell:focus,
-  .partial-product-cell:focus-visible {
-    outline: none;
-  }
-
-  .partial-product-cell.is-covered {
-    fill: var(--off);
-  }
-
-  .partial-product-cell.is-latest-covered {
-    fill: var(--on);
-  }
-
-  .partial-product-cell.is-zero-factor {
-    fill: #565656;
-  }
-
-  .multiplication-matrix-label {
-    fill: #1f1f1f;
-    stroke: none;
-    font: 800 .42px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-anchor: middle;
-    dominant-baseline: middle;
-    pointer-events: none;
-  }
-
-  #svg {
-    grid-area: board;
-  }
-
+  input[type="range"] {width: 157px;}
+  input[type="number"] {width: 30px;}
+  
   #container {
-    display: grid;
-    grid-template-columns: var(--settings-panel-width) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    gap: clamp(8px, 1.4vw, 16px);
+    display: flex;
     height: 100dvh;
     width: 100dvw;
-    padding: clamp(8px, 1.4vw, 14px);
     box-sizing: border-box;
   }
 
-  #container:has(#inputs:not([open])) {
-    grid-template-columns: var(--settings-panel-width) minmax(0, 1fr);
+  /* 1. Stacked (controls on top, SVG below) */
+  #container.layout-stacked {
+    flex-direction: column;
   }
 
-  #container:has(#inputs[data-header-session="sprint"]),
-  #container:has(#inputs[data-header-session="goal"]) {
-    grid-template-columns: var(--settings-panel-width) minmax(0, 1fr);
-  }
-
-  #container:has(#inputs[data-header-session="sprint"]:not([open])),
-  #container:has(#inputs[data-header-session="goal"]:not([open])) {
-    grid-template-columns: var(--settings-panel-width) minmax(0, 1fr);
+  /* 2. Side-by-side (controls on left, SVG on right) */
+  #container.layout-side-by-side {
+    flex-direction: row;
   }
 
   #inputs {
-    position: relative;
-    width: var(--settings-panel-width);
-    max-height: 100%;
-    overflow: auto;
-    align-self: start;
-    box-sizing: border-box;
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: var(--settings-radius);
-    padding: 10px;
-    background: var(--ui-surface);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.12);
-  }
-
-  #inputs:not([open]) {
-    width: var(--settings-panel-width);
-    height: 42px;
-    padding: 0;
-    border-color: rgba(0,0,0,0.12);
-    background: var(--ui-surface);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.16);
-    overflow: visible;
-  }
-
-  #inputs[data-header-session="sprint"]:not([open]),
-  #inputs[data-header-session="goal"]:not([open]) {
-    width: auto;
-  }
-
-  #settings-body {
-    display: grid;
-    gap: 8px;
-    min-width: 0;
-    padding-top: 48px;
-  }
-
-  .settings-toggle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 2;
-    display: block;
-    width: auto;
-    height: 42px;
-    cursor: pointer;
-    list-style: none;
-    user-select: none;
-  }
-
-  .settings-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: grid;
-    place-items: center;
-    width: var(--settings-button-size);
-    height: var(--settings-button-size);
-    border: 1px solid rgba(255,255,255,0.28);
-    border-radius: var(--settings-radius);
-    background: var(--ui-active);
-    box-shadow: none;
-    color: white;
-    line-height: 1;
-  }
-
-  .settings-slider-icon {
-    display: block;
-    width: var(--settings-icon-size);
-    height: var(--settings-icon-size);
-    fill: none;
-    stroke: currentColor;
-    stroke-width: var(--settings-icon-stroke-width);
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .header-session-controls {
-    position: absolute;
-    top: 0;
-    left: calc(var(--settings-button-size) + var(--settings-header-outer-gap));
-    width: var(--settings-header-controls-width);
-    z-index: 3;
-    display: grid;
-    grid-template-columns: var(--session-time-width) var(--session-goal-width) var(--session-action-width);
-    align-items: center;
-    gap: var(--settings-header-control-gap);
-    height: var(--settings-button-size);
-    cursor: default;
-  }
-
-  .header-session-controls .number-control-slot .drag-number-control {
-    min-height: var(--session-action-height);
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .header-session-controls .timer-control-slot,
-  .header-session-controls .goal-target-control-slot {
-    min-width: 0;
-  }
-
-  .header-session-controls .timer-control-slot .drag-number-value {
-    flex: 0 0 var(--session-time-width);
-    width: var(--session-time-width);
-    min-width: var(--session-time-width);
-  }
-
-  .header-session-controls .goal-target-control-slot .drag-number-value {
-    flex: 0 0 var(--session-goal-width);
-    width: var(--session-goal-width);
-    min-width: var(--session-goal-width);
-  }
-
-  .header-session-controls .drag-number-value,
-  .header-session-controls .session-action {
-    min-height: var(--session-action-height);
-    border: 0;
-    border-radius: var(--session-action-radius);
-    background: var(--ui-active);
-    color: white;
-    box-shadow: none;
-    font: 800 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-shadow: none;
-  }
-
-  .header-session-controls .session-target-slot.is-selected .drag-number-value {
-    background: var(--off);
-  }
-
-  .header-session-controls .session-target-slot.is-selected.is-live .drag-number-value {
-    background: var(--on);
-  }
-
-  .header-session-controls .session-target-slot.is-zeroed .drag-number-value {
-    background: var(--ui-active);
-  }
-
-  .header-session-controls .session-action {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .session-action-icon {
-    width: 18px;
-    height: 18px;
-    fill: currentColor;
-  }
-
-  .session-active-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: var(--session-action-width);
-    min-height: var(--session-action-height);
-    border-radius: var(--session-action-radius);
-    overflow: hidden;
-    background: var(--ui-active);
-  }
-
-  .session-active-actions[hidden],
-  .session-start[hidden] {
-    display: none;
-  }
-
-  .session-active-actions .session-action {
-    min-height: var(--session-action-height);
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .session-active-actions .session-stop {
-    border-left: 1px solid rgba(255,255,255,0.28);
-    background: transparent;
-  }
-
-  .clear-board-button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 2;
-    display: grid;
-    place-items: center;
-    width: var(--settings-button-size);
-    min-height: var(--settings-button-size);
-    height: var(--settings-button-size);
-    margin: 0;
-    border: 1px solid rgba(255,255,255,0.28);
-    border-radius: var(--settings-radius);
-    background: var(--ui-active);
-    color: white;
-    box-shadow: none;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .clear-board-icon {
-    display: block;
-    width: 24px;
-    height: 24px;
-    fill: currentColor;
-  }
-
-  .clear-board-button:active {
-    background: var(--ui-rail);
-  }
-
-  .settings-toggle::-webkit-details-marker {
-    display: none;
-  }
-
-  .settings-toggle::marker {
-    content: "";
-  }
-
-  @media (max-width: 760px), (orientation: portrait) {
-    #container {
-      grid-template-columns: 1fr;
-      grid-template-rows: minmax(0, 1fr);
-    }
-
-    #inputs {
-      width: auto;
-      height: 100%;
-      max-height: none;
-      align-self: stretch;
-      justify-self: stretch;
-      overflow: auto;
-    }
-
-    #inputs[open] + #board-area {
-      display: none;
-    }
-
-    #container:has(#inputs:not([open])) {
-      grid-template-columns: 1fr;
-      grid-template-rows: 42px minmax(0, 1fr);
-    }
-
-    #inputs:not([open]) {
-      width: var(--settings-panel-width);
-      height: var(--settings-button-size);
-      justify-self: start;
-      align-self: start;
-    }
-
-    #inputs[data-header-session="sprint"]:not([open]),
-    #inputs[data-header-session="goal"]:not([open]) {
-      width: var(--settings-panel-width);
-      justify-self: start;
-    }
+    /* Prevent the controls from shrinking */
+    flex-shrink: 0;
+    margin-bottom: 0; /* No longer needed */
   }
 </style>
 <script>
@@ -1175,134 +93,48 @@ function svg(tagName, attrs, textContent) {
 }
 
 class NumSlider {
-  constructor(min, max, start, units, step=1, parent='settings-body', options={}) {
+  constructor(min, max, start, units, step=1, parent='inputs') {
     this.min = min
     this.max = max
-    this.step = step
-    this.values = Array.isArray(options.values) ? [...new Set(options.values.map(Number).filter(Number.isFinite))].sort((a,b)=>a-b) : null
-    this.formatter = null
-    this.displayOverride = null
-    this.dragEnabled = true
-    this.beforePointerDown = null
 
-    let num = document.createElement('button')
-    num.type = 'button'
-    num.className = 'drag-number-value'
-    const displayUnits = options.label || units
-    const stored = options.storageKey ? localStorage.getItem(options.storageKey) : localStorage.getItem(units)
-    const legacyStored = options.legacyStorageKey ? localStorage.getItem(options.legacyStorageKey) : null
-    const initial = stored ?? (options.legacyStorageTransform && legacyStored !== null ? options.legacyStorageTransform(legacyStored) : start)
-    num.dataset.value = this.clamp(initial)
-    num.textContent = this.formatValue(num.dataset.value)
-    num.title = `Drag to change ${units}`
+    let slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = min
+    slider.max = max
+    slider.step = step
+    slider.value = localStorage.getItem(units) || start
+    this.slider = slider
+    this.slider.addEventListener('input', () => this.num.value = this.slider.value)
+    
+    let num = document.createElement('input')
+    num.type = 'number'
+    num.value = slider.value
+    num.min = min
+    num.max = max
+    num.step = step
+    num.style.textAlign = 'right' 
     this.num = num
+    this.num.addEventListener('input', () => {
+      let value = Math.min(Math.max(Number(this.num.value) || min, min), max)
+      this.num.value = value
+      this.slider.value = value
+    })
 
     let label = document.createElement('label')
-    label.className = 'drag-number-control'
-    label.append(document.createElement('span'))
-    label.firstChild.textContent = displayUnits
+    label.append(this.slider)
     label.append(this.num)
+    label.append(document.createTextNode(' ' + units))
+    label.append(document.createElement('br'))
     this.label = label
 
-    this.enableDrag()
     document.getElementById(parent).append(this.label)
-    this.on('input',()=>localStorage.setItem(options.storageKey || units,this.value()))
+    this.on('input',()=>localStorage.setItem(units,this.value()))
   }
 
-  clamp(raw) {
-    const value = Number(raw)
-    const fallback = Number.isFinite(value) ? value : this.min
-    if (this.values && this.values.length) {
-      return this.values.reduce((nearest, option) => Math.abs(option - fallback) < Math.abs(nearest - fallback) ? option : nearest, this.values[0])
-    }
-    const stepped = Math.round(fallback / this.step) * this.step
-    return Math.min(Math.max(stepped, this.min), this.max)
-  }
-  valueIndex(raw=this.value()) {
-    if (!this.values || !this.values.length) return 0
-    const value = this.clamp(raw)
-    return this.values.indexOf(value)
-  }
-  valueByDelta(startValue, delta) {
-    if (!this.values || !this.values.length) return startValue + delta * this.step
-    const startIndex = this.valueIndex(startValue)
-    const nextIndex = Math.min(Math.max(startIndex + delta, 0), this.values.length - 1)
-    return this.values[nextIndex]
-  }
-  setValue(raw, emit=false) {
-    const value = this.clamp(raw)
-    const changed = Number(this.num.dataset.value) !== value
-    if (changed) {
-      this.num.dataset.value = value
-      this.renderValue()
-    }
-    if (emit && changed) this.num.dispatchEvent(new Event('input', { bubbles: true }))
-  }
-  formatValue(value) {
-    return this.formatter ? this.formatter(Number(value)) : value
-  }
-  renderValue() {
-    this.num.textContent = this.displayOverride ?? this.formatValue(this.value())
-  }
-  setFormatter(formatter) {
-    this.formatter = formatter
-    this.renderValue()
-  }
-  setDisplay(text) {
-    this.displayOverride = text
-    this.renderValue()
-  }
-  clearDisplay() {
-    this.displayOverride = null
-    this.renderValue()
-  }
-  setDragEnabled(enabled) {
-    this.dragEnabled = enabled
-    this.num.classList.toggle('is-locked', !enabled)
-    this.num.setAttribute('aria-disabled', enabled ? 'false' : 'true')
-  }
-  value() {return Number(this.num.dataset.value)}
+  value() {return Number(this.slider.value)}
   on(event, func) {
+    this.slider.addEventListener(event,func)
     this.num.addEventListener(event,func)
-  }
-  enableDrag() {
-    let startX = 0
-    let startY = 0
-    let startValue = 0
-    let dragging = false
-    let moved = false
-    const pixelsPerStep = 32
-    this.num.addEventListener('pointerdown', (e) => {
-      if (!this.dragEnabled) return
-      if (e.button !== 0) return
-      if (this.beforePointerDown && this.beforePointerDown(e) === false) return
-      dragging = true
-      moved = false
-      startX = e.clientX
-      startY = e.clientY
-      startValue = this.value()
-      this.num.setPointerCapture(e.pointerId)
-      e.preventDefault()
-    })
-    this.num.addEventListener('pointermove', (e) => {
-      if (!dragging) return
-      const axisDelta = ((e.clientX - startX) - (e.clientY - startY)) / Math.SQRT2
-      const delta = Math.round(axisDelta / pixelsPerStep)
-      if (delta !== 0) moved = true
-      // Apply on every move, including delta === 0, so dragging away and back
-      // to the start restores the original value instead of leaving it one
-      // step off. `moved` still tracks real movement so a plain click focuses.
-      this.setValue(this.valueByDelta(startValue, delta), true)
-    })
-    this.num.addEventListener('pointerup', (e) => {
-      if (!dragging) return
-      dragging = false
-      this.num.releasePointerCapture(e.pointerId)
-      if (!moved) this.num.focus()
-    })
-    this.num.addEventListener('pointercancel', () => {
-      dragging = false
-    })
   }
 }
 
@@ -1311,46 +143,40 @@ class Column{
     this.g = svg('g',{transform:`translate(${x},0)`})
     canvas.append(this.g)
 
-    const place = cols - 1 - x
-    this.g.append(svg('rect',{x:0,y:2,height:horizon,width:1,fill:place%3==0?'#b8b8b8':'#565656'}))
+    const place = Math.abs(Math.round((cols-1)/2)-x)
+    this.g.append(svg('rect',{x:0,y:2,height:horizon,width:1,fill:place%3==0?'#888':'#444'}))
     // column place labels
     // this.g.append(svg('text',{x:0,y:2,transform:'translate(.5,.6)'},`${place}`))
-
+        
     this.topBead = svg('rect',{x:0,y:0, height:1, width:1})
     this.g.append(this.topBead)
 
     this.heaven = 0
     this.earth = 0
-
+    
     this.top = svg('rect',{x:0,y:0,width:1,height:2,fill:'transparent'})
     this.g.append(this.top)
-    this.setValue = (value, notify = true) => {
-      const safeValue = Math.min(Math.max(Number(value) || 0, 0), 9)
-      const heaven = safeValue >= 5 ? 1 : 0
-      const earth = safeValue - heaven * 5
-      this.heaven = heaven * 5
-      this.earth = earth
-      this.topBead.setAttribute('y', heaven)
-      this.topBead.style.fill = `var(--${heaven ? 'on' : 'off'})`
-      this.bottom.forEach((bead, bi) => {
-        if (bi < earth) bead.style.fill = 'var(--on)'
-        else if (bi > earth) bead.style.fill = 'var(--off)'
-        else bead.style.fill = 'transparent'
-      })
-      if (notify) queueAutoSubmitCheck()
-    }
     this.toggleHeaven = ()=>{
       const y = (+this.topBead.getAttribute('y')+1)%2
-      this.setValue(this.earth + y * 5)
+      this.topBead.setAttribute('y',y)
+      this.topBead.style.fill = `var(--${y?'on':'off'})`
+      this.heaven = y*5
     }
     this.top.addEventListener('mousedown',this.toggleHeaven)
-
+    
     this.earthControls = []
     this.bottom = [0,1,2,3,4].map(i=>{
       const idx = i
       const bead = svg('rect',{x:0,y:i+2+horizon,width:1,height:1})
       if (i==0) bead.style.fill = 'transparent'
-      const callback = ()=> this.setValue(this.heaven + idx)
+      const callback = ()=>{
+        this.earth = idx
+        bead.style.fill = 'transparent'
+        this.bottom.forEach((b,bi)=>{
+          if (bi<idx) b.style.fill='var(--on)'
+          if (bi>idx) b.style.fill='var(--off)'
+        })
+      }
       bead.addEventListener('mousedown',callback)
       this.earthControls.push(callback)
       this.g.append(bead)
@@ -1364,31 +190,15 @@ class Column{
   value(){return this.heaven+this.earth}
 }
 
-function createSprintTimerValues() {
-  const values = []
-  for (let seconds = 15; seconds <= 120; seconds += 15) values.push(seconds)
-  for (let seconds = 150; seconds <= 300; seconds += 30) values.push(seconds)
-  for (let seconds = 360; seconds <= 1200; seconds += 60) values.push(seconds)
-  for (let seconds = 1500; seconds <= 3600; seconds += 300) values.push(seconds)
-  return values
-}
-
 const canvas = document.getElementById('svg')
-const boardArea = document.getElementById('board-area')
-const colSlider = new NumSlider(4,16,5,'columns',1,'columns-control-slot', { label: 'cols' })
+const colSlider = new NumSlider(5,15,5,'columns',1)
 colSlider.on('input',reset)
-const digits = new NumSlider(1,8,2,'digits',1,'digits-control-slot')
-digits.on('input',restartPractice)
-const sprintTimerValues = createSprintTimerValues()
-const sprintMinutes = new NumSlider(15,3600,300,'timer',1,'sprint-minutes-slot', {
-  values: sprintTimerValues,
-  storageKey: 'timerSeconds',
-  legacyStorageKey: 'minutes',
-  legacyStorageTransform: value => Number(value) * 60
-})
-const goalProblems = new NumSlider(5,100,10,'problems',5,'goal-target-slot')
+const digits = new NumSlider(1,6,2,'digits')
+digits.on('input',rng)
+const [plus, minus, times] = ['plus','minus','times'].map(id=>document.getElementById(id))
 const horizon = 0.3
 
+const streak = document.getElementById('streak')
 let columns;
 const controls = ['0ol.;/','8ujmk,','6tgbhn','4edcfv','2qazsx']
 .reduce((acc,curr,col)=>{
@@ -1404,699 +214,13 @@ const buttonConfigs = [
   { id: 'times', label: 'x' }
 ];
 
-let settingsIconSizePx = 31
-let settingsIconStrokeWidth = 1
-
-function applySettingsIconTuning() {
-  document.documentElement.style.setProperty('--settings-icon-size', `${settingsIconSizePx}px`)
-  document.documentElement.style.setProperty('--settings-icon-stroke-width', settingsIconStrokeWidth)
+function findAnimal(i){
+  animals = [...' 🐀🐂🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖']
+  return animals[Math.min(Math.floor(Math.log2(i)),animals.length-1)]
 }
-
-applySettingsIconTuning()
 
 const btnCont = document.getElementById('buttons');
-const settingsPanel = document.getElementById('inputs')
-const headerSessionControls = document.getElementById('header-session-controls')
-const sessionStart = document.getElementById('session-start')
-const sessionActiveActions = document.getElementById('session-active-actions')
-const sessionPause = document.getElementById('session-pause')
-const sessionStop = document.getElementById('session-stop')
-const clearBoardButton = document.getElementById('clear-board')
-const errorToggle = document.getElementById('error-toggle')
-const sessionTargets = ['sprint', 'goal']
-const storedSessionTarget = localStorage.getItem('sorobanSessionTarget') || localStorage.getItem('sorobanPracticeSessionMode')
-let sessionTarget = sessionTargets.includes(storedSessionTarget) ? storedSessionTarget : 'sprint'
-const modeToggle = document.getElementById('mode-toggle')
-let practiceMode = localStorage.getItem('sorobanPracticeMode') === 'multiply' ? 'multiply' : 'addsub'
-let immediateErrorFeedback = localStorage.getItem('sorobanImmediateErrorFeedback') === 'true'
-const storedSettingsOpen = localStorage.getItem('sorobanSettingsOpen')
-if (storedSettingsOpen !== null) settingsPanel.open = storedSettingsOpen === 'true'
-const practiceHud = document.getElementById('practice-hud')
-const practiceProblemDisplay = document.getElementById('practice-problem')
-const practiceProgress = document.getElementById('practice-progress')
-const multiplicationMatrix = document.getElementById('multiplication-matrix')
-const sprintScore = document.getElementById('sprint-score')
-const goalTime = document.getElementById('goal-time')
-const sprintMinutesSlot = document.getElementById('sprint-minutes-slot')
-const goalTargetSlot = document.getElementById('goal-target-slot')
-const sprintSession = { status: 'idle', timer: null, endTime: 0, remainingMs: 0, correct: 0, total: 0 }
-const goalSession = { status: 'idle', timer: null, startTime: 0, elapsed: 0, correct: 0 }
-let practiceProblem = { operation: 'add', base: 0n, operand: 0n, answer: 0n }
-let practiceHudFrame = null
-let lastPracticePromptText = ''
-let lastAddSubOperandText = ''
-const persistedSorobanStateKey = 'sorobanCurrentWorkV1'
-let persistenceFrame = null
-let restoringPersistedState = false
-const practiceSymbols = { add: '+', subtract: '-', multiply: '×' }
-const repeatPromptRetryLimit = 24
-const maxPracticeHudFontSize = 112
-const minPracticeHudFontSize = 6
-const promptTextMeasureContext = document.createElement('canvas').getContext('2d')
-let practiceProgressState = { steps: [], index: 0 }
-
-function formatSessionTime(seconds) {
-  const safeSeconds = Math.max(0, Math.floor(seconds))
-  const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, '0')
-  const secs = String(safeSeconds % 60).padStart(2, '0')
-  return `${minutes}:${secs}`
-}
-
-function formatSprintTime(seconds) {
-  const safeSeconds = Math.max(0, Math.floor(seconds))
-  const minutes = String(Math.floor(safeSeconds / 60))
-  const secs = String(safeSeconds % 60).padStart(2, '0')
-  return `${minutes}:${secs}`
-}
-
-sprintMinutes.setFormatter(value => formatSprintTime(value))
-
-function stopSessionTimer(session) {
-  if (session.timer) clearInterval(session.timer)
-  session.timer = null
-}
-
-function sessionIsActive() {
-  return sprintSession.status === 'running' || sprintSession.status === 'paused' || goalSession.status === 'running' || goalSession.status === 'paused'
-}
-
-function currentPracticeSessionMode() {
-  if (sprintSession.status === 'running' || sprintSession.status === 'paused') return 'sprint'
-  if (goalSession.status === 'running' || goalSession.status === 'paused') return 'goal'
-  return 'zen'
-}
-
-function goalElapsedSeconds() {
-  if (goalSession.status === 'running') return goalSession.elapsed + Math.floor((Date.now() - goalSession.startTime) / 1000)
-  return goalSession.elapsed
-}
-
-function parsePersistedBigInt(value, fallback = 0n) {
-  try {
-    if (value === null || value === undefined || value === '') return fallback
-    return BigInt(value)
-  } catch {
-    return fallback
-  }
-}
-
-function clampNumber(value, min, max, fallback = min) {
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return fallback
-  return Math.min(Math.max(Math.round(numeric), min), max)
-}
-
-function serializedSessionStatus(status) {
-  if (status === 'running') return 'paused'
-  return ['idle', 'paused', 'finished'].includes(status) ? status : 'idle'
-}
-
-function setBoardState(boardText, notify = false) {
-  if (!columns || !columns.length) return
-  const digitsOnly = String(boardText || '').replace(/\D/g, '')
-  const normalized = digitsOnly.padStart(columns.length, '0').slice(-columns.length)
-  columns.forEach((column, index) => column.setValue(Number(normalized[index] || 0), false))
-  if (notify) queueAutoSubmitCheck()
-}
-
-function persistedBoardState() {
-  if (!columns || !columns.length) return ''
-  return cols2String()
-}
-
-function persistedProblemState() {
-  return {
-    operation: practiceProblem.operation,
-    base: practiceProblem.base.toString(),
-    operand: practiceProblem.operand.toString(),
-    answer: practiceProblem.answer.toString()
-  }
-}
-
-function persistedSprintState() {
-  const status = serializedSessionStatus(sprintSession.status)
-  return {
-    status,
-    remainingMs: status === 'idle' ? 0 : Math.max(0, Math.ceil(sprintRemainingMs())),
-    correct: sprintSession.correct,
-    total: sprintSession.total
-  }
-}
-
-function persistedGoalState() {
-  const status = serializedSessionStatus(goalSession.status)
-  return {
-    status,
-    elapsed: status === 'idle' ? 0 : Math.max(0, goalElapsedSeconds()),
-    correct: goalSession.correct
-  }
-}
-
-function persistSorobanState() {
-  if (restoringPersistedState || !columns || !columns.length) return
-  const state = {
-    version: 1,
-    savedAt: Date.now(),
-    columns: colSlider.value(),
-    digits: digits.value(),
-    practiceMode,
-    immediateErrorFeedback,
-    sessionTarget,
-    total: total.textContent || '0',
-    board: persistedBoardState(),
-    problem: persistedProblemState(),
-    progressIndex: practiceProgressState.index,
-    lastPracticePromptText,
-    lastAddSubOperandText,
-    sprintSession: persistedSprintState(),
-    goalSession: persistedGoalState()
-  }
-  localStorage.setItem(persistedSorobanStateKey, JSON.stringify(state))
-}
-
-function queuePersistSorobanState() {
-  if (restoringPersistedState) return
-  if (persistenceFrame) cancelAnimationFrame(persistenceFrame)
-  persistenceFrame = requestAnimationFrame(() => {
-    persistenceFrame = null
-    persistSorobanState()
-  })
-}
-
-function clearPersistedSorobanState() {
-  if (persistenceFrame) cancelAnimationFrame(persistenceFrame)
-  persistenceFrame = null
-  localStorage.removeItem(persistedSorobanStateKey)
-}
-
-function readPersistedSorobanState() {
-  try {
-    const raw = localStorage.getItem(persistedSorobanStateKey)
-    if (!raw) return null
-    const state = JSON.parse(raw)
-    return state && state.version === 1 ? state : null
-  } catch {
-    clearPersistedSorobanState()
-    return null
-  }
-}
-
-function restoreSprintState(state) {
-  stopSessionTimer(sprintSession)
-  sprintSession.status = serializedSessionStatus(state?.status)
-  sprintSession.endTime = 0
-  sprintSession.remainingMs = Math.max(0, Number(state?.remainingMs) || 0)
-  sprintSession.correct = Math.max(0, Number(state?.correct) || 0)
-  sprintSession.total = Math.max(sprintSession.correct, Number(state?.total) || 0)
-  renderSprintSession()
-}
-
-function restoreGoalState(state) {
-  stopSessionTimer(goalSession)
-  goalSession.status = serializedSessionStatus(state?.status)
-  goalSession.startTime = 0
-  goalSession.elapsed = Math.max(0, Number(state?.elapsed) || 0)
-  goalSession.correct = Math.max(0, Number(state?.correct) || 0)
-  renderGoalSession()
-}
-
-function restorePersistedSorobanState() {
-  const state = readPersistedSorobanState()
-  if (!state || !state.problem) return false
-  restoringPersistedState = true
-  try {
-    colSlider.setValue(clampNumber(state.columns, 4, 16, colSlider.value()))
-    digits.setValue(clampNumber(state.digits, 1, 8, digits.value()))
-    practiceMode = state.practiceMode === 'multiply' ? 'multiply' : 'addsub'
-    setPracticeMode(practiceMode)
-    setImmediateErrorFeedback(Boolean(state.immediateErrorFeedback))
-    sessionTarget = state.sessionTarget === 'goal' ? 'goal' : 'sprint'
-    localStorage.setItem('sorobanSessionTarget', sessionTarget)
-    total.textContent = String(state.total || '0').replace(/[^\d]/g, '') || '0'
-    reset()
-
-    const operation = state.problem.operation === 'multiply' ? 'multiply' : state.problem.operation === 'subtract' ? 'subtract' : 'add'
-    const base = parsePersistedBigInt(state.problem.base)
-    const operand = parsePersistedBigInt(state.problem.operand)
-    const answer = parsePersistedBigInt(state.problem.answer, operation === 'multiply' ? base * operand : operation === 'add' ? base + operand : base - operand)
-    setPracticeProblem(operation, base, operand, answer)
-    setBoardState(state.board, false)
-
-    lastPracticePromptText = state.lastPracticePromptText || promptTextFor(operation, base, operand)
-    lastAddSubOperandText = state.lastAddSubOperandText || ((operation === 'add' || operation === 'subtract') ? operand.toString() : '')
-    practiceProgressState.index = clampNumber(state.progressIndex, 0, practiceProgressState.steps.length, 0)
-    renderPracticeProgress()
-    syncMultiplicationProgressCells()
-    restoreSprintState(state.sprintSession)
-    restoreGoalState(state.goalSession)
-    renderSessionTargetControls()
-    renderPracticeProblem()
-    syncLegacyAnswerButtons()
-  } catch {
-    restoringPersistedState = false
-    clearPersistedSorobanState()
-    return false
-  }
-  restoringPersistedState = false
-  queuePracticeHudLayout()
-  queuePersistSorobanState()
-  return true
-}
-
-function setActionIcon(button, pathData) {
-  const path = button.querySelector('path')
-  if (path) path.setAttribute('d', pathData)
-}
-
-function autoAdvanceEnabled() {
-  return true
-}
-
-function fitPracticeHudText() {
-  if (practiceProblemDisplay.hidden || practiceProblemDisplay.offsetParent === null) return
-  const baseSize = parseFloat(getComputedStyle(boardArea).getPropertyValue('--hud-font-size'))
-  if (!Number.isFinite(baseSize)) return
-  let size = Math.min(maxPracticeHudFontSize, baseSize)
-  practiceProblemDisplay.style.fontSize = `${size}px`
-  for (let i = 0; i < 8; i++) {
-    const availableWidth = practiceProblemDisplay.clientWidth
-    const availableHeight = practiceProblemDisplay.clientHeight
-    if (!availableWidth || !availableHeight) return
-    const style = getComputedStyle(practiceProblemDisplay)
-    let measuredWidth = practiceProblemDisplay.scrollWidth
-    if (promptTextMeasureContext) {
-      promptTextMeasureContext.font = `${style.fontWeight} ${size}px ${style.fontFamily}`
-      measuredWidth = promptTextMeasureContext.measureText(practiceProblemDisplay.textContent).width
-    }
-    const widthScale = availableWidth / Math.max(1, measuredWidth)
-    const heightScale = availableHeight / Math.max(1, size)
-    const scale = Math.min(widthScale, heightScale, 1)
-    if (scale >= 0.995) break
-    size *= scale * 0.98
-    practiceProblemDisplay.style.fontSize = `${Math.max(minPracticeHudFontSize, size)}px`
-    if (size <= minPracticeHudFontSize) break
-  }
-  updatePracticeProgressRing()
-}
-
-function updatePracticeProgressRing() {
-  if (practiceProgress.hidden || practiceProgress.offsetParent === null) return
-  const available = Math.min(practiceHud.clientWidth, practiceHud.clientHeight)
-  if (!available) return
-  const style = getComputedStyle(practiceProblemDisplay)
-  const fontSize = parseFloat(style.fontSize)
-  if (!Number.isFinite(fontSize)) return
-  promptTextMeasureContext.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}`
-  const metrics = promptTextMeasureContext.measureText(practiceProblemDisplay.textContent)
-  const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || fontSize
-  const desired = Math.max(metrics.width + fontSize * 0.92, textHeight + fontSize * 0.92, fontSize * 1.7)
-  const size = Math.min(Math.max(48, desired), Math.max(48, available - 4))
-  practiceHud.style.setProperty('--practice-progress-size', `${size}px`)
-}
-
-function layoutPracticeHud() {
-  const rect = boardArea.getBoundingClientRect()
-  if (!rect.width || !rect.height) return
-  const boardAspect = colSlider.value() / (7 + horizon)
-  const areaAspect = rect.width / rect.height
-  const gap = Math.min(Math.max(window.innerWidth * 0.014, 8), 16)
-  const widthLimited = areaAspect <= boardAspect
-  const matrixVisible = multiplicationStepModeActive()
-  const promptFloor = 42
-
-  if (widthLimited) {
-    const boardHeight = rect.width / boardAspect
-    const naturalTrack = rect.height - boardHeight - gap
-    const matrixTrackFloor = matrixVisible ? Math.min(Math.max(rect.height * 0.3, 170), 300) : 0
-    const track = Math.max(promptFloor, naturalTrack, matrixTrackFloor)
-    boardArea.dataset.promptLayout = 'top'
-    boardArea.style.setProperty('--hud-track', `${track}px`)
-    boardArea.style.setProperty('--board-gap-px', `${gap}px`)
-    boardArea.style.setProperty('--hud-font-size', `${Math.min(maxPracticeHudFontSize, Math.max(minPracticeHudFontSize, track * 0.78))}px`)
-  } else {
-    const boardWidth = rect.height * boardAspect
-    const naturalTrack = rect.width - boardWidth - gap
-    const track = Math.max(promptFloor, naturalTrack)
-    boardArea.dataset.promptLayout = 'side'
-    boardArea.style.setProperty('--hud-track', `${track}px`)
-    boardArea.style.setProperty('--board-gap-px', `${gap}px`)
-    boardArea.style.setProperty('--hud-font-size', `${Math.min(maxPracticeHudFontSize, Math.max(minPracticeHudFontSize, track * 0.72))}px`)
-  }
-  requestAnimationFrame(fitPracticeHudText)
-}
-
-function queuePracticeHudLayout() {
-  if (practiceHudFrame) cancelAnimationFrame(practiceHudFrame)
-  practiceHudFrame = requestAnimationFrame(() => {
-    practiceHudFrame = null
-    layoutPracticeHud()
-  })
-}
-
-function boardMatchesValue(value) {
-  return new RegExp(`^0*${value.toString()}0*$`).test(cols2String())
-}
-
-function practiceAnswerMatchesBoard() {
-  return boardMatchesValue(practiceProblem.answer)
-}
-
-function stepsModeActive() {
-  return immediateErrorFeedback
-}
-
-function linearStepModeActive() {
-  return stepsModeActive() && practiceMode === 'addsub' && practiceProblem.operation !== 'multiply'
-}
-
-function multiplicationStepModeActive() {
-  return stepsModeActive() && practiceMode === 'multiply' && practiceProblem.operation === 'multiply'
-}
-
-function guidedStepModeActive() {
-  return linearStepModeActive() || multiplicationStepModeActive()
-}
-
-function buildAddSubProgressSteps(operation, base, operand) {
-  if (operation !== 'add' && operation !== 'subtract') return []
-  const operandText = operand.toString()
-  const places = Array.from(operandText, (digit, index) => {
-    const exponent = BigInt(operandText.length - 1 - index)
-    return {
-      digitIndex: index,
-      placeValue: BigInt(Number(digit)) * (10n ** exponent)
-    }
-  })
-  if (operation === 'add') places.reverse()
-  let current = base
-  return places.map(step => {
-    current = operation === 'add' ? current + step.placeValue : current - step.placeValue
-    return { value: current, digitIndex: step.digitIndex }
-  })
-}
-
-function buildMultiplicationProgressSteps(base, operand) {
-  const topDigits = base.toString()
-  const sideDigits = Array.from(operand.toString()).reverse().join('')
-  const cells = []
-  for (let row = 0; row < sideDigits.length; row++) {
-    for (let col = 0; col < topDigits.length; col++) {
-      const topPlace = topDigits.length - 1 - col
-      const sidePlace = row
-      const exponent = topPlace + sidePlace
-      const digitProduct = BigInt(Number(topDigits[col])) * BigInt(Number(sideDigits[row]))
-      const partial = digitProduct * (10n ** BigInt(exponent))
-      cells.push({ cellKey: `${row}-${col}`, row, col, exponent, partial })
-    }
-  }
-  cells.sort((a, b) => a.exponent - b.exponent || a.row - b.row || a.col - b.col)
-  let current = 0n
-  return cells.map(cell => {
-    current += cell.partial
-    return { ...cell, value: current }
-  })
-}
-
-function buildPracticeProgressSteps(operation, base, operand) {
-  if (operation === 'multiply') return buildMultiplicationProgressSteps(base, operand)
-  return buildAddSubProgressSteps(operation, base, operand)
-}
-
-function renderPracticeProgress() {
-  const active = linearStepModeActive() && practiceProgressState.steps.length > 0
-  practiceProgress.hidden = true
-  practiceHud.classList.toggle('has-progress', false)
-  const totalSteps = practiceProgressState.steps.length
-  const completedSteps = Math.min(practiceProgressState.index, totalSteps)
-  practiceProgress.setAttribute('aria-valuemax', String(totalSteps))
-  practiceProgress.setAttribute('aria-valuenow', String(completedSteps))
-  practiceProblemDisplay.classList.toggle('is-checkpoint-control', active)
-  practiceProblemDisplay.title = active ? 'Restore last checkpoint' : ''
-  renderPracticeProblem()
-  queuePersistSorobanState()
-}
-
-function lastPracticeCheckpointValue() {
-  if (!guidedStepModeActive()) return null
-  const previousStep = practiceProgressState.steps[practiceProgressState.index - 1]
-  if (previousStep) return previousStep.value
-  if (practiceProblem.operation === 'multiply') return 0n
-  if (practiceProblem.operation === 'add' || practiceProblem.operation === 'subtract') return practiceProblem.base
-  return null
-}
-
-function restoreLastPracticeCheckpoint() {
-  const checkpoint = lastPracticeCheckpointValue()
-  if (checkpoint === null) return
-  setBoardState(checkpoint.toString(), false)
-  queuePersistSorobanState()
-}
-
-function preparePracticeProgress() {
-  practiceProgressState = {
-    steps: buildPracticeProgressSteps(practiceProblem.operation, practiceProblem.base, practiceProblem.operand),
-    index: 0
-  }
-  renderPracticeProgress()
-}
-
-function practiceProgressComplete() {
-  return !guidedStepModeActive() || practiceProgressState.index >= practiceProgressState.steps.length
-}
-
-function advancePracticeProgressForBoard() {
-  if (!guidedStepModeActive()) return false
-  let advanced = false
-  while (practiceProgressState.index < practiceProgressState.steps.length) {
-    const nextStep = practiceProgressState.steps[practiceProgressState.index]
-    if (!boardMatchesValue(nextStep.value)) break
-    practiceProgressState.index += 1
-    advanced = true
-  }
-  if (advanced) {
-    renderPracticeProgress()
-    syncMultiplicationProgressCells()
-  }
-  return advanced
-}
-
-function queueAutoSubmitCheck() {
-  if (restoringPersistedState) return
-  if (!autoAdvanceEnabled()) return
-  if (!columns || !columns.length) return
-  advancePracticeProgressForBoard()
-  if (guidedStepModeActive() && !practiceProgressComplete()) {
-    queuePersistSorobanState()
-    return
-  }
-  if (practiceAnswerMatchesBoard()) submitPracticeAnswer()
-  else queuePersistSorobanState()
-}
-
-function sprintConfiguredMs() {
-  return sprintMinutes.value() * 1000
-}
-
-function sprintRemainingMs() {
-  if (sprintSession.status === 'running') return Math.max(0, sprintSession.endTime - Date.now())
-  if (sprintSession.status === 'paused') return sprintSession.remainingMs
-  if (sprintSession.status === 'finished') return 0
-  return sprintConfiguredMs()
-}
-
-function renderSessionTargetControls() {
-  const active = sessionIsActive()
-  const sprintSelected = sessionTarget === 'sprint'
-  const goalSelected = sessionTarget === 'goal'
-  const sprintLive = sprintSession.status === 'running' || sprintSession.status === 'paused'
-  const goalLive = goalSession.status === 'running' || goalSession.status === 'paused'
-  settingsPanel.dataset.headerSession = sessionTarget
-  headerSessionControls.dataset.sessionTarget = sessionTarget
-  sprintMinutesSlot.classList.add('session-target-slot')
-  goalTargetSlot.classList.add('session-target-slot')
-  sprintMinutesSlot.classList.toggle('is-selected', sprintSelected)
-  sprintMinutesSlot.classList.toggle('is-live', sprintSelected && sprintLive)
-  sprintMinutesSlot.classList.toggle('is-zeroed', !sprintSelected)
-  goalTargetSlot.classList.toggle('is-selected', goalSelected)
-  goalTargetSlot.classList.toggle('is-live', goalSelected && goalLive)
-  goalTargetSlot.classList.toggle('is-zeroed', !goalSelected)
-  sprintMinutes.setDragEnabled(!active)
-  goalProblems.setDragEnabled(!active)
-
-  if (sprintSelected) {
-    const sprintActive = sprintSession.status === 'running' || sprintSession.status === 'paused' || sprintSession.status === 'finished'
-    sprintMinutes.setDisplay(sprintActive ? formatSprintTime(Math.ceil(sprintRemainingMs() / 1000)) : null)
-    goalProblems.setDisplay('0')
-  } else {
-    const goalActive = goalSession.status === 'running' || goalSession.status === 'paused' || goalSession.status === 'finished'
-    sprintMinutes.setDisplay(goalActive ? formatSprintTime(goalElapsedSeconds()) : '0:00')
-    goalProblems.setDisplay(goalActive ? `${Math.min(goalSession.correct, goalProblems.value())}/${goalProblems.value()}` : null)
-  }
-
-  const paused = sprintSession.status === 'paused' || goalSession.status === 'paused'
-  sessionStart.hidden = active
-  sessionActiveActions.hidden = !active
-  sessionPause.setAttribute('aria-label', paused ? 'Resume session' : 'Pause session')
-  sessionPause.title = paused ? 'Resume' : 'Pause'
-  setActionIcon(sessionPause, paused ? 'M8 5v14l11-7z' : 'M8 5h3v14H8zM13 5h3v14h-3z')
-}
-
-function renderSprintSession() {
-  let remainingMs = sprintRemainingMs()
-  if (sprintSession.status === 'running' && remainingMs <= 0) {
-    sprintSession.status = 'finished'
-    sprintSession.remainingMs = 0
-    stopSessionTimer(sprintSession)
-    remainingMs = 0
-  }
-  const active = sprintSession.status === 'running' || sprintSession.status === 'paused'
-  sprintMinutes.setDragEnabled(!active)
-  sprintMinutes.setDisplay(formatSprintTime(Math.ceil(remainingMs / 1000)))
-  sprintScore.textContent = `${sprintSession.correct}/${sprintSession.total}`
-  renderSessionTargetControls()
-  queuePersistSorobanState()
-}
-
-function resetSprintSession() {
-  sprintSession.status = 'idle'
-  stopSessionTimer(sprintSession)
-  sprintSession.endTime = 0
-  sprintSession.remainingMs = 0
-  sprintSession.correct = 0
-  sprintSession.total = 0
-  renderSprintSession()
-}
-
-function startSprintSession() {
-  const restarting = sprintSession.status === 'idle' || sprintSession.status === 'finished'
-  const duration = sprintSession.status === 'paused' ? sprintSession.remainingMs : sprintConfiguredMs()
-  sprintSession.status = 'running'
-  sprintSession.endTime = Date.now() + duration
-  sprintSession.remainingMs = duration
-  if (restarting) {
-    sprintSession.correct = 0
-    sprintSession.total = 0
-  }
-  stopSessionTimer(sprintSession)
-  sprintSession.timer = setInterval(renderSprintSession, 250)
-  renderSprintSession()
-}
-
-function pauseSprintSession() {
-  if (sprintSession.status !== 'running') return
-  sprintSession.remainingMs = Math.max(0, sprintSession.endTime - Date.now())
-  sprintSession.status = 'paused'
-  stopSessionTimer(sprintSession)
-  renderSprintSession()
-}
-
-function stopSprintSession() {
-  resetSprintSession()
-}
-
-function renderGoalSession() {
-  const target = goalProblems.value()
-  const elapsedSeconds = goalElapsedSeconds()
-  const active = goalSession.status === 'running' || goalSession.status === 'paused'
-  goalProblems.setDragEnabled(!active)
-  goalProblems.setDisplay(`${Math.min(goalSession.correct, target)}/${target}`)
-  goalTime.textContent = formatSessionTime(elapsedSeconds)
-  renderSessionTargetControls()
-  queuePersistSorobanState()
-}
-
-function resetGoalSession() {
-  goalSession.status = 'idle'
-  stopSessionTimer(goalSession)
-  goalSession.startTime = 0
-  goalSession.elapsed = 0
-  goalSession.correct = 0
-  renderGoalSession()
-}
-
-function startGoalSession() {
-  const restarting = goalSession.status === 'idle' || goalSession.status === 'finished'
-  if (restarting) {
-    goalSession.elapsed = 0
-    goalSession.correct = 0
-  }
-  goalSession.status = 'running'
-  goalSession.startTime = Date.now()
-  stopSessionTimer(goalSession)
-  goalSession.timer = setInterval(renderGoalSession, 250)
-  renderGoalSession()
-}
-
-function pauseGoalSession() {
-  if (goalSession.status !== 'running') return
-  goalSession.elapsed += Math.floor((Date.now() - goalSession.startTime) / 1000)
-  goalSession.status = 'paused'
-  stopSessionTimer(goalSession)
-  renderGoalSession()
-}
-
-function stopGoalSession() {
-  resetGoalSession()
-}
-
-function completeGoalSession() {
-  goalSession.elapsed = goalSession.elapsed + Math.floor((Date.now() - goalSession.startTime) / 1000)
-  goalSession.status = 'finished'
-  stopSessionTimer(goalSession)
-  renderGoalSession()
-}
-
-function recordPracticeAttempt(correct) {
-  if (sprintSession.status === 'running') {
-    renderSprintSession()
-    sprintSession.total += 1
-    if (correct) sprintSession.correct += 1
-    renderSprintSession()
-  }
-  if (goalSession.status === 'running') {
-    if (!correct) return
-    goalSession.correct += 1
-    if (goalSession.correct >= goalProblems.value()) completeGoalSession()
-    else renderGoalSession()
-  }
-  queuePersistSorobanState()
-}
-
-function startSelectedSession() {
-  if (sessionTarget === 'goal') startGoalSession()
-  else startSprintSession()
-}
-
-function pauseOrResumeSelectedSession() {
-  if (sprintSession.status === 'running') pauseSprintSession()
-  else if (sprintSession.status === 'paused') startSprintSession()
-  else if (goalSession.status === 'running') pauseGoalSession()
-  else if (goalSession.status === 'paused') startGoalSession()
-}
-
-function stopSelectedSession() {
-  if (sprintSession.status === 'running' || sprintSession.status === 'paused') stopSprintSession()
-  if (goalSession.status === 'running' || goalSession.status === 'paused') stopGoalSession()
-}
-
-sessionStart.addEventListener('click', startSelectedSession)
-sessionPause.addEventListener('click', pauseOrResumeSelectedSession)
-sessionStop.addEventListener('click', stopSelectedSession)
-
-sprintMinutes.on('input', () => {
-  selectSessionTarget('sprint', false)
-  resetSprintSession()
-})
-
-goalProblems.on('input', () => {
-  selectSessionTarget('goal', false)
-  resetGoalSession()
-})
-clearBoardButton.addEventListener('click', event => {
-  event.preventDefault()
-  event.stopPropagation()
-  clearBoard()
-})
+const zodiac = document.getElementById('zodiac')
 
 buttonConfigs.forEach(cfg => {
   const btn = document.createElement('button');
@@ -2104,107 +228,28 @@ buttonConfigs.forEach(cfg => {
   btn.dataset.label = cfg.label;
   btn.textContent = cfg.label;
   btn.style.marginBottom = '5px';
-  btn.addEventListener('click', submitPracticeAnswer);
+
+  // Toggle between label and answer
+  btn.addEventListener('click', () => {
+    const hidden = btn.textContent === btn.dataset.label
+    const re = new RegExp(`^0*${Math.abs(btn.dataset.answer)}0*$`);    // only zeros outside the answer block
+    const correct = re.test(cols2String())
+    btn.textContent = hidden && !correct ? btn.dataset.answer : btn.dataset.label;
+    btn.style.backgroundColor = hidden && !correct ? '#fcc': '#ddd'
+    if (correct){
+      total.textContent = btn.dataset.answer
+      const incremented = +streak.textContent + 1
+      streak.textContent = streak.dataset.restart=='true'? 1:incremented
+      zodiac.textContent = findAnimal(incremented)
+      streak.dataset.restart = false
+      rng(false)
+    } else {
+      streak.dataset.restart = true
+    }
+  });
 
   btnCont.appendChild(btn);
 });
-
-function renderFeatureToggle(button, enabled) {
-  button.classList.toggle('is-active', enabled)
-  button.setAttribute('aria-pressed', enabled ? 'true' : 'false')
-}
-
-function setImmediateErrorFeedback(enabled) {
-  immediateErrorFeedback = Boolean(enabled)
-  localStorage.setItem('sorobanImmediateErrorFeedback', immediateErrorFeedback ? 'true' : 'false')
-  document.documentElement.dataset.immediateErrorFeedback = immediateErrorFeedback ? 'on' : 'off'
-  renderFeatureToggle(errorToggle, immediateErrorFeedback)
-  preparePracticeProgress()
-  renderMultiplicationMatrix()
-  queueAutoSubmitCheck()
-  queuePersistSorobanState()
-}
-
-errorToggle.addEventListener('click', () => {
-  setImmediateErrorFeedback(!immediateErrorFeedback)
-})
-
-setImmediateErrorFeedback(immediateErrorFeedback)
-
-settingsPanel.addEventListener('toggle', () => {
-  localStorage.setItem('sorobanSettingsOpen', settingsPanel.open ? 'true' : 'false')
-  queuePracticeHudLayout()
-})
-
-function renderHeaderSessionControls() {
-  headerSessionControls.insertBefore(sprintMinutesSlot, sessionStart)
-  headerSessionControls.insertBefore(goalTargetSlot, sessionStart)
-  renderSessionTargetControls()
-}
-
-headerSessionControls.addEventListener('click', event => {
-  event.preventDefault()
-  event.stopPropagation()
-})
-
-headerSessionControls.addEventListener('mousedown', event => {
-  event.stopPropagation()
-})
-
-headerSessionControls.addEventListener('touchstart', event => {
-  event.stopPropagation()
-}, { passive: true })
-
-function selectSessionTarget(target, resetSessions = true) {
-  if (sessionIsActive()) return false
-  const nextTarget = target === 'goal' ? 'goal' : 'sprint'
-  const changed = sessionTarget !== nextTarget
-  sessionTarget = nextTarget
-  localStorage.setItem('sorobanSessionTarget', sessionTarget)
-  if (resetSessions && changed) {
-    resetSprintSession()
-    resetGoalSession()
-  }
-  renderSessionTargetControls()
-  queuePersistSorobanState()
-  return true
-}
-
-sprintMinutes.beforePointerDown = () => selectSessionTarget('sprint')
-goalProblems.beforePointerDown = () => selectSessionTarget('goal')
-
-renderHeaderSessionControls()
-
-window.addEventListener('resize', queuePracticeHudLayout)
-if ('ResizeObserver' in window) new ResizeObserver(queuePracticeHudLayout).observe(boardArea)
-
-function setPracticeMode(mode) {
-  practiceMode = mode === 'multiply' ? 'multiply' : 'addsub'
-  localStorage.setItem('sorobanPracticeMode', practiceMode)
-  modeToggle.dataset.mode = practiceMode
-  modeToggle.querySelectorAll('button').forEach(btn => {
-    const active = btn.dataset.mode === practiceMode
-    btn.classList.toggle('is-active', active)
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false')
-  })
-  Array.from(btnCont.children).forEach(btn => {
-    btn.hidden = practiceMode === 'multiply' ? btn.id !== 'times' : btn.id === 'times'
-    btn.textContent = btn.dataset.label
-    btn.style.backgroundColor = '#ddd'
-  })
-  preparePracticeProgress()
-  renderMultiplicationMatrix()
-  queuePersistSorobanState()
-}
-
-modeToggle.addEventListener('click', event => {
-  event.preventDefault()
-  const nextMode = practiceMode === 'multiply' ? 'addsub' : 'multiply'
-  setPracticeMode(nextMode)
-  restartPractice()
-})
-
-setPracticeMode(practiceMode)
 
 const [onPicker,offPicker] = [document.getElementById('on'),document.getElementById('off')]
 onPicker.value = localStorage.getItem('on') || '#b266ff'
@@ -2215,26 +260,28 @@ saveTheme('off',offPicker.value)
 onPicker.addEventListener('input', reset);
 offPicker.addEventListener('input', reset);
 
+let prevB;
+
 const total = document.getElementById('numbers')
-if (!restorePersistedSorobanState()) rng()
-window.addEventListener('pagehide', persistSorobanState)
+const container = document.getElementById('container');
+const inputsDiv = document.getElementById('inputs');
+rng()
 
 function reset(a,b){
   const colCount = colSlider.value()
   canvas.innerHTML = ''
   canvas.setAttribute('viewBox',`0 0 ${colCount} ${7+horizon}`)
+  updateLayout();
 
   columns = [...Array(colCount).keys()].map(i=>new Column(i,colCount))
   saveTheme('on',onPicker.value)
   saveTheme('off',offPicker.value)
 
   
-	  Array.from(btnCont.children).forEach((btn,i)=>{
+  Array.from(btnCont.children).forEach((btn,i)=>{
     btn.style.backgroundColor = '#ddd'
     btn.textContent = btn.dataset.label
   })
-  queuePracticeHudLayout()
-  queuePersistSorobanState()
 }
 
 function saveTheme(key, value){
@@ -2244,364 +291,47 @@ function saveTheme(key, value){
   el.value = value;
 };
 
-function currentTotal() {
-  return BigInt(total.textContent || '0')
-}
-
-function boardMax() {
-  return 10n ** BigInt(colSlider.value()) - 1n
-}
-
-function pow10(exponent) {
-  return 10n ** BigInt(exponent)
-}
-
-function randomBigInt(min, max) {
-  if (max < min) return 0n
-  const range = max - min + 1n
-  if (range <= BigInt(Number.MAX_SAFE_INTEGER)) {
-    return min + BigInt(Math.floor(Math.random() * Number(range)))
-  }
-  const digitCount = range.toString().length
-  let candidate = 0n
-  do {
-    let text = ''
-    for (let i = 0; i < digitCount; i++) text += Math.floor(Math.random() * 10)
-    candidate = BigInt(text)
-  } while (candidate >= range)
-  return min + candidate
-}
-
-function endsInZero(value) {
-  return value !== 0n && value % 10n === 0n
-}
-
-function randomOperandWithDigitCount(digitCount, maxAllowed = boardMax(), options = {}) {
-  const min = digitCount <= 1 ? 1n : pow10(digitCount - 1)
-  const max = pow10(digitCount) - 1n
-  const cappedMax = maxAllowed < max ? maxAllowed : max
-  if (cappedMax < min) return 0n
-  for (let attempt = 0; attempt < 64; attempt++) {
-    const operand = randomBigInt(min, cappedMax)
-    if (!options.rejectTerminalZero || !endsInZero(operand)) return operand
-  }
-  for (let operand = min; operand <= cappedMax; operand++) {
-    if (!options.rejectTerminalZero || !endsInZero(operand)) return operand
-  }
-  return 0n
-}
-
-function randomOperandUpToDigitCount(maxDigits, maxAllowed = boardMax(), options = {}) {
-  const cappedMax = maxAllowed < pow10(maxDigits) - 1n ? maxAllowed : pow10(maxDigits) - 1n
-  if (cappedMax < 1n) return 0n
-  const allowedDigits = []
-  for (let digitCount = 1; digitCount <= maxDigits; digitCount++) {
-    const min = digitCount <= 1 ? 1n : pow10(digitCount - 1)
-    if (cappedMax >= min) allowedDigits.push(digitCount)
-  }
-  const selectedDigits = allowedDigits[Math.floor(Math.random() * allowedDigits.length)]
-  return randomOperandWithDigitCount(selectedDigits, cappedMax, options)
-}
-
-function randomOperand(maxAllowed = boardMax(), avoidText = '') {
+function random(){
   const n = digits.value()
-  const exactMin = pow10(n - 1)
-  const exactMax = pow10(n) - 1n
-  const cappedMax = maxAllowed < exactMax ? maxAllowed : exactMax
-  if (cappedMax < 1n) return 0n
-  const min = cappedMax >= exactMin ? exactMin : 1n
-  const avoid = avoidText ? BigInt(avoidText) : null
-  if (avoid !== null && min === cappedMax && min === avoid) return 0n
-  for (let attempt = 0; attempt < 64; attempt++) {
-    const operand = randomBigInt(min, cappedMax)
-    if (avoid === null || operand !== avoid) return operand
-  }
-  if (avoid === null || min !== avoid) return min
-  return min + 1n <= cappedMax ? min + 1n : 0n
+  const min = Math.pow(10, n - 1);
+  const max = Math.pow(10, n) - 1;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function promptTextFor(operation, base, operand) {
-  if (operation === 'multiply') return `${base} ${practiceSymbols.multiply} ${operand}`
-  return `${practiceSymbols[operation]} ${operand}`
-}
-
-function promptIsFresh(operation, base, operand, attempt) {
-  return promptTextFor(operation, base, operand) !== lastPracticePromptText || attempt >= repeatPromptRetryLimit
-}
-
-function setPracticeProblem(operation, base, operand, answer) {
-  const promptText = promptTextFor(operation, base, operand)
-  practiceProblem = { operation, base, operand, answer, promptText }
-  lastPracticePromptText = promptText
-  if (operation === 'add' || operation === 'subtract') lastAddSubOperandText = operand.toString()
-  preparePracticeProgress()
-  renderPracticeProblem()
-  renderMultiplicationMatrix()
-  syncLegacyAnswerButtons()
-  queueAutoSubmitCheck()
-  queuePersistSorobanState()
-}
-
-function renderMultiplicationMatrix() {
-  const visible = multiplicationStepModeActive()
-  multiplicationMatrix.hidden = !visible
-  multiplicationMatrix.classList.toggle('is-checkpoint-control', visible)
-  multiplicationMatrix.title = visible ? 'Restore last checkpoint' : ''
-  practiceHud.classList.toggle('has-matrix', visible)
-  multiplicationMatrix.replaceChildren()
-  if (!visible) {
-    queuePracticeHudLayout()
-    return
-  }
-
-  const topDigits = practiceProblem.base.toString()
-  const sideDigits = Array.from(practiceProblem.operand.toString()).reverse().join('')
-  const cols = topDigits.length
-  const rows = sideDigits.length
-  const scale = 0.64
-  const labelOffset = 0.34
-  const pad = 0.9
-  const plot = (x, y) => ({
-    x: (x - y) * scale,
-    y: (x + y) * scale
-  })
-  const lattice = []
-  for (let y = 0; y <= rows; y++) {
-    for (let x = 0; x <= cols; x++) lattice.push(plot(x, y))
-  }
-  const minX = Math.min(...lattice.map(point => point.x)) - pad
-  const maxX = Math.max(...lattice.map(point => point.x)) + pad
-  const minY = Math.min(...lattice.map(point => point.y)) - pad
-  const maxY = Math.max(...lattice.map(point => point.y)) + pad
-  const matrixSvg = svg('svg', {
-    class: 'multiplication-matrix-svg',
-    viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
-    preserveAspectRatio: 'xMidYMid meet',
-    role: 'img',
-    'aria-label': `${practiceProblem.base} by ${practiceProblem.operand} partial product tracker`
-  })
-
-  const cellGroup = svg('g', {})
-  const stepByCell = new Map(practiceProgressState.steps.map((step, index) => [step.cellKey, index]))
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const corners = [
-        plot(col, row),
-        plot(col + 1, row),
-        plot(col + 1, row + 1),
-        plot(col, row + 1)
-      ]
-      const cellKey = `${row}-${col}`
-      const stepIndex = stepByCell.get(cellKey)
-      const complete = Number.isInteger(stepIndex) && stepIndex < practiceProgressState.index
-      const latestComplete = complete && stepIndex === practiceProgressState.index - 1
-      const zeroFactor = topDigits[col] === '0' || sideDigits[row] === '0'
-      const cell = svg('polygon', {
-        class: `partial-product-cell${complete ? ' is-covered' : ''}${latestComplete ? ' is-latest-covered' : ''}${zeroFactor ? ' is-zero-factor' : ''}`,
-        points: corners.map(point => `${point.x},${point.y}`).join(' '),
-        'data-cell-key': cellKey,
-        'data-step-index': Number.isInteger(stepIndex) ? String(stepIndex) : '',
-        'aria-label': `${topDigits[col]} times ${sideDigits[row]}`
-      })
-      cellGroup.append(cell)
-    }
-  }
-  matrixSvg.append(cellGroup)
-
-  const topLabelGroup = svg('g', {})
-  for (let col = 0; col < cols; col++) {
-    const a = plot(col, 0)
-    const b = plot(col + 1, 0)
-    topLabelGroup.append(svg('text', {
-      class: 'multiplication-matrix-label',
-      x: (a.x + b.x) / 2 + labelOffset,
-      y: (a.y + b.y) / 2 - labelOffset
-    }, topDigits[col]))
-  }
-  matrixSvg.append(topLabelGroup)
-
-  const sideLabelGroup = svg('g', {})
-  for (let row = 0; row < rows; row++) {
-    const a = plot(cols, row)
-    const b = plot(cols, row + 1)
-    sideLabelGroup.append(svg('text', {
-      class: 'multiplication-matrix-label',
-      x: (a.x + b.x) / 2 + labelOffset,
-      y: (a.y + b.y) / 2 + labelOffset
-    }, sideDigits[row]))
-  }
-  matrixSvg.append(sideLabelGroup)
-  multiplicationMatrix.append(matrixSvg)
-  syncMultiplicationProgressCells()
-  queuePracticeHudLayout()
-}
-
-function syncMultiplicationProgressCells() {
-  multiplicationMatrix.querySelectorAll('.partial-product-cell').forEach(cell => {
-    const rawStepIndex = cell.dataset.stepIndex
-    const stepIndex = Number(rawStepIndex)
-    const complete = rawStepIndex !== '' && Number.isInteger(stepIndex) && stepIndex < practiceProgressState.index
-    const latestComplete = complete && stepIndex === practiceProgressState.index - 1
-    cell.classList.toggle('is-covered', complete)
-    cell.classList.toggle('is-latest-covered', latestComplete)
-  })
-}
-
-practiceProblemDisplay.addEventListener('click', restoreLastPracticeCheckpoint)
-multiplicationMatrix.addEventListener('click', restoreLastPracticeCheckpoint)
 
 function rng(resetFlag=true){
-  if (resetFlag) reset()
-  if (practiceMode === 'multiply') generateMultiplyProblem()
-  else generateAddSubProblem()
-}
-
-function restartPractice() {
-  clearPersistedSorobanState()
-  lastAddSubOperandText = ''
-  total.textContent = '0'
-  rng(true)
-  resetSprintSession()
-  resetGoalSession()
-}
-
-function clearBoard() {
-  clearPersistedSorobanState()
-  reset()
-  if (currentPracticeSessionMode() !== 'zen' || practiceMode !== 'addsub') return
-  const operand = practiceProblem.operand > 0n ? practiceProblem.operand : randomOperand()
-  total.textContent = '0'
-  setPracticeProblem('add', 0n, operand, operand)
-}
-
-function generateAddSubProblem() {
-  const limit = boardMax()
-  const base = currentTotal()
-  for (let attempt = 0; attempt < 1000; attempt++) {
-    const operation = Math.random() < 0.5 ? 'add' : 'subtract'
-    const room = operation === 'add' ? limit - base : base
-    if (room <= 0n) continue
-    const operand = randomOperand(room, lastAddSubOperandText)
-    const answer = operation === 'add' ? base + operand : base - operand
-    if (operand > 0n && answer >= 0n && answer <= limit && promptIsFresh(operation, base, operand, attempt)) {
-      setPracticeProblem(operation, base, operand, answer)
-      return
-    }
+  if (total.textContent == '0') {
+    total.textContent = random()
+    // streak.textContent = 0
   }
-  const addRoom = limit - base
-  const subtractRoom = base
-  const fallbackOperations = Math.random() < 0.5
-    ? [['add', addRoom], ['subtract', subtractRoom]]
-    : [['subtract', subtractRoom], ['add', addRoom]]
-  for (const [operation, room] of fallbackOperations) {
-    if (room <= 0n) continue
-    const operand = randomOperand(room, lastAddSubOperandText)
-    if (operand <= 0n) continue
-    const answer = operation === 'add' ? base + operand : base - operand
-    setPracticeProblem(operation, base, operand, answer)
-    return
-  }
-}
-
-function generateMultiplyProblem() {
-  const n = digits.value()
-  const requiredProductColumns = Math.min(16, n * 2)
-  if (colSlider.value() < requiredProductColumns) {
-    colSlider.setValue(requiredProductColumns, true)
-  }
-  const limit = boardMax()
-  const multiplicationFactorOptions = { rejectTerminalZero: true }
-  for (let attempt = 0; attempt < 1000; attempt++) {
-    const base = randomOperandWithDigitCount(n, limit, multiplicationFactorOptions)
-    const operandLimit = base > 0n ? limit / base : 0n
-    // Keep multiplication practice square for deterministic matrix geometry.
-    // Swap back to randomOperandUpToDigitCount(...) here for mixed-length factors.
-    const operand = randomOperandWithDigitCount(n, operandLimit, multiplicationFactorOptions)
-    const answer = base * operand
-    if (base > 0n && operand > 0n && !endsInZero(base) && !endsInZero(operand) && answer <= limit && promptIsFresh('multiply', base, operand, attempt)) {
-      setPracticeProblem('multiply', base, operand, answer)
-      return
-    }
-  }
-  const base = randomOperandWithDigitCount(n, limit, multiplicationFactorOptions)
-  const operandLimit = base > 0n ? limit / base : 1n
-  const operand = randomOperandWithDigitCount(n, operandLimit, multiplicationFactorOptions)
-  setPracticeProblem('multiply', base, operand, base * operand)
-}
-
-function renderPracticeProblem() {
-  practiceProblemDisplay.replaceChildren()
-  const promptText = practiceProblem.promptText || promptTextFor(practiceProblem.operation, practiceProblem.base, practiceProblem.operand)
-  if (!linearStepModeActive()) {
-    practiceProblemDisplay.textContent = promptText
-    practiceProblemDisplay.classList.remove('is-checkpoint-control')
-    practiceProblemDisplay.title = ''
-    queuePracticeHudLayout()
-    return
-  }
-
-  const symbol = document.createElement('span')
-  symbol.className = 'practice-problem-symbol'
-  symbol.textContent = `${practiceSymbols[practiceProblem.operation]} `
-  practiceProblemDisplay.append(symbol)
-
-  const completedDigitIndexes = new Set(
-    practiceProgressState.steps
-      .slice(0, practiceProgressState.index)
-      .map(step => step.digitIndex)
-      .filter(index => Number.isInteger(index))
-  )
-  const latestDigitIndex = practiceProgressState.steps[practiceProgressState.index - 1]?.digitIndex
-  Array.from(practiceProblem.operand.toString()).forEach((digit, index) => {
-    const span = document.createElement('span')
-    const complete = completedDigitIndexes.has(index)
-    const latestComplete = complete && index === latestDigitIndex
-    span.className = `practice-problem-digit${complete ? ' is-complete' : ''}${latestComplete ? ' is-latest-complete' : ''}`
-    span.textContent = digit
-    practiceProblemDisplay.append(span)
-  })
-  practiceProblemDisplay.classList.toggle('is-checkpoint-control', practiceProgressState.steps.length > 0)
-  practiceProblemDisplay.title = practiceProgressState.steps.length > 0 ? 'Restore last checkpoint' : ''
-  queuePracticeHudLayout()
-}
-
-function syncLegacyAnswerButtons() {
+  const a = +total.textContent
+  let b;
+  // let i = 0
+  do {
+    b = random();
+    // console.log(i)
+    // i++;
+  } while (b === prevB);
+  prevB = b;
   Array.from(btnCont.children).forEach((btn,i)=>{
-    const visible = ['add', 'subtract', 'multiply'][i] === practiceProblem.operation
-    btn.dataset.label = practiceProblemDisplay.textContent
-    btn.dataset.answer = practiceProblem.answer.toString()
-    btn.hidden = !visible
+    btn.dataset.label = `${['+','-','x'][i]} ${b}`
+    btn.dataset.answer = [a+b,a-b,a*b][i]
     btn.textContent = btn.dataset.label
     btn.style.backgroundColor = '#ddd'
   })
-}
-
-function submitPracticeAnswer() {
-  const answer = practiceProblem.answer.toString()
-  advancePracticeProgressForBoard()
-  if (guidedStepModeActive() && !practiceProgressComplete()) return
-  const correct = practiceAnswerMatchesBoard()
-  if (correct) {
-    total.textContent = answer
-    recordPracticeAttempt(true)
-    rng(practiceMode === 'multiply')
-  } else {
-    recordPracticeAttempt(false)
-    queuePersistSorobanState()
-  }
+  if (resetFlag) reset()
 }
 
 document.onkeydown = (e)=>{
   const key = e.key
   if (key==' ') rng()
-  if (key=='Enter') submitPracticeAnswer()
+  if (key=='Enter') reveal()
   if (key=='r') reset()
   const ansIdx = 'p-='.indexOf(key)
-  if (ansIdx>=0) submitPracticeAnswer()
+  if (ansIdx>=0) btnCont.children[ansIdx].click()
   const [col, row] = controls[key] || [NaN,NaN]
   if (isNaN(col)) return
-  const columnIndex = Math.floor((colSlider.value()-1)/2)-col
-  if (columns[columnIndex]) columns[columnIndex].move(row)
+  columns[(colSlider.value()-1)/2-col].move(row)
 }
 
 canvas.addEventListener('touchstart', function(e) {
@@ -2627,6 +357,50 @@ canvas.addEventListener('touchstart', function(e) {
 function cols2String(){
   return columns.map(c=>c.value()).join('')
 }
+function fitArea(availW, availH, aspect) {
+  if (availW <= 0 || availH <= 0) return 0;
+  const w = Math.min(availW, availH * aspect);
+  const h = w / aspect;
+  return w * h;
+}
+
+function updateLayout() {
+  const aspect = colSlider.value() / (7 + horizon) || 1;
+
+  // Container box minus padding
+  const cs = getComputedStyle(container);
+  const gap  = parseFloat(cs.gap) || 0;
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop)  + parseFloat(cs.paddingBottom);
+  const W = container.clientWidth  - padX;
+  const H = container.clientHeight - padY;
+
+  // 1) Measure STACKED (controls on top)
+  container.classList.add('layout-stacked');
+  container.classList.remove('layout-side-by-side');
+  // Available to SVG when stacked: full width, height minus controls and the vertical gap
+  const stackedArea = fitArea(W, H - inputsDiv.offsetHeight - gap, aspect);
+
+  // 2) Measure SIDE-BY-SIDE (controls on left)
+  container.classList.add('layout-side-by-side');
+  container.classList.remove('layout-stacked');
+  // Available to SVG when side-by-side: width minus controls and the horizontal gap, full height
+  const sideArea = fitArea(W - inputsDiv.offsetWidth - gap, H, aspect);
+
+  // 3) Pick the winner
+  const stackedBetter = stackedArea >= sideArea;
+  container.classList.toggle('layout-stacked', stackedBetter);
+  container.classList.toggle('layout-side-by-side', !stackedBetter);
+}
+
+// Keep your existing calls, but this version gives correct measurements
+window.addEventListener('resize', updateLayout);
+window.addEventListener('load', updateLayout);
+
+// Optional: re-evaluate if the controls change size (e.g., label grows)
+new ResizeObserver(updateLayout).observe(inputsDiv);
+
+
 
 const btn = document.getElementById('stopwatch');
 

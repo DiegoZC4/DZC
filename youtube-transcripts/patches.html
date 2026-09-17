@@ -24,12 +24,11 @@ main { padding: 14px clamp(10px, 1.6vw, 28px) 42px; width: 100%; }
 .page-nav a { color: var(--accent); font-size: 14px; font-weight: 850; text-decoration: none; }
 .toolbar { align-items: center; display: flex; justify-content: flex-end; margin-bottom: 10px; }
 button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 850; min-height: 36px; padding: 0 11px; }
-.player-panel { background: #111; border: 1px solid rgba(0, 0, 0, 0.35); border-radius: 7px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22); display: none; left: 10px; padding: 3px; position: fixed; top: 10px; width: min(220px, calc(100vw - 20px)); z-index: 20; }
-.player-panel[data-open="true"] { display: block; }
-.player-top { height: 0; position: relative; }
-.player-title { height: 1px; left: -9999px; overflow: hidden; position: absolute; top: auto; width: 1px; }
-.player-top button { align-items: center; background: rgba(24, 24, 24, 0.78); border: 1px solid rgba(255, 255, 255, 0.32); border-radius: 999px; color: #fff; display: inline-flex; font-size: 15px; height: 22px; justify-content: center; line-height: 1; min-height: 0; padding: 0; position: absolute; right: -7px; top: -7px; width: 22px; z-index: 2; }
-.player-frame { aspect-ratio: 16 / 9; background: #111; border: 0; border-radius: 5px; display: block; width: 100%; }
+.review-player { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: none; gap: 8px; margin: 0 0 10px; padding: 8px; position: sticky; top: 0; z-index: 4; }
+.review-player[data-open="true"] { display: grid; }
+.review-player-top { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+.review-player-title { font-size: 13px; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.review-player-frame { aspect-ratio: 16 / 9; background: #111; border: 0; border-radius: 6px; display: block; max-height: 42vh; width: 100%; }
 .patch-results { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
 .patch-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; padding: 9px 10px; }
 .patch-card-top { align-items: center; display: grid; gap: 8px; grid-template-columns: 24px minmax(0, 1fr) auto; }
@@ -37,13 +36,12 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 .patch-title { font-size: 14px; font-weight: 850; line-height: 1.22; overflow-wrap: anywhere; }
 .patch-meta { color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patch-status { background: var(--accent-soft); border: 1px solid #ffd2cf; border-radius: 999px; color: var(--accent); font-size: 12px; font-weight: 900; padding: 3px 8px; white-space: nowrap; }
-.patch-body { border-top: 1px solid var(--line); display: grid; gap: 4px; padding-top: 7px; }
-.patch-window { color: #30302e; font-size: 13.5px; line-height: 1.34; overflow-wrap: anywhere; }
-.patch-time { color: var(--muted); display: inline-block; font-size: 12px; font-weight: 900; margin-right: 5px; text-decoration: none; white-space: nowrap; }
-.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); cursor: pointer; font-weight: 950; padding: 0 2px; text-decoration: none; }
+.patch-body { display: grid; gap: 5px; }
+.patch-window { border-top: 1px solid var(--line); color: #30302e; font-size: 13.5px; line-height: 1.34; padding-top: 6px; }
+.patch-time { color: var(--muted); font-size: 12px; font-weight: 900; margin-right: 5px; white-space: nowrap; }
+.patch-window-text { display: inline; }
+.patch-word { background: var(--accent-soft); border-radius: 4px; color: var(--accent); font-weight: 950; padding: 0 2px; text-decoration: none; }
 .patch-word:hover { text-decoration: underline; }
-.patch-missing { background: #f3f4f0; border-radius: 4px; color: #777a70; cursor: pointer; font-weight: 900; padding: 0 2px; text-decoration: none; }
-.patch-missing:hover { text-decoration: underline; }
 .empty { color: var(--muted); padding: 18px 0; }
 @media (max-width: 680px) {
   .topbar { align-items: flex-start; flex-direction: column; }
@@ -57,7 +55,7 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 <body>
 <main>
   <div class="topbar">
-    <div class="meta" id="patchMeta">Loading decensor candidates...</div>
+    <div class="meta" id="patchMeta">Loading uncensored candidates...</div>
     <div class="page-nav">
       <a href="index.html">Search</a>
       <a href="stats.html">Stats</a>
@@ -66,12 +64,12 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
   <div class="toolbar">
     <button id="refreshPatches" type="button">Refresh</button>
   </div>
-  <section class="player-panel" id="patchPlayerPanel" data-open="false">
-    <div class="player-top">
-      <div class="player-title" id="patchPlayerTitle"></div>
-      <button id="closePatchPlayer" type="button" aria-label="Close player">&times;</button>
+  <section class="review-player" id="reviewPlayer" aria-label="YouTube review player">
+    <div class="review-player-top">
+      <div class="review-player-title" id="reviewPlayerTitle"></div>
+      <button id="closeReviewPlayer" type="button" aria-label="Close player">&times;</button>
     </div>
-    <iframe class="player-frame" id="patchPlayer" title="YouTube preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <iframe class="review-player-frame" id="reviewPlayerFrame" title="YouTube video review player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
   </section>
   <section class="patch-results" id="patchResults"></section>
 </main>
@@ -79,12 +77,13 @@ button { background: var(--panel); border: 1px solid var(--line); border-radius:
 const patchMeta = document.getElementById('patchMeta');
 const patchResults = document.getElementById('patchResults');
 const refreshPatches = document.getElementById('refreshPatches');
-const patchPlayerPanel = document.getElementById('patchPlayerPanel');
-const patchPlayer = document.getElementById('patchPlayer');
-const patchPlayerTitle = document.getElementById('patchPlayerTitle');
-const closePatchPlayer = document.getElementById('closePatchPlayer');
+const reviewPlayer = document.getElementById('reviewPlayer');
+const reviewPlayerFrame = document.getElementById('reviewPlayerFrame');
+const reviewPlayerTitle = document.getElementById('reviewPlayerTitle');
+const closeReviewPlayer = document.getElementById('closeReviewPlayer');
 const CANDIDATE_START = '\uE000';
 const CANDIDATE_END = '\uE001';
+const CENSOR_RE = /\[\s*__\s*\]/;
 let channelByName = new Map();
 
 const CATEGORY_STYLES = {
@@ -105,9 +104,9 @@ init();
 
 async function init() {
   refreshPatches.addEventListener('click', () => loadPatches());
-  closePatchPlayer.addEventListener('click', () => {
-    patchPlayerPanel.dataset.open = 'false';
-    patchPlayer.src = 'about:blank';
+  closeReviewPlayer.addEventListener('click', () => {
+    reviewPlayer.dataset.open = 'false';
+    reviewPlayerFrame.src = 'about:blank';
   });
   await loadChannels();
   await loadPatches();
@@ -123,25 +122,13 @@ async function loadChannels() {
 }
 
 async function loadPatches() {
-  patchMeta.textContent = 'Loading decensor candidates...';
+  patchMeta.textContent = 'Loading uncensored candidates...';
   patchResults.innerHTML = '';
-  const loadStarted = performance.now();
   try {
     const payload = await getJson('api.php?action=patches&limit=200');
-    const fetchedAt = performance.now();
-    const summaryText = renderPatches(payload.patches || {});
-    const renderedAt = performance.now();
-    patchMeta.textContent = `${summaryText} · ${formatPatchTiming(payload.timing || {}, {
-      total_ms: renderedAt - loadStarted,
-      fetch_parse_ms: fetchedAt - loadStarted,
-      render_ms: renderedAt - fetchedAt
-    })}`;
+    renderPatches(payload.patches || {});
   } catch (error) {
-    const failedAt = performance.now();
     patchMeta.textContent = error.message;
-    if (Number.isFinite(failedAt - loadStarted)) {
-      patchMeta.textContent += ` · browser ${formatMs(failedAt - loadStarted)}`;
-    }
     patchResults.innerHTML = '';
   }
 }
@@ -151,16 +138,14 @@ function renderPatches(payload) {
   const groups = groupPatchMarkers(markers);
   const videoCount = new Set(markers.map(item => item.video_id)).size;
   if (markers.length) {
-    const suggested = markers.filter(markerHasProposal).length;
-    const missing = markers.length - suggested;
-    patchMeta.textContent = `${groups.length} card${groups.length === 1 ? '' : 's'} · ${suggested} suggested · ${missing} unpatched from ${videoCount} video${videoCount === 1 ? '' : 's'}`;
+    patchMeta.textContent = `${groups.length} candidate card${groups.length === 1 ? '' : 's'} · ${markers.length} replacement${markers.length === 1 ? '' : 's'} from ${videoCount} video${videoCount === 1 ? '' : 's'}`;
   } else {
-    patchMeta.textContent = 'No decensor candidates yet.';
+    patchMeta.textContent = 'No uncensored candidates yet.';
   }
 
   if (!markers.length) {
-    patchResults.innerHTML = '<div class="empty">No decensor candidates recorded yet.</div>';
-    return patchMeta.textContent;
+    patchResults.innerHTML = '<div class="empty">No uncensored candidates recorded yet.</div>';
+    return;
   }
 
   const fragment = document.createDocumentFragment();
@@ -181,57 +166,19 @@ function renderPatches(payload) {
     `;
     article.querySelector('.avatar-slot').replaceWith(channelAvatarElement(first.channel || ''));
     article.querySelector('.patch-title').textContent = first.title || first.video_id || '';
-    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · ${patchFractionText(group)} suggested`;
-    article.querySelector('.patch-status').textContent = `${group.suggestedCount}/${group.totalCensorCount || group.markers.length} censors`;
+    article.querySelector('.patch-meta').textContent = `${first.channel || ''} · ${group.windows.length} candidate cue${group.windows.length === 1 ? '' : 's'}`;
+    article.querySelector('.patch-status').textContent = `${group.markers.length} candidate${group.markers.length === 1 ? '' : 's'}`;
 
     const body = article.querySelector('.patch-body');
     for (const windowGroup of group.windows) {
       const windowElement = document.createElement('section');
       windowElement.className = 'patch-window';
-      renderPatchWindow(windowElement, windowGroup);
+      renderPatchWindowLine(windowElement, windowGroup);
       body.appendChild(windowElement);
     }
     fragment.appendChild(article);
   }
   patchResults.replaceChildren(fragment);
-  return patchMeta.textContent;
-}
-
-function formatPatchTiming(serverTiming, browserTiming) {
-  const parts = [
-    `browser ${formatMs(browserTiming.total_ms)}`,
-    `fetch ${formatMs(browserTiming.fetch_parse_ms)}`,
-    `render ${formatMs(browserTiming.render_ms)}`
-  ];
-  if (Number.isFinite(Number(serverTiming.total_ms))) {
-    parts.push(`server ${formatMs(serverTiming.total_ms)}`);
-  }
-  const detailParts = [
-    ['db videos', serverTiming.video_query_ms],
-    ['db proposals', serverTiming.proposal_query_ms],
-    ['marker scan', serverTiming.marker_offset_ms],
-    ['payload', serverTiming.payload_ms]
-  ]
-    .filter(([, value]) => Number.isFinite(Number(value)))
-    .map(([label, value]) => `${label} ${formatMs(value)}`);
-  if (detailParts.length) parts.push(detailParts.join(', '));
-  return parts.join(' · ');
-}
-
-function formatMs(ms) {
-  const value = Number(ms);
-  if (!Number.isFinite(value)) return 'n/a';
-  return value >= 1000 ? `${(value / 1000).toFixed(2)}s` : `${value.toFixed(0)}ms`;
-}
-
-function patchFractionText(group) {
-  const first = group.markers[0] || {};
-  const suggested = Number(first.video_suggested_count || group.suggestedCount || 0);
-  const total = Number(first.video_censor_count || group.totalCensorCount || 0);
-  if (Number.isFinite(suggested) && Number.isFinite(total) && total > 0) {
-    return `${suggested}/${total}`;
-  }
-  return String(suggested || group.markers.length);
 }
 
 function groupPatchMarkers(markers) {
@@ -239,92 +186,57 @@ function groupPatchMarkers(markers) {
   for (const marker of markers) {
     const key = `${marker.run_id}:${marker.video_id}`;
     if (!groupsByKey.has(key)) {
-      groupsByKey.set(key, { key, markers: [], windowsByKey: new Map(), suggestedStarts: new Set(), totalCensorCount: 0 });
+      groupsByKey.set(key, { key, markers: [], windowsByKey: new Map() });
     }
     const group = groupsByKey.get(key);
     group.markers.push(marker);
-    if (markerHasProposal(marker)) group.suggestedStarts.add(Number(marker.marker_char_start));
-    group.totalCensorCount = Math.max(group.totalCensorCount, Number(marker.video_censor_count || 0));
     const windowKey = String(marker.window_index);
     if (!group.windowsByKey.has(windowKey)) {
       group.windowsByKey.set(windowKey, {
         index: marker.window_index,
         start: marker.window_start_timestamp,
         end: marker.window_end_timestamp,
-        cueStartChar: Number(marker.cue_start_char ?? marker.window_index ?? marker.marker_char_start ?? 0),
-        cueText: marker.cue_text || marker.youtube_excerpt || '',
         text: stripPatchMarkers(marker.stt_text || marker.stt_excerpt || ''),
         markers: []
       });
     }
     const windowGroup = group.windowsByKey.get(windowKey);
-    if (!windowGroup.cueText && (marker.cue_text || marker.youtube_excerpt)) {
-      windowGroup.cueText = marker.cue_text || marker.youtube_excerpt || '';
-    }
     if (!windowGroup.text && (marker.stt_text || marker.stt_excerpt)) {
       windowGroup.text = stripPatchMarkers(marker.stt_text || marker.stt_excerpt || '');
     }
     windowGroup.markers.push(marker);
   }
-  return [...groupsByKey.values()]
-    .map(group => ({
-      ...group,
-      suggestedCount: Number(group.markers[0]?.video_suggested_count || group.suggestedStarts.size),
-      markers: group.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds)),
-      windows: [...group.windowsByKey.values()]
-        .map(windowGroup => ({
-          ...windowGroup,
-          markers: windowGroup.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds))
-        }))
-        .sort((a, b) => Number(a.index) - Number(b.index))
-    }))
-    .sort((a, b) => {
-      const totalCount = patchDenominator(a) - patchDenominator(b);
-      if (totalCount) return totalCount;
-      const patchCount = a.suggestedCount - b.suggestedCount;
-      if (patchCount) return patchCount;
-      const firstA = a.markers[0] || {};
-      const firstB = b.markers[0] || {};
-      return String(firstA.channel || '').localeCompare(String(firstB.channel || ''), undefined, { sensitivity: 'base' })
-        || String(firstA.title || '').localeCompare(String(firstB.title || ''), undefined, { sensitivity: 'base' })
-        || String(firstA.video_id || '').localeCompare(String(firstB.video_id || ''));
-    });
+  return [...groupsByKey.values()].map(group => ({
+    ...group,
+    markers: group.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds)),
+    windows: [...group.windowsByKey.values()]
+      .map(windowGroup => ({
+        ...windowGroup,
+        markers: windowGroup.markers.sort((a, b) => Number(a.marker_start_seconds) - Number(b.marker_start_seconds))
+      }))
+      .sort((a, b) => Number(a.index) - Number(b.index))
+  }));
 }
 
-function patchDenominator(group) {
-  return Number(group.totalCensorCount || group.markers[0]?.video_censor_count || group.markers.length || 0);
-}
-
-function renderPatchWindow(container, windowGroup) {
-  const line = document.createElement('div');
-  line.className = 'patch-cue-line';
-  const primaryMarker = windowGroup.markers[0] || {};
-  const time = document.createElement('a');
+function renderPatchWindowLine(container, windowGroup) {
+  const time = document.createElement('span');
   time.className = 'patch-time';
-  time.href = markerUrl(primaryMarker);
-  time.textContent = windowGroup.start || primaryMarker.marker_timestamp || '0:00';
-  time.title = 'Preview this cue';
-  time.addEventListener('click', event => {
-    if (isNativeLinkClick(event)) return;
-    event.preventDefault();
-    openPatchPlayer(primaryMarker);
-  });
-  line.appendChild(time);
-  const cueText = document.createElement('span');
-  cueText.className = 'patch-window-text';
-  line.appendChild(cueText);
-  renderCueText(cueText, windowGroup);
-  container.replaceChildren(line);
+  time.textContent = windowGroup.start || '0:00';
+  container.appendChild(time);
+  const text = document.createElement('span');
+  text.className = 'patch-window-text';
+  container.appendChild(text);
+  renderPatchWindowText(text, windowGroup);
 }
 
-function renderCueText(container, windowGroup) {
-  const rawCueText = String(windowGroup.cueText || '');
-  if (rawCueText && Number.isFinite(windowGroup.cueStartChar)) {
-    const rendered = renderCueTextFromOffsets(container, rawCueText, windowGroup.cueStartChar, windowGroup.markers);
-    if (rendered) return;
+function renderPatchWindowText(container, windowGroup) {
+  const candidateText = markedCueText(windowGroup.markers);
+  if (candidateText) {
+    renderMarkedCandidateText(container, candidateText, windowGroup.markers);
+    return;
   }
 
-  const text = windowGroup.text || fallbackPatchText(windowGroup.markers);
+  const text = stripPatchMarkers(windowGroup.text || fallbackPatchText(windowGroup.markers));
   if (text.includes(CANDIDATE_START) && text.includes(CANDIDATE_END)) {
     renderMarkedCandidateText(container, text, windowGroup.markers);
     return;
@@ -347,7 +259,9 @@ function renderCueText(container, windowGroup) {
     const index = lowerText.indexOf(needle, cursor);
     if (index < 0) continue;
     if (index > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
-    fragment.appendChild(patchWordElement(text.slice(index, index + item.text.length), item.marker));
+    const mark = patchWordLink(item.marker);
+    mark.textContent = text.slice(index, index + item.text.length);
+    fragment.appendChild(mark);
     cursor = index + item.text.length;
     matched++;
   }
@@ -355,30 +269,20 @@ function renderCueText(container, windowGroup) {
   container.replaceChildren(matched ? fragment : document.createTextNode(text));
 }
 
-function renderCueTextFromOffsets(container, cueText, cueStartChar, markers) {
-  const ordered = [...markers].sort((a, b) => Number(a.marker_char_start) - Number(b.marker_char_start));
-  const fragment = document.createDocumentFragment();
-  let cursor = 0;
-  let rendered = 0;
-  for (const marker of ordered) {
-    const start = Number(marker.marker_char_start) - cueStartChar;
-    const end = Number(marker.marker_char_end) - cueStartChar;
+function markedCueText(markers) {
+  const sorted = [...markers]
+    .sort((a, b) => Number(a.marker_char_start) - Number(b.marker_char_start))
+    .filter(marker => stripPatchMarkers(marker.replacement_text || marker.candidate_text || ''));
+  if (!sorted.length) return '';
+  let text = `${sorted[0].youtube_before || ''}[ __ ]${sorted[0].youtube_after || ''}`;
+  for (const marker of sorted) {
     const replacement = stripPatchMarkers(marker.replacement_text || marker.candidate_text || '');
-    if (!Number.isFinite(start) || !Number.isFinite(end) || start < cursor || end <= start || end > cueText.length) {
-      continue;
-    }
-    if (start > cursor) fragment.appendChild(document.createTextNode(cueText.slice(cursor, start)));
-    fragment.appendChild(replacement ? patchWordElement(replacement, marker) : missingPatchElement(marker));
-    cursor = end;
-    rendered++;
+    text = text.replace(CENSOR_RE, () => `${CANDIDATE_START}${replacement}${CANDIDATE_END}`);
   }
-  if (!rendered) return false;
-  if (cursor < cueText.length) fragment.appendChild(document.createTextNode(cueText.slice(cursor)));
-  container.appendChild(fragment);
-  return true;
+  return stripPatchMarkers(text);
 }
 
-function renderMarkedCandidateText(container, text, markers = []) {
+function renderMarkedCandidateText(container, text, markers) {
   const fragment = document.createDocumentFragment();
   let cursor = 0;
   let matched = 0;
@@ -396,72 +300,49 @@ function renderMarkedCandidateText(container, text, markers = []) {
       fragment.appendChild(document.createTextNode(text.slice(start).replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
       break;
     }
-    fragment.appendChild(patchWordElement(text.slice(start + CANDIDATE_START.length, end), markers[matched] || markers[0] || {}));
+    const mark = patchWordLink(markers[matched] || markers[0] || {});
+    mark.textContent = text.slice(start + CANDIDATE_START.length, end);
+    fragment.appendChild(mark);
     matched++;
     cursor = end + CANDIDATE_END.length;
   }
   container.replaceChildren(matched ? fragment : document.createTextNode(text.replaceAll(CANDIDATE_START, '').replaceAll(CANDIDATE_END, '')));
 }
 
-function patchWordElement(text, marker) {
-  const mark = document.createElement('a');
-  mark.className = 'patch-word';
-  mark.href = markerUrl(marker);
-  mark.rel = 'noreferrer';
-  mark.title = `${marker.marker_timestamp || '0:00'} · preview`;
-  mark.textContent = text;
-  mark.addEventListener('click', event => {
-    if (isNativeLinkClick(event)) return;
+function patchWordLink(marker) {
+  const link = document.createElement('a');
+  link.className = 'patch-word';
+  link.href = marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(marker.video_id || '')}`;
+  link.rel = 'noreferrer';
+  link.title = `${marker.marker_timestamp || '0:00'} · ${marker.status || 'candidate'}${marker.reason ? ` · ${marker.reason}` : ''}`;
+  link.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
-    openPatchPlayer(marker);
+    openReviewPlayer(marker);
   });
-  return mark;
+  return link;
 }
 
-function missingPatchElement(marker) {
-  const mark = document.createElement('a');
-  mark.className = 'patch-missing';
-  mark.href = markerUrl(marker);
-  mark.rel = 'noreferrer';
-  mark.title = `${marker.marker_timestamp || '0:00'} · no proposed patch`;
-  mark.textContent = '[ __ ]';
-  mark.addEventListener('click', event => {
-    if (isNativeLinkClick(event)) return;
-    event.preventDefault();
-    openPatchPlayer(marker);
-  });
-  return mark;
-}
-
-function markerHasProposal(marker) {
-  return Boolean(stripPatchMarkers(marker.replacement_text || marker.candidate_text || ''));
-}
-
-function isNativeLinkClick(event) {
-  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
-}
-
-function markerUrl(marker) {
-  const videoId = marker.youtube_id || marker.video_id || '';
-  const seconds = Math.max(0, Math.floor(Number(marker.marker_start_seconds || marker.window_start_seconds || 0)));
-  return marker.url || `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&t=${seconds}s`;
-}
-
-function openPatchPlayer(marker) {
-  const videoId = marker.youtube_id || marker.video_id || '';
+function openReviewPlayer(marker) {
+  const videoId = String(marker.video_id || marker.youtube_id || '').trim();
   if (!videoId) return;
   const seconds = Math.max(0, Math.floor(Number(marker.marker_start_seconds || marker.window_start_seconds || 0)));
-  patchPlayer.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?start=${seconds}&autoplay=1&rel=0`;
-  patchPlayerTitle.textContent = `${marker.title || videoId} · ${marker.marker_timestamp || formatTimestamp(seconds)}`;
-  patchPlayerPanel.dataset.open = 'true';
+  const title = [marker.marker_timestamp || formatTimestamp(seconds), marker.channel, marker.title]
+    .filter(Boolean)
+    .join(' · ');
+  reviewPlayerTitle.textContent = title;
+  reviewPlayer.dataset.open = 'true';
+  reviewPlayerFrame.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?start=${seconds}&autoplay=1&rel=0`;
 }
 
-function formatTimestamp(totalSeconds) {
-  const seconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+function formatTimestamp(seconds) {
+  const value = Math.max(0, Math.floor(Number(seconds || 0)));
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const secs = value % 60;
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
 function fallbackPatchText(markers) {
@@ -573,16 +454,9 @@ function initialsFor(value) {
 
 async function getJson(url) {
   const response = await fetch(url, { cache: 'no-store' });
-  const text = await response.text();
-  if (!text.trim()) throw new Error(`Empty API response (${response.status})`);
-  let payload;
-  try {
-    payload = JSON.parse(text);
-  } catch {
-    const snippet = text.trim().replace(/\s+/g, ' ').slice(0, 140);
-    throw new Error(`Invalid API response (${response.status})${snippet ? `: ${snippet}` : ''}`);
-  }
-  if (!response.ok || !payload.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  const payload = await response.json();
+  if (!payload.ok) throw new Error(payload.error || 'Request failed');
   return payload;
 }
 </script>

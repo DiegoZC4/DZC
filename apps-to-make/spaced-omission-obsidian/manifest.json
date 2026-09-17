@@ -1,9 +1,0 @@
-{
-  "id": "spaced-omission",
-  "name": "Spaced Omission",
-  "version": "0.1.0",
-  "minAppVersion": "1.4.0",
-  "description": "Surfaces neglected notes with age-weighted random selection.",
-  "author": "Diego Z. C. + Codex",
-  "isDesktopOnly": false
-}

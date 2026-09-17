@@ -1,107 +1,869 @@
-<!DOCTYPE html> <html lang="en"> 
-  <head><meta charset="UTF-8"> 
-    <title>Periodic Table Etymologies</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛︎</text></svg>">
-  </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Periodic Table Etymologies</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛︎</text></svg>">
+  <style>
+    :root {
+      --bg: #f5f0e7;
+      --panel: rgba(255, 251, 245, 0.92);
+      --panel-strong: #fffdf8;
+      --ink: #191713;
+      --muted: #6d655c;
+      --line: #d9cbb8;
+      --accent: #8b5e34;
+      --accent-soft: #efe0ca;
+      --shadow: 0 16px 40px rgba(48, 33, 20, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Iowan Old Style", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.75), transparent 28%),
+        linear-gradient(180deg, #f9f4ec 0%, #efe5d7 100%);
+    }
+
+    .shell {
+      width: min(1880px, calc(100vw - 24px));
+      margin: 18px auto 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      line-height: 1.05;
+    }
+
+    .title-wrap p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      border: 1px solid var(--line);
+      background: #f8efe3;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font: inherit;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .view {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 520px;
+      min-height: 760px;
+    }
+
+    .table-pane {
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.12));
+      overflow: auto;
+    }
+
+    .detail-pane {
+      border-left: 1px solid var(--line);
+      background: rgba(247, 240, 230, 0.9);
+      padding: 20px 18px;
+    }
+
+    .detail-pane h2 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+    }
+
+    .detail-pane p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .meta-kicker {
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    #periodicCanvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .cell-button {
+      cursor: pointer;
+    }
+
+    .cell-button.selected .selection-ring {
+      opacity: 1;
+    }
+
+    .selection-ring {
+      pointer-events: none;
+    }
+
+    .cell-button:focus {
+      outline: none;
+    }
+
+    .list-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.45);
+    }
+
+    .search-wrap {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      width: 100%;
+    }
+
+    .search-wrap input {
+      flex: 1 1 360px;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 12px 16px;
+      font: inherit;
+      background: var(--panel-strong);
+      color: var(--ink);
+    }
+
+    .summary {
+      color: var(--muted);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .card .sub {
+      margin: 6px 0 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .trace-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .trace-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .trace-table th,
+    .trace-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      width: 20%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .trace-table th {
+      background: rgba(239, 224, 202, 0.65);
+      font-size: 0.75rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .trace-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .trace-table td.empty-cell {
+      color: #9a9085;
+    }
+
+    .empty {
+      padding: 30px 18px 36px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .cost-view {
+      padding: 18px;
+    }
+
+    .cost-intro {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .cost-toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .sort-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .sort-label {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .sort-button {
+      border: 1px solid var(--line);
+      background: #f8efe3;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .sort-button[aria-pressed="true"] {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .direction-button {
+      min-width: 112px;
+    }
+
+    .cost-highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .cost-highlight-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+      padding: 16px;
+    }
+
+    .cost-highlight-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .rank-list {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.5;
+    }
+
+    .rank-list a {
+      color: inherit;
+    }
+
+    .data-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+      line-height: 1.35;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    .data-table th {
+      background: rgba(239, 224, 202, 0.65);
+      font-size: 0.77rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .data-table td.wrap {
+      white-space: normal;
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    @media (max-width: 980px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-pane {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
 <body>
-<script>
-function svg(tagName, attrs, textContent) {
-  var el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
-  for (var key in attrs) el.setAttribute(key, attrs[key]);
-  if (textContent) el.textContent = textContent;
-  return el;
-}
+  <div class="shell">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>Periodic Table Etymologies</h1>
+        <p>Browse the image-based Mendeleev layout or read the structured etymology lines.</p>
+      </div>
+      <nav class="tabs" aria-label="Views">
+        <button class="tab-button" type="button" data-view="layout" aria-selected="true">Mendeleev Layout</button>
+        <button class="tab-button" type="button" data-view="list" aria-selected="false">Etymology List</button>
+        <button class="tab-button" type="button" data-view="cost" aria-selected="false">Cost per Gram</button>
+      </nav>
+    </header>
 
-const gap = .3
-const [w,h] = [18+gap, 9+gap]
-const textShadow = '0 0 2px white,'.repeat(2).slice(0, -1);
-const canvas = svg('svg', {
-  width: 'calc(100vw - 16px)',
-  viewBox: `0 0 ${w} ${h}`,
-  fill:'none',
-  'stroke-width':.05,
-  stroke:'black',
-  'text-anchor':'middle',
-  'alignment-baseline':'middle',
-  'style': `text-shadow: ${textShadow};`
-});
-document.body.append(canvas)
+    <section id="layoutView" class="view active">
+      <div class="layout-grid">
+        <div class="table-pane">
+          <svg id="periodicCanvas" viewBox="0 0 18.3 9.3" fill="none" stroke="black" stroke-width="0.05"></svg>
+        </div>
+        <aside class="detail-pane">
+          <div class="meta-kicker">Selected Entry</div>
+          <div id="detailPane"></div>
+        </aside>
+      </div>
+    </section>
 
-const symbols = ['','H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
+    <section id="listView" class="view">
+      <div class="list-controls">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="Search by name, symbol, meaning, language, or root">
+          <div id="resultSummary" class="summary"></div>
+        </div>
+      </div>
+      <div id="listGrid" class="list-grid"></div>
+      <div id="emptyState" class="empty" hidden>No matching etymology entries.</div>
+    </section>
 
-async function buildTable(){
-  for (let i=0; i<119; i++){
-    const [x,y] = tableCoords(i);
-    const g = svg('g',{transform:`translate(${x},${y})`})
-    canvas.append(g)
+    <section id="costView" class="view">
+      <div class="cost-view">
+        <div class="cost-toolbar">
+          <p id="costSummary" class="cost-intro"></p>
+          <div class="sort-controls" aria-label="Cost sort controls">
+            <span class="sort-label">Sort by</span>
+            <button id="sortByGram" class="sort-button" type="button" aria-pressed="true">USD/g</button>
+            <button id="sortByVolume" class="sort-button" type="button" aria-pressed="false">USD/cm^3</button>
+            <button id="sortDirection" class="sort-button direction-button" type="button" aria-pressed="false">Increasing</button>
+          </div>
+        </div>
+        <div id="costHighlightGrid" class="cost-highlight-grid"></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Z</th>
+                <th>Symbol</th>
+                <th>Element</th>
+                <th>USD/g</th>
+                <th>Cumsum USD/g</th>
+                <th>USD/cm^3</th>
+                <th>Cumsum USD/cm^3</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Purity</th>
+                <th>Offer</th>
+                <th>Density</th>
+              </tr>
+            </thead>
+            <tbody id="costTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
 
-    g.append(svg('rect',{
-      x:0,
-      y:0,
-      width:1,
-      height:1,
-    }))
-    const img = svg('image', {
-      width:1, height:1,
-      preserveAspectRatio:"xMidYMin slice"
-    })
-    g.append(img)
-    pickImage(i).then(url => {
-      if (url)img.setAttribute('href',url)
-    });
-    g.append(svg('text',{
-      x:.2,y:.25,
-      'font-size':.25,
-      stroke:'none',
-      fill:'black',
-    },i))
-    g.append(svg('text',{
-      x:.5,y:.68,
-      'font-size':.5,
-      stroke:'none',
-      fill:'black',
-    },symbols[i]))
-  }
-  canvas.append(svg('path',{d:
-    `M${2},${7}
-    v-2 l${gap},${gap+2} v2 z`,
-    fill:'black'
-  }))
-}
-buildTable();
+  <script>window.ETYMOLOGY_TRACES = {"1": {"number": 1, "symbol": "H", "name": "Hydrogen", "meaning": "water + begetter", "origin_word": "ὕδωρ (root: ὑδρ -) + γενής ( hydor genes )", "origin_language": "Greek via Latin and French", "origin_type": "descriptive", "summary": "From French hydrogène and Latin hydro- and -genes , derived from the Greek ὕδωρ γείνομαι ( hydor geinomai ), meaning \"Ι beget water\".", "etymology_lines": [{"language": "Greek via Latin and French", "word": "ὕδωρ + γενής ( hydor genes )", "roots": "ὑδρ -", "meaning": "water + begetter", "notes": "descriptive"}]}, "2": {"number": 2, "symbol": "He", "name": "Helium", "meaning": "sun", "origin_word": "ἥλιος ( hélios )", "origin_language": "Greek", "origin_type": "astrological; mythological", "summary": "Named after the Greek ἥλιος ( helios ), meaning \"the sun\" or the mythological sun-god. It was first identified by its characteristic emission lines in the Sun's spectrum .", "etymology_lines": [{"language": "Greek", "word": "ἥλιος ( hélios )", "roots": "", "meaning": "sun", "notes": "astrological; mythological"}]}, "3": {"number": 3, "symbol": "Li", "name": "Lithium", "meaning": "stone", "origin_word": "λίθος ( lithos )", "origin_language": "Greek", "origin_type": "", "summary": "From Greek λίθος ( lithos ) meaning \"stone\", because it was discovered from a mineral while other common alkali metals ( sodium and potassium ) were discovered from plant tissue.", "etymology_lines": [{"language": "Greek", "word": "λίθος ( lithos )", "roots": "", "meaning": "stone", "notes": ""}]}, "4": {"number": 4, "symbol": "Be", "name": "Beryllium", "meaning": " beryl \", a mineral", "origin_word": "City of Belur in India via Greek βήρυλλος ( beryllos )", "origin_language": "Sanskrit , Pali , and Prakrit via Greek, Latin, Old French , and Middle English", "origin_type": "descriptive (colour)", "summary": "βήρυλλος ( beryllos ), denoting beryl , which contains beryllium. The word is derived (via Latin: beryllus and French: béryl ) from the Greek βήρυλλος ( bērullos ), \"a blue-green spar \", from Prakrit वॆरुलिय‌ ( veruliya ), from Pāli वेलुरिय ( veḷuriya ), भेलिरु ( veḷiru ) or भिलर् ( viḷar ): \"to become pale\", in reference to the pale semiprecious gemstone beryl .", "etymology_lines": [{"language": "Sanskrit , Pali , and Prakrit via Greek, Latin, Old French , and Middle English", "word": "City of Belur in India via Greek βήρυλλος ( beryllos )", "roots": "", "meaning": "beryl \", a mineral", "notes": "descriptive (colour)"}]}, "5": {"number": 5, "symbol": "B", "name": "Boron", "meaning": "", "origin_word": "بورق ( buraq )", "origin_language": "Arabic , Medieval Latin , Anglo-Norman , Middle French , and Middle English", "origin_type": "", "summary": "From the Arabic بورق ( buraq ), which refers to borax . Possibly derived from Persian بوره ( burah ). The Arabic was adapted as Medieval Latin baurach , Anglo-Norman boreis , and Middle English boras , which became the source of the English \"boron\".", "etymology_lines": [{"language": "Arabic , Medieval Latin , Anglo-Norman , Middle French , and Middle English", "word": "بورق ( buraq )", "roots": "", "meaning": "", "notes": ""}]}, "6": {"number": 6, "symbol": "C", "name": "Carbon", "meaning": "charcoal", "origin_word": "charbone", "origin_language": "Latin via French", "origin_type": "", "summary": "From French charbone , which in turn came from Latin carbō , meaning \"charcoal\" and is related to carbōn , meaning \"a coal\". (The German and Dutch names, \" Kohlenstoff \" and \" koolstof \", respectively, both literally mean \"coal matter\".) These words come from the Proto-Indo-European base * ker- meaning \"heat\", \"fire\", or \"to burn\".", "etymology_lines": [{"language": "Latin via French", "word": "charbone", "roots": "", "meaning": "charcoal", "notes": ""}]}, "7": {"number": 7, "symbol": "N", "name": "Nitrogen", "meaning": "native-soda begetter", "origin_word": "νίτρον (Latin: nitrum ) -γενής ( -genes )", "origin_language": "Greek via Latin and French", "origin_type": "descriptive", "summary": "From French nitrogène derived from Greek νίτρον γείνομαι ( nitron geinomai ), meaning \"I form/beget native-soda ( niter )\". The original source is either the Arabic word نطرون ( natrun ) or the Egyptian word netjeri . (See the entry on Sodium below). · Former name azote (French), from Greek ἄζωτος ( azōtos ) \"lifeless\" but possibly inspired by azoth , one of the alchemical names of mercury, from Andalusian Arabic al-zuq , the Classical Arabic name of that element.", "etymology_lines": [{"language": "Greek via Latin and French", "word": "νίτρον (Latin: nitrum ) -γενής ( -genes )", "roots": "", "meaning": "native-soda begetter", "notes": "descriptive"}]}, "8": {"number": 8, "symbol": "O", "name": "Oxygen", "meaning": "to bring forth acid", "origin_word": "ὀξύ γείνομαι ( oxy geinomai )/ oxygène", "origin_language": "Greek via French", "origin_type": "", "summary": "From Greek ὀξύ γείνομαι ( oxy geinomai ), meaning \"Ι bring forth acid\", as it was believed to be an essential component of acids. This phrase was corrupted into the French oxygène , which became the source of the English \"oxygen\".", "etymology_lines": [{"language": "Greek via French", "word": "ὀξύ γείνομαι ( oxy geinomai )/ oxygène", "roots": "", "meaning": "to bring forth acid", "notes": ""}]}, "9": {"number": 9, "symbol": "F", "name": "Fluorine", "meaning": "a flowing", "origin_word": "fluor", "origin_language": "Latin", "origin_type": "", "summary": "From Latin fluor meaning \"a flowing\", from mineral name fluorspar (calcium fluoride). Fluorspar was used to make iron flowing in smelting.", "etymology_lines": [{"language": "Latin", "word": "fluor", "roots": "", "meaning": "a flowing", "notes": ""}]}, "10": {"number": 10, "symbol": "Ne", "name": "Neon", "meaning": "new", "origin_word": "νέος ( neos )", "origin_language": "Greek", "origin_type": "", "summary": "From Greek νέος ( neos ), meaning \"new\".", "etymology_lines": [{"language": "Greek", "word": "νέος ( neos )", "roots": "", "meaning": "new", "notes": ""}]}, "11": {"number": 11, "symbol": "Na", "name": "Sodium", "meaning": "", "origin_word": "soda", "origin_language": "English", "origin_type": "", "summary": "From the English \" soda \", used in names of sodium compounds such as caustic soda , soda ash , and baking soda . Probably from Italian sida (or directly from Medieval Latin soda ) meaning \"a kind of saltwort\", from which soda was obtained, of uncertain origin.", "etymology_lines": [{"language": "English", "word": "soda", "roots": "", "meaning": "", "notes": ""}]}, "12": {"number": 12, "symbol": "Mg", "name": "Magnesium", "meaning": "", "origin_word": "Μαγνησία ( Magnesia )", "origin_language": "Greek", "origin_type": "toponym", "summary": "From the Ancient Greek Μαγνησία ( Magnesia ) (district in Thessaly ), where it was discovered.", "etymology_lines": [{"language": "Greek", "word": "Μαγνησία ( Magnesia )", "roots": "", "meaning": "", "notes": "toponym"}]}, "13": {"number": 13, "symbol": "Al", "name": "Aluminium", "meaning": " alum \" (literally: bitter salt)", "origin_word": "alumen", "origin_language": "Latin", "origin_type": "", "summary": "Latin alumen , which means \" alum \" (literally: bitter salt).", "etymology_lines": [{"language": "Latin", "word": "alumen", "roots": "", "meaning": "alum \" (literally: bitter salt)", "notes": ""}]}, "14": {"number": 14, "symbol": "Si", "name": "Silicon", "meaning": "flint", "origin_word": "silex , silicis", "origin_language": "Latin", "origin_type": "descriptive", "summary": "From Latin silex or silicis , which means \" flint \", a kind of stone (chiefly silicon dioxide).", "etymology_lines": [{"language": "Latin", "word": "silex , silicis", "roots": "", "meaning": "flint", "notes": "descriptive"}]}, "15": {"number": 15, "symbol": "P", "name": "Phosphorus", "meaning": "light-bearer", "origin_word": "φῶς + φόρος ( phos + phoros )", "origin_language": "Greek via Latin", "origin_type": "descriptive", "summary": "From Greek φῶς + φόρος ( phos + phoros ), which means \"light bearer\", because white phosphorus emits a faint glow upon exposure to oxygen . Phosphorus was the ancient name for Venus , or Hesperus , the Morning Star.", "etymology_lines": [{"language": "Greek via Latin", "word": "φῶς + φόρος ( phos + phoros )", "roots": "", "meaning": "light-bearer", "notes": "descriptive"}, {"language": "Scientific Latin", "word": "phosphorus", "roots": "", "meaning": "light-bringer; Morning Star", "notes": "Derived <- Ancient Greek Phosphoros"}, {"language": "Ancient Greek", "word": "phos (phos/phos)", "roots": "", "meaning": "light", "notes": ""}, {"language": "Ancient Greek", "word": "-phoros", "roots": "", "meaning": "bearing, carrying", "notes": "Derived from pherein"}, {"language": "Proto-Indo-European", "word": "*bher-", "roots": "", "meaning": "to carry, bear", "notes": ""}]}, "16": {"number": 16, "symbol": "S", "name": "Sulfur", "meaning": "brimstone", "origin_word": "Old Latin sulpur (later sulphur , sulfur ) Proto-Indo-European * swépl̥ (genitive * sulplós ), nominal derivative of * swelp .", "origin_language": "Latin Proto-Indo-European (PIE)", "origin_type": "", "summary": "The word came into Middle English from Anglo-Norman sulfre , itself derived through Old French soulfre from Late Latin sulfur . From Proto-Indo-European * swelp \"to burn\"", "etymology_lines": [{"language": "Latin Proto-Indo-European (PIE)", "word": "Old Latin sulpur (later sulphur , sulfur ) Proto-Indo-European * swépl̥ (genitive * sulplós ), nominal derivative of * swelp .", "roots": "", "meaning": "to burn", "notes": ""}, {"language": "English", "word": "sulfur", "roots": "", "meaning": "sulfur, brimstone", "notes": "Derived <- Latin sulfur / sulphur"}, {"language": "Unspecified", "word": "The Latin word is old, but its deeper pre-Latin origin is uncertain", "roots": "", "meaning": "", "notes": ""}]}, "17": {"number": 17, "symbol": "Cl", "name": "Chlorine", "meaning": "greenish-yellow", "origin_word": "χλωρός ( chlorós )", "origin_language": "Greek", "origin_type": "descriptive (colour)", "summary": "From Greek χλωρός ( chlorós ), which means \"yellowish green\" or \"greenish yellow\", because of the colour of the gas.", "etymology_lines": [{"language": "Greek", "word": "χλωρός ( chlorós )", "roots": "", "meaning": "pale green", "notes": "descriptive (colour)"}, {"language": "French", "word": "chlore / New Latin chlorine", "roots": "", "meaning": "greenish-yellow, pale green", "notes": "Derived <- Ancient Greek khloros"}, {"language": "Unspecified", "word": "Probably from Proto-Indo-European *ghel- / *ghl-", "roots": "", "meaning": "green, yellow, shine", "notes": ""}]}, "18": {"number": 18, "symbol": "Ar", "name": "Argon", "meaning": "inactive, lazy", "origin_word": "ἀργόν ( argon )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "Greek argon means \"inactive\" (literally: \"slow\").", "etymology_lines": [{"language": "Greek", "word": "ἀργόν ( argon )", "roots": "", "meaning": "inactive", "notes": "descriptive"}, {"language": "New Latin", "word": "argon", "roots": "", "meaning": "inactive, idle, lazy", "notes": "Derived <- Ancient Greek argon"}, {"language": "Ancient Greek", "word": "argon is the neuter of argos", "roots": "", "meaning": "idle, not working", "notes": ""}, {"language": "Ancient Greek", "word": "a-", "roots": "", "meaning": "not, without\" + ergon = \"work", "notes": ""}, {"language": "Proto-Indo-European", "word": "*werg-", "roots": "", "meaning": "to do, work", "notes": ""}]}, "19": {"number": 19, "symbol": "K", "name": "Potassium", "meaning": "potash", "origin_word": "potassa ; potasch via potash", "origin_language": "Neo-Latin via Dutch and English", "origin_type": "", "summary": "From the English \" potash \": pot-ash (potassium compound prepared from an alkali extracted in a pot from the ash of burnt wood or tree leaves). Potash is a calque of Dutch potaschen , which means \"pot ashes\". · Symbol K is from the Latin name kalium , from Arabic القلي ( al qalīy ), which means \"calcined ashes\".", "etymology_lines": [{"language": "Neo-Latin via Dutch and English", "word": "potassa ; potasch via potash", "roots": "", "meaning": "pot-ash", "notes": ""}, {"language": "English", "word": "potassium", "roots": "", "meaning": "pot ash", "notes": "Derived <- potash"}, {"language": "English", "word": "potash", "roots": "", "meaning": "", "notes": "Derived <- pot + ash, from the older process of leaching ashes in pots"}, {"language": "Unspecified", "word": "Chemical symbol K reflects Neo-Latin kalium", "roots": "", "meaning": "the calcined ashes", "notes": "Derived <- Arabic al-qali"}]}, "20": {"number": 20, "symbol": "Ca", "name": "Calcium", "meaning": "lime", "origin_word": "χάλιξ / calx", "origin_language": "Greek/Latin", "origin_type": "", "summary": "From Latin calx , which means \"lime\". Calcium was known as early as the first century when the Ancient Romans prepared lime as calcium oxide .", "etymology_lines": [{"language": "Greek/Latin", "word": "χάλιξ / calx", "roots": "", "meaning": "pebble\"/\"limestone", "notes": ""}, {"language": "New Latin", "word": "calcium", "roots": "", "meaning": "lime, limestone", "notes": "Derived <- Latin calx"}, {"language": "Unspecified", "word": "The deeper origin of Latin calx is uncertain", "roots": "", "meaning": "", "notes": ""}]}, "21": {"number": 21, "symbol": "Sc", "name": "Scandium", "meaning": "Scandinavia", "origin_word": "Scandia", "origin_language": "Latin", "origin_type": "toponym", "summary": "Named from Latin Scandia , \" Scandinavia \". · Former name eka-boron", "etymology_lines": [{"language": "Latin", "word": "Scandia", "roots": "", "meaning": "Scandinavia", "notes": "toponym"}, {"language": "New Latin", "word": "scandium", "roots": "", "meaning": "Scandinavia", "notes": "Derived <- Latin Scandia"}]}, "22": {"number": 22, "symbol": "Ti", "name": "Titanium", "meaning": "the Titans", "origin_word": "Τιτάν , GEN : Τιτάνος ( Titan )", "origin_language": "Greek", "origin_type": "mythological", "summary": "After the \" Titans \", the first offspring of Gaia in Greek mythology.", "etymology_lines": [{"language": "Greek", "word": "Τιτάν , GEN : Τιτάνος ( Titan )", "roots": "", "meaning": "Titans\", sons of Gaia", "notes": "mythological"}, {"language": "New Latin", "word": "titanium", "roots": "", "meaning": "", "notes": "Derived <- Titanes, the Titans of Greek mythology"}, {"language": "Unspecified", "word": "The deeper origin of the mythological name Titan is uncertain", "roots": "", "meaning": "", "notes": ""}]}, "23": {"number": 23, "symbol": "V", "name": "Vanadium", "meaning": "Vanadis / Freyja", "origin_word": "Vanadís", "origin_language": "Old Norse", "origin_type": "mythological", "summary": "From Old Norse Vanadís , one of the names of the Vanr goddess Freyja in Norse mythology , because of multicoloured chemical compounds deemed beautiful.", "etymology_lines": [{"language": "Old Norse", "word": "Vanadís", "roots": "", "meaning": "Dís of the Vanir", "notes": "mythological"}, {"language": "New Latin", "word": "vanadium", "roots": "", "meaning": "", "notes": "Derived <- Vanadis, an Old Norse epithet of the goddess Freyja"}, {"language": "Unspecified", "word": "Vanadis literally means \"goddess/lady of the Vanir\"", "roots": "", "meaning": "", "notes": ""}]}, "24": {"number": 24, "symbol": "Cr", "name": "Chromium", "meaning": "color", "origin_word": "χρῶμα ( chróma )", "origin_language": "Greek via French", "origin_type": "descriptive (colour)", "summary": "From Greek χρῶμα ( chróma ), \"colour\", because of its multicoloured compounds. This word was adapted as the French chrome , and adding the suffix -ium created the English \"chromium\".", "etymology_lines": [{"language": "Greek via French", "word": "χρῶμα ( chróma )", "roots": "", "meaning": "colour", "notes": "descriptive (colour)"}, {"language": "New Latin", "word": "chromium", "roots": "", "meaning": "color", "notes": "Derived <- Ancient Greek khroma"}, {"language": "Unspecified", "word": "The deeper pre-Greek / Indo-European history of khroma is uncertain", "roots": "", "meaning": "", "notes": ""}]}, "25": {"number": 25, "symbol": "Mn", "name": "Manganese", "meaning": "Magnesia", "origin_word": "Μαγνησία ( Magnesia ; Medieval Latin: magnesia )", "origin_language": "Greek via Latin, Italian , and French", "origin_type": "descriptive, toponym", "summary": "From Latin Magnesia , ultimately from Ancient Greek region Magnesia . The word Magnesia evolved into manganese in Italian and into manganèse in French.", "etymology_lines": [{"language": "Greek via Latin, Italian , and French", "word": "Μαγνησία ( Magnesia ; Medieval Latin: magnesia )", "roots": "", "meaning": "Magnesia (regional unit) \", Greece", "notes": "descriptive, toponym"}, {"language": "French", "word": "manganese / New Latin manganese", "roots": "", "meaning": "", "notes": "Derived <- Magnesia, a region in Greece"}, {"language": "Unspecified", "word": "The name first attached to minerals from Magnesia before narrowing to the element", "roots": "", "meaning": "", "notes": ""}]}, "26": {"number": 26, "symbol": "Fe", "name": "Iron", "meaning": "traditional Germanic name", "origin_word": "īsern (earlier: īren/īsen ) /yren/yron", "origin_language": "Old English via Middle English", "origin_type": "descriptive", "summary": "From the Anglo-Saxon īsern which is derived from Proto-Germanic isarnan meaning \"holy metal\" or \"strong metal\". · Symbol Fe is from Latin ferrum , meaning \"iron\".", "etymology_lines": [{"language": "Old English via Middle English", "word": "īsern (earlier: īren/īsen ) /yren/yron", "roots": "", "meaning": "holy metal or strong metal", "notes": "descriptive"}, {"language": "English", "word": "iron", "roots": "", "meaning": "iron", "notes": "Derived <- Proto-Germanic *isarna / *isarnan"}, {"language": "Unspecified", "word": "The deeper origin is uncertain, though often treated as an early borrowing into Germanic", "roots": "", "meaning": "", "notes": ""}, {"language": "Unspecified", "word": "Chemical symbol Fe reflects Latin ferrum", "roots": "", "meaning": "iron", "notes": ""}]}, "27": {"number": 27, "symbol": "Co", "name": "Cobalt", "meaning": "kobold", "origin_word": "Kobold", "origin_language": "German", "origin_type": "", "summary": "From German Kobold , which means \"goblin\". The metal was named by miners, because it was poisonous and troublesome ( polluted and degraded by other mined elements, such as nickel). Other sources cite the origin in the silver miners' belief that cobalt had been placed by \" Kobolds \", who had stolen the silver. Some suggest that the name may have been derived from Greek κόβαλος ( kobalos ), which means \"mine\" and which may have common roots with kobold, goblin, and cobalt.", "etymology_lines": [{"language": "German", "word": "Kobold", "roots": "", "meaning": "goblin", "notes": ""}, {"language": "German", "word": "Kobalt / cobalt", "roots": "", "meaning": "goblin, mine spirit", "notes": "Derived <- German kobold"}, {"language": "Unspecified", "word": "Miners used the word for deceptive ores that looked useful but were troublesome", "roots": "", "meaning": "", "notes": ""}]}, "28": {"number": 28, "symbol": "Ni", "name": "Nickel", "meaning": "Old Nick", "origin_word": "Kopparnickel / Kupfernickel", "origin_language": "Swedish via German", "origin_type": "descriptive", "summary": "From Swedish kopparnickel , meaning \"copper-coloured ore\". This referred to the ore niccolite from which it was obtained.", "etymology_lines": [{"language": "Swedish via German", "word": "Kopparnickel / Kupfernickel", "roots": "", "meaning": "copper-coloured ore", "notes": "descriptive"}, {"language": "German", "word": "Nickel (in Kupfernickel)", "roots": "", "meaning": "Old Nick / devil", "notes": "Derived <- a pet form of Nikolaus"}, {"language": "Unspecified", "word": "Kupfernickel literally meant \"copper-devil\" or \"false copper\"", "roots": "", "meaning": "", "notes": ""}, {"language": "Unspecified", "word": "Nikolaus", "roots": "", "meaning": "victory of the people", "notes": "Derived <- Greek Nikolaos"}]}, "29": {"number": 29, "symbol": "Cu", "name": "Copper", "meaning": "Cyprus", "origin_word": "Κύπριος ( Kyprios )?", "origin_language": "Greek? via Latin, West Germanic , Old English , and Middle English", "origin_type": "toponym", "summary": "Possibly from Greek Κύπριος ( Kyprios ) (which comes from Κύπρος ( Kypros ), the Greek name of Cyprus) via Latin cuprum , West Germanic * kupar , Old English coper / copor , and Middle English coper . The Latin term, during the Roman Empire, was aes cyprium ; aes was the generic term for copper alloys such as bronze . Cyprium means \" Cyprus \" or \"which is from Cyprus\", where so much of it was mined; it was simplified to cuprum and then eventually Anglicized as \"copper\" (Old English coper/copor ). · Symbol Cu is from the Latin name cuprum (\"copper\").", "etymology_lines": [{"language": "Greek? via Latin, West Germanic , Old English , and Middle English", "word": "Κύπριος ( Kyprios )?", "roots": "", "meaning": "who/which is from Cyprus", "notes": "toponym"}, {"language": "English", "word": "copper", "roots": "", "meaning": "copper", "notes": "Derived <- Latin cuprum"}, {"language": "Latin", "word": "cuprum is shortened from aes Cyprium", "roots": "", "meaning": "metal of Cyprus", "notes": ""}]}, "30": {"number": 30, "symbol": "Zn", "name": "Zinc", "meaning": "German zinke / tooth-like point", "origin_word": "Zink", "origin_language": "German", "origin_type": "", "summary": "From German Zink which is related to Zinken \"prong, point\", probably alluding to its spiky crystals. May be derived from Old Persian .", "etymology_lines": [{"language": "German", "word": "Zink", "roots": "", "meaning": "?\"Cornet", "notes": ""}, {"language": "German", "word": "Zink / zinc", "roots": "", "meaning": "prong, point, tooth", "notes": "Derived <- German Zinke"}, {"language": "Unspecified", "word": "The name probably referred to pointed crystal forms or tooth-like projections", "roots": "", "meaning": "", "notes": ""}]}, "31": {"number": 31, "symbol": "Ga", "name": "Gallium", "meaning": "Gaul", "origin_word": "Gallia", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Gallia , which means \" Gaul \" (Ancient France), and also gallus , which means \"rooster\". The element was obtained as free metal by Lecoq de Boisbaudran , who named it after his native land France. Allegations were later made that he had also named it after himself, as gallus is Latin for le coq (\" rooster \"), but he denied that this had been his intention. · Former name eka-aluminium by Mendeleev, who had predicted its existence.", "etymology_lines": [{"language": "Latin", "word": "Gallia", "roots": "", "meaning": "Gaul\" (Ancient France)", "notes": "toponym"}, {"language": "New Latin", "word": "gallium", "roots": "", "meaning": "Gaul, France", "notes": "Derived <- Latin Gallia"}]}, "32": {"number": 32, "symbol": "Ge", "name": "Germanium", "meaning": "Germany", "origin_word": "Germania", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Germania , which means \"Germany\". · Former name eka-silicon by Mendeleev.", "etymology_lines": [{"language": "Latin", "word": "Germania", "roots": "", "meaning": "Germany", "notes": "toponym"}, {"language": "New Latin", "word": "germanium", "roots": "", "meaning": "Germany", "notes": "Derived <- Latin Germania"}]}, "33": {"number": 33, "symbol": "As", "name": "Arsenic", "meaning": "orpiment", "origin_word": "ἀρσενικόν ( arsenikon )", "origin_language": "Syriac / Persian via Greek, Latin, Old French , and Middle English", "origin_type": "descriptive (colour)", "summary": "From Greek ἀρσενικόν ( arsenikon ), which is adapted from Syriac ܠܫܢܐܠܐ ܙܐܦܢܝܐ ‎ ( (al) zarniqa ) and Persian زرنيخ ( zarnik ), \"yellow orpiment \". The Greek arsenikon is paretymologically related to the Greek word ἀρσενικός ( arsenikos ), which means \"masculine\" or \"potent\". These words were adapted as the Latin arsenicum and Old French arsenic , which is the source for the English arsenic.", "etymology_lines": [{"language": "Syriac / Persian via Greek, Latin, Old French , and Middle English", "word": "ἀρσενικόν ( arsenikon )", "roots": "", "meaning": "?\"male", "notes": "descriptive (colour)"}, {"language": "English", "word": "arsenic", "roots": "", "meaning": "orpiment", "notes": "Derived <- Latin arsenicum -> Ancient Greek arsenikon"}, {"language": "Ancient Greek", "word": "arsenikon is usually taken as a borrowing from Persian zarnik", "roots": "", "meaning": "gold-colored", "notes": ""}]}, "34": {"number": 34, "symbol": "Se", "name": "Selenium", "meaning": "Selene / Moon", "origin_word": "σελήνη ( selene )", "origin_language": "Greek", "origin_type": "astrological; mythological", "summary": "From Greek σελήνη ( selene ), which means \"Moon\", and also the moon-goddess Selene .", "etymology_lines": [{"language": "Greek", "word": "σελήνη ( selene )", "roots": "", "meaning": "moon", "notes": "astrological; mythological"}, {"language": "New Latin", "word": "selenium", "roots": "", "meaning": "the Moon", "notes": "Derived <- Ancient Greek Selene"}]}, "35": {"number": 35, "symbol": "Br", "name": "Bromine", "meaning": "stench", "origin_word": "βρῶμος ( brómos )", "origin_language": "Greek via French", "origin_type": "", "summary": "βρῶμος ( brómos ) means \"stench\" (literally: \"clangor\"), due to its characteristic smell.", "etymology_lines": [{"language": "Greek via French", "word": "βρῶμος ( brómos )", "roots": "", "meaning": "dirt\" or \"stench\" (of male goat)", "notes": ""}, {"language": "New Latin", "word": "bromine", "roots": "", "meaning": "stench, bad smell", "notes": "Derived <- Ancient Greek bromos"}]}, "36": {"number": 36, "symbol": "Kr", "name": "Krypton", "meaning": "hidden", "origin_word": "κρυπτός ( kryptos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek κρυπτός ( kryptos ), which means \"hidden one\", because of its colourless, odourless, tasteless, gaseous properties, as well as its rarity in nature.", "etymology_lines": [{"language": "Greek", "word": "κρυπτός ( kryptos )", "roots": "", "meaning": "hidden", "notes": "descriptive"}, {"language": "New Latin", "word": "krypton", "roots": "", "meaning": "hidden, concealed", "notes": "Derived <- Ancient Greek kryptos"}]}, "37": {"number": 37, "symbol": "Rb", "name": "Rubidium", "meaning": "deep red", "origin_word": "rubidus", "origin_language": "Latin", "origin_type": "descriptive (colour)", "summary": "From Latin rubidus , which means \"deepest red\", because of the colour of a spectral line .", "etymology_lines": [{"language": "Latin", "word": "rubidus", "roots": "", "meaning": "deepest red", "notes": "descriptive (colour)"}, {"language": "New Latin", "word": "rubidium", "roots": "", "meaning": "deep red, dark red", "notes": "Derived <- Latin rubidus"}, {"language": "Latin", "word": "rubidus", "roots": "", "meaning": "red", "notes": "Derived <- ruber"}, {"language": "Proto-Indo-European", "word": "*h1reudh-", "roots": "", "meaning": "red", "notes": ""}]}, "38": {"number": 38, "symbol": "Sr", "name": "Strontium", "meaning": "Strontian", "origin_word": "Strontian", "origin_language": "Scottish Gaelic via English", "origin_type": "toponym", "summary": "Named after strontianite , the mineral. Strontianite itself was named after the town of Strontian ( Scotland ) where the mineral was found; Sròn an t-Sìthein literally means \"nose ['point'] of the fairy hill \".", "etymology_lines": [{"language": "Scottish Gaelic via English", "word": "Strontian", "roots": "", "meaning": "proper name", "notes": "toponym"}, {"language": "New Latin", "word": "strontium", "roots": "", "meaning": "", "notes": "Derived <- Strontian, the Scottish village where the mineral was identified"}]}, "39": {"number": 39, "symbol": "Y", "name": "Yttrium", "meaning": "Ytterby", "origin_word": "Ytterby", "origin_language": "Swedish", "origin_type": "toponym", "summary": "Named after the mineral yttria (yttrium oxide), where it was originally extracted from. Yttria itself was named after Ytterby , Sweden.", "etymology_lines": [{"language": "Swedish", "word": "Ytterby", "roots": "", "meaning": "proper name", "notes": "toponym"}, {"language": "New Latin", "word": "yttrium", "roots": "", "meaning": "", "notes": "Derived <- Ytterby, the Swedish village associated with the mineral source"}]}, "40": {"number": 40, "symbol": "Zr", "name": "Zirconium", "meaning": "zircon", "origin_word": "ܙܐܪܓܥܢܥ ( zargono ), زرگون ( zargûn )", "origin_language": "Syriac / Persian via Arabic and German", "origin_type": "", "summary": "From Arabic زركون ( zarkûn ). Derived from Persian زرگون ( zargûn ), which means \"gold-like\". Zirkon is the German variant of these and is the origin of the English zircon .", "etymology_lines": [{"language": "Syriac / Persian via Arabic and German", "word": "ܙܐܪܓܥܢܥ ( zargono ), زرگون ( zargûn )", "roots": "", "meaning": "gold-like", "notes": ""}, {"language": "New Latin", "word": "zirconium", "roots": "", "meaning": "", "notes": "Derived <- zircon"}, {"language": "English", "word": "zircon", "roots": "", "meaning": "", "notes": "Derived <- French zircon / German Zirkon"}, {"language": "Unspecified", "word": "Ultimately from Persian zargun", "roots": "", "meaning": "gold-colored", "notes": ""}]}, "41": {"number": 41, "symbol": "Nb", "name": "Niobium", "meaning": "snowy", "origin_word": "Νιόβη ( Niobe )", "origin_language": "Greek", "origin_type": "mythological", "summary": "Named after Niobe , daughter of Tantalus in classical mythology. · Former name columbium from Columbia , personification of the United States.", "etymology_lines": [{"language": "Greek", "word": "Νιόβη ( Niobe )", "roots": "", "meaning": "snowy", "notes": "mythological"}]}, "42": {"number": 42, "symbol": "Mo", "name": "Molybdenum", "meaning": "lead", "origin_word": "μόλυβδος ( molybdos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek μόλυβδος ( molybdos ), \"lead\", due to confusion with lead ore galena .", "etymology_lines": [{"language": "Greek", "word": "μόλυβδος ( molybdos )", "roots": "", "meaning": "lead-like", "notes": "descriptive"}, {"language": "New Latin", "word": "molybdenum", "roots": "", "meaning": "lead", "notes": "Derived <- Ancient Greek molybdos / molybdaina"}, {"language": "Unspecified", "word": "The word was first applied to lead-like minerals before being fixed to the element", "roots": "", "meaning": "", "notes": ""}]}, "43": {"number": 43, "symbol": "Tc", "name": "Technetium", "meaning": "artificial", "origin_word": "τεχνητός ( technetos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek τεχνητός ( technetos ), which means \"artificial\", because it was the first artificially produced element. · Former name eka-manganese", "etymology_lines": [{"language": "Greek", "word": "τεχνητός ( technetos )", "roots": "", "meaning": "artificial", "notes": "descriptive"}, {"language": "New Latin", "word": "technetium", "roots": "", "meaning": "artificial", "notes": "Derived <- Ancient Greek tekhnetos"}, {"language": "Ancient Greek", "word": "tekhnetos", "roots": "", "meaning": "art, craft, skill", "notes": "Derived <- tekhne"}, {"language": "Proto-Indo-European", "word": "*teks-", "roots": "", "meaning": "to weave, fabricate, make", "notes": ""}]}, "44": {"number": 44, "symbol": "Ru", "name": "Ruthenium", "meaning": "Ruthenia\", Kievan Rus'", "origin_word": "Ruthenia", "origin_language": "Latin", "origin_type": "toponym (exonym)", "summary": "From Latin Ruthenia , geographical exonym for Kievan Rus' .", "etymology_lines": [{"language": "Latin", "word": "Ruthenia", "roots": "", "meaning": "Ruthenia\", Kievan Rus'", "notes": "toponym (exonym)"}]}, "45": {"number": 45, "symbol": "Rh", "name": "Rhodium", "meaning": "rose", "origin_word": "ῥόδον ( rhodon )", "origin_language": "Greek", "origin_type": "descriptive (colour)", "summary": "From Greek ῥόδον ( rhodon ), which means \"rose\". From its rose-red compounds .", "etymology_lines": [{"language": "Greek", "word": "ῥόδον ( rhodon )", "roots": "", "meaning": "rose", "notes": "descriptive (colour)"}]}, "46": {"number": 46, "symbol": "Pd", "name": "Palladium", "meaning": "Pallas", "origin_word": "Παλλάς (genitive: Παλλάδος ) ( Pallas )", "origin_language": "Greek via Latin", "origin_type": "astrological; mythological", "summary": "Named after Pallas , the asteroid discovered two years earlier. The asteroid itself was named after Pallas Athena , goddess of wisdom and victory. The word Palladium is derived from Greek Παλλάδιον and is the neuter version of Παλλάδιος , meaning \"of Pallas\".", "etymology_lines": [{"language": "Greek via Latin", "word": "Παλλάς (genitive: Παλλάδος ) ( Pallas )", "roots": "", "meaning": "little maiden", "notes": "astrological; mythological"}, {"language": "New Latin", "word": "palladium", "roots": "", "meaning": "", "notes": "Derived <- Pallas, the asteroid Pallas"}, {"language": "Unspecified", "word": "The asteroid name goes back to Pallas Athena in Greek mythology", "roots": "", "meaning": "", "notes": ""}]}, "47": {"number": 47, "symbol": "Ag", "name": "Silver", "meaning": "traditional Germanic name", "origin_word": "𒊭𒁺𒁍/𒊭𒅈𒇥 ( siolfor / seolfor )", "origin_language": "Akkadian via Old English and Middle English", "origin_type": "", "summary": "Possibly borrowed from Akkadian 𒊭𒅈𒇥 ( sarpu ) \"refined silver\" and related to 𒊭𒁺𒁍 ( sarapu ) \"to refine\", \"smelt\". From Old English , seolfor which was derived from Proto-Germanic * silubra- ; compare Old High German silabar ; and has cognates in Balto-Slavic languages : sĭrebro , sidabras , Old Prussian sirablan . Alternatively, possibly from one of the Pre-Indo-European languages , compare zilar . · Symbol Ag is from the Latin name argentum (\"silver\"), which is derived from Proto-Indo-European * arg-ent- .", "etymology_lines": [{"language": "Akkadian via Old English and Middle English", "word": "𒊭𒁺𒁍/𒊭𒅈𒇥 ( siolfor / seolfor )", "roots": "", "meaning": "to refine\", \"smelt", "notes": ""}, {"language": "English", "word": "silver", "roots": "", "meaning": "silver", "notes": "Derived <- Proto-Germanic *silubra / *silubr-"}, {"language": "Unspecified", "word": "The deeper origin is uncertain", "roots": "", "meaning": "", "notes": ""}, {"language": "Unspecified", "word": "Chemical symbol Ag reflects Latin argentum", "roots": "", "meaning": "silver", "notes": ""}]}, "48": {"number": 48, "symbol": "Cd", "name": "Cadmium", "meaning": "calamine / cadmia", "origin_word": "καδμεία ( kadmeia )", "origin_language": "Greek/Latin", "origin_type": "", "summary": "From Latin cadmia , which is derived from Greek καδμεία ( kadmeia ) and means \" calamine \", a cadmium-bearing mixture of minerals. Cadmium is named after Cadmus (in Greek: Κάδμος : Kadmos ), a character in Greek mythology and calamine is derived from Le Calamine , the French name of the Belgian town of Kelmis .", "etymology_lines": [{"language": "Greek/Latin", "word": "καδμεία ( kadmeia )", "roots": "", "meaning": "Earth \" (as classical element), \" calamine \" or Cadmean earth [?]", "notes": ""}, {"language": "New Latin", "word": "cadmium", "roots": "", "meaning": "calamine", "notes": "Derived <- Latin cadmia"}, {"language": "Latin", "word": "cadmia", "roots": "", "meaning": "Cadmean earth / calamine", "notes": "Derived <- Ancient Greek kadmeia"}, {"language": "Unspecified", "word": "The Greek word refers to Kadmeia / Thebes, associated with Cadmus", "roots": "", "meaning": "", "notes": ""}]}, "49": {"number": 49, "symbol": "In", "name": "Indium", "meaning": "indigo", "origin_word": "indigo", "origin_language": "Greek via Latin and English", "origin_type": "descriptive (colour)", "summary": "Named after indigo , because of an indigo-coloured spectrum line. The English word indigo is from Spanish indico and Dutch indigo (from Portuguese endego ), from Latin indigo , from Greek ἰνδικόν ( indikon ): \"blue dye from India\".", "etymology_lines": [{"language": "Greek via Latin and English", "word": "indigo", "roots": "", "meaning": "", "notes": "descriptive (colour)"}, {"language": "New Latin", "word": "indium", "roots": "", "meaning": "", "notes": "Derived <- indigo, for the indigo-blue spectral line"}, {"language": "English", "word": "indigo", "roots": "", "meaning": "Indian dye", "notes": "Derived <- Latin indicum"}, {"language": "Latin", "word": "indicum", "roots": "", "meaning": "Indian (substance)", "notes": "Derived <- Greek indikon"}]}, "50": {"number": 50, "symbol": "Sn", "name": "Tin", "meaning": "traditional Germanic name", "origin_word": "tin", "origin_language": "Anglo-Saxon via Middle English", "origin_type": "", "summary": "The word tin is borrowed from a Proto-Indo-European language , and has cognates in several Germanic and Celtic languages . · Symbol Sn is from its Latin name stannum .", "etymology_lines": [{"language": "Anglo-Saxon via Middle English", "word": "tin", "roots": "", "meaning": "", "notes": ""}, {"language": "English", "word": "tin", "roots": "", "meaning": "tin", "notes": "Derived <- Proto-Germanic *tinom"}, {"language": "Unspecified", "word": "The deeper origin is uncertain", "roots": "", "meaning": "", "notes": ""}, {"language": "Unspecified", "word": "Chemical symbol Sn reflects Latin stannum", "roots": "", "meaning": "tin", "notes": ""}]}, "51": {"number": 51, "symbol": "Sb", "name": "Antimony", "meaning": "stibium / stibnite", "origin_word": "", "origin_language": "Greek? via Medieval Latin and Middle English", "origin_type": "", "summary": "Possibly from Greek ἀντί + μόνος ( anti + monos ), approximately meaning \"opposed to solitude\", as believed never to exist in pure form, or ἀντί + μοναχός ( anti + monachos ) for \"monk-killer\" (in French folk etymology, anti-moine \"monk's bane\"), because many early alchemists were monks, and antimony is poisonous. This may also be derived from the Pharaonic ( Ancient Egyptian ), Antos Ammon (expression), which could be translated as \"bloom of the god Ammo\".", "etymology_lines": [{"language": "Greek? via Medieval Latin and Middle English", "word": "", "roots": "", "meaning": "various", "notes": ""}, {"language": "English", "word": "antimony", "roots": "", "meaning": "", "notes": "Derived <- Medieval Latin antimonium (ultimate origin uncertain)"}, {"language": "Unspecified", "word": "An older classical name is Latin stibium", "roots": "", "meaning": "antimony, stibnite", "notes": "Derived <- Ancient Greek stibi"}, {"language": "Unspecified", "word": "Chemical symbol Sb comes from stibium rather than antimony", "roots": "", "meaning": "", "notes": ""}]}, "52": {"number": 52, "symbol": "Te", "name": "Tellurium", "meaning": "earth / Tellus", "origin_word": "Tellus", "origin_language": "Latin", "origin_type": "", "summary": "From Latin tellus , \" Earth \".", "etymology_lines": [{"language": "Latin", "word": "Tellus", "roots": "", "meaning": "Earth", "notes": ""}, {"language": "New Latin", "word": "tellurium", "roots": "", "meaning": "earth", "notes": "Derived <- Latin tellus / telluris"}]}, "53": {"number": 53, "symbol": "I", "name": "Iodine", "meaning": "violet", "origin_word": "ἰώδης ( iodes )", "origin_language": "Greek via French", "origin_type": "descriptive (colour)", "summary": "Named after the Greek ἰώδης ( iodes ), which means \"violet\", because of the colour of the gaseous phase. This word was adapted as the French iode , which is the source of the English \"iodine\".", "etymology_lines": [{"language": "Greek via French", "word": "ἰώδης ( iodes )", "roots": "", "meaning": "violet", "notes": "descriptive (colour)"}, {"language": "French", "word": "iode / New Latin iodine", "roots": "", "meaning": "violet-like", "notes": "Derived <- Ancient Greek ioeides"}, {"language": "Ancient Greek", "word": "ion", "roots": "", "meaning": "violet\" + -eides = \"having the form/color of", "notes": ""}]}, "54": {"number": 54, "symbol": "Xe", "name": "Xenon", "meaning": "foreign, strange", "origin_word": "ξένος ( xenos )", "origin_language": "Greek", "origin_type": "", "summary": "From the Greek adjective ξένος ( xenos ): \"foreign\", \"a stranger\".", "etymology_lines": [{"language": "Greek", "word": "ξένος ( xenos )", "roots": "", "meaning": "foreign", "notes": ""}, {"language": "New Latin", "word": "xenon", "roots": "", "meaning": "stranger, foreigner, guest", "notes": "Derived <- Ancient Greek xenos"}]}, "55": {"number": 55, "symbol": "Cs", "name": "Caesium", "meaning": "sky-blue", "origin_word": "caesius", "origin_language": "Latin", "origin_type": "descriptive (colour)", "summary": "From Latin caesius , which means \"sky blue\". Its identification was based upon the bright blue lines in its spectrum, and it was the first element discovered by spectrum analysis.", "etymology_lines": [{"language": "Latin", "word": "caesius", "roots": "", "meaning": "blue-grey\" or \"sky blue", "notes": "descriptive (colour)"}, {"language": "New Latin", "word": "caesium / cesium", "roots": "", "meaning": "sky-blue, blue-gray", "notes": "Derived <- Latin caesius"}]}, "56": {"number": 56, "symbol": "Ba", "name": "Barium", "meaning": "heavy", "origin_word": "βαρύς ( barys )", "origin_language": "Greek via Neo-Latin", "origin_type": "", "summary": "βαρύς ( barys ) means \"heavy\". The oxide was initially called \"barote\", then \"baryta\", which was modified to \"barium\" to describe the metal. Humphry Davy gave the element this name because it was originally found in baryte , which shares the same source.", "etymology_lines": [{"language": "Greek via Neo-Latin", "word": "βαρύς ( barys )", "roots": "", "meaning": "heavy", "notes": ""}, {"language": "New Latin", "word": "barium", "roots": "", "meaning": "heavy", "notes": "Derived <- Ancient Greek barys"}]}, "57": {"number": 57, "symbol": "La", "name": "Lanthanum", "meaning": "hidden", "origin_word": "λανθάνειν ( lanthanein )", "origin_language": "Greek", "origin_type": "", "summary": "From Greek λανθάνω ( lanthánō ), \"I escape notice\".", "etymology_lines": [{"language": "Greek", "word": "λανθάνειν ( lanthanein )", "roots": "", "meaning": "to escape notice", "notes": ""}, {"language": "New Latin", "word": "lanthanum", "roots": "", "meaning": "to lie hidden, escape notice", "notes": "Derived <- Ancient Greek lanthanein"}]}, "58": {"number": 58, "symbol": "Ce", "name": "Cerium", "meaning": "grain\", \"bread", "origin_word": "ceres", "origin_language": "Latin", "origin_type": "astrological; mythological", "summary": "Named after the asteroid Ceres , discovered two years earlier. The asteroid itself, now classified as a dwarf planet, was named after Ceres , the goddess of fertility in Roman mythology. Ceres is derived from Proto-Indo-European * ker-es- from base * ker- meaning \"to grow\".", "etymology_lines": [{"language": "Latin", "word": "ceres", "roots": "", "meaning": "grain\", \"bread", "notes": "astrological; mythological"}]}, "59": {"number": 59, "symbol": "Pr", "name": "Praseodymium", "meaning": "green twin", "origin_word": "πράσιος δίδυμος ( prasios didymos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek πράσιος δίδυμος ( prasios didymos ), meaning \"green twin\", because didymium separates into praseodymium and neodymium .", "etymology_lines": [{"language": "Greek", "word": "πράσιος δίδυμος ( prasios didymos )", "roots": "", "meaning": "green twin", "notes": "descriptive"}, {"language": "New Latin", "word": "praseodymium", "roots": "", "meaning": "green twin", "notes": "Derived <- Ancient Greek prasios + didymos"}, {"language": "Ancient Greek", "word": "prasios", "roots": "", "meaning": "leek-green", "notes": ""}, {"language": "Ancient Greek", "word": "didymos", "roots": "", "meaning": "twin", "notes": ""}]}, "60": {"number": 60, "symbol": "Nd", "name": "Neodymium", "meaning": "new twin", "origin_word": "νέος δίδυμος ( neos didymos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek νέος διδύμος ( neos didymos ), which means \"new twin\", because didymium separates into praseodymium and neodymium.", "etymology_lines": [{"language": "Greek", "word": "νέος δίδυμος ( neos didymos )", "roots": "", "meaning": "new twin", "notes": "descriptive"}, {"language": "New Latin", "word": "neodymium", "roots": "", "meaning": "new twin", "notes": "Derived <- Ancient Greek neos + didymos"}, {"language": "Ancient Greek", "word": "neos", "roots": "", "meaning": "new", "notes": ""}, {"language": "Ancient Greek", "word": "didymos", "roots": "", "meaning": "twin", "notes": ""}]}, "61": {"number": 61, "symbol": "Pm", "name": "Promethium", "meaning": "forethought", "origin_word": "Προμηθεύς ( Prometheus )", "origin_language": "Greek", "origin_type": "mythological", "summary": "Named after Prometheus (a god in classical mythology), who stole the fire of heaven and gave it to mankind.", "etymology_lines": [{"language": "Greek", "word": "Προμηθεύς ( Prometheus )", "roots": "", "meaning": "forethought", "notes": "mythological"}]}, "62": {"number": 62, "symbol": "Sm", "name": "Samarium", "meaning": "", "origin_word": "Samarsky-Bykhovets, Vassili", "origin_language": "", "origin_type": "eponym", "summary": "Named after the mineral samarskite , itself named after Colonel Vassili Samarsky-Bykhovets , a Russian mine official.", "etymology_lines": [{"language": "Unspecified", "word": "Samarsky-Bykhovets, Vassili", "roots": "", "meaning": "", "notes": "eponym"}]}, "63": {"number": 63, "symbol": "Eu", "name": "Europium", "meaning": "broad-faced\" or \"well-watered", "origin_word": "Εὐρώπη ( Europe )", "origin_language": "Ancient Greek", "origin_type": "toponym; mythological", "summary": "Named after Europe, where it was discovered. Europe itself was named after Europa (consort of Zeus) .", "etymology_lines": [{"language": "Ancient Greek", "word": "Εὐρώπη ( Europe )", "roots": "", "meaning": "broad-faced\" or \"well-watered", "notes": "toponym; mythological"}]}, "64": {"number": 64, "symbol": "Gd", "name": "Gadolinium", "meaning": "named after Johan Gadolin", "origin_word": "Gadolin, Johan", "origin_language": "Finnish", "origin_type": "eponym", "summary": "Named in honour of Johan Gadolin , who was one of the founders of Nordic chemistry research, and who discovered § yttrium . The mineral gadolinite is also named after him.", "etymology_lines": [{"language": "Finnish", "word": "Gadolin, Johan", "roots": "", "meaning": "", "notes": "eponym"}, {"language": "New Latin", "word": "gadolinium", "roots": "", "meaning": "", "notes": "Derived <- Gadolin, the surname of Johan Gadolin"}, {"language": "Unspecified", "word": "This is an honorific name rather than a transparent lexical compound", "roots": "", "meaning": "", "notes": ""}]}, "65": {"number": 65, "symbol": "Tb", "name": "Terbium", "meaning": "Ytterby", "origin_word": "Ytterby", "origin_language": "Swedish", "origin_type": "toponym", "summary": "Named after Ytterby , the village in Sweden where the element was first discovered.", "etymology_lines": [{"language": "Swedish", "word": "Ytterby", "roots": "", "meaning": "proper name", "notes": "toponym"}, {"language": "New Latin", "word": "terbium", "roots": "", "meaning": "", "notes": "Derived <- terbia, the old chemical name formed from Ytterby"}, {"language": "Unspecified", "word": "Like yttrium, erbium, and ytterbium, the chain ultimately points back to Ytterby in Sweden", "roots": "", "meaning": "", "notes": ""}]}, "66": {"number": 66, "symbol": "Dy", "name": "Dysprosium", "meaning": "hard to get", "origin_word": "δυσπρόσιτος ( dysprositos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek δυσπρόσιτος ( dysprositos ), which means \"hard to get at\".", "etymology_lines": [{"language": "Greek", "word": "δυσπρόσιτος ( dysprositos )", "roots": "", "meaning": "hard to get at", "notes": "descriptive"}, {"language": "New Latin", "word": "dysprosium", "roots": "", "meaning": "hard to get at, hard to obtain", "notes": "Derived <- Ancient Greek dysprositos"}, {"language": "Ancient Greek", "word": "dys-", "roots": "", "meaning": "badly, hard\" + prositos = \"approachable / accessible", "notes": ""}]}, "67": {"number": 67, "symbol": "Ho", "name": "Holmium", "meaning": "Stockholm", "origin_word": "Holmia", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Holmia , \" Stockholm \".", "etymology_lines": [{"language": "Latin", "word": "Holmia", "roots": "", "meaning": "Stockholm", "notes": "toponym"}, {"language": "New Latin", "word": "holmium", "roots": "", "meaning": "Stockholm", "notes": "Derived <- Latin Holmia"}]}, "68": {"number": 68, "symbol": "Er", "name": "Erbium", "meaning": "Ytterby", "origin_word": "Ytterby", "origin_language": "Swedish", "origin_type": "toponym", "summary": "Named after Ytterby , Sweden , where large concentrations of minerals yttria and erbia are located. Erbia and terbia were confused at this time. After 1860, what had been known as terbia was renamed erbia, and after 1877, what had been known as erbia was renamed terbia.", "etymology_lines": [{"language": "Swedish", "word": "Ytterby", "roots": "", "meaning": "proper name", "notes": "toponym"}, {"language": "New Latin", "word": "erbium", "roots": "", "meaning": "", "notes": "Derived <- erbia, the old chemical name formed from Ytterby"}, {"language": "Unspecified", "word": "The chain ultimately points back to Ytterby in Sweden", "roots": "", "meaning": "", "notes": ""}]}, "69": {"number": 69, "symbol": "Tm", "name": "Thulium", "meaning": "Thule", "origin_word": "Θούλη ( Thoúlē )", "origin_language": "Greek", "origin_type": "mythological", "summary": "Named after Thule , an ancient Roman and Greek name ( Θούλη ) for a mythical country in the far north, perhaps Scandinavia .", "etymology_lines": [{"language": "Greek", "word": "Θούλη ( Thoúlē )", "roots": "", "meaning": "Thule", "notes": "mythological"}, {"language": "New Latin", "word": "thulium", "roots": "", "meaning": "", "notes": "Derived <- Thule, the classical name for a far northern land"}, {"language": "Unspecified", "word": "The deeper origin of Thule itself is uncertain", "roots": "", "meaning": "", "notes": ""}]}, "70": {"number": 70, "symbol": "Yb", "name": "Ytterbium", "meaning": "Ytterby", "origin_word": "Ytterby", "origin_language": "Swedish", "origin_type": "toponym", "summary": "Named after ytterbia , the oxide compound of ytterbium. Ytterbia itself was named after Ytterby , Sweden.", "etymology_lines": [{"language": "Swedish", "word": "Ytterby", "roots": "", "meaning": "proper name", "notes": "toponym"}, {"language": "New Latin", "word": "ytterbium", "roots": "", "meaning": "", "notes": "Derived <- Ytterby, the Swedish village associated with the mineral source"}]}, "71": {"number": 71, "symbol": "Lu", "name": "Lutetium", "meaning": "Lutetia / Paris", "origin_word": "Lutetia", "origin_language": "Latin", "origin_type": "toponym", "summary": "Named after the Latin Lutetia ( Gaulish for \"place of mud\"), the city of Paris.", "etymology_lines": [{"language": "Latin", "word": "Lutetia", "roots": "", "meaning": "Paris", "notes": "toponym"}, {"language": "New Latin", "word": "lutetium", "roots": "", "meaning": "", "notes": "Derived <- Lutetia, the Latin name of Paris"}]}, "72": {"number": 72, "symbol": "Hf", "name": "Hafnium", "meaning": "Hafnia / Copenhagen", "origin_word": "Hafnia", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Hafnia : \" Copenhagen \", Denmark.", "etymology_lines": [{"language": "Latin", "word": "Hafnia", "roots": "", "meaning": "Copenhagen", "notes": "toponym"}, {"language": "New Latin", "word": "hafnium", "roots": "", "meaning": "", "notes": "Derived <- Hafnia, the Latin name of Copenhagen"}]}, "73": {"number": 73, "symbol": "Ta", "name": "Tantalum", "meaning": "Tantalus", "origin_word": "Τάνταλος ( Tantalus )", "origin_language": "Greek", "origin_type": "mythological", "summary": "Named after Greek Τάνταλος ( Tantalus ), who was punished after death by being condemned to stand knee-deep in water. If he bent to drink the water, it drained below the level he could reach (in Greek mythology ). This was considered similar to tantalum's general non-reactivity (that is, \"unreachability\") because of its inertness (it sits among reagents and is unaffected by them).", "etymology_lines": [{"language": "Greek", "word": "Τάνταλος ( Tantalus )", "roots": "", "meaning": "possibly \"the bearer\" or \"the sufferer", "notes": "mythological"}, {"language": "New Latin", "word": "tantalum", "roots": "", "meaning": "", "notes": "Derived <- Tantalos (Tantalus) of Greek mythology"}]}, "74": {"number": 74, "symbol": "W", "name": "Tungsten", "meaning": "heavy stone", "origin_word": "tung sten", "origin_language": "Swedish and Danish", "origin_type": "descriptive", "summary": "From the Swedish and Danish \"tung sten\", which means \"heavy stone\". · Symbol W is from the German name Wolfram . · Former name Wolfrahm (German, literally \"wolf cream\") was the historical name. The names wolfram or volfram are still used in Swedish and several other languages.", "etymology_lines": [{"language": "Swedish and Danish", "word": "tung sten", "roots": "", "meaning": "heavy stone", "notes": "descriptive"}, {"language": "English", "word": "tungsten", "roots": "", "meaning": "heavy stone", "notes": "Derived <- Swedish tung sten"}, {"language": "Unspecified", "word": "The chemical symbol W preserves German Wolfram, the older alternative name", "roots": "", "meaning": "", "notes": ""}]}, "75": {"number": 75, "symbol": "Re", "name": "Rhenium", "meaning": "Rhine", "origin_word": "Rhenus", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Rhenus , the river Rhine .", "etymology_lines": [{"language": "Latin", "word": "Rhenus", "roots": "", "meaning": "Rhine", "notes": "toponym"}]}, "76": {"number": 76, "symbol": "Os", "name": "Osmium", "meaning": "smell", "origin_word": "ὀσμή ( osme )", "origin_language": "Greek via Neo-Latin", "origin_type": "descriptive", "summary": "From Greek ὀσμή ( osme ), meaning \"a smell\", as osmium tetroxide is foul-smelling.", "etymology_lines": [{"language": "Greek via Neo-Latin", "word": "ὀσμή ( osme )", "roots": "", "meaning": "a smell", "notes": "descriptive"}, {"language": "New Latin", "word": "osmium", "roots": "", "meaning": "smell, odor", "notes": "Derived <- Ancient Greek osme"}]}, "77": {"number": 77, "symbol": "Ir", "name": "Iridium", "meaning": "Iris / rainbow", "origin_word": "ἴρις (genitive: ἴριδος ) ( iris )", "origin_language": "Greek via Latin", "origin_type": "descriptive (colour)", "summary": "Named after the Latin noun iris , which means \" rainbow , iris plant, iris of the eye\", because many of its salts are strongly coloured; Iris was originally the name of the goddess of rainbows and a messenger in Greek mythology.", "etymology_lines": [{"language": "Greek via Latin", "word": "ἴρις (genitive: ἴριδος ) ( iris )", "roots": "", "meaning": "of rainbows", "notes": "descriptive (colour)"}, {"language": "New Latin", "word": "iridium", "roots": "", "meaning": "rainbow", "notes": "Derived <- Latin iris"}, {"language": "Latin", "word": "iris", "roots": "", "meaning": "", "notes": "Derived <- Ancient Greek Iris, the rainbow and the goddess Iris"}]}, "78": {"number": 78, "symbol": "Pt", "name": "Platinum", "meaning": "little silver", "origin_word": "platina ( del Pinto )", "origin_language": "Spanish via Neo-Latin", "origin_type": "descriptive", "summary": "From the Spanish, platina , which means \"little silver\", because it was first encountered in a silver mine. The modern Spanish is platino . Platina is a diminutive of plata (silver); it is a loan word from French plate or Provençal plata (sheet of metal) and is the origin of the English \"plate\".", "etymology_lines": [{"language": "Spanish via Neo-Latin", "word": "platina ( del Pinto )", "roots": "", "meaning": "little silver\" (of the Pinto River)", "notes": "descriptive"}, {"language": "Spanish", "word": "platina", "roots": "", "meaning": "little silver", "notes": "Derived -> New Latin platinum"}, {"language": "Spanish", "word": "platina is a diminutive of plata", "roots": "", "meaning": "silver", "notes": ""}]}, "79": {"number": 79, "symbol": "Au", "name": "Gold", "meaning": "traditional Germanic name", "origin_word": "gold", "origin_language": "Old English via Middle English", "origin_type": "descriptive (colour)", "summary": "From the Old English \"gold\", from Proto-Indo-European * ghel- meaning \"yellow/ bright\". · Symbol Au is from Latin aurum , which means \"shining dawn\".", "etymology_lines": [{"language": "Old English via Middle English", "word": "gold", "roots": "", "meaning": "", "notes": "descriptive (colour)"}, {"language": "English", "word": "gold", "roots": "", "meaning": "gold", "notes": "Derived <- Proto-Germanic *gulth- / *gulda-"}, {"language": "Unspecified", "word": "Probably from Proto-Indo-European *ghel-", "roots": "", "meaning": "yellow, green, shine", "notes": ""}, {"language": "Unspecified", "word": "Chemical symbol Au reflects Latin aurum", "roots": "", "meaning": "gold", "notes": ""}]}, "80": {"number": 80, "symbol": "Hg", "name": "Mercury", "meaning": "Mercury", "origin_word": "Mercurius", "origin_language": "Latin", "origin_type": "mythological", "summary": "Named after Mercury , the god of speed and messenger of the Gods, as was the planet Mercury named after the god. · Symbol Hg is from Latin hydrargyrum , which is from the Greek words ὕδωρ and ἀργυρός ( hydor and argyros ). Meaning \"water-silver\", because it is a liquid like water (at room temperature), and has a silvery metallic sheen.", "etymology_lines": [{"language": "Latin", "word": "Mercurius", "roots": "", "meaning": "Mercury \", Roman god", "notes": "mythological"}, {"language": "English", "word": "mercury", "roots": "", "meaning": "", "notes": "Derived <- Latin Mercurius, the Roman god Mercury"}, {"language": "Unspecified", "word": "The chemical symbol Hg reflects Neo-Latin hydrargyrum", "roots": "", "meaning": "water-silver", "notes": "Derived <- Ancient Greek hydrargyros"}]}, "81": {"number": 81, "symbol": "Tl", "name": "Thallium", "meaning": "green shoot", "origin_word": "θαλλός ( thallos )", "origin_language": "Greek", "origin_type": "descriptive", "summary": "From Greek θαλλός ( thallos ), which means \"a green shoot (twig)\", because of its bright-green spectral emission lines .", "etymology_lines": [{"language": "Greek", "word": "θαλλός ( thallos )", "roots": "", "meaning": "green twig", "notes": "descriptive"}, {"language": "New Latin", "word": "thallium", "roots": "", "meaning": "green shoot, young branch", "notes": "Derived <- Ancient Greek thallos"}]}, "82": {"number": 82, "symbol": "Pb", "name": "Lead", "meaning": "traditional Germanic name", "origin_word": "lead", "origin_language": "Anglo-Saxon", "origin_type": "", "summary": "· Symbol Pb is from the Latin name plumbum , still visible in the English plumbing .", "etymology_lines": [{"language": "Anglo-Saxon", "word": "lead", "roots": "", "meaning": "", "notes": ""}, {"language": "English", "word": "lead", "roots": "", "meaning": "lead", "notes": "Derived <- Proto-Germanic *lauda-"}, {"language": "Unspecified", "word": "The deeper origin is uncertain", "roots": "", "meaning": "", "notes": ""}, {"language": "Unspecified", "word": "Chemical symbol Pb reflects Latin plumbum", "roots": "", "meaning": "lead", "notes": ""}]}, "83": {"number": 83, "symbol": "Bi", "name": "Bismuth", "meaning": "white mass", "origin_word": "bisemutum", "origin_language": "Neo-Latin from German", "origin_type": "descriptive (colour)", "summary": "bisemutum is derived from German Wismuth , perhaps from weiße Masse , and means \"white mass\", due to its appearance.", "etymology_lines": [{"language": "Neo-Latin from German", "word": "bisemutum", "roots": "", "meaning": "white mass", "notes": "descriptive (colour)"}, {"language": "German", "word": "Wismut / Weismut", "roots": "", "meaning": "", "notes": "Derived -> New Latin bismuth"}, {"language": "Unspecified", "word": "The traditional explanation is German weisse Masse", "roots": "", "meaning": "white mass", "notes": ""}, {"language": "Unspecified", "word": "The exact early history is debated, but \"white mass\" is the standard account", "roots": "", "meaning": "", "notes": ""}]}, "84": {"number": 84, "symbol": "Po", "name": "Polonium", "meaning": "Poland", "origin_word": "Polonia", "origin_language": "Latin", "origin_type": "toponym", "summary": "Named after Poland , homeland of discoverer Marie Curie . · Former name radium F", "etymology_lines": [{"language": "Latin", "word": "Polonia", "roots": "", "meaning": "Poland", "notes": "toponym"}, {"language": "New Latin", "word": "polonium", "roots": "", "meaning": "Poland", "notes": "Derived <- Latin Polonia"}]}, "85": {"number": 85, "symbol": "At", "name": "Astatine", "meaning": "unstable", "origin_word": "ἄστατος ( astatos )", "origin_language": "Greek", "origin_type": "", "summary": "From Greek ἄστατος ( astatos ), meaning \"unstable\". · Former name alabamine (Ab) was an earlier proposed name for astatine", "etymology_lines": [{"language": "Greek", "word": "ἄστατος ( astatos )", "roots": "", "meaning": "unstable", "notes": ""}, {"language": "New Latin", "word": "astatine", "roots": "", "meaning": "unstable, unsettled", "notes": "Derived <- Ancient Greek astatos"}, {"language": "Ancient Greek", "word": "a-", "roots": "", "meaning": "not\" + statos = \"standing, stable", "notes": ""}]}, "86": {"number": 86, "symbol": "Rn", "name": "Radon", "meaning": "named from radium", "origin_word": "radium", "origin_language": "Latin via German and English", "origin_type": "", "summary": "Contraction of radium emanation , since the element appears in the radioactive decay of radium. · Former name niton (Nt), from Latin nitens \"shining\", because of the radioluminescence of radon.", "etymology_lines": [{"language": "Latin via German and English", "word": "radium", "roots": "", "meaning": "", "notes": ""}, {"language": "New Latin", "word": "radon", "roots": "", "meaning": "", "notes": "Derived <- radium + the noble-gas suffix -on"}, {"language": "Unspecified", "word": "Radium", "roots": "", "meaning": "ray, spoke, beam", "notes": "Derived <- Latin radius"}]}, "87": {"number": 87, "symbol": "Fr", "name": "Francium", "meaning": "France", "origin_word": "France", "origin_language": "French", "origin_type": "toponym", "summary": "Named after France (literally: \"Land of the Franks\"), where it was discovered, at the Curie Institute, Paris .", "etymology_lines": [{"language": "French", "word": "France", "roots": "", "meaning": "", "notes": "toponym"}, {"language": "New Latin", "word": "francium", "roots": "", "meaning": "France", "notes": "Derived <- France / Latin Francia"}]}, "88": {"number": 88, "symbol": "Ra", "name": "Radium", "meaning": "ray", "origin_word": "radius", "origin_language": "Latin via French", "origin_type": "descriptive", "summary": "From Latin radius meaning \"ray\", because of its radioactivity .", "etymology_lines": [{"language": "Latin via French", "word": "radius", "roots": "", "meaning": "ray", "notes": "descriptive"}, {"language": "New Latin", "word": "radium", "roots": "", "meaning": "ray, spoke, beam", "notes": "Derived <- Latin radius"}]}, "89": {"number": 89, "symbol": "Ac", "name": "Actinium", "meaning": "beam", "origin_word": "ἀκτίς ( aktis )", "origin_language": "Greek", "origin_type": "", "summary": "From Greek ἀκτίς / ἀκτῖνος ( aktis / aktinos ), which means \"beam ( ray )\".", "etymology_lines": [{"language": "Greek", "word": "ἀκτίς ( aktis )", "roots": "", "meaning": "beam", "notes": ""}]}, "90": {"number": 90, "symbol": "Th", "name": "Thorium", "meaning": "thunder", "origin_word": "Þōrr ( Thor )", "origin_language": "Old Norse", "origin_type": "mythological", "summary": "From Old Norse Þōrr ( Thor ), a god associated with thunder in Norse mythology . · Former name ionium (Io) was given early in the study of radioactive elements to the Thorium-230 isotope .", "etymology_lines": [{"language": "Old Norse", "word": "Þōrr ( Thor )", "roots": "", "meaning": "thunder", "notes": "mythological"}]}, "91": {"number": 91, "symbol": "Pa", "name": "Protactinium", "meaning": "first beam element", "origin_word": "πρῶτος + ἀκτίς", "origin_language": "Greek", "origin_type": "descriptive?", "summary": "From Greek proto- \"first\" + Neo-Latin actinium (itself from Greek ἀκτίς , gen. [?] : ἀκτῖνος ) \"ray\": proto(-)actinium , later shortened to protactinium .", "etymology_lines": [{"language": "Greek", "word": "πρῶτος + ἀκτίς", "roots": "", "meaning": "first beam element", "notes": "descriptive?"}]}, "92": {"number": 92, "symbol": "U", "name": "Uranium", "meaning": "sky", "origin_word": "Οὐρανός ( Ouranos ); \"Uranus\"", "origin_language": "Greek via Latin", "origin_type": "astrological; mythological", "summary": "Named after the planet Uranus , which had been discovered eight years earlier in 1781. The planet was named after the god Uranus , the god of sky and heaven in Greek mythology .", "etymology_lines": [{"language": "Greek via Latin", "word": "Οὐρανός ( Ouranos ); \"Uranus\"", "roots": "", "meaning": "sky", "notes": "astrological; mythological"}]}, "93": {"number": 93, "symbol": "Np", "name": "Neptunium", "meaning": "Neptune", "origin_word": "Neptunus", "origin_language": "Latin", "origin_type": "astrological; mythological", "summary": "Named after Neptune , the planet. The planet itself was named after Neptune , the god of oceans in Roman mythology.", "etymology_lines": [{"language": "Latin", "word": "Neptunus", "roots": "", "meaning": "Neptune", "notes": "astrological; mythological"}]}, "94": {"number": 94, "symbol": "Pu", "name": "Plutonium", "meaning": "god of wealth", "origin_word": "Πλούτων ( Ploutōn ) via \"Pluto\"", "origin_language": "Greek via Latin", "origin_type": "astrological; mythological", "summary": "Named after the dwarf planet Pluto (then considered to be the ninth planet), because it was discovered directly after element neptunium ( § Np ) and is higher than element uranium ( § U ) in the periodic table . Thus, plutonium was named by analogy with the ordering of the planets, ending with Pluto. Pluto itself was named after Pluto , a Greek god of the dead. Greek Πλούτων ( Ploutōn ) is related to the word πλοῦτος ( ploutos ) meaning \"wealth\".", "etymology_lines": [{"language": "Greek via Latin", "word": "Πλούτων ( Ploutōn ) via \"Pluto\"", "roots": "", "meaning": "god of wealth", "notes": "astrological; mythological"}]}, "95": {"number": 95, "symbol": "Am", "name": "Americium", "meaning": "", "origin_word": "America", "origin_language": "", "origin_type": "toponym", "summary": "Named after the Americas, because it was discovered in the United States; by analogy with europium ( § Eu ). The name of the continent America itself is derived from the name of the Italian navigator Amerigo Vespucci .", "etymology_lines": [{"language": "Unspecified", "word": "America", "roots": "", "meaning": "", "notes": "toponym"}]}, "96": {"number": 96, "symbol": "Cm", "name": "Curium", "meaning": "", "origin_word": "Curie, Marie and Pierre", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Marie and Pierre Curie , who discovered radium and researched radioactivity .", "etymology_lines": [{"language": "Unspecified", "word": "Curie, Marie and Pierre", "roots": "", "meaning": "", "notes": "eponym"}]}, "97": {"number": 97, "symbol": "Bk", "name": "Berkelium", "meaning": "", "origin_word": "University of California, Berkeley", "origin_language": "Anglo-Saxon via English", "origin_type": "toponym", "summary": "Named after the University of California, Berkeley , where it was discovered. The city of Berkeley itself was named after George Berkeley .", "etymology_lines": [{"language": "Anglo-Saxon via English", "word": "University of California, Berkeley", "roots": "", "meaning": "", "notes": "toponym"}]}, "98": {"number": 98, "symbol": "Cf", "name": "Californium", "meaning": "", "origin_word": "California", "origin_language": "English", "origin_type": "toponym", "summary": "Named after the state of California , US, and the University of California, Berkeley . The origin of the name California is disputed.", "etymology_lines": [{"language": "English", "word": "California", "roots": "", "meaning": "", "notes": "toponym"}]}, "99": {"number": 99, "symbol": "Es", "name": "Einsteinium", "meaning": "", "origin_word": "Einstein, Albert", "origin_language": "German", "origin_type": "eponym", "summary": "Named in honour of Albert Einstein , for his work on theoretical physics , which included the photoelectric effect .", "etymology_lines": [{"language": "German", "word": "Einstein, Albert", "roots": "", "meaning": "", "notes": "eponym"}]}, "100": {"number": 100, "symbol": "Fm", "name": "Fermium", "meaning": "Italian surname", "origin_word": "Fermi, Enrico", "origin_language": "Italian", "origin_type": "eponym", "summary": "Named in honour of Enrico Fermi , who developed the first nuclear reactor , quantum mechanics , nuclear and particle physics, and statistical mechanics .", "etymology_lines": [{"language": "Italian", "word": "Fermi, Enrico", "roots": "", "meaning": "Italian surname", "notes": "eponym"}]}, "101": {"number": 101, "symbol": "Md", "name": "Mendelevium", "meaning": "", "origin_word": "Mendeleyev, Dmitri", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Dmitri Mendeleyev , who formulated the periodic table . · Former name eka-thulium .", "etymology_lines": [{"language": "Unspecified", "word": "Mendeleyev, Dmitri", "roots": "", "meaning": "", "notes": "eponym"}]}, "102": {"number": 102, "symbol": "No", "name": "Nobelium", "meaning": "", "origin_word": "Nobel, Alfred", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Alfred Nobel , who invented dynamite and instituted the Nobel Prizes foundation.", "etymology_lines": [{"language": "Unspecified", "word": "Nobel, Alfred", "roots": "", "meaning": "", "notes": "eponym"}]}, "103": {"number": 103, "symbol": "Lr", "name": "Lawrencium", "meaning": "", "origin_word": "Lawrence, Ernest", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Ernest Lawrence , who was involved in the development of the cyclotron . · Symbol Lw was used formerly, Lr is used since 1963.", "etymology_lines": [{"language": "Unspecified", "word": "Lawrence, Ernest", "roots": "", "meaning": "", "notes": "eponym"}]}, "104": {"number": 104, "symbol": "Rf", "name": "Rutherfordium", "meaning": "", "origin_word": "Rutherford, Ernest", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Ernest Rutherford , who pioneered the Bohr model of the atom . Rutherfordium has also been called kurchatovium ( Ku ), named in honour of Igor Kurchatov , who helped develop understanding of the uranium chain reaction and the nuclear reactor . · Former name unnilquadium (Unq, '104'): temporary systematic name and symbol", "etymology_lines": [{"language": "Unspecified", "word": "Rutherford, Ernest", "roots": "", "meaning": "", "notes": "eponym"}]}, "105": {"number": 105, "symbol": "Db", "name": "Dubnium", "meaning": "", "origin_word": "Дубна ( Dubna )", "origin_language": "Russian", "origin_type": "toponym", "summary": "Named after Dubna , Russia, location of the Joint Institute for Nuclear Research (JINR) where it was discovered. · Former names: hahnium (Ha) was proposed by researchers at the University of California, Berkeley, in honour of Otto Hahn , for his pioneering work in radioactivity and radiochemistry , but the proposal was rejected. unnilpentium (Unp, '105'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Russian", "word": "Дубна ( Dubna )", "roots": "", "meaning": "", "notes": "toponym"}]}, "106": {"number": 106, "symbol": "Sg", "name": "Seaborgium", "meaning": "Swedish surname", "origin_word": "Seaborg, Glenn Teodor", "origin_language": "Swedish via English", "origin_type": "eponym", "summary": "Named in honour of Glenn T. Seaborg , who discovered the chemistry of the transuranium elements , shared in the discovery and isolation of ten elements, and developed and proposed the actinide series . · Former names: eka-tungsten , unnilhexium (Unh, '106'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Swedish via English", "word": "Seaborg, Glenn Teodor", "roots": "", "meaning": "Swedish surname", "notes": "eponym"}]}, "107": {"number": 107, "symbol": "Bh", "name": "Bohrium", "meaning": "", "origin_word": "Bohr, Niels", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Niels Bohr , who made fundamental contributions to the understanding of atomic structure and quantum mechanics . · Former name unnilseptium (Uns, '107'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Unspecified", "word": "Bohr, Niels", "roots": "", "meaning": "", "notes": "eponym"}]}, "108": {"number": 108, "symbol": "Hs", "name": "Hassium", "meaning": " Hesse ", "origin_word": "Hassia", "origin_language": "Latin", "origin_type": "toponym", "summary": "From Latin Hassia , meaning Hessen , the German state where it was discovered at the GSI Helmholtz Centre for Heavy Ion Research , Darmstadt . · Former names: eka-osmium , unniloctium (Uno, '108'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Latin", "word": "Hassia", "roots": "", "meaning": "Hesse", "notes": "toponym"}]}, "109": {"number": 109, "symbol": "Mt", "name": "Meitnerium", "meaning": "", "origin_word": "Meitner, Lise", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Lise Meitner , who shared discovery of nuclear fission . · Former names: eka-iridium , unnilennium (Une, '109'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Unspecified", "word": "Meitner, Lise", "roots": "", "meaning": "", "notes": "eponym"}]}, "110": {"number": 110, "symbol": "Ds", "name": "Darmstadtium", "meaning": "proper name", "origin_word": "Darmstadt", "origin_language": "German", "origin_type": "toponym", "summary": "Named after Darmstadt , where it was discovered at the GSI Helmholtz Centre for Heavy Ion Research . · Former name eka-platinum , ununnilium (Uun, '110'): temporary systematic name and symbol .", "etymology_lines": [{"language": "German", "word": "Darmstadt", "roots": "", "meaning": "proper name", "notes": "toponym"}]}, "111": {"number": 111, "symbol": "Rg", "name": "Roentgenium", "meaning": "", "origin_word": "Röntgen, Wilhelm Conrad", "origin_language": "", "origin_type": "eponym", "summary": "Named in honour of Wilhelm Röntgen , who discovered and produced X-rays . · Former names: eka-gold , unununium (Uuu, '111'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Unspecified", "word": "Röntgen, Wilhelm Conrad", "roots": "", "meaning": "", "notes": "eponym"}]}, "112": {"number": 112, "symbol": "Cn", "name": "Copernicium", "meaning": "Polish surname", "origin_word": "Copernicus, Nicolaus", "origin_language": "Polish via Latin", "origin_type": "eponym", "summary": "Named in honour of Nicolaus Copernicus . · Former names: eka-mercury , and temporarily systematic name and symbol ununbium (Uub, '112'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Polish via Latin", "word": "Copernicus, Nicolaus", "roots": "", "meaning": "Polish surname", "notes": "eponym"}]}, "113": {"number": 113, "symbol": "Nh", "name": "Nihonium", "meaning": "Japan", "origin_word": "日本 ( Nihon )", "origin_language": "Japanese", "origin_type": "toponym", "summary": "Named after Nihon (\" Japan \"), where the element was discovered at the Riken research institute. · Former names: eka-thallium , ununtrium (Uut, '113'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Japanese", "word": "日本 ( Nihon )", "roots": "", "meaning": "Japan", "notes": "toponym"}]}, "114": {"number": 114, "symbol": "Fl", "name": "Flerovium", "meaning": "Russian surname", "origin_word": "Flerov, Georgy", "origin_language": "Russian", "origin_type": "eponym", "summary": "Named in honour of Georgy Flyorov , who was at the forefront of Soviet nuclear physics and founder of the Joint Institute for Nuclear Research in Dubna , Russia , where the element was discovered. · Former name ununquadium (Uuq, '114'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Russian", "word": "Flerov, Georgy", "roots": "", "meaning": "Russian surname", "notes": "eponym"}]}, "115": {"number": 115, "symbol": "Mc", "name": "Moscovium", "meaning": " Moscow ", "origin_word": "Moscovia", "origin_language": "Latin", "origin_type": "toponym", "summary": "Named after Moscow Oblast , where the element was discovered. · Former names: eka-bismuth , ununpentium (Uup, '115'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Latin", "word": "Moscovia", "roots": "", "meaning": "Moscow", "notes": "toponym"}]}, "116": {"number": 116, "symbol": "Lv", "name": "Livermorium", "meaning": "", "origin_word": "Livermore", "origin_language": "English", "origin_type": "toponym", "summary": "Named in honour of the Lawrence Livermore National Laboratory , which collaborated in the discovery and is in Livermore, California , in turn named after the rancher Robert Livermore . · Former name ununhexium (Uuh, '116'): temporary systematic name and symbol .", "etymology_lines": [{"language": "English", "word": "Livermore", "roots": "", "meaning": "", "notes": "toponym"}]}, "117": {"number": 117, "symbol": "Ts", "name": "Tennessine", "meaning": "", "origin_word": "Tennessee", "origin_language": "Cherokee via English", "origin_type": "toponym", "summary": "Named after the US state of Tennessee , itself named after the Cherokee village of ᏔᎾᏏ ( tanasi ), where important work for one of the steps to synthesise the element was done in the Oak Ridge National Laboratory . · Former names: eka-astatine , ununseptium (Uus, '117'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Cherokee via English", "word": "Tennessee", "roots": "", "meaning": "", "notes": "toponym"}]}, "118": {"number": 118, "symbol": "Og", "name": "Oganesson", "meaning": "Armenian surname", "origin_word": "Oganessian, Yuri ( Оганесян )", "origin_language": "Russian", "origin_type": "eponym", "summary": "Named after Yuri Oganessian , a great contributor to the field of synthesis of superheavy elements. · Former names: eka-radon , ununoctium (Uuo, '118'): temporary systematic name and symbol .", "etymology_lines": [{"language": "Russian", "word": "Oganessian, Yuri ( Оганесян )", "roots": "", "meaning": "Armenian surname", "notes": "eponym"}]}};
+</script>
+  <script>window.LUCITERIA_CHEAPEST_PER_GRAM = {"vendor": "Luciteria", "generated_from": "luciteria_price_per_gram_offers.csv", "elements_with_price_per_g": 73, "elements_without_price_per_g": 45, "rows": [{"atomic_number": 1, "symbol": "H", "element_name": "Hydrogen", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Usually traded as compressed gas; Luciteria-style solid samples are uncommon rather than impossible."}, {"atomic_number": 2, "symbol": "He", "element_name": "Helium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Noble gas sold industrially in cylinders, but not typically as a compact collectible sample."}, {"atomic_number": 3, "symbol": "Li", "element_name": "Lithium", "price_per_g_usd": 4.99, "purity_label": "99.9%", "price_usd": 4990.0, "mass_g": 1000.0, "variant_label": "1kg - 1g granules in sealed package", "density_g_per_cm3": 0.535, "url": "https://www.luciteria.com/elements-for-sale/p/lithium-metal-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 4, "symbol": "Be", "element_name": "Beryllium", "price_per_g_usd": 5.25, "purity_label": "99.5%", "price_usd": 525.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 1.848, "url": "https://www.luciteria.com/elements-for-sale/p/buy-beryllium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 5, "symbol": "B", "element_name": "Boron", "price_per_g_usd": 4.5, "purity_label": "99.99%", "price_usd": 450.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 2.46, "url": "https://www.luciteria.com/elements-for-sale/p/buy-boron-element", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 6, "symbol": "C", "element_name": "Carbon", "price_per_g_usd": 0.125, "purity_label": ">99%", "price_usd": 12.5, "mass_g": 100.0, "variant_label": "100 grams (graphite pellets)", "density_g_per_cm3": 2.26, "url": "https://www.luciteria.com/elements-for-sale/p/carbon", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 7, "symbol": "N", "element_name": "Nitrogen", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Abundant industrial gas, but not commonly retailed as a collectible elemental sample."}, {"atomic_number": 8, "symbol": "O", "element_name": "Oxygen", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Industrial gas product rather than a compact collectible specimen."}, {"atomic_number": 9, "symbol": "F", "element_name": "Fluorine", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "hazardous_gas", "availability_note": "Extremely reactive and toxic gas, making consumer sample sales difficult."}, {"atomic_number": 10, "symbol": "Ne", "element_name": "Neon", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Noble gas; available industrially but not commonly sold as a small display sample."}, {"atomic_number": 11, "symbol": "Na", "element_name": "Sodium", "price_per_g_usd": 0.825, "purity_label": "99.7%", "price_usd": 8.25, "mass_g": 10.0, "variant_label": "10 grams", "density_g_per_cm3": 0.968, "url": "https://www.luciteria.com/elements-for-sale/p/buy-sodium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 12, "symbol": "Mg", "element_name": "Magnesium", "price_per_g_usd": 0.149, "purity_label": "99.9%", "price_usd": 149.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 1.738, "url": "https://www.luciteria.com/elements-for-sale/p/buy-magnesium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 13, "symbol": "Al", "element_name": "Aluminum", "price_per_g_usd": 0.3315, "purity_label": "99.9%", "price_usd": 331.5, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 2.7, "url": "https://www.luciteria.com/elements-for-sale/p/aluminum-metal-99996", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 14, "symbol": "Si", "element_name": "Silicon", "price_per_g_usd": 0.079, "purity_label": "99.99999%", "price_usd": 79.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 2.33, "url": "https://www.luciteria.com/elements-for-sale/p/buy-silicon", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 15, "symbol": "P", "element_name": "Phosphorus", "price_per_g_usd": 20.0, "purity_label": "99.99%", "price_usd": 20.0, "mass_g": 1.0, "variant_label": "1 gram (powder)", "density_g_per_cm3": 1.823, "url": "https://www.luciteria.com/elements-for-sale/p/violet-phosphorus", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 16, "symbol": "S", "element_name": "Sulfur", "price_per_g_usd": 0.06, "purity_label": "99.9%", "price_usd": 60.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 1.96, "url": "https://www.luciteria.com/elements-for-sale/p/buy-sulfur", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 17, "symbol": "Cl", "element_name": "Chlorine", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "hazardous_gas", "availability_note": "Corrosive toxic gas with difficult packaging and consumer-handling constraints."}, {"atomic_number": 18, "symbol": "Ar", "element_name": "Argon", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Industrial noble gas; small collectible retail market is limited."}, {"atomic_number": 19, "symbol": "K", "element_name": "Potassium", "price_per_g_usd": 2.0, "purity_label": "99%", "price_usd": 20.0, "mass_g": 10.0, "variant_label": "10 grams", "density_g_per_cm3": 0.856, "url": "https://www.luciteria.com/elements-for-sale/p/buy-potassium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 20, "symbol": "Ca", "element_name": "Calcium", "price_per_g_usd": 0.75, "purity_label": "99.9%", "price_usd": 75.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 1.55, "url": "https://www.luciteria.com/elements-for-sale/p/buy-calcium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 21, "symbol": "Sc", "element_name": "Scandium", "price_per_g_usd": 8.5, "purity_label": "99.95%", "price_usd": 850.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 2.985, "url": "https://www.luciteria.com/elements-for-sale/p/scandium-metal-9995-dendritic", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 22, "symbol": "Ti", "element_name": "Titanium", "price_per_g_usd": 0.228, "purity_label": "99.5%", "price_usd": 228.0, "mass_g": 1000.0, "variant_label": "1 kilogram 99.9994%", "density_g_per_cm3": 4.507, "url": "https://www.luciteria.com/elements-for-sale/p/buy-titanium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 23, "symbol": "V", "element_name": "Vanadium", "price_per_g_usd": 0.68, "purity_label": "99.95%", "price_usd": 680.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.11, "url": "https://www.luciteria.com/elements-for-sale/p/buy-vanadium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 24, "symbol": "Cr", "element_name": "Chromium", "price_per_g_usd": 0.054, "purity_label": "99.5%", "price_usd": 54.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.19, "url": "https://www.luciteria.com/elements-for-sale/p/buy-chromium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 25, "symbol": "Mn", "element_name": "Manganese", "price_per_g_usd": 2.2, "purity_label": "99.7%", "price_usd": 2200.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.47, "url": "https://www.luciteria.com/elements-for-sale/p/buy-manganese", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 26, "symbol": "Fe", "element_name": "Iron", "price_per_g_usd": 0.05, "purity_label": "99.95%", "price_usd": 50.0, "mass_g": 1000.0, "variant_label": "1 kilogram (1mm spheres)", "density_g_per_cm3": 7.874, "url": "https://www.luciteria.com/elements-for-sale/p/iron-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 27, "symbol": "Co", "element_name": "Cobalt", "price_per_g_usd": 0.405, "purity_label": "99.95%", "price_usd": 405.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.9, "url": "https://www.luciteria.com/elements-for-sale/p/buy-cobalt", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 28, "symbol": "Ni", "element_name": "Nickel", "price_per_g_usd": 0.085, "purity_label": "99.95%", "price_usd": 85.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.908, "url": "https://www.luciteria.com/elements-for-sale/p/buy-nickel-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 29, "symbol": "Cu", "element_name": "Copper", "price_per_g_usd": 0.05908, "purity_label": "99.95%", "price_usd": 59.08, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.96, "url": "https://www.luciteria.com/elements-for-sale/p/copper-metal-9999-granules", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 30, "symbol": "Zn", "element_name": "Zinc", "price_per_g_usd": 0.09998, "purity_label": "99.99%", "price_usd": 99.98, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.14, "url": "https://www.luciteria.com/elements-for-sale/p/buy-pure-zinc", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 31, "symbol": "Ga", "element_name": "Gallium", "price_per_g_usd": 3.055, "purity_label": "99.99%", "price_usd": 3055.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 5.904, "url": "https://www.luciteria.com/elements-for-sale/p/buy-gallium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 32, "symbol": "Ge", "element_name": "Germanium", "price_per_g_usd": 4.1, "purity_label": "99.999%", "price_usd": 4100.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 5.323, "url": "https://www.luciteria.com/elements-for-sale/p/buy-germanium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 33, "symbol": "As", "element_name": "Arsenic", "price_per_g_usd": 6.25, "purity_label": "99.9999%", "price_usd": 6.25, "mass_g": 1.0, "variant_label": "1 gram (labeled bottle)", "density_g_per_cm3": 5.727, "url": "https://www.luciteria.com/elements-for-sale/p/buy-arsenic", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 34, "symbol": "Se", "element_name": "Selenium", "price_per_g_usd": 0.12, "purity_label": "99.99%", "price_usd": 120.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 4.819, "url": "https://www.luciteria.com/elements-for-sale/p/buy-selenium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 35, "symbol": "Br", "element_name": "Bromine", "price_per_g_usd": 16.025641, "purity_label": "99.9%", "price_usd": 50.0, "mass_g": 3.12, "variant_label": "15x60mm 1ml flat bottom ampule", "density_g_per_cm3": 3.12, "url": "https://www.luciteria.com/elements-for-sale/p/bromine-liquid-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 36, "symbol": "Kr", "element_name": "Krypton", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Available in specialty gas supply, but uncommon in collectible retail form."}, {"atomic_number": 37, "symbol": "Rb", "element_name": "Rubidium", "price_per_g_usd": 45.0, "purity_label": "99.99%", "price_usd": 225.0, "mass_g": 5.0, "variant_label": "5 gram 15x60mm ampule", "density_g_per_cm3": 1.532, "url": "https://www.luciteria.com/elements-for-sale/p/rubidium-metal-9999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 38, "symbol": "Sr", "element_name": "Strontium", "price_per_g_usd": 0.325, "purity_label": "99.9%", "price_usd": 325.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 2.63, "url": "https://www.luciteria.com/elements-for-sale/p/strontium-metal-for-sale", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 39, "symbol": "Y", "element_name": "Yttrium", "price_per_g_usd": 0.132, "purity_label": "99.9%", "price_usd": 132.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 4.472, "url": "https://www.luciteria.com/elements-for-sale/p/buy-yttrium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 40, "symbol": "Zr", "element_name": "Zirconium", "price_per_g_usd": 0.22, "purity_label": "99.2%", "price_usd": 220.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.511, "url": "https://www.luciteria.com/elements-for-sale/p/zirconium-metal-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 41, "symbol": "Nb", "element_name": "Niobium", "price_per_g_usd": 0.355, "purity_label": "99.95%", "price_usd": 355.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.57, "url": "https://www.luciteria.com/elements-for-sale/p/niobium-metal-9995-rods", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 42, "symbol": "Mo", "element_name": "Molybdenum", "price_per_g_usd": 0.155, "purity_label": "99.95%", "price_usd": 155.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 10.28, "url": "https://www.luciteria.com/elements-for-sale/p/buy-molybdenum", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 43, "symbol": "Tc", "element_name": "Technetium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "All isotopes are radioactive; commercial sample market is sparse and tightly constrained."}, {"atomic_number": 44, "symbol": "Ru", "element_name": "Ruthenium", "price_per_g_usd": 85.0, "purity_label": "99.99%", "price_usd": 85.0, "mass_g": 1.0, "variant_label": "1 gram bead", "density_g_per_cm3": 12.37, "url": "https://www.luciteria.com/elements-for-sale/p/buy-ruthenium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 45, "symbol": "Rh", "element_name": "Rhodium", "price_per_g_usd": 1232.0, "purity_label": "99.9%", "price_usd": 123.2, "mass_g": 0.1, "variant_label": "100mg (labeled bottle)", "density_g_per_cm3": 12.45, "url": "https://www.luciteria.com/elements-for-sale/p/buy-rhodium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 46, "symbol": "Pd", "element_name": "Palladium", "price_per_g_usd": 68.98, "purity_label": "99.95%", "price_usd": 68.98, "mass_g": 1.0, "variant_label": "1 gram (labeled bottle)", "density_g_per_cm3": 12.023, "url": "https://www.luciteria.com/elements-for-sale/p/buy-valcambi-palladium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 47, "symbol": "Ag", "element_name": "Silver", "price_per_g_usd": 2.7945, "purity_label": "99.9%", "price_usd": 279.45, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 10.49, "url": "https://www.luciteria.com/elements-for-sale/p/buy-silver", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 48, "symbol": "Cd", "element_name": "Cadmium", "price_per_g_usd": 0.077, "purity_label": "99.9%", "price_usd": 77.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.65, "url": "https://www.luciteria.com/elements-for-sale/p/cadmium-metal-99999-sticks", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 49, "symbol": "In", "element_name": "Indium", "price_per_g_usd": 1.1155, "purity_label": "99.995%", "price_usd": 1115.5, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.31, "url": "https://www.luciteria.com/elements-for-sale/p/buy-indium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 50, "symbol": "Sn", "element_name": "Tin", "price_per_g_usd": 0.195, "purity_label": "99.99%", "price_usd": 195.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.31, "url": "https://www.luciteria.com/elements-for-sale/p/buy-tin-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 51, "symbol": "Sb", "element_name": "Antimony", "price_per_g_usd": 0.21, "purity_label": "99.99%", "price_usd": 210.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.697, "url": "https://www.luciteria.com/elements-for-sale/p/buy-antimony-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 52, "symbol": "Te", "element_name": "Tellurium", "price_per_g_usd": 0.689, "purity_label": "99.999%", "price_usd": 689.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.24, "url": "https://www.luciteria.com/elements-for-sale/p/buy-tellurium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 53, "symbol": "I", "element_name": "Iodine", "price_per_g_usd": 3.2, "purity_label": "99.8%", "price_usd": 32.0, "mass_g": 10.0, "variant_label": "10 grams glass ampule", "density_g_per_cm3": 4.94, "url": "https://www.luciteria.com/elements-for-sale/p/buy-iodine", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 54, "symbol": "Xe", "element_name": "Xenon", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "gas_handling", "availability_note": "Specialty noble gas with limited collectible demand and awkward packaging."}, {"atomic_number": 55, "symbol": "Cs", "element_name": "Cesium", "price_per_g_usd": 67.0, "purity_label": "99.99%", "price_usd": 67.0, "mass_g": 1.0, "variant_label": "1g 10x40mm ampule", "density_g_per_cm3": 1.879, "url": "https://www.luciteria.com/elements-for-sale/p/cesium-metal-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 56, "symbol": "Ba", "element_name": "Barium", "price_per_g_usd": 0.55, "purity_label": "99.9%", "price_usd": 55.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 3.51, "url": "https://www.luciteria.com/elements-for-sale/p/buy-barium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 57, "symbol": "La", "element_name": "Lanthanum", "price_per_g_usd": 0.21, "purity_label": "99.5%", "price_usd": 210.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.146, "url": "https://www.luciteria.com/elements-for-sale/p/buy-lanthanum", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 58, "symbol": "Ce", "element_name": "Cerium", "price_per_g_usd": 0.1, "purity_label": "99.5%", "price_usd": 100.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.689, "url": "https://www.luciteria.com/elements-for-sale/p/buy-cerium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 59, "symbol": "Pr", "element_name": "Praseodymium", "price_per_g_usd": 0.525, "purity_label": "99.6%", "price_usd": 525.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 6.64, "url": "https://www.luciteria.com/elements-for-sale/p/buy-praseodymium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 60, "symbol": "Nd", "element_name": "Neodymium", "price_per_g_usd": 0.5, "purity_label": "99.5%", "price_usd": 500.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.01, "url": "https://www.luciteria.com/elements-for-sale/p/buy-neodymium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 61, "symbol": "Pm", "element_name": "Promethium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "No stable isotopes; scarcity and radioactivity limit normal retail sale."}, {"atomic_number": 62, "symbol": "Sm", "element_name": "Samarium", "price_per_g_usd": 0.32, "purity_label": "99.95%", "price_usd": 320.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.353, "url": "https://www.luciteria.com/elements-for-sale/p/samarium-metal-999-dendritic", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 63, "symbol": "Eu", "element_name": "Europium", "price_per_g_usd": 2.05, "purity_label": "99.9%", "price_usd": 2050.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 5.244, "url": "https://www.luciteria.com/elements-for-sale/p/buy-europium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 64, "symbol": "Gd", "element_name": "Gadolinium", "price_per_g_usd": 0.64, "purity_label": "99.5%", "price_usd": 640.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 7.901, "url": "https://www.luciteria.com/elements-for-sale/p/buy-gadolinium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 65, "symbol": "Tb", "element_name": "Terbium", "price_per_g_usd": 2.85, "purity_label": "99.9%", "price_usd": 2850.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.219, "url": "https://www.luciteria.com/elements-for-sale/p/terbium-metal-999-pieces", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 66, "symbol": "Dy", "element_name": "Dysprosium", "price_per_g_usd": 2.0, "purity_label": "99.9%", "price_usd": 2000.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.551, "url": "https://www.luciteria.com/elements-for-sale/p/buy-dysprosium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 67, "symbol": "Ho", "element_name": "Holmium", "price_per_g_usd": 0.99, "purity_label": "99.9%", "price_usd": 990.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 8.795, "url": "https://www.luciteria.com/elements-for-sale/p/buy-holmium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 68, "symbol": "Er", "element_name": "Erbium", "price_per_g_usd": 0.68, "purity_label": "99.9%", "price_usd": 680.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 9.066, "url": "https://www.luciteria.com/elements-for-sale/p/buy-erbium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 69, "symbol": "Tm", "element_name": "Thulium", "price_per_g_usd": 1.975, "purity_label": "99.95%", "price_usd": 1975.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 9.32, "url": "https://www.luciteria.com/elements-for-sale/p/buy-thulium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 70, "symbol": "Yb", "element_name": "Ytterbium", "price_per_g_usd": 0.8, "purity_label": "99.99%", "price_usd": 80.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 6.57, "url": "https://www.luciteria.com/elements-for-sale/p/buy-ytterbium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 71, "symbol": "Lu", "element_name": "Lutetium", "price_per_g_usd": 3.45, "purity_label": "99.9%", "price_usd": 3450.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 9.841, "url": "https://www.luciteria.com/elements-for-sale/p/buy-lutetium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 72, "symbol": "Hf", "element_name": "Hafnium", "price_per_g_usd": 7.0, "purity_label": "99.4%", "price_usd": 700.0, "mass_g": 100.0, "variant_label": "100 grams", "density_g_per_cm3": 13.31, "url": "https://www.luciteria.com/elements-for-sale/p/buy-hafnium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 73, "symbol": "Ta", "element_name": "Tantalum", "price_per_g_usd": 1.1, "purity_label": "99.95%", "price_usd": 1100.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 16.65, "url": "https://www.luciteria.com/elements-for-sale/p/buy-tantalum", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 74, "symbol": "W", "element_name": "Tungsten", "price_per_g_usd": 0.625, "purity_label": "99.95%", "price_usd": 625.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 19.25, "url": "https://www.luciteria.com/elements-for-sale/p/buy-tungsten", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 75, "symbol": "Re", "element_name": "Rhenium", "price_per_g_usd": 10.0, "purity_label": "99.95%", "price_usd": 200.0, "mass_g": 20.0, "variant_label": "20 grams single bead", "density_g_per_cm3": 21.02, "url": "https://www.luciteria.com/elements-for-sale/p/buy-rhenium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 76, "symbol": "Os", "element_name": "Osmium", "price_per_g_usd": 38.0, "purity_label": "99.95%", "price_usd": 3800.0, "mass_g": 100.0, "variant_label": "100 gram bead", "density_g_per_cm3": 22.59, "url": "https://www.luciteria.com/elements-for-sale/p/buy-osmium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 77, "symbol": "Ir", "element_name": "Iridium", "price_per_g_usd": 290.0, "purity_label": "99.95%", "price_usd": 290.0, "mass_g": 1.0, "variant_label": "1 gram (labeled box)", "density_g_per_cm3": 22.56, "url": "https://www.luciteria.com/elements-for-sale/p/buy-iridium-metal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 78, "symbol": "Pt", "element_name": "Platinum", "price_per_g_usd": 79.93, "purity_label": "99.95%", "price_usd": 79.93, "mass_g": 1.0, "variant_label": "1 gram (labeled box)", "density_g_per_cm3": 21.45, "url": "https://www.luciteria.com/elements-for-sale/p/platinum", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 79, "symbol": "Au", "element_name": "Gold", "price_per_g_usd": 166.666667, "purity_label": "99.99%", "price_usd": 375.0, "mass_g": 2.25, "variant_label": "2-2.5g single crystal", "density_g_per_cm3": 19.3, "url": "https://www.luciteria.com/elements-for-sale/p/gold-9999-crystal", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 80, "symbol": "Hg", "element_name": "Mercury", "price_per_g_usd": 2.033333, "purity_label": "99.99%", "price_usd": 61.0, "mass_g": 30.0, "variant_label": "30 grams (sealed glass ampule)", "density_g_per_cm3": 13.534, "url": "https://www.luciteria.com/elements-for-sale/p/mercury-metal-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 81, "symbol": "Tl", "element_name": "Thallium", "price_per_g_usd": 4.0, "purity_label": "99.99%", "price_usd": 40.0, "mass_g": 10.0, "variant_label": "10 grams in oil", "density_g_per_cm3": 11.85, "url": "https://www.luciteria.com/elements-for-sale/p/thallium-metal-9999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 82, "symbol": "Pb", "element_name": "Lead", "price_per_g_usd": 0.1575, "purity_label": "99.99%", "price_usd": 157.5, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 11.34, "url": "https://www.luciteria.com/elements-for-sale/p/lead-metal-sheet", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 83, "symbol": "Bi", "element_name": "Bismuth", "price_per_g_usd": 0.05, "purity_label": "99.99%", "price_usd": 50.0, "mass_g": 1000.0, "variant_label": "1 kilogram", "density_g_per_cm3": 9.78, "url": "https://www.luciteria.com/elements-for-sale/p/buy-bismuth", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 84, "symbol": "Po", "element_name": "Polonium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "Highly radioactive and hazardous; consumer sale is generally impractical."}, {"atomic_number": 85, "symbol": "At", "element_name": "Astatine", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Extremely short-lived and available only in trace amounts, so practical samples do not exist."}, {"atomic_number": 86, "symbol": "Rn", "element_name": "Radon", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Radioactive noble gas with short half-life; storage and sale are impractical."}, {"atomic_number": 87, "symbol": "Fr", "element_name": "Francium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "So short-lived that no bulk commercial sample is practical."}, {"atomic_number": 88, "symbol": "Ra", "element_name": "Radium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "Radioactive and regulated, with significant handling and licensing barriers."}, {"atomic_number": 89, "symbol": "Ac", "element_name": "Actinium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "Radioactive actinide with licensing and supply constraints."}, {"atomic_number": 90, "symbol": "Th", "element_name": "Thorium", "price_per_g_usd": 1750.0, "purity_label": "99.9%", "price_usd": 175.0, "mass_g": 0.1, "variant_label": "100mg", "density_g_per_cm3": 11.724, "url": "https://www.luciteria.com/elements-for-sale/p/thorium-metal-999", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 91, "symbol": "Pa", "element_name": "Protactinium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "radioactive", "availability_note": "Radioactive and tightly controlled; very limited commercial handling."}, {"atomic_number": 92, "symbol": "U", "element_name": "Uranium", "price_per_g_usd": 20.183853, "purity_label": "99.9%", "price_usd": 1010.0, "mass_g": 50.04, "variant_label": "50.04g in sealed ampule with silicone", "density_g_per_cm3": 19.05, "url": "https://www.luciteria.com/elements-for-sale/p/buy-uranium", "vendor": "Luciteria", "scraped_at_utc": "2026-03-23T05:01:53.502546+00:00", "availability_status": "for_sale", "availability_reason": "available", "availability_note": "Cheapest observed Luciteria offer with usable mass data."}, {"atomic_number": 93, "symbol": "Np", "element_name": "Neptunium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Artificial radioactive actinide subject to strong regulatory and security controls."}, {"atomic_number": 94, "symbol": "Pu", "element_name": "Plutonium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Nuclear-material controls dominate availability."}, {"atomic_number": 95, "symbol": "Am", "element_name": "Americium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Radioactive transuranic with regulatory controls and limited legitimate retail channels."}, {"atomic_number": 96, "symbol": "Cm", "element_name": "Curium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Radioactive transuranic with regulatory and production barriers."}, {"atomic_number": 97, "symbol": "Bk", "element_name": "Berkelium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Produced only in tiny amounts and tightly controlled."}, {"atomic_number": 98, "symbol": "Cf", "element_name": "Californium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "materials_control", "availability_note": "Produced in reactors in limited amounts and heavily regulated."}, {"atomic_number": 99, "symbol": "Es", "element_name": "Einsteinium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Only minute amounts are produced; isotopes are too short-lived for practical sale."}, {"atomic_number": 100, "symbol": "Fm", "element_name": "Fermium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Synthetic and short-lived; no practical macroscopic market."}, {"atomic_number": 101, "symbol": "Md", "element_name": "Mendelevium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Synthetic and too short-lived for commercial specimens."}, {"atomic_number": 102, "symbol": "No", "element_name": "Nobelium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Synthetic and too short-lived for ordinary sample trade."}, {"atomic_number": 103, "symbol": "Lr", "element_name": "Lawrencium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "short_half_life", "availability_note": "Synthetic and too short-lived for ordinary sample trade."}, {"atomic_number": 104, "symbol": "Rf", "element_name": "Rutherfordium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 105, "symbol": "Db", "element_name": "Dubnium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 106, "symbol": "Sg", "element_name": "Seaborgium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 107, "symbol": "Bh", "element_name": "Bohrium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 108, "symbol": "Hs", "element_name": "Hassium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 109, "symbol": "Mt", "element_name": "Meitnerium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 110, "symbol": "Ds", "element_name": "Darmstadtium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 111, "symbol": "Rg", "element_name": "Roentgenium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 112, "symbol": "Cn", "element_name": "Copernicium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 113, "symbol": "Nh", "element_name": "Nihonium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 114, "symbol": "Fl", "element_name": "Flerovium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 115, "symbol": "Mc", "element_name": "Moscovium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 116, "symbol": "Lv", "element_name": "Livermorium", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 117, "symbol": "Ts", "element_name": "Tennessine", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}, {"atomic_number": 118, "symbol": "Og", "element_name": "Oganesson", "price_per_g_usd": null, "purity_label": "", "price_usd": null, "mass_g": null, "variant_label": "", "density_g_per_cm3": null, "url": "", "vendor": "Luciteria", "scraped_at_utc": "", "availability_status": "not_for_sale", "availability_reason": "synthetic_only", "availability_note": "Made atom-by-atom in accelerators; no macroscopic sample exists."}]};
+</script>
+  <script>
+    const gap = 0.3;
+    const w = 18 + gap;
+    const h = 9 + gap;
+    const textShadow = '0 0 2px white,0 0 2px white';
+    const symbols = ['', 'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'];
+    const canvas = document.getElementById('periodicCanvas');
+    const detailPane = document.getElementById('detailPane');
+    const listGrid = document.getElementById('listGrid');
+    const searchInput = document.getElementById('searchInput');
+    const resultSummary = document.getElementById('resultSummary');
+    const emptyState = document.getElementById('emptyState');
+    const costSummary = document.getElementById('costSummary');
+    const costHighlightGrid = document.getElementById('costHighlightGrid');
+    const costTableBody = document.getElementById('costTableBody');
+    const sortByGramButton = document.getElementById('sortByGram');
+    const sortByVolumeButton = document.getElementById('sortByVolume');
+    const sortDirectionButton = document.getElementById('sortDirection');
+    const ACTIVE_TAB_KEY = 'periodicTable.activeTab';
+    const COST_SORT_MODE_KEY = 'periodicTable.costSortMode';
+    const COST_SORT_DIRECTION_KEY = 'periodicTable.costSortDirection';
+    let etymologyData = {};
+    let selectedAtomicNumber = 1;
+    let costSortMode = localStorage.getItem(COST_SORT_MODE_KEY) || 'gram';
+    let costSortDirection = localStorage.getItem(COST_SORT_DIRECTION_KEY) || 'asc';
 
-function tableCoords(i){
-  const rightAlign = [[2,1],[10,6],[18,6],[36,16],[54,16],[86,16],[118,16],[70,14],[102,14]]
-  for (const [idx, [right,range]] of rightAlign.entries()) {
-    if (i<=right && i>right-range){
-      const isLanthanide = right==70||right==102
-      return [
-        w-1 -right+i +(isLanthanide?-2:0),
-        isLanthanide?h-2+Math.floor(i/89):idx
-      ]
+    function svg(tagName, attrs, textContent) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+      for (const key in attrs) el.setAttribute(key, attrs[key]);
+      if (textContent != null) el.textContent = textContent;
+      return el;
     }
-  }
-  
-  const leftAlign = [1,3,11,19,37,55,87]
-  for (const [idx, left] of leftAlign.entries()) {
-    if (i>=left && i<left+2) return [i-left,idx]
-  }
-  return [-1,-1]
-}
 
-function pickImage(base){
-  const formats = ['webp','jpg','jpeg','png','avif','svg'];
-  return new Promise(res=>{
-    let i = 0;
-    function tryNext(){
-      if(i >= formats.length) return res(null);
-      const url = `${base}.${formats[i++]}`;
-      const probe = new Image();
-      probe.onload  = () => res(url);
-      probe.onerror = tryNext;
-      probe.src     = url + '?v=' + Date.now();
+    function tableCoords(i) {
+      const rightAlign = [[2,1],[10,6],[18,6],[36,16],[54,16],[86,16],[118,16],[70,14],[102,14]];
+      for (const [idx, [right, range]] of rightAlign.entries()) {
+        if (i <= right && i > right - range) {
+          const isLanthanide = right === 70 || right === 102;
+          return [
+            w - 1 - right + i + (isLanthanide ? -2 : 0),
+            isLanthanide ? h - 2 + Math.floor(i / 89) : idx
+          ];
+        }
+      }
+
+      const leftAlign = [1,3,11,19,37,55,87];
+      for (const [idx, left] of leftAlign.entries()) {
+        if (i >= left && i < left + 2) return [i - left, idx];
+      }
+      return [-1, -1];
     }
-    tryNext();
-  });
-}
-</script></body></html>
+
+    function pickImage(base) {
+      return Promise.resolve(`${base}.png`);
+    }
+
+    function setSelectedCell() {
+      canvas.querySelectorAll('.cell-button').forEach((node) => {
+        node.classList.toggle('selected', Number(node.dataset.atomicNumber) === selectedAtomicNumber);
+      });
+    }
+
+    function renderDetail() {
+      const entry = etymologyData[String(selectedAtomicNumber)];
+      if (!entry) {
+        detailPane.innerHTML = '<h2>No etymology entry</h2><p>This element currently has no structured trace in the local JSON.</p>';
+        return;
+      }
+
+      detailPane.innerHTML = `
+        <div class="meta-kicker">${entry.symbol} · ${entry.number}</div>
+        <h2>${escapeHtml(entry.name)}</h2>
+        <p><strong>Gloss:</strong> ${escapeHtml(entry.meaning || '—')}</p>
+        ${entry.summary ? `<p>${escapeHtml(entry.summary)}</p>` : ''}
+        ${renderTraceTable(entry.etymology_lines || [])}
+      `;
+      setSelectedCell();
+    }
+
+    async function buildTable() {
+      canvas.innerHTML = '';
+      for (let i = 1; i < 119; i++) {
+        const [x, y] = tableCoords(i);
+        if (x < 0 || y < 0) continue;
+
+        const g = svg('g', {
+          transform: `translate(${x},${y})`,
+          class: 'cell-button',
+          tabindex: '0',
+          role: 'button',
+          'data-atomic-number': i,
+          'aria-label': `${symbols[i]} ${i}`
+        });
+        g.addEventListener('click', () => {
+          selectedAtomicNumber = i;
+          renderDetail();
+        });
+        g.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectedAtomicNumber = i;
+            renderDetail();
+          }
+        });
+        canvas.append(g);
+
+        g.append(svg('rect', { x: 0, y: 0, width: 1, height: 1, fill: 'none' }));
+        const img = svg('image', { width: 1, height: 1, preserveAspectRatio: 'xMidYMin slice' });
+        g.append(img);
+        pickImage(i).then((url) => {
+          if (url) img.setAttribute('href', url);
+        });
+        g.append(svg('text', {
+          x: 0.2, y: 0.25, 'font-size': 0.25, stroke: 'none', fill: 'black',
+          'text-anchor': 'middle', 'dominant-baseline': 'middle',
+          style: `text-shadow:${textShadow}`
+        }, i));
+        g.append(svg('text', {
+          x: 0.5, y: 0.68, 'font-size': 0.5, stroke: 'none', fill: 'black',
+          'text-anchor': 'middle', 'dominant-baseline': 'middle',
+          style: `text-shadow:${textShadow}`
+        }, symbols[i]));
+        g.append(svg('rect', {
+          x: 0.02, y: 0.02, width: 0.96, height: 0.96,
+          fill: 'none', stroke: '#000000', 'stroke-width': 0.04,
+          opacity: 0, class: 'selection-ring'
+        }));
+      }
+
+      canvas.append(svg('path', {
+        d: `M${2},${7} v-2 l${gap},${gap + 2} v2 z`,
+        fill: 'black'
+      }));
+      renderDetail();
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function renderCell(value) {
+      const text = String(value || '').trim();
+      if (!text) return '<td class="empty-cell">—</td>';
+      return `<td>${escapeHtml(text)}</td>`;
+    }
+
+    function renderTraceTable(lines) {
+      if (!lines.length) return '<p>No structured etymology lines.</p>';
+      const rows = lines.map((line) => `
+        <tr>
+          ${renderCell(line.language)}
+          ${renderCell(line.word)}
+          ${renderCell(line.roots)}
+          ${renderCell(line.meaning)}
+          ${renderCell(line.notes)}
+        </tr>
+      `).join('');
+      return `
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th>Language</th>
+                <th>Word</th>
+                <th>Roots</th>
+                <th>Meaning</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function formatUsd(value, digits = 2) {
+      if (value == null || Number.isNaN(Number(value))) return '—';
+      return `$${Number(value).toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      })}`;
+    }
+
+    function priceDigits(value) {
+      if (value == null || Number.isNaN(Number(value))) return 2;
+      const num = Number(value);
+      if (num < 0.1) return 4;
+      if (num < 1) return 3;
+      return 2;
+    }
+
+    function renderRankList(rows) {
+      return `
+        <ol class="rank-list">
+          ${rows.map((row) => `
+            <li>
+              <strong>${escapeHtml(row.element_name)}</strong> (${escapeHtml(row.symbol)}) ·
+              ${costSortMode === 'gram'
+                ? `${formatUsd(row.price_per_g_usd, priceDigits(row.price_per_g_usd))}/g`
+                : `${formatUsd(row.price_per_cm3_usd, priceDigits(row.price_per_cm3_usd))}/cm^3`}
+            </li>
+          `).join('')}
+        </ol>
+      `;
+    }
+
+    function renderCostView() {
+      const payload = window.LUCITERIA_CHEAPEST_PER_GRAM;
+      if (!payload || !payload.rows || !payload.rows.length) {
+        costSummary.textContent = 'No price-per-gram data loaded.';
+        costHighlightGrid.innerHTML = '';
+        costTableBody.innerHTML = '';
+        return;
+      }
+
+      const pricedRows = payload.rows.filter((row) => row.price_per_g_usd != null);
+      const unpricedRows = payload.rows.filter((row) => row.price_per_g_usd == null);
+      const rows = [...pricedRows]
+        .map((row) => ({
+          ...row,
+          price_per_cm3_usd:
+            row.price_per_g_usd != null && row.density_g_per_cm3 != null
+              ? Number(row.price_per_g_usd) * Number(row.density_g_per_cm3)
+              : null
+        }))
+        .sort((a, b) => {
+          const aValue = costSortMode === 'gram' ? a.price_per_g_usd : a.price_per_cm3_usd;
+          const bValue = costSortMode === 'gram' ? b.price_per_g_usd : b.price_per_cm3_usd;
+          if (aValue == null && bValue == null) return (a.atomic_number ?? 999) - (b.atomic_number ?? 999);
+          if (aValue == null) return 1;
+          if (bValue == null) return -1;
+          return costSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+        });
+      const unavailableRows = [...unpricedRows].sort((a, b) => (a.atomic_number ?? 999) - (b.atomic_number ?? 999));
+      const cheapest = [...rows].sort((a, b) => (a.price_per_g_usd ?? Infinity) - (b.price_per_g_usd ?? Infinity)).slice(0, 10);
+      const mostExpensive = [...rows].sort((a, b) => (b.price_per_g_usd ?? -Infinity) - (a.price_per_g_usd ?? -Infinity)).slice(0, 10);
+      const cheapestByVolume = [...rows].sort((a, b) => (a.price_per_cm3_usd ?? Infinity) - (b.price_per_cm3_usd ?? Infinity)).slice(0, 10);
+      const mostExpensiveByVolume = [...rows].sort((a, b) => (b.price_per_cm3_usd ?? -Infinity) - (a.price_per_cm3_usd ?? -Infinity)).slice(0, 10);
+      sortByGramButton.setAttribute('aria-pressed', String(costSortMode === 'gram'));
+      sortByVolumeButton.setAttribute('aria-pressed', String(costSortMode === 'volume'));
+      sortDirectionButton.textContent = costSortDirection === 'asc' ? 'Increasing' : 'Decreasing';
+      sortDirectionButton.setAttribute('aria-pressed', String(costSortDirection === 'desc'));
+      costSummary.textContent =
+        costSortMode === 'gram'
+          ? `${rows.length} elements have a usable cheapest-offer USD/g from Luciteria and ${unavailableRows.length} do not appear in the current market dataset. Table is sorted ${costSortDirection === 'asc' ? 'from cheapest to most expensive' : 'from most expensive to cheapest'} by mass, then lists unavailable elements.`
+          : `${rows.length} elements have a usable cheapest-offer USD/g from Luciteria and ${unavailableRows.length} do not appear in the current market dataset. USD/cm^3 is derived from density; table is sorted ${costSortDirection === 'asc' ? 'from cheapest to most expensive' : 'from most expensive to cheapest'} by volume, then lists unavailable elements.`;
+      costHighlightGrid.innerHTML = `
+        <article class="cost-highlight-card">
+          <h3>${costSortMode === 'gram' ? 'Cheapest per gram' : 'Cheapest per cubic centimeter'}</h3>
+          ${renderRankList(costSortMode === 'gram' ? cheapest : cheapestByVolume)}
+        </article>
+        <article class="cost-highlight-card">
+          <h3>${costSortMode === 'gram' ? 'Most expensive per gram' : 'Most expensive per cubic centimeter'}</h3>
+          ${renderRankList(costSortMode === 'gram' ? mostExpensive : mostExpensiveByVolume)}
+        </article>
+      `;
+      let cumulativeGram = 0;
+      let cumulativeVolume = 0;
+      const pricedTableRows = rows.map((row, index) => {
+        cumulativeGram += Number(row.price_per_g_usd ?? 0);
+        cumulativeVolume += Number(row.price_per_cm3_usd ?? 0);
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${row.atomic_number ?? '—'}</td>
+            <td><strong>${escapeHtml(row.symbol)}</strong></td>
+            <td>${escapeHtml(row.element_name)}</td>
+            <td>${formatUsd(row.price_per_g_usd, priceDigits(row.price_per_g_usd))}</td>
+            <td>${formatUsd(cumulativeGram, priceDigits(cumulativeGram))}</td>
+            <td>${formatUsd(row.price_per_cm3_usd, priceDigits(row.price_per_cm3_usd))}</td>
+            <td>${formatUsd(cumulativeVolume, priceDigits(cumulativeVolume))}</td>
+            <td>For sale</td>
+            <td>available</td>
+            <td>${escapeHtml(row.purity_label || '—')}</td>
+            <td class="wrap">${row.url ? `<a href="${escapeHtml(row.url)}">${escapeHtml(row.variant_label || 'link')}</a>` : escapeHtml(row.variant_label || '—')}</td>
+            <td>${row.density_g_per_cm3 != null ? Number(row.density_g_per_cm3).toFixed(2) : '—'}</td>
+          </tr>
+        `;
+      }).join('');
+      const unavailableTableRows = unavailableRows.map((row) => `
+        <tr>
+          <td>—</td>
+          <td>${row.atomic_number ?? '—'}</td>
+          <td><strong>${escapeHtml(row.symbol)}</strong></td>
+          <td>${escapeHtml(row.element_name)}</td>
+          <td>—</td>
+          <td>${formatUsd(cumulativeGram, priceDigits(cumulativeGram))}</td>
+          <td>—</td>
+          <td>${formatUsd(cumulativeVolume, priceDigits(cumulativeVolume))}</td>
+          <td>Not for sale</td>
+          <td class="wrap">${escapeHtml(row.availability_reason || 'not_listed')}<br>${escapeHtml(row.availability_note || '')}</td>
+          <td>—</td>
+          <td class="wrap">—</td>
+          <td>—</td>
+        </tr>
+      `).join('');
+      costTableBody.innerHTML = pricedTableRows + unavailableTableRows;
+    }
+
+    function setupCostControls() {
+      sortByGramButton.addEventListener('click', () => {
+        costSortMode = 'gram';
+        localStorage.setItem(COST_SORT_MODE_KEY, costSortMode);
+        renderCostView();
+      });
+      sortByVolumeButton.addEventListener('click', () => {
+        costSortMode = 'volume';
+        localStorage.setItem(COST_SORT_MODE_KEY, costSortMode);
+        renderCostView();
+      });
+      sortDirectionButton.addEventListener('click', () => {
+        costSortDirection = costSortDirection === 'asc' ? 'desc' : 'asc';
+        localStorage.setItem(COST_SORT_DIRECTION_KEY, costSortDirection);
+        renderCostView();
+      });
+    }
+
+    function listEntries() {
+      const query = searchInput.value.trim().toLowerCase();
+      const rows = Object.values(etymologyData)
+        .sort((a, b) => a.number - b.number)
+        .filter((entry) => {
+          if (!query) return true;
+          const haystack = [
+            entry.name,
+            entry.symbol,
+            entry.meaning,
+            entry.origin_word,
+            entry.origin_language,
+            entry.summary,
+            ...(entry.etymology_lines || []).flatMap((line) => [
+              line.language,
+              line.word,
+              line.roots,
+              line.meaning,
+              line.notes
+            ])
+          ].join(' ').toLowerCase();
+          return haystack.includes(query);
+        });
+
+      resultSummary.textContent = `${rows.length} entries`;
+      emptyState.hidden = rows.length !== 0;
+      listGrid.innerHTML = rows.map((entry) => `
+        <article class="card">
+          <div class="meta-kicker">${entry.symbol} · ${entry.number}</div>
+          <h3>${escapeHtml(entry.name)}</h3>
+          <div class="sub">${escapeHtml(entry.meaning || '—')}</div>
+          ${renderTraceTable(entry.etymology_lines || [])}
+        </article>
+      `).join('');
+    }
+
+    function setupTabs() {
+      document.querySelectorAll('.tab-button').forEach((button) => {
+        button.addEventListener('click', () => {
+          const view = button.dataset.view;
+          localStorage.setItem(ACTIVE_TAB_KEY, view);
+          document.querySelectorAll('.tab-button').forEach((node) => {
+            node.setAttribute('aria-selected', String(node === button));
+          });
+          document.querySelectorAll('.view').forEach((node) => {
+            node.classList.toggle('active', node.id === `${view}View`);
+          });
+        });
+      });
+    }
+
+    function restoreActiveTab() {
+      const activeView = localStorage.getItem(ACTIVE_TAB_KEY) || 'layout';
+      const activeButton = document.querySelector(`.tab-button[data-view="${activeView}"]`);
+      if (activeButton) activeButton.click();
+    }
+
+    async function init() {
+      setupTabs();
+      setupCostControls();
+      searchInput.addEventListener('input', listEntries);
+      etymologyData = window.ETYMOLOGY_TRACES || {};
+      await buildTable();
+      listEntries();
+      renderCostView();
+      restoreActiveTab();
+    }
+
+    init();
+  </script>
+</body>
+</html>

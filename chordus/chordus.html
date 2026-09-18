@@ -344,7 +344,7 @@ header nav #theme-toggle{margin-left:auto}
    of the two would win, so the navbar gap would stop matching the hr gap in
    Conduct. When the conductor toolbar is showing, that toolbar's own bottom
    margin still spaces the score. */
-#rehearsal-score{margin-top:0;min-width:0}#rehearsal-score.is-editable .rehearsal-note{touch-action:none;cursor:ns-resize}
+#rehearsal-score{margin-top:0;min-width:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}#rehearsal-score.is-editable .rehearsal-note{touch-action:none;cursor:ns-resize}
 /* A held note is a drag, so the phone must not offer its selection callout or
    start a text selection under the finger. */
 #voicing-score{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}#rehearsal-score:not(.is-editable) .rehearsal-note{touch-action:pan-y pinch-zoom;cursor:pointer}.rehearsal-system{display:block;width:100%;height:auto;margin-bottom:14px;user-select:none;-webkit-user-select:none;overflow:visible}.pitch-guide{stroke:var(--muted);stroke-width:.6;opacity:.55}.pitch-guide.tonic{stroke:var(--ink);stroke-width:1;opacity:.85}.pitch-guide.third{stroke-dasharray:3 4;opacity:.35}.pitch-column{stroke:var(--line);stroke-width:.7}.pitch-reference{font:11px system-ui;fill:var(--muted);text-anchor:end}.progression-roman{font:700 21px Georgia,serif;fill:var(--ink);text-anchor:middle}.progression-name{font:24px 'Chordus Jazz Text',system-ui;fill:var(--ink);text-anchor:middle}.pitch-hit{fill:transparent}/* Compressed grand staff in the conductor editor: the noteheads carry the
@@ -367,7 +367,7 @@ header nav #theme-toggle{margin-left:auto}
 .grand-staff .rehearsal-note text,.grand-staff .ledger,.grand-staff .staff-line,.grand-staff .barline,.grand-staff .staff-brace,.grand-staff .clef{pointer-events:none}
 .pitch-bar{fill:currentColor;opacity:.85}.pitch-note-label{font:600 11px system-ui;fill:var(--surface);pointer-events:none}.rehearsal-note.other-part{opacity:.22}.rehearsal-note.selected .pitch-bar{stroke:var(--ink);stroke-width:2}.rehearsal-note.playing .pitch-bar{stroke:var(--accent);stroke-width:2}#rehearsal-selection{display:flex;align-items:center;gap:6px;min-height:36px;margin-top:8px;font-size:.875rem}#selected-pitch{min-width:75px;color:var(--muted)}.rehearsal-note.s{color:var(--s)}.rehearsal-note.a{color:var(--a)}.rehearsal-note.t{color:var(--t)}.rehearsal-note.b{color:var(--b)}#conductor-dialog{color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;width:min(380px,calc(100% - 24px));padding:16px}#conductor-dialog::backdrop{background:rgb(8 17 30/.6)}.conductor-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}#conductor-form{display:grid;gap:8px}#conductor-password{width:100%;height:40px;font:16px system-ui;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:6px 10px}#conductor-message:not(:empty){margin-top:10px;color:var(--muted);font-size:.875rem}
 .pill-toggle-group{position:relative;display:inline-grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:3px;height:36px;gap:0;border:1px solid var(--line);border-radius:999px;background:var(--selected)}
-#voicing-score{margin-top:10px;min-width:0}#voicing-score .rehearsal-note{touch-action:none;cursor:ns-resize}#voicing-score .voicing-hit{fill:transparent;touch-action:none;cursor:ns-resize}#voicing-score:not(.is-editable) .voicing-hit{display:none}.rehearsal-notation{margin-bottom:16px}.reading-hit{fill:transparent}.rehearsal-reading-note{touch-action:pan-y pinch-zoom;cursor:pointer}.reading-accidental{text-anchor:end}/* A sounding note takes its own voice's colour. The staff group already sets
+#voicing-score{margin-top:10px;min-width:0}#voicing-score .rehearsal-note{touch-action:none;cursor:ns-resize}#voicing-score .voicing-hit{fill:transparent;touch-action:none;cursor:ns-resize}#voicing-score:not(.is-editable) .voicing-hit{display:none}.rehearsal-notation{margin-bottom:16px}.reading-hit{fill:transparent}.rehearsal-reading-note{touch-action:pan-y pinch-zoom;cursor:pointer;-webkit-touch-callout:none}.reading-accidental{text-anchor:end}/* A sounding note takes its own voice's colour. The staff group already sets
    `color` per part for the clef, so currentColor is that part's hue here and
    the note says which voice you are hearing, not just that something sounds.
    The measure header carries the accent instead, so there is still one
@@ -396,7 +396,7 @@ header nav #theme-toggle{margin-left:auto}
 .borrow-option{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:6px 8px;height:auto}
 .borrow-option strong{font:700 1rem/1.3 Georgia,serif}.borrow-option span{color:var(--muted);font-size:.8125rem}
 .preview-divider{margin:3px 0 10px;border:0;border-top:1px solid var(--line)}
-.voicing-preview{min-width:0}
+.voicing-preview{min-width:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .measure-editor input{height:36px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);padding:0 8px;font:16px ui-monospace,monospace;min-width:0}.measure-editor .section-input{width:90px}
 .rhythm-editor{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%}.rhythm-editor .pager{width:70px}#measure-rhythm{flex:1 1 160px;max-width:340px}.rhythm-editor small{color:var(--muted);flex:1 1 100%}
 .chord-lyrics-editor{display:flex;align-items:flex-start;gap:8px;flex:1 1 100%;min-width:0}.chord-lyrics-editor>span{padding-top:7px;color:var(--muted)}#measure-lyrics{flex:1;min-width:0;max-width:660px;resize:vertical;min-height:60px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:16px/1.4 Georgia,serif}.chord-lyric{font:16px Georgia,serif;fill:var(--ink);text-anchor:middle;pointer-events:none}
@@ -404,7 +404,7 @@ header nav #theme-toggle{margin-left:auto}
 .dynamics-layer{pointer-events:none}.dynamics-fill{fill:var(--ink);opacity:.075}.dynamics-edge{fill:none;stroke:var(--ink);opacity:.24;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .dynamic-handle{touch-action:none;cursor:ns-resize;outline:none}.dynamic-handle-hit{fill:transparent}.dynamic-handle-dot{fill:var(--paper);stroke:var(--muted);stroke-width:1.5}.dynamic-handle:is(:hover,:focus-visible) .dynamic-handle-dot{stroke:var(--accent);stroke-width:3}.dynamic-handle-label{font:italic 700 13px Georgia,serif;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:3px;pointer-events:none}
 @media print{.dynamics-editor,.dynamics-controls{display:none!important}.dynamics-layer{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-#rehearsal-cue-label{color:var(--accent);font-weight:650}.reading-measure-target,.reading-voice-target{cursor:pointer;touch-action:pan-y pinch-zoom}.reading-voice-target{fill:transparent}
+#rehearsal-cue-label{color:var(--accent);font-weight:650}.reading-measure-target,.reading-voice-target{cursor:pointer;touch-action:pan-y pinch-zoom;-webkit-touch-callout:none}.reading-voice-target{fill:transparent}
 .cue-measure-fill{fill:var(--accent);opacity:0;pointer-events:none}.cue-measure-fill.is-cued{opacity:.12}
 .cue-voice-fill{fill:currentColor;opacity:0;pointer-events:none}.cue-voice-fill.is-cued{opacity:.22}
 /* No ring on the cue targets. Their rects are deliberately generous, running
@@ -5350,8 +5350,12 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     const target=readingTargetAt(event);if(!target)return;
     const touch=event.pointerType==='touch';
     readingPress={id:event.pointerId,target,x:event.clientX,y:event.clientY,touch,moved:false};
-    // Touch auditions on release instead of on contact, so a swipe still scrolls.
-    if(touch)return;
+    // A finger sounds on contact and keeps sounding while it is held, the same
+    // as a mouse. Claiming the press is also what stops the browser running its
+    // own long-press over the note: the selection box and the context menu both
+    // belong to that gesture. Scrolling is unaffected, because touch-action and
+    // not this decides whether the page pans, and a press that turns into a
+    // scroll is dropped in pointermove below.
     event.preventDefault();playReading(target);
   });
   cueBoard()?.addEventListener('pointerdown',event=>{
@@ -5362,6 +5366,11 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     // turns out to have been a tap.
     readingPress={id:event.pointerId,point,x:event.clientX,y:event.clientY,touch:event.pointerType==='touch',moved:false};
   });
+  // A long press on the score is a held note, never a right-click: Android
+  // raises its own selection box and menu over one otherwise.
+  for(const surface of cueSurfaces())surface.addEventListener('contextmenu',event=>{
+    if(event.target.closest?.('svg'))event.preventDefault();
+  });
   cueBoard()?.addEventListener('keydown',event=>{
     if(![' ','Enter'].includes(event.key)||event.repeat||!canPublish())return;
     const point=readingPoint(event.target);if(!point)return;
@@ -5369,8 +5378,14 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   });
   document.addEventListener('pointermove',event=>{
     if(!readingPress||readingPress.id!==event.pointerId)return;
-    if(readingPress.point||readingPress.touch){
+    if(readingPress.point){
       if(Math.hypot(event.clientX-readingPress.x,event.clientY-readingPress.y)>5){readingPress.moved=true;stopSound();}
+      return;
+    }
+    if(readingPress.touch){
+      // Only a vertical drag can scroll the page, so only that ends the note. A
+      // finger settling sideways on the measure it is holding keeps sounding.
+      if(Math.abs(event.clientY-readingPress.y)>10){readingPress.moved=true;stopSound();}
       return;
     }
     // Held mouse or pen: follow the pointer across voices, re-sounding only
@@ -5382,11 +5397,7 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   document.addEventListener('pointerup',event=>{
     if(!readingPress||readingPress.id!==event.pointerId)return;
     const held=readingPress;cancelReading();
-    if(held.point){if(!held.moved)setPoint(held.point);return;}
-    if(held.touch&&!held.moved&&held.target?.pitches.length){
-      playReading(held.target);
-      const token=audioToken;setTimeout(()=>{if(token===audioToken)stopSound();},220);
-    }
+    if(held.point&&!held.moved)setPoint(held.point);
   },true);
   document.addEventListener('pointercancel',event=>{if(readingPress?.id===event.pointerId)cancelReading();},true);
   window.addEventListener('blur',cancelReading);

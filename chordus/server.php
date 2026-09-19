@@ -39,6 +39,10 @@ function chordus_schema(PDO $db): void {
     // too — pointing is transient and would swamp the table.
     $db->exec('CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, action TEXT NOT NULL, client TEXT NOT NULL, label TEXT NOT NULL, revision INTEGER, summary TEXT NOT NULL, changes TEXT, body TEXT)');
     $db->exec('CREATE INDEX IF NOT EXISTS history_at ON history(at)');
+    // One row is one device saying yes to one song. Nothing here is ever tallied
+    // or closed: a vote simply stops counting once it is old, so a round of
+    // voting ends by itself and nobody has to clear it before the next.
+    $db->exec('CREATE TABLE IF NOT EXISTS votes (song TEXT NOT NULL, voter TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY(song, voter))');
 }
 function chordus_database(string $directory): PDO {
     $db = new PDO('sqlite:' . $directory . '/rehearsal.sqlite3', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -327,6 +331,39 @@ function chordus_publish(PDO $db, array $score, int $expected, array $seed, mixe
         $db->exec('COMMIT');
         return ['revision' => $revision, 'score' => $score];
     } catch (Throwable $error) { $db->exec('ROLLBACK'); throw $error; }
+}
+// Approval voting for what to sing next: say yes to as many songs as you like.
+// A vote lasts five minutes from when it was cast, which is about one song, so
+// the wishes on the page are always the room's recent ones.
+const CHORDUS_VOTE_TTL = 300;
+// The server has no catalog to check a song against, so it holds the id to the
+// shape every catalog id has and caps what one device, and the table, can hold.
+function chordus_song_id(mixed $raw): string {
+    chordus_require(is_string($raw) && preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/D', $raw) === 1, 'Unknown song.');
+    return $raw;
+}
+function chordus_vote(PDO $db, string $voter, string $song, bool $on, ?int $now = null): void {
+    $now ??= time();
+    $db->prepare('DELETE FROM votes WHERE at<=?')->execute([$now - CHORDUS_VOTE_TTL]);
+    if (!$on) { $db->prepare('DELETE FROM votes WHERE song=? AND voter=?')->execute([$song, $voter]); return; }
+    $held = $db->prepare('SELECT COUNT(*) FROM votes WHERE voter=? AND song<>?'); $held->execute([$voter, $song]);
+    chordus_require((int)$held->fetchColumn() < 64, 'Too many votes from this device.', 429);
+    chordus_require((int)$db->query('SELECT COUNT(*) FROM votes')->fetchColumn() < 4096, 'Too many votes right now.', 429);
+    // Voting again for the same song renews it rather than counting twice.
+    $db->prepare('INSERT INTO votes(song,voter,at) VALUES(?,?,?) ON CONFLICT(song,voter) DO UPDATE SET at=excluded.at')->execute([$song, $voter, $now]);
+}
+// What every device is told: how many live votes each song has, which of them
+// are this device's own and when each of those lapses. Reading never deletes,
+// so a poll stays a read; the age filter is what makes an old vote not count.
+function chordus_votes(PDO $db, string $voter, ?int $now = null): array {
+    $now ??= time(); $floor = $now - CHORDUS_VOTE_TTL;
+    $counts = []; $mine = [];
+    $q = $db->prepare('SELECT song, COUNT(*) AS votes FROM votes WHERE at>? GROUP BY song'); $q->execute([$floor]);
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) $counts[(string)$row['song']] = (int)$row['votes'];
+    $q = $db->prepare('SELECT song, at FROM votes WHERE voter=? AND at>?'); $q->execute([$voter, $floor]);
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) $mine[(string)$row['song']] = (int)$row['at'] + CHORDUS_VOTE_TTL;
+    // Cast to objects so an empty ballot is {} and not [] on the wire.
+    return ['ttl' => CHORDUS_VOTE_TTL, 'counts' => (object)$counts, 'mine' => (object)$mine];
 }
 function chordus_identity(PDO $db, string $token): ?array {
     if (preg_match('/^[a-f0-9]{64}$/D', $token) !== 1) return null;

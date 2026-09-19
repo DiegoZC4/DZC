@@ -60,6 +60,10 @@ try {
     // the rest, which is all the reins need to mean.
     $client = chordus_client((string)($_SERVER['HTTP_X_CHORDUS_CLIENT'] ?? 'unknown'));
     $label = chordus_label((string)($_SERVER['HTTP_X_CHORDUS_LABEL'] ?? ''));
+    // A voter is a phone, not a tab: the device id above is per tab so that two
+    // tabs can be two conductors, which would let one person vote twice. A page
+    // cached from before voting existed sends no voter, and falls back to it.
+    $voter = chordus_client((string)($_SERVER['HTTP_X_CHORDUS_VOTER'] ?? $_SERVER['HTTP_X_CHORDUS_CLIENT'] ?? 'unknown'));
     $token = (string)($_COOKIE['chordus_conductor'] ?? '');
     // In open and url mode there is no login, so everyone arrives a conductor and
     // the self-asserted client id is all the reins need: it keeps one holder
@@ -78,6 +82,12 @@ try {
             chordus_require(is_string($body['password'] ?? null), 'Enter the conductor password.');
             $identity = chordus_login($db, $body['password'], $config['password_hash'], $peer);
             chordus_cookie($identity['token'], $identity['expires'], $secure);
+        } elseif ($action === 'vote') {
+            // Everyone in the room has a say in what is sung next, conductor or
+            // not, so this sits outside the role check below. The same-origin
+            // rule above still applies.
+            chordus_require(is_bool($body['on'] ?? null), 'Invalid vote.');
+            chordus_vote($db, $voter, chordus_song_id($body['song'] ?? null), $body['on']);
         } else {
             chordus_require($identity !== null, $mode === 'password' ? 'Sign in as conductor first.' : 'Reload Chordus to edit.', $mode === 'password' ? 401 : 403);
             // The CSRF token guards a signed-in session. Without a login there is
@@ -116,7 +126,7 @@ try {
     chordus_response(['ok' => true, 'configured' => true, 'accessMode' => $mode, 'conductor' => $identity !== null, 'csrf' => $identity['csrf'] ?? '',
         'revision' => $current['revision'], 'score' => $method === 'GET' && $since === $current['revision'] ? null : $current['score'],
         'cue'=>$method==='GET'&&$since===$current['revision']&&$cueSince===$cue['serial']?null:$cue,
-        'reins'=>chordus_reins($db),'client'=>$client,'now'=>time()]);
+        'reins'=>chordus_reins($db),'client'=>$client,'votes'=>chordus_votes($db,$voter),'now'=>time()]);
 } catch (JsonException $error) { chordus_response(['ok' => false, 'error' => 'Invalid JSON.'], 400); }
 catch (Throwable $error) {
     $code = $error instanceof RuntimeException && in_array($error->getCode(), [400,401,403,405,409,413,415,429,503], true) ? $error->getCode() : 503;

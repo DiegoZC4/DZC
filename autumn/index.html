@@ -556,6 +556,12 @@ button { color: inherit; }
   text-align: center;
 }
 
+.mixer-row-label.is-group-drag {
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
 .part-heading,
 .matrix-cell,
 .mixer .drag-number,
@@ -569,6 +575,11 @@ button { color: inherit; }
 }
 
 .part-heading {
+  /* Holding one of these solos its row, so a phone must not answer the same
+     gesture with a text selection or a callout menu. */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
   overflow: hidden;
   border-color: color-mix(in srgb, var(--part-color) 40%, var(--line));
   background: color-mix(in srgb, var(--part-color) 15%, var(--field));
@@ -760,10 +771,34 @@ button { color: inherit; }
 .display-fullscreen { grid-row: 2; }
 .display-download { grid-row: 3; }
 .display-help { grid-row: 4; }
-.display-theme,
-.display-demo { grid-row: 4; grid-column: 1; }
+/* The theme toggle is on every song and the demo link only on songs that have
+   a recording, so the toggle keeps the first cell instead of sliding along
+   whenever a song happens to carry one. */
+.display-theme { grid-row: 4; grid-column: 1; }
+.display-demo { grid-row: 4; grid-column: 2; }
 .display-demo[hidden] { display: none; }
-.display-demo:not([hidden]) ~ .display-theme { grid-column: 2; }
+/* These two are marks rather than controls, so they carry no button box. Each
+   sits centred in its cell at a size that sits comfortably beside the
+   bordered inputs rather than filling the row. Both viewBoxes are cropped to
+   their ink, so the height below is the mark itself, not a padded artboard. */
+.icon-button.display-demo,
+.icon-button.display-demo:hover,
+.icon-button.display-theme,
+.icon-button.display-theme:hover { border: none; background: none; }
+.icon-button.display-demo:hover,
+.icon-button.display-theme:hover { opacity: 0.72; }
+.icon-button.display-demo svg,
+.icon-button.display-theme svg {
+  width: auto;
+  height: 80%;
+}
+
+/* Outlines, like every other icon here. Each viewBox is the mark's own ink
+   plus half a stroke, so the line is not clipped by the tight crop, and each
+   stroke is set so that at this height both draw the same 1.25px the rest of
+   the toolbar uses; the two differ because the crops are at different scales. */
+.icon-button.display-theme svg { stroke-width: 1.575; }
+.icon-button.display-demo svg { stroke-width: 1.178; }
 .display-control-row > :first-child { width: var(--toolbar-unit-width); justify-self: end; text-align: right; }
 .display-control-row > :last-child { justify-self: start; }
 .display-direction-row .pill-toggle {
@@ -1707,7 +1742,6 @@ textarea:focus-visible {
    utility icons, so it opts out of the shared stroke treatment. The same mark
    reads as its own opposite when mirrored, so the dark side of the dial swaps to
    match the palette it switches to. Matches Chordus. */
-.icon-button svg.theme-icon { fill: currentColor; stroke: none; }
 :root[data-theme="dark"] .theme-icon { transform: scaleX(-1); }
 
 </style>
@@ -11570,11 +11604,11 @@ function ceilPow2(v) {
   </score-partwise>
 </script>
     <script id="playback-data" type="application/json">{"chapters":[{"label":"Start","measure":1,"tick":0},{"label":"A","measure":17,"tick":46080},{"label":"B","measure":33,"tick":93120}],"division":960,"endTick":110400,"lyrics":[[1,0,0,"Feel"],[2,0,0,"Feel"],[3,0,0,"Feel"],[1,480,0,"the"],[2,480,0,"the"],[3,480,0,"the"],[1,960,0,"fall-"],[2,960,0,"fall-"],[3,960,0,"fall-"],[1,2400,0,"ing"],[2,2400,0,"ing"],[3,2400,0,"ing"],[1,2880,0,"air,"],[2,2880,0,"air,"],[3,2880,0,"air,"],[1,5280,0,"The"],[1,5760,0,"light"],[2,5760,0,"light"],[3,5760,0,"light"],[1,6240,0,"be-"],[2,6240,0,"be-"],[3,6240,0,"be-"],[1,6720,0,"com-"],[2,6720,0,"com-"],[3,6720,0,"com-"],[1,8160,0,"ing"],[2,8160,0,"ing"],[3,8160,0,"ing"],[1,8640,0,"gold-"],[2,8640,0,"gold-"],[3,8640,0,"gold-"],[1,9600,0,"en;"],[2,9600,0,"en;"],[3,9600,0,"en;"],[1,11520,0,"Trees"],[2,11520,0,"Trees"],[3,11520,0,"Trees"],[1,12000,0,"their"],[2,12000,0,"their"],[3,12000,0,"their"],[1,12480,0,"col-"],[2,12480,0,"col-"],[3,12480,0,"col-"],[1,13920,0,"ors"],[2,13920,0,"ors"],[3,13920,0,"ors"],[1,14400,0,"wear,"],[2,14400,0,"wear,"],[3,14400,0,"wear,"],[1,16320,0,"Deep"],[2,16320,0,"Deep"],[3,16320,0,"Deep"],[1,16800,0,"and"],[2,16800,0,"and"],[3,16800,0,"and"],[1,17280,0,"all-"],[2,17280,0,"all-"],[3,17280,0,"all-"],[1,18240,0,"en-"],[2,18240,0,"en-"],[3,18240,0,"en-"],[1,19200,0,"fold-"],[2,19200,0,"fold-"],[3,19200,0,"fold-"],[1,20160,0,"ing."],[2,20160,0,"ing."],[3,20160,0,"ing."],[0,22560,0,"The"],[0,23040,0,"au-"],[1,23040,0,"au-"],[2,23040,0,"au-"],[3,23040,0,"au-"],[0,23520,0,"tumn"],[1,23520,0,"tumn"],[2,23520,0,"tumn"],[3,23520,0,"tumn"],[0,24000,0,"leaves"],[1,24000,0,"leaves"],[2,24000,0,"leaves"],[3,24000,0,"leaves"],[0,25440,0,"em-"],[1,25440,0,"em-"],[2,25440,0,"em-"],[3,25440,0,"em-"],[0,25920,0,"brac-"],[1,25920,0,"brac-"],[2,25920,0,"brac-"],[3,25920,0,"brac-"],[0,26880,0,"ing;"],[1,26880,0,"ing;"],[2,26880,0,"ing;"],[3,26880,0,"ing;"],[0,28320,0,"But"],[0,28800,0,"soon"],[1,28800,0,"soon"],[2,28800,0,"soon"],[3,28800,0,"soon"],[0,29280,0,"they"],[1,29280,0,"they"],[2,29280,0,"they"],[3,29280,0,"they"],[0,29760,0,"all"],[1,29760,0,"all"],[2,29760,0,"all"],[3,29760,0,"all"],[0,30720,0,"must"],[1,30720,0,"must"],[2,30720,0,"must"],[3,30720,0,"must"],[0,31680,0,"fall,"],[1,31680,0,"fall,"],[2,31680,0,"fall,"],[3,31680,0,"fall,"],[0,34080,0,"The"],[0,34560,0,"sum-"],[1,34560,0,"sum-"],[2,34560,0,"sum-"],[3,34560,0,"sum-"],[0,35040,0,"mer"],[1,35040,0,"mer"],[2,35040,0,"mer"],[3,35040,0,"mer"],[0,35520,0,"green"],[1,35520,0,"green"],[2,35520,0,"green"],[3,35520,0,"green"],[0,36960,0,"e-"],[1,36960,0,"e-"],[2,36960,0,"e-"],[3,36960,0,"e-"],[0,37440,0,"ras-"],[1,37440,0,"ras-"],[2,37440,0,"ras-"],[3,37440,0,"ras-"],[0,38400,0,"ing,"],[1,38400,0,"ing,"],[2,38400,0,"ing,"],[3,38400,0,"ing,"],[0,39840,0,"To"],[0,40320,0,"an-"],[1,40320,0,"an-"],[2,40320,0,"an-"],[3,40320,0,"an-"],[0,40800,0,"swer"],[1,40800,0,"swer"],[2,40800,0,"swer"],[3,40800,0,"swer"],[0,41280,0,"win-"],[1,41280,0,"win-"],[2,41280,0,"win-"],[3,41280,0,"win-"],[0,42240,0,"ter’s"],[1,42240,0,"ter’s"],[2,42240,0,"ter’s"],[3,42240,0,"ter’s"],[0,43200,0,"call."],[1,43200,0,"call."],[2,43200,0,"call."],[3,43200,0,"call."],[1,45600,0,"And"],[1,46080,0,"here"],[2,46080,0,"here"],[3,46080,0,"here"],[1,47040,0,"once"],[2,47040,0,"once"],[3,47040,0,"once"],[1,48480,0,"a-"],[2,48480,0,"a-"],[3,48480,0,"a-"],[1,48960,0,"gain"],[2,48960,0,"gain"],[3,48960,0,"gain"],[1,51360,0,"Fa-"],[2,51360,0,"Fa-"],[3,51360,0,"Fa-"],[1,51840,0,"mil-"],[2,51840,0,"mil-"],[3,51840,0,"mil-"],[1,52320,0,"iar"],[2,52320,0,"iar"],[3,52320,0,"iar"],[1,52800,0,"paths"],[2,52800,0,"paths"],[3,52800,0,"paths"],[1,54240,0,"I"],[2,54240,0,"I"],[3,54240,0,"I"],[1,54720,0,"wan-"],[2,54720,0,"wan-"],[3,54720,0,"wan-"],[1,55680,0,"der;"],[2,55680,0,"der;"],[3,55680,0,"der;"],[0,56640,0,"Fa-"],[0,57600,0,"mil-"],[1,57600,0,"Through"],[2,57600,0,"Through"],[3,57600,0,"Through"],[1,58080,0,"the"],[2,58080,0,"the"],[3,58080,0,"the"],[1,58560,0,"west-"],[2,58560,0,"west-"],[3,58560,0,"west-"],[0,59520,0,"iar"],[1,60000,0,"mark"],[2,60000,0,"mark"],[3,60000,0,"mark"],[0,60480,0,"paths"],[1,60480,0,"end"],[2,60480,0,"end"],[3,60480,0,"end"],[1,61920,0,"the"],[0,62400,0,"I"],[1,62400,0,"liv-"],[2,62400,0,"liv-"],[3,62400,0,"liv-"],[1,62880,0,"ing"],[2,62880,0,"ing"],[3,62880,0,"ing"],[0,63360,0,"wan-"],[1,63360,0,"earth"],[2,63360,0,"earth"],[3,63360,0,"earth"],[1,64320,0,"I"],[2,64320,0,"I"],[3,64320,0,"I"],[1,65280,0,"pon-"],[2,65280,0,"pon-"],[3,65280,0,"pon-"],[1,66240,0,"der."],[2,66240,0,"der."],[3,66240,0,"der."],[0,67200,0,"der."],[0,68640,0,"Though"],[0,69120,0,"fad-"],[1,69120,0,"fad-"],[2,69120,0,"fad-"],[3,69120,0,"fad-"],[0,69600,0,"ing"],[1,69600,0,"ing"],[2,69600,0,"ing"],[3,69600,0,"ing"],[0,70080,0,"days"],[1,70080,0,"days"],[2,70080,0,"days"],[3,70080,0,"days"],[0,71520,0,"are"],[1,71520,0,"are"],[2,71520,0,"are"],[3,71520,0,"are"],[0,72000,0,"cold-"],[1,72000,0,"cold-"],[2,72000,0,"cold-"],[3,72000,0,"cold-"],[0,72960,0,"er,"],[1,72960,0,"er,"],[2,72960,0,"er,"],[3,72960,0,"er,"],[0,74400,0,"And"],[0,74880,0,"soon"],[1,74880,0,"soon"],[2,74880,0,"soon"],[3,74880,0,"soon"],[0,75360,0,"the"],[1,75360,0,"the"],[2,75360,0,"the"],[3,75360,0,"the"],[0,75840,0,"dark-"],[1,75840,0,"dark-"],[2,75840,0,"dark-"],[3,75840,0,"dark-"],[0,76800,0,"ness"],[1,76800,0,"ness"],[2,76800,0,"ness"],[3,76800,0,"ness"],[0,77760,0,"long,"],[1,77760,0,"long,"],[2,77760,0,"long,"],[3,77760,0,"long,"],[0,80160,0,"My"],[0,80640,0,"spi-"],[1,80640,0,"spi-"],[2,80640,0,"spi-"],[3,80640,0,"spi-"],[0,81120,0,"rit-"],[1,81120,0,"rit-"],[2,81120,0,"rit-"],[3,81120,0,"rit-"],[0,81600,0,"fire"],[1,81600,0,"fire"],[2,81600,0,"fire"],[3,81600,0,"fire"],[0,83040,0,"grows"],[1,83040,0,"grows"],[2,83040,0,"grows"],[3,83040,0,"grows"],[0,83520,0,"bold-"],[1,83520,0,"bold-"],[2,83520,0,"bold-"],[3,83520,0,"bold-"],[0,84480,0,"er,"],[1,84480,0,"er,"],[2,84480,0,"er,"],[3,84480,0,"er,"],[0,85920,0,"And"],[0,86400,0,"in"],[1,86400,0,"in"],[2,86400,0,"in"],[3,86400,0,"in"],[0,86880,0,"my"],[1,86880,0,"my"],[2,86880,0,"my"],[3,86880,0,"my"],[0,87360,0,"heart"],[1,87360,0,"heart"],[2,87360,0,"heart"],[3,87360,0,"heart"],[0,88320,0,"a"],[1,88320,0,"a"],[2,88320,0,"a"],[3,88320,0,"a"],[0,89280,0,"song."],[1,89280,0,"song."],[2,89280,0,"song."],[3,89280,0,"song."],[0,91680,0,"E-"],[1,92160,0,"E-"],[2,92160,0,"E-"],[3,92160,0,"E-"],[0,92640,0,"ven"],[1,92640,0,"ven"],[2,92640,0,"ven"],[3,92640,0,"ven"],[0,93120,0,"when"],[1,93120,0,"when"],[2,93120,0,"when"],[3,93120,0,"when"],[0,94080,0,"shad-"],[1,94080,0,"shad-"],[2,94080,0,"shad-"],[3,94080,0,"shad-"],[0,94560,0,"ows"],[1,94560,0,"ows"],[2,94560,0,"ows"],[3,94560,0,"ows"],[0,95040,0,"length-"],[1,95040,0,"length-"],[2,95040,0,"length-"],[3,95040,0,"length-"],[0,96000,0,"en,"],[1,96000,0,"en,"],[2,96000,0,"en,"],[3,96000,0,"en,"],[0,98400,0,"I’m"],[0,98880,0,"here"],[1,98880,0,"where"],[2,98880,0,"where"],[3,98880,0,"where"],[0,99360,0,"where"],[0,99840,0,"I"],[1,99840,0,"I"],[2,99840,0,"I"],[3,99840,0,"I"],[0,100800,0,"be-"],[1,100800,0,"be-"],[2,100800,0,"be-"],[3,100800,0,"be-"],[0,101760,0,"long."],[1,101760,0,"long."],[2,101760,0,"long."],[3,101760,0,"long."]],"measures":[[0,2880,3,4],[2880,2880,3,4],[5760,2880,3,4],[8640,2880,3,4],[11520,2880,3,4],[14400,2880,3,4],[17280,2880,3,4],[20160,2880,3,4],[23040,2880,3,4],[25920,2880,3,4],[28800,2880,3,4],[31680,2880,3,4],[34560,2880,3,4],[37440,2880,3,4],[40320,2880,3,4],[43200,2880,3,4],[46080,2880,3,4],[48960,2880,3,4],[51840,2880,3,4],[54720,2880,3,4],[57600,2880,3,4],[60480,2880,3,4],[63360,2880,3,4],[66240,2880,3,4],[69120,2880,3,4],[72000,2880,3,4],[74880,2880,3,4],[77760,2880,3,4],[80640,2880,3,4],[83520,2880,3,4],[86400,2880,3,4],[89280,3840,4,4],[93120,2880,3,4],[96000,2880,3,4],[98880,2880,3,4],[101760,2880,3,4],[104640,2880,3,4],[107520,2880,3,4]],"notes":[[1,0,480,60,47],[2,0,480,57,31],[3,0,480,45,31],[3,0,480,52,31],[1,480,960,62,47],[2,480,960,57,31],[3,480,960,45,31],[3,480,960,52,31],[1,960,2400,62,47],[2,960,2400,57,31],[3,960,2400,41,31],[3,960,2400,50,31],[1,2400,2880,57,47],[2,2400,2880,57,31],[3,2400,2880,41,31],[3,2400,2880,50,31],[1,2880,5280,59,47],[2,2880,5760,57,31],[3,2880,5760,43,31],[3,2880,5760,50,31],[1,5280,5760,59,47],[1,5760,6240,60,47],[2,5760,6240,57,31],[3,5760,6240,45,31],[3,5760,6240,52,31],[1,6240,6720,62,47],[2,6240,6720,57,31],[3,6240,6720,45,31],[3,6240,6720,52,31],[1,6720,8160,62,47],[2,6720,8160,57,31],[3,6720,8160,41,31],[3,6720,8160,50,31],[1,8160,8640,57,47],[2,8160,8640,57,31],[3,8160,8640,41,31],[3,8160,8640,50,31],[1,8640,9600,60,47],[2,8640,9600,57,31],[3,8640,9600,43,31],[3,8640,9600,50,31],[1,9600,11520,59,47],[2,9600,11520,57,31],[3,9600,11520,43,31],[3,9600,11520,50,31],[1,11520,12000,60,47],[2,11520,12000,57,31],[3,11520,12000,45,31],[3,11520,12000,52,31],[1,12000,12480,62,47],[2,12000,12480,57,31],[3,12000,12480,45,31],[3,12000,12480,52,31],[1,12480,13920,62,47],[2,12480,13920,57,31],[3,12480,13920,41,31],[3,12480,13920,50,31],[1,13920,14400,57,47],[2,13920,14400,57,31],[3,13920,14400,41,31],[3,13920,14400,50,31],[1,14400,16320,59,47],[2,14400,16320,57,31],[3,14400,16320,43,31],[3,14400,16320,50,31],[1,16320,16800,59,47],[2,16320,16800,55,31],[3,16320,16800,40,31],[3,16320,16800,50,31],[1,16800,17280,60,47],[2,16800,17280,55,31],[3,16800,17280,40,31],[3,16800,17280,50,31],[1,17280,18240,60,47],[2,17280,18240,57,31],[3,17280,18240,45,31],[3,17280,18240,52,31],[1,18240,19200,62,47],[2,18240,19200,57,31],[3,18240,19200,50,31],[3,18240,19200,53,31],[1,19200,20160,64,47],[2,19200,20160,60,31],[3,19200,20160,45,31],[3,19200,20160,52,31],[1,20160,22560,62,47],[2,20160,22560,59,31],[3,20160,22560,43,31],[3,20160,22560,50,31],[0,22560,23040,69,31],[0,23040,23520,74,31],[1,23040,23520,65,31],[2,23040,23520,57,31],[3,23040,23520,50,31],[0,23520,24000,69,31],[1,23520,24000,65,31],[2,23520,24000,57,31],[3,23520,24000,50,31],[0,24000,25440,72,31],[1,24000,25440,62,31],[1,24000,25440,64,31],[2,24000,25440,52,31],[2,24000,25440,60,31],[3,24000,25440,45,31],[0,25440,25920,69,31],[1,25440,25920,62,31],[1,25440,25920,64,31],[2,25440,25920,52,31],[2,25440,25920,60,31],[3,25440,25920,45,31],[0,25920,26400,71,31],[1,25920,26880,59,31],[1,25920,26880,62,31],[2,25920,26880,50,31],[3,25920,26880,43,31],[0,26400,26880,69,31],[0,26880,28320,69,31],[1,26880,28800,60,31],[1,26880,28800,62,31],[2,26880,28800,52,31],[3,26880,28800,45,31],[0,28320,28800,69,31],[0,28800,29280,74,31],[1,28800,29280,65,31],[2,28800,29280,57,31],[3,28800,29280,50,31],[0,29280,29760,69,31],[1,29280,29760,65,31],[2,29280,29760,57,31],[3,29280,29760,50,31],[0,29760,30720,72,31],[1,29760,30720,60,31],[1,29760,30720,64,31],[2,29760,30720,52,31],[3,29760,30720,45,31],[0,30720,31680,71,31],[1,30720,31680,59,31],[1,30720,31680,62,31],[2,30720,31680,50,31],[3,30720,31680,43,31],[0,31680,34080,69,31],[1,31680,34560,57,31],[1,31680,32640,62,31],[2,31680,34560,52,31],[3,31680,34560,45,31],[1,32640,34560,61,31],[0,34080,34560,69,31],[0,34560,35040,74,31],[1,34560,35040,65,31],[2,34560,35040,57,31],[3,34560,35040,50,31],[0,35040,35520,69,31],[1,35040,35520,65,31],[2,35040,35520,57,31],[3,35040,35520,50,31],[0,35520,36960,72,31],[1,35520,36960,60,31],[1,35520,36960,64,31],[2,35520,36960,52,31],[3,35520,36960,45,31],[0,36960,37440,69,31],[1,36960,37440,60,31],[1,36960,37440,64,31],[2,36960,37440,52,31],[3,36960,37440,45,31],[0,37440,37920,71,31],[1,37440,38400,59,31],[1,37440,38400,62,31],[2,37440,38400,50,31],[3,37440,38400,43,31],[0,37920,38400,69,31],[0,38400,39840,69,31],[1,38400,40320,60,31],[1,38400,39360,62,31],[2,38400,40320,52,31],[3,38400,40320,45,31],[1,39360,40320,64,31],[0,39840,40320,69,31],[0,40320,40800,74,47],[1,40320,40800,65,47],[2,40320,40800,62,47],[3,40320,40800,50,47],[0,40800,41280,76,47],[1,40800,41280,65,47],[2,40800,41280,62,47],[3,40800,41280,50,47],[0,41280,42240,72,47],[1,41280,42240,69,47],[2,41280,42240,64,47],[3,41280,42240,53,47],[0,42240,43200,71,47],[1,42240,43200,69,47],[2,42240,43200,62,47],[3,42240,43200,55,47],[0,43200,45600,69,47],[1,43200,45600,64,47],[2,43200,45600,57,47],[3,43200,45600,57,47],[1,45600,46080,57,47],[1,46080,46560,60,47],[2,46080,47040,57,31],[3,46080,47040,45,31],[3,46080,47040,52,31],[1,46560,47040,62,47],[1,47040,48480,62,47],[2,47040,48480,57,31],[3,47040,48480,41,31],[3,47040,48480,50,31],[1,48480,48960,57,47],[2,48480,48960,57,31],[3,48480,48960,41,31],[3,48480,48960,50,31],[1,48960,51360,59,47],[2,48960,51360,57,31],[3,48960,51360,43,31],[3,48960,51360,50,31],[1,51360,51840,59,47],[2,51360,51840,57,31],[3,51360,51840,43,31],[3,51360,51840,50,31],[1,51840,52320,60,47],[2,51840,52320,57,31],[3,51840,52320,45,31],[3,51840,52320,52,31],[1,52320,52800,62,47],[2,52320,52800,57,31],[3,52320,52800,45,31],[3,52320,52800,52,31],[1,52800,54240,62,47],[2,52800,54240,57,31],[3,52800,54240,41,31],[3,52800,54240,50,31],[1,54240,54720,57,47],[2,54240,54720,57,31],[3,54240,54720,41,31],[3,54240,54720,50,31],[1,54720,55680,60,47],[2,54720,55680,57,31],[3,54720,55680,43,31],[3,54720,55680,50,31],[1,55680,57600,59,47],[2,55680,57600,57,31],[3,55680,57600,43,31],[3,55680,57600,50,31],[0,56640,57600,67,31],[0,57600,59520,69,31],[1,57600,58080,60,47],[2,57600,58080,57,31],[3,57600,58080,45,31],[3,57600,58080,52,31],[1,58080,58560,62,47],[2,58080,58560,57,31],[3,58080,58560,45,31],[3,58080,58560,52,31],[1,58560,60000,62,47],[2,58560,60000,57,31],[3,58560,60000,41,31],[3,58560,60000,50,31],[0,59520,60480,72,31],[1,60000,60480,57,47],[2,60000,60480,57,31],[3,60000,60480,41,31],[3,60000,60480,50,31],[0,60480,61440,62,31],[1,60480,61920,59,47],[2,60480,62400,59,31],[3,60480,62400,43,31],[3,60480,62400,50,31],[0,61440,62400,64,31],[1,61920,62400,59,47],[0,62400,63360,67,31],[1,62400,62880,59,47],[2,62400,62880,55,31],[3,62400,62880,40,31],[3,62400,62880,50,31],[1,62880,63360,60,47],[2,62880,63360,55,31],[3,62880,63360,40,31],[3,62880,63360,50,31],[0,63360,67200,69,47],[1,63360,64320,60,63],[2,63360,64320,57,47],[3,63360,64320,45,47],[3,63360,64320,52,47],[1,64320,65280,62,63],[2,64320,65280,57,47],[3,64320,65280,50,47],[3,64320,65280,53,47],[1,65280,66240,64,63],[2,65280,66240,60,47],[3,65280,66240,45,47],[3,65280,66240,52,47],[1,66240,68640,62,63],[2,66240,68160,59,47],[3,66240,68640,43,47],[3,66240,68640,50,47],[0,67200,68640,67,47],[2,68160,68640,59,47],[0,68640,69120,69,31],[0,69120,69600,74,31],[1,69120,69600,65,31],[2,69120,69600,57,31],[3,69120,69600,50,31],[0,69600,70080,69,31],[1,69600,70080,65,31],[2,69600,70080,57,31],[3,69600,70080,50,31],[0,70080,71520,72,31],[1,70080,71520,62,31],[1,70080,71520,64,31],[2,70080,71520,52,31],[2,70080,71520,60,31],[3,70080,71520,45,31],[0,71520,72000,69,31],[1,71520,72000,62,31],[1,71520,72000,64,31],[2,71520,72000,52,31],[2,71520,72000,60,31],[3,71520,72000,45,31],[0,72000,72480,71,31],[1,72000,72960,59,31],[1,72000,72960,62,31],[2,72000,72960,50,31],[3,72000,72960,43,31],[0,72480,72960,69,31],[0,72960,74400,69,31],[1,72960,74880,60,31],[1,72960,74880,62,31],[2,72960,74880,52,31],[3,72960,74880,45,31],[0,74400,74880,69,31],[0,74880,75360,74,31],[1,74880,75360,65,31],[2,74880,75360,57,31],[3,74880,75360,50,31],[0,75360,75840,69,31],[1,75360,75840,65,31],[2,75360,75840,57,31],[3,75360,75840,50,31],[0,75840,76800,72,31],[1,75840,76800,60,31],[1,75840,76800,64,31],[2,75840,76800,52,31],[3,75840,76800,45,31],[0,76800,77760,71,31],[1,76800,77760,59,31],[1,76800,77760,62,31],[2,76800,77760,50,31],[3,76800,77760,43,31],[0,77760,80160,69,31],[1,77760,80640,57,31],[1,77760,78720,62,31],[2,77760,80640,52,31],[3,77760,80640,45,31],[1,78720,80640,61,31],[0,80160,80640,64,47],[0,80640,81120,69,47],[1,80640,81120,60,47],[2,80640,81120,52,47],[3,80640,81120,45,47],[0,81120,81600,64,47],[1,81120,81600,60,47],[2,81120,81600,52,47],[3,81120,81600,45,47],[0,81600,83040,67,47],[1,81600,83040,59,47],[2,81600,83040,55,47],[3,81600,83040,40,47],[3,81600,83040,47,47],[0,83040,83520,64,47],[1,83040,83520,59,47],[2,83040,83520,55,47],[3,83040,83520,40,47],[3,83040,83520,47,47],[0,83520,84000,66,47],[1,83520,84480,57,47],[2,83520,84480,54,47],[3,83520,84480,38,47],[3,83520,84480,45,47],[0,84000,84480,64,47],[0,84480,85920,64,47],[1,84480,85440,57,47],[2,84480,86400,55,47],[3,84480,86400,40,47],[3,84480,86400,47,47],[1,85440,86400,59,47],[0,85920,86400,64,47],[0,86400,86880,69,63],[1,86400,86880,60,63],[2,86400,86880,52,63],[3,86400,86880,45,63],[0,86880,87360,71,63],[1,86880,87360,60,63],[2,86880,87360,52,63],[3,86880,87360,45,63],[0,87360,88320,67,63],[1,87360,88320,64,63],[2,87360,88320,59,63],[3,87360,88320,48,63],[0,88320,89280,66,63],[1,88320,89280,64,63],[2,88320,89280,57,63],[3,88320,89280,50,63],[0,89280,91680,64,63],[1,89280,92160,59,63],[2,89280,92160,57,63],[3,89280,92160,52,63],[0,91680,92160,71,47],[0,92160,92640,76,47],[1,92160,92640,67,47],[2,92160,92640,59,47],[3,92160,92640,52,47],[0,92640,93120,78,47],[1,92640,93120,67,47],[2,92640,93120,59,47],[3,92640,93120,52,47],[0,93120,94080,74,47],[1,93120,94080,62,47],[1,93120,94080,66,47],[2,93120,94080,54,47],[3,93120,94080,47,47],[0,94080,94560,71,47],[1,94080,94560,62,47],[1,94080,94560,66,47],[2,94080,94560,54,47],[3,94080,94560,47,47],[0,94560,95040,74,47],[1,94560,95040,62,47],[1,94560,95040,66,47],[2,94560,95040,54,47],[3,94560,95040,47,47],[0,95040,95520,73,47],[1,95040,96000,61,47],[1,95040,96000,64,47],[2,95040,96000,52,47],[3,95040,96000,45,47],[0,95520,96000,71,47],[0,96000,98400,71,47],[1,96000,98880,59,47],[1,96000,96960,64,47],[2,96000,98880,54,47],[3,96000,98880,47,47],[1,96960,98880,63,47],[0,98400,98880,71,47],[0,98880,99360,69,47],[1,98880,99840,59,47],[1,98880,99840,62,47],[2,98880,99840,50,47],[3,98880,99840,43,47],[0,99360,99840,71,47],[0,99840,100800,67,47],[1,99840,100800,60,47],[1,99840,100800,64,47],[2,99840,100800,52,47],[3,99840,100800,45,47],[0,100800,101760,66,47],[1,100800,101760,59,47],[1,100800,101760,62,47],[2,100800,101760,54,47],[3,100800,101760,47,47],[0,101760,109440,64,31],[1,101760,109440,59,31],[2,101760,109440,55,31],[3,101760,109440,40,31],[3,101760,109440,52,31]],"parts":[{"index":0,"name":"Soprano","short":"S"},{"index":1,"name":"Alto","short":"A"},{"index":2,"name":"Tenor","short":"T"},{"index":3,"name":"Bass","short":"B"}],"tempos":[[0,48]],"version":1}</script>
-    <script id="trainer-config" type="application/json">{"composer":"","demoVideo":"https://youtu.be/_KEp0DETKEw","favicon":"🍁","schemaVersion":1,"slug":"autumn","title":"Autumn"}</script>
-    <script id="build-metadata" type="application/json">{"build":{"builder":"choir-practice-builder","builderVersion":"1","fingerprint":"74fc6b966741ccfe","normalizedScoreSha256":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","playbackSha256":"b39b7a0ead72f3c1ab76996d2b825d7e0a3e8a0b22b8e2eb297db7c7f0f6a7e6","source":{"format":"mscz","name":"Autumn.mscz","sha256":"5ab48416be3a88f7fcf24238e986d6864c8bfd0dd10fefb8b15ab89f954b7dac"}},"composer":"","counts":{"chapters":3,"lyrics":372,"measures":38,"notes":465,"tempos":1,"tracks":4},"creators":[{"name":"Composer / arranger","type":"composer"},{"name":"Text by Charles Anthony Silvestri","type":"lyrics"},{"name":"Music by Ola Gjeilo","type":"artist"}],"favicon":"🍁","fingerprint":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","fingerprintAlgorithm":"sha256","layoutBreaksRemoved":28,"measureCount":38,"noteCount":465,"repeatedLyricsMarked":0,"schemaVersion":1,"slug":"autumn","sourceFile":"score.musicxml","title":"Autumn","trackCount":4,"version":1,"warnings":[]}</script>
+    <script id="trainer-config" type="application/json">{"chapters":[{"label":"Feel the falling air","tick":0},{"label":"The autumn leaves embracing","tick":22560},{"label":"And here once again","tick":45600},{"label":"Fading days are colder","tick":69120},{"label":"Even when shadows lengthen","tick":91680}],"composer":"","demoVideo":"https://youtu.be/_KEp0DETKEw","favicon":"🍁","schemaVersion":1,"slug":"autumn","title":"Autumn"}</script>
+    <script id="build-metadata" type="application/json">{"build":{"builder":"choir-practice-builder","builderVersion":"1","fingerprint":"a88f37bc8a7e0f46","normalizedScoreSha256":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","playbackSha256":"b39b7a0ead72f3c1ab76996d2b825d7e0a3e8a0b22b8e2eb297db7c7f0f6a7e6","source":{"format":"mscz","name":"Autumn.mscz","sha256":"5ab48416be3a88f7fcf24238e986d6864c8bfd0dd10fefb8b15ab89f954b7dac"}},"composer":"","counts":{"chapters":3,"lyrics":372,"measures":38,"notes":465,"tempos":1,"tracks":4},"creators":[{"name":"Composer / arranger","type":"composer"},{"name":"Text by Charles Anthony Silvestri","type":"lyrics"},{"name":"Music by Ola Gjeilo","type":"artist"}],"favicon":"🍁","fingerprint":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","fingerprintAlgorithm":"sha256","layoutBreaksRemoved":28,"measureCount":38,"noteCount":465,"repeatedLyricsMarked":0,"schemaVersion":1,"slug":"autumn","sourceFile":"score.musicxml","title":"Autumn","trackCount":4,"version":1,"warnings":[]}</script>
     <script id="portable-state" type="application/json"></script>
       <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%22.9em%22%20text-anchor%3D%22middle%22%20font-size%3D%2290%22%3E%F0%9F%8D%81%3C%2Ftext%3E%3C%2Fsvg%3E" />
-    <!-- standalone-build:74fc6b966741ccfe -->
+    <!-- standalone-build:a88f37bc8a7e0f46 -->
   </head>
   <body>
     <a class="skip-link" href="#score">Skip to score</a>
@@ -11645,14 +11679,17 @@ function ceilPow2(v) {
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path></svg>
               </button>
             </div>
-            <!-- Lucide Youtube (v0.400.0, the last release with brand icons), ISC license: https://lucide.dev -->
-            <a class="icon-button display-utility display-demo" id="demoVideo" href="#" target="_blank" rel="noopener noreferrer" aria-label="Watch the demo recording" data-help="Open the demo recording on YouTube." hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path><path d="m10 15 5-3-5-3z"></path></svg>
-            </a>
             <!-- Material Symbols brightness_6, Apache-2.0: https://fonts.google.com/icons -->
             <button class="icon-button display-utility display-theme" id="themeToggle" type="button" aria-label="Switch to dark theme" data-help="Switch between the light and dark palette.">
-              <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M 20 8.69 V 4 h -4.69 L 12 0.69 L 8.69 4 H 4 v 4.69 L 0.69 12 L 4 15.31 V 20 h 4.69 L 12 23.31 L 15.31 20 H 20 v -4.69 L 23.31 12 L 20 8.69 Z M 12 18 c -0.89 0 -1.74 -0.2 -2.5 -0.55 C 11.56 16.5 13 14.42 13 12 s -1.44 -4.5 -3.5 -5.45 C 10.26 6.2 11.11 6 12 6 c 3.31 0 6 2.69 6 6 s -2.69 6 -6 6 Z"/></svg>
+              <svg class="theme-icon" viewBox="-0.098 -0.098 24.195 24.195" aria-hidden="true" focusable="false"><path d="M 20 8.69 V 4 h -4.69 L 12 0.69 L 8.69 4 H 4 v 4.69 L 0.69 12 L 4 15.31 V 20 h 4.69 L 12 23.31 L 15.31 20 H 20 v -4.69 L 23.31 12 L 20 8.69 Z M 12 18 c -0.89 0 -1.74 -0.2 -2.5 -0.55 C 11.56 16.5 13 14.42 13 12 s -1.44 -4.5 -3.5 -5.45 C 10.26 6.2 11.11 6 12 6 c 3.31 0 6 2.69 6 6 s -2.69 6 -6 6 Z"/></svg>
             </button>
+            <!-- YouTube brand icon: Simple Icons contributors, CC0 1.0. Path embedded
+                 unchanged; the accessible label is on the link. CC0 does not waive
+                 trademark rights: YouTube is a trademark of Google LLC, and the icon
+                 marks a link to YouTube without implying endorsement. -->
+            <a class="icon-button display-utility display-demo" id="demoVideo" href="#" target="_blank" rel="noopener noreferrer" aria-label="Watch the demo recording" data-help="Open the demo recording on YouTube." hidden>
+              <svg viewBox="-0.589 2.956 25.178 18.088" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+            </a>
             <div class="control-stack tempo-column" role="group" aria-label="Tempo controls">
               <!-- User-selected metronome silhouette; inlined for offline use. -->
               <span class="tempo-column-heading" aria-hidden="true">
@@ -11718,9 +11755,6 @@ function ceilPow2(v) {
               </div>
               <label class="display-control-row display-scale-row"><span>Scale</span><button class="drag-number" id="verticalScale" type="button" data-value="100" data-help="Drag vertically to resize notation.">100%</button></label>
               <label class="display-control-row display-stretch-row"><span>Stretch</span><button class="drag-number" id="horizontalScale" type="button" data-value="100" data-help="Drag vertically to change spacing.">100%</button></label>
-              <div class="display-control-row display-feature-row">
-                <button class="binary-feature-button display-lyrics-toggle" id="lyricsToggle" type="button" aria-pressed="false" data-help="Hide repeated lyric syllables.">Unique lyrics</button>
-              </div>
               <button class="icon-button display-utility display-fullscreen" id="fullscreen" type="button" aria-label="Enter full screen" data-help="Toggle full screen.">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
               </button>
@@ -11780,6 +11814,10 @@ function ceilPow2(v) {
   const SCHEDULER_INTERVAL_MS = 40;
   const SCHEDULER_HORIZON_SECONDS = 0.34;
   const SCHEDULER_LEAD_SECONDS = 0.028;
+  const PITCH_BAR_LYRIC_LANES = 3;
+  const MIXER_SOLO_HOLD_MS = 500;
+  const PITCH_AUDITION_HOLD_MS = 250;
+  const PITCH_AUDITION_RELEASE_SECONDS = 0.12;
   const PITCH_CAPTURE_INTERVAL_MS = 1000 / 15;
   const PITCH_CAPTURE_FALLBACK_INTERVAL_MS = 100;
   const PITCH_CAPTURE_BUFFER_SIZE = 4096;
@@ -12437,13 +12475,17 @@ function ceilPow2(v) {
         if (event.button !== 0) return;
         this.finishPendingAnimation();
         this.setTransition("none");
-        this.drag = { index: this.index, offset: 0, pointerId: event.pointerId, startY: event.clientY, unset: this.unset };
+        // startY moves as the wheel wraps; originY stays put so a press can
+        // tell whether it was a drag at all.
+        this.drag = { index: this.index, offset: 0, pointerId: event.pointerId,
+          startY: event.clientY, originY: event.clientY, moved: false, unset: this.unset };
         this.element.classList.add("is-dragging");
         this.element.setPointerCapture(event.pointerId);
         event.preventDefault();
       }, listenerOptions);
       this.element.addEventListener("pointermove", (event) => {
         if (!this.drag || this.drag.pointerId !== event.pointerId) return;
+        if (Math.abs(event.clientY - this.drag.originY) > 4) this.drag.moved = true;
         const height = this.height();
         let delta = event.clientY - this.drag.startY;
         if (this.drag.unset) {
@@ -12487,6 +12529,16 @@ function ceilPow2(v) {
       const drag = this.drag;
       const height = this.height();
       const delta = event.clientY - drag.startY;
+      // Tapping is what people try first, so it moves to the next option
+      // rather than doing nothing and leaving the control looking inert.
+      if (!drag.moved) {
+        this.drag = null;
+        this.element.classList.remove("is-dragging");
+        if (this.element.hasPointerCapture(event.pointerId)) this.element.releasePointerCapture(event.pointerId);
+        this.step(1);
+        event.preventDefault();
+        return;
+      }
       if (drag.unset) {
         this.drag = null;
         this.element.classList.remove("is-dragging");
@@ -12771,11 +12823,13 @@ function ceilPow2(v) {
     const previous = lyricsMode;
     lyricsMode = next === "changes" ? "changes" : "full";
     const condensed = lyricsMode === "changes";
-    elements.lyricsToggle.setAttribute("aria-pressed", String(condensed));
-    elements.lyricsToggle.dataset.help = condensed
-      ? "Show every lyric syllable, including immediate repetitions."
-      : "Hide repeated lyric syllables.";
-    elements.lyricsToggle.setAttribute("aria-label", condensed ? "Show all lyrics" : "Show only unique lyrics");
+    if (elements.lyricsToggle) {
+      elements.lyricsToggle.setAttribute("aria-pressed", String(condensed));
+      elements.lyricsToggle.dataset.help = condensed
+        ? "Show every lyric syllable, including immediate repetitions."
+        : "Hide repeated lyric syllables.";
+      elements.lyricsToggle.setAttribute("aria-label", condensed ? "Show all lyrics" : "Show only unique lyrics");
+    }
     if (reload && lyricsMode !== previous) {
       if (scoreView === "bars") scheduleBarRender();
       else if (!reloadNotationForDisplay()) {
@@ -13001,7 +13055,7 @@ function ceilPow2(v) {
     });
   }
 
-  function registerResetTarget(element, label, mutate, { labelTarget = false, cancelActive = null } = {}) {
+  function registerResetTarget(element, label, mutate, { labelTarget = false, cancelActive = null, holdToReset = true } = {}) {
     if (!element || element.dataset.resetBound === "true") return;
     element.dataset.resetBound = "true";
     element.dataset.resettable = "true";
@@ -13009,7 +13063,9 @@ function ceilPow2(v) {
       element.dataset.resetLabel = "true";
       if (!element.hasAttribute("tabindex")) element.tabIndex = 0;
     }
-    element.setAttribute("aria-description", `Right-click, long-press, or press Shift+F10 to reset ${label}`);
+    element.setAttribute("aria-description", holdToReset
+      ? `Right-click, long-press, or press Shift+F10 to reset ${label}`
+      : `Right-click or press Shift+F10 to reset ${label}`);
 
     let holdTimer = 0;
     let holdPointerId = null;
@@ -13048,7 +13104,7 @@ function ceilPow2(v) {
       reset();
     });
     element.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || event.pointerType === "mouse") return;
+      if (event.button !== 0 || event.pointerType === "mouse" || !holdToReset) return;
       clearHold();
       holdPointerId = event.pointerId;
       holdX = event.clientX;
@@ -13465,45 +13521,103 @@ function ceilPow2(v) {
     savePreferences();
   }
 
-  function attachPaintInteraction() {
-    let active = false;
-    let pointerId = null;
-    let targetState = false;
-    let last = null;
+  function aloneOnItsRow(row, partCount) {
+    return Array.from({ length: partCount }, (_, part) => part)
+      .every((part) => row.on(part) === (part === row.index));
+  }
+
+  function turnOnEveryPart(row, partCount) {
+    for (let part = 0; part < partCount; part += 1) row.set(part, true);
+  }
+
+  function soloRow(row, partCount) {
+    if (aloneOnItsRow(row, partCount)) return turnOnEveryPart(row, partCount);
+    // The kept part goes on first: a row is not allowed to empty, so turning
+    // the others off around a part that is itself off would be refused.
+    row.set(row.index, true);
+    for (let part = 0; part < partCount; part += 1) if (part !== row.index) row.set(part, false);
+  }
+
+  function pressRow(row, partCount) {
+    if (aloneOnItsRow(row, partCount)) turnOnEveryPart(row, partCount);
+    else row.set(row.index, !row.on(row.index));
+  }
+
+  // Press a part to toggle it, hold to leave only that part on — the gesture
+  // Chordus uses on its clefs. The two rows are independent: soloing what you
+  // can see never changes what you can hear. Holding the last part still
+  // standing puts the others back, and so does a plain press on it, since a
+  // row with nothing left on is never what anyone wants; that also gives the
+  // hold a one-press way out. Dragging across the Hear row still paints it.
+  function attachMixerGestures() {
+    const rowAt = (cell) => {
+      if (cell?.dataset.visibleIndex !== undefined) {
+        return { index: Number(cell.dataset.visibleIndex), selector: "[data-visible-index]",
+          key: "visibleIndex", on: (part) => visibleTracks.has(part), set: setTrackVisibility, paints: false };
+      }
+      if (cell?.dataset.audioIndex !== undefined) {
+        return { index: Number(cell.dataset.audioIndex), selector: "[data-audio-index]",
+          key: "audioIndex", on: (part) => audibleTracks.has(part), set: setTrackAudible, paints: true };
+      }
+      return null;
+    };
+    let gesture = null;
+    const clear = () => {
+      if (!gesture) return;
+      window.clearTimeout(gesture.timer);
+      const { pointerId } = gesture;
+      gesture = null;
+      if (elements.mixer.hasPointerCapture(pointerId)) elements.mixer.releasePointerCapture(pointerId);
+    };
     elements.mixer.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
-      const cell = event.target.closest("[data-audio-index]");
-      if (!cell) return;
-      active = true;
-      pointerId = event.pointerId;
-      last = null;
-      targetState = cell.getAttribute("aria-pressed") !== "true";
-      elements.mixer.setPointerCapture(pointerId);
-      setTrackAudible(Number(cell.dataset.audioIndex), targetState);
-      last = cell;
+      const row = rowAt(event.target.closest("[data-visible-index], [data-audio-index]"));
+      if (!row) return;
+      clear();
+      gesture = { row, pointerId: event.pointerId, x: event.clientX, y: event.clientY,
+        held: false, painting: false, painted: row.index, target: false };
+      try { elements.mixer.setPointerCapture(event.pointerId); } catch {}
+      gesture.timer = window.setTimeout(() => {
+        if (!gesture) return;
+        gesture.held = true;
+        soloRow(gesture.row, parts.length);
+      }, MIXER_SOLO_HOLD_MS);
       event.preventDefault();
     });
     elements.mixer.addEventListener("pointermove", (event) => {
-      if (!active || event.pointerId !== pointerId || !elements.mixer.hasPointerCapture(pointerId)) return;
-      const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-audio-index]");
-      if (!cell || !elements.mixer.contains(cell) || cell === last) return;
-      setTrackAudible(Number(cell.dataset.audioIndex), targetState);
-      last = cell;
+      if (!gesture || event.pointerId !== gesture.pointerId || gesture.held) return;
+      if (!gesture.painting && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) <= 10) return;
+      window.clearTimeout(gesture.timer);
+      const { row } = gesture;
+      if (!row.paints) { clear(); return; }
+      if (!gesture.painting) {
+        gesture.painting = true;
+        gesture.target = !row.on(row.index);
+        row.set(row.index, gesture.target);
+      }
+      const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest(row.selector);
+      const part = cell && elements.mixer.contains(cell) ? Number(cell.dataset[row.key]) : null;
+      if (part === null || Number.isNaN(part) || part === gesture.painted) return;
+      gesture.painted = part;
+      row.set(part, gesture.target);
     });
-    const finish = (event) => {
-      if (!active || event.pointerId !== pointerId) return;
-      active = false;
-      last = null;
-      if (elements.mixer.hasPointerCapture(pointerId)) elements.mixer.releasePointerCapture(pointerId);
-      pointerId = null;
-    };
-    elements.mixer.addEventListener("pointerup", finish);
-    elements.mixer.addEventListener("pointercancel", finish);
-    elements.mixer.addEventListener("lostpointercapture", (event) => {
-      if (event.pointerId !== pointerId) return;
-      active = false;
-      pointerId = null;
-      last = null;
+    elements.mixer.addEventListener("pointerup", (event) => {
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      const { row, held, painting } = gesture;
+      clear();
+      if (!held && !painting) pressRow(row, parts.length);
+    });
+    elements.mixer.addEventListener("pointercancel", clear);
+    elements.mixer.addEventListener("lostpointercapture", clear);
+
+    // Keyboard and assistive tech reach both actions through the button
+    // itself, where a synthetic click carries no pointer detail.
+    elements.mixer.addEventListener("click", (event) => {
+      if (event.detail !== 0) return;
+      const row = rowAt(event.target.closest("[data-visible-index], [data-audio-index]"));
+      if (!row) return;
+      if (event.shiftKey) soloRow(row, parts.length);
+      else pressRow(row, parts.length);
     });
   }
 
@@ -13513,6 +13627,53 @@ function ceilPow2(v) {
     label.textContent = text;
     elements.mixer.append(label);
     registerResetTarget(label, text, mutate, { labelTarget: true });
+    return label;
+  }
+
+  // Dragging a row label rides every part at once. The parts move by the same
+  // number of steps rather than to the same value, so the balance between them
+  // survives the trip, and the shift stops as soon as any one part reaches an
+  // end of the scale. Both mean a drag back to where it started restores the
+  // mix exactly. Each step emits the same "input" the part's own control does,
+  // so mixing, persistence and preset handling stay in one place.
+  function attachGroupDrag(label, controls, values, pixelsPerStep) {
+    const indicesNow = () => controls.map((control) => values.indexOf(nearestAllowed(control.value(), values)));
+    const shift = (startIndices, steps) => {
+      if (startIndices.some((index) => index < 0)) return;
+      const room = clamp(steps, -Math.min(...startIndices), values.length - 1 - Math.max(...startIndices));
+      controls.forEach((control, part) => control.setValue(values[startIndices[part] + room]));
+    };
+
+    let pointerId = null;
+    let startY = 0;
+    let startIndices = [];
+    label.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || !controls.length) return;
+      pointerId = event.pointerId;
+      startY = event.clientY;
+      startIndices = indicesNow();
+      try { label.setPointerCapture(pointerId); } catch {}
+      event.preventDefault();
+    });
+    label.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== pointerId || !label.hasPointerCapture(pointerId)) return;
+      shift(startIndices, Math.round((startY - event.clientY) / pixelsPerStep));
+    });
+    const release = (event) => {
+      if (event.pointerId !== pointerId) return;
+      if (label.hasPointerCapture(pointerId)) label.releasePointerCapture(pointerId);
+      pointerId = null;
+    };
+    label.addEventListener("pointerup", release);
+    label.addEventListener("pointercancel", release);
+    label.addEventListener("lostpointercapture", () => { pointerId = null; });
+    label.addEventListener("keydown", (event) => {
+      const steps = ["ArrowUp", "ArrowRight"].includes(event.key) ? 1
+        : ["ArrowDown", "ArrowLeft"].includes(event.key) ? -1 : 0;
+      if (!steps) return;
+      shift(indicesNow(), steps);
+      event.preventDefault();
+    });
   }
 
   function buildMixer() {
@@ -13530,8 +13691,10 @@ function ceilPow2(v) {
       button.style.setProperty("--part-color", part.color);
       button.dataset.visibleIndex = String(index);
       button.textContent = part.short;
-      button.addEventListener("click", () => setTrackVisibility(index, !visibleTracks.has(index)));
-      registerResetTarget(button, `${part.name} notation`, (state) => { state.visible[index] = true; });
+      button.setAttribute("aria-label", `${part.name} notation`);
+      button.dataset.help = `Show ${part.name}; hold for only this part.`;
+      registerResetTarget(button, `${part.name} notation`, (state) => { state.visible[index] = true; },
+        { holdToReset: false });
       elements.mixer.append(button);
     });
 
@@ -13546,25 +13709,24 @@ function ceilPow2(v) {
       button.className = "matrix-cell";
       button.style.setProperty("--part-color", part.color);
       button.dataset.audioIndex = String(index);
-      button.addEventListener("click", (event) => {
-        // Pointer interaction is handled on pointerdown so users can paint a
-        // row. Synthetic clicks (keyboard and assistive tech) still need the
-        // normal button toggle without undoing the pointer change.
-        if (event.detail === 0) setTrackAudible(index, !audibleTracks.has(index));
-      });
+      button.setAttribute("aria-label", `${part.name} audio`);
+      button.dataset.help = `Hear ${part.name}; hold for only this part.`;
       registerResetTarget(button, `${part.name} audio`, (state) => {
         state.audible[index] = true;
         state.practiceMixMode = null;
         state.practiceMixUndo = null;
-      });
+      }, { holdToReset: false });
       elements.mixer.append(button);
     });
 
-    appendMixerLabel("Vol", (state, defaults) => {
+    const volumeLabel = appendMixerLabel("Vol", (state, defaults) => {
       state.volumes = [...defaults.volumes];
       state.practiceMixMode = null;
       state.practiceMixUndo = null;
     });
+    volumeLabel.classList.add("is-group-drag");
+    volumeLabel.dataset.help = "Drag vertically to change every part.";
+    volumeLabel.setAttribute("aria-label", "All part volumes");
     parts.forEach((part, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -13594,6 +13756,7 @@ function ceilPow2(v) {
       });
       volumeControls.push(control);
     });
+    attachGroupDrag(volumeLabel, volumeControls, VOLUME_VALUES, 4);
 
     appendMixerLabel("Pan", (state, defaults) => { state.pans = [...defaults.pans]; });
     parts.forEach((part, index) => {
@@ -14084,6 +14247,56 @@ function ceilPow2(v) {
     window.addEventListener("pointermove", move, { signal: controller.signal, passive: false });
     window.addEventListener("pointerup", finish, { signal: controller.signal, passive: false });
     window.addEventListener("pointercancel", cancelScoreScrub, { signal: controller.signal });
+  }
+
+  // A pitch bar is drawn two semitones tall, centred on its own pitch, so a
+  // press is on it when it lands within a semitone of that centre. Bars of
+  // neighbouring pitches overlap, so the nearest one wins; a tie goes to the
+  // part the score is following.
+  function barNoteAt(tick, pitch) {
+    const selected = currentScorePartIndex();
+    const under = (sequence.notes || []).filter(([track, start, end, key]) =>
+      visibleTracks.has(track) && tick >= start && tick < end && Math.abs(key - pitch) <= 1);
+    under.sort((left, right) => Math.abs(left[3] - pitch) - Math.abs(right[3] - pitch)
+      || (right[0] === selected) - (left[0] === selected));
+    return under.length ? { key: under[0][3], track: under[0][0] } : null;
+  }
+
+  // Pressing a pitch bar sounds it at once, with a mouse or a finger alike.
+  // Let go quickly and the press also moves the playhead, the way a press
+  // anywhere else in this view does. Keep holding and it stops being a seek
+  // and stays a note until the pointer lifts. Moving hands the press back to
+  // the scrub and drops the note. Each pointer keeps its own voice, so two
+  // fingers sound two bars.
+  function beginPitchAudition(event, note) {
+    if (event.button !== 0 || !note || !engine) return;
+    let voice = null;
+    try { voice = engine.holdNote(note.key, note.track); } catch { return; }
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const controller = new AbortController();
+    let sustained = false;
+    const timer = window.setTimeout(() => {
+      sustained = true;
+      cancelScoreScrub();
+    }, PITCH_AUDITION_HOLD_MS);
+    const finish = () => {
+      controller.abort();
+      window.clearTimeout(timer);
+      voice?.release();
+      voice = null;
+    };
+    window.addEventListener("pointermove", (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId || sustained) return;
+      if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) > 8) finish();
+    }, { signal: controller.signal });
+    window.addEventListener("pointerup", (upEvent) => {
+      if (upEvent.pointerId === pointerId) finish();
+    }, { signal: controller.signal });
+    window.addEventListener("pointercancel", (cancelEvent) => {
+      if (cancelEvent.pointerId === pointerId) finish();
+    }, { signal: controller.signal });
   }
 
   function moveAnnotationRecord(currentId, tick, partIndex) {
@@ -14604,6 +14817,7 @@ function ceilPow2(v) {
       this.nextNoteIndex = 0;
       this.nextClickIndex = 0;
       this.scheduled = new Set();
+      this.held = new Set();
       this.output = null;
       this.api = null;
       this.metronomeVolume = 0;
@@ -14911,6 +15125,65 @@ function ceilPow2(v) {
       oscillator.stop(end + 0.01);
     }
 
+    holdNote(key, track) {
+      this.ensureAudio();
+      void this.context.resume();
+      const start = this.context.currentTime;
+      const frequency = 440 * 2 ** ((key - 69) / 12);
+      const oscillator = this.context.createOscillator();
+      oscillator.setPeriodicWave(this.wave);
+      oscillator.frequency.setValueAtTime(frequency, start);
+      const vibrato = this.context.createOscillator();
+      const vibratoDepth = this.context.createGain();
+      vibrato.frequency.value = 5.05 + track * 0.08;
+      vibratoDepth.gain.value = 3.8;
+      vibrato.connect(vibratoDepth).connect(oscillator.detune);
+      const filter = this.context.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = clamp(frequency * 5.2, 900, 5200);
+      filter.Q.value = 0.48;
+      const envelope = this.context.createGain();
+      const level = 0.112 * 10 ** (clamp((55 - key) * 0.72, 0, 9) / 20);
+      envelope.gain.setValueAtTime(0.0001, start);
+      envelope.gain.exponentialRampToValueAtTime(level, start + 0.026);
+      // The audition follows the part's own volume and pan, but a part turned
+      // down to silence would otherwise have nothing to listen to, so that one
+      // goes straight to the master instead.
+      const strip = this.trackStrips[track]?.gain;
+      oscillator.connect(filter).connect(envelope)
+        .connect(strip && strip.gain.value > 0.0005 ? strip : this.master);
+
+      const voice = { oscillator, vibrato, envelope };
+      this.held.add(voice);
+      oscillator.start(start);
+      vibrato.start(start);
+      let released = false;
+      return {
+        release: () => {
+          if (released) return;
+          released = true;
+          this.held.delete(voice);
+          const now = this.context.currentTime;
+          const gain = envelope.gain;
+          // Read the level before cancelling anything. Cancelling drops the
+          // parameter back to where the attack ramp began, so a value read
+          // afterwards is silence, and holding that is an abrupt cut rather
+          // than a release. Firefox has no cancelAndHoldAtTime and takes this
+          // path for every note.
+          const current = Math.max(0.0001, Number(gain.value) || 0.0001);
+          if (typeof gain.cancelAndHoldAtTime === "function") gain.cancelAndHoldAtTime(now);
+          else {
+            gain.cancelScheduledValues(now);
+            gain.setValueAtTime(current, now);
+          }
+          gain.exponentialRampToValueAtTime(0.0001, now + PITCH_AUDITION_RELEASE_SECONDS);
+          const silent = now + PITCH_AUDITION_RELEASE_SECONDS + 0.03;
+          try { oscillator.stop(silent); } catch {}
+          try { vibrato.stop(silent); } catch {}
+        },
+      };
+    }
+
     scheduleClick(click, position, minimumLead) {
       if (!this.context || click.time < position - 0.002) return;
       const start = this.context.currentTime + Math.max(minimumLead, (click.time - position) / this.rate);
@@ -15024,6 +15297,62 @@ function ceilPow2(v) {
         const left = onsetX - (throughFirstLetterWidth - firstLetterWidth / 2);
         lyricText.setAttribute("x", String(left));
       });
+    });
+  }
+
+  // A syllable is drawn on its note's onset, so wherever notes come quickly the
+  // words run into each other. Holding the view wider would override the
+  // Stretch setting across the whole score for the sake of a few crowded bars,
+  // so a syllable that cannot fit beside its neighbour drops to the next line
+  // instead and only the crowded places pay for it. Lanes are filled greedily
+  // in reading order, which keeps everything on the first line wherever it
+  // fits and lets a run of three crowded syllables use three lines rather than
+  // ping-pong between two. The system grows by whatever lines it ends up using.
+  // First fit, in reading order: a syllable takes the topmost line whose last
+  // word ends far enough to its left, so everything stays on one line wherever
+  // it fits and a crowded run steps down as far as it must.
+  function assignLyricLanes(syllables, gap) {
+    const laneEnds = [];
+    const lanes = syllables.map((syllable) => {
+      let lane = laneEnds.findIndex((end) => end + gap <= syllable.left);
+      if (lane < 0 && laneEnds.length < PITCH_BAR_LYRIC_LANES) lane = laneEnds.push(-Infinity) - 1;
+      // Past that the words are denser than the width on offer; the line that
+      // ends soonest is the one that overlaps least.
+      if (lane < 0) lane = laneEnds.indexOf(Math.min(...laneEnds));
+      laneEnds[lane] = syllable.left + syllable.width;
+      return lane;
+    });
+    return { lanes, lineCount: Math.max(1, laneEnds.length) };
+  }
+
+  function packPitchBarLyrics(systems) {
+    systems.forEach(({ svg, lyricTop, lyricLineHeight, lyricVerses }) => {
+      if (!lyricVerses?.length || !Number.isFinite(lyricTop)) return;
+      const byVerse = new Map();
+      svg.querySelectorAll(".bar-lyric-text").forEach((text) => {
+        const verse = Number(text.dataset.verse) || 0;
+        if (!byVerse.has(verse)) byVerse.set(verse, []);
+        byVerse.get(verse).push({
+          text,
+          left: Number(text.getAttribute("x")) || 0,
+          width: measuredSvgTextLength(text),
+        });
+      });
+
+      let usedLines = 0;
+      lyricVerses.forEach((verse) => {
+        const syllables = (byVerse.get(verse) || []).sort((left, right) => left.left - right.left);
+        const { lanes, lineCount } = assignLyricLanes(syllables, lyricLineHeight * 0.15);
+        syllables.forEach((syllable, index) => {
+          syllable.text.setAttribute("y", String(lyricTop + (usedLines + lanes[index]) * lyricLineHeight));
+        });
+        usedLines += lineCount;
+      });
+
+      if (usedLines <= lyricVerses.length) return;
+      const box = (svg.getAttribute("viewBox") || "").split(" ").map(Number);
+      if (box.length !== 4 || !box.every(Number.isFinite)) return;
+      svg.setAttribute("viewBox", `${box[0]} ${box[1]} ${box[2]} ${box[3] + (usedLines - lyricVerses.length) * lyricLineHeight}`);
     });
   }
 
@@ -15490,9 +15819,10 @@ function ceilPow2(v) {
       svg.append(cursor);
       const system = {
         shell, svg, cursor, traceLayer, startTick, endTick, leftPad, plotWidth, minPitch, maxPitch, xAtTick, yAtPitch,
+        lyricTop, lyricLineHeight, lyricVerses,
         traceEdges: new Map(), traceEdgesByBin: new Map(),
       };
-      svg.addEventListener("pointerdown", (event) => beginScoreScrub(event, (pointerEvent) => {
+      const pointAt = (pointerEvent) => {
         const matrix = svg.getScreenCTM();
         if (!matrix) return null;
         const point = svg.createSVGPoint();
@@ -15500,18 +15830,33 @@ function ceilPow2(v) {
         point.y = pointerEvent.clientY;
         const local = point.matrixTransform(matrix.inverse());
         const ratio = clamp((local.x - leftPad) / plotWidth, 0, 0.999999);
-        const tick = clamp(Math.round(startTick + ratio * (endTick - startTick)), startTick, Math.max(startTick, endTick - 1));
-        const clickedPitch = maxPitch + 1 - (local.y - topPad) / pitchStep;
-        const active = (sequence.notes || []).filter(([track, noteStart, noteEnd]) =>
-          visibleTracks.has(track) && tick >= noteStart && tick < noteEnd);
-        active.sort((left, right) => Math.abs(left[3] - clickedPitch) - Math.abs(right[3] - clickedPitch));
         return {
-          tick,
+          tick: clamp(Math.round(startTick + ratio * (endTick - startTick)), startTick, Math.max(startTick, endTick - 1)),
+          pitch: maxPitch + 1 - (local.y - topPad) / pitchStep,
+        };
+      };
+      const sounding = (at) => (sequence.notes || []).filter(([track, noteStart, noteEnd]) =>
+        visibleTracks.has(track) && at.tick >= noteStart && at.tick < noteEnd);
+      const scrubTarget = (pointerEvent) => {
+        const at = pointAt(pointerEvent);
+        if (!at) return null;
+        const active = sounding(at)
+          .sort((left, right) => Math.abs(left[3] - at.pitch) - Math.abs(right[3] - at.pitch));
+        return {
+          tick: at.tick,
           partIndex: active[0]?.[0] ?? currentScorePartIndex(),
           snapStartTick: startTick,
           snapEndTick: endTick,
         };
-      }));
+      };
+      const barUnder = (pointerEvent) => {
+        const at = pointAt(pointerEvent);
+        return at ? barNoteAt(at.tick, at.pitch) : null;
+      };
+      svg.addEventListener("pointerdown", (event) => {
+        beginScoreScrub(event, scrubTarget);
+        beginPitchAudition(event, barUnder(event));
+      });
 
       shell.append(svg);
       fragment.append(shell);
@@ -15522,6 +15867,7 @@ function ceilPow2(v) {
     barSystems = nextSystems;
     activeBarSystemIndex = -1;
     alignPitchBarLyricsToFirstLetter(nextSystems);
+    packPitchBarLyrics(nextSystems);
     renderPitchTrace(nextSystems);
     updateBarPlayhead(engine ? engine.tickAtSeconds(engine.currentSeconds()) : 0);
   }
@@ -16040,6 +16386,13 @@ function ceilPow2(v) {
     restoreScoreRenderStyleLock();
     const snapshot = scoreRenderSnapshot;
     if (!snapshot) return;
+    // The snapshot is a deep clone, so as it fades out across the live score
+    // every translucent overlay is painted twice and its tint visibly darkens
+    // for the length of the fade. Notation is opaque and cross-fades cleanly;
+    // the highlights are not, so drop them here and let the live ones, which
+    // are already in the right place for the new layout, show through alone.
+    snapshot.querySelectorAll(".at-cursor-bar, .at-cursor-beat, .at-selection, .score-selected-part")
+      .forEach((overlay) => overlay.remove());
     snapshot.classList.add("is-revealing");
     const delay = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 130;
     scoreRenderSnapshotTimer = window.setTimeout(() => {
@@ -16365,11 +16718,8 @@ function ceilPow2(v) {
     const topLimit = header + 8;
     const bottomLimit = window.innerHeight - 20;
     if (transition.bounds.bottom <= bottomLimit) return false;
-    const usableHeight = Math.max(1, bottomLimit - topLimit);
     const targetHeight = Math.max(1, transition.bounds.bottom - transition.bounds.top);
-    const delta = targetHeight <= usableHeight
-      ? transition.bounds.bottom - bottomLimit
-      : transition.bounds.top - topLimit;
+    const delta = transition.bounds.top - readingLine(targetHeight, topLimit, bottomLimit);
     if (delta <= 1) return false;
     const destination = window.scrollY + delta;
     const duration = followScrollDuration(Math.abs(destination - window.scrollY));
@@ -16403,6 +16753,44 @@ function ceilPow2(v) {
     const direction = playbackDirection(cursor);
     if (direction) scrollToPlayback(direction, "smooth", true);
     else predictiveVerticalFollow(cursor);
+  }
+
+  // Where the music comes to rest when the view follows it: a fifth of the way
+  // down the reading band, the same line the band already treats as the top of
+  // comfortable reading. That leaves a system of context above it and the rest
+  // of the screen as lookahead, and the music then has the whole page to cross
+  // before the view has to move again. Landing it at the bottom edge instead,
+  // which is all a minimum scroll needs, hides what is coming and moves the
+  // page at every system. A system too tall for that hangs from the top, so
+  // none of it is cut off.
+  function readingLine(cursorHeight, topLimit, bottomLimit) {
+    const usableHeight = Math.max(1, bottomLimit - topLimit);
+    return cursorHeight >= usableHeight * 0.8 ? topLimit : topLimit + usableHeight * 0.2;
+  }
+
+  function playbackCursorPlace() {
+    const bounds = playbackCursorElement()?.getBoundingClientRect();
+    return bounds ? `${Math.round(bounds.left)}:${Math.round(bounds.top)}` : null;
+  }
+
+  // A jump only reads as a jump if the score comes with it. The pitchbar view
+  // moves its playhead as the seek is applied, while AlphaTab moves its cursor
+  // a frame or two later, so this waits for whichever it is to leave the place
+  // it held BEFORE the seek. A jump that stays in view never moves far enough
+  // to need a scroll and simply runs out of attempts.
+  function followCursorFrom(place) {
+    let frames = 0;
+    const attempt = () => {
+      if (playbackCursorPlace() !== place) {
+        // Always park it, even when the target is technically already in view,
+        // so a jump lands in the same spot every time. The minimal destination
+        // is the reading line whichever way the playhead moved.
+        scrollToPlayback(playbackDirection() || "down", "smooth", true);
+        return;
+      }
+      if ((frames += 1) < 12) requestAnimationFrame(attempt);
+    };
+    requestAnimationFrame(attempt);
   }
 
   function playbackCursorElement() {
@@ -16486,9 +16874,7 @@ function ceilPow2(v) {
     const bottomLimit = window.innerHeight - 20;
     if (["up", "down"].includes(direction)) {
       const destination = minimal
-        ? direction === "up"
-          ? window.scrollY + bounds.top - topLimit
-          : window.scrollY + bounds.bottom - bottomLimit
+        ? window.scrollY + bounds.top - readingLine(bounds.height, topLimit, bottomLimit)
         : window.scrollY + bounds.top - (topLimit + Math.max(0, bottomLimit - topLimit - bounds.height) / 2);
       if (behavior === "smooth") {
         const target = Math.max(0, destination);
@@ -16599,7 +16985,8 @@ function ceilPow2(v) {
   elements.scoreViewToggle.addEventListener("click", () => setScoreView(scoreView === "standard" ? "bars" : "standard"));
   elements.pitchCapture.addEventListener("click", togglePitchCapture);
   elements.erasePitchTrace.addEventListener("click", clearPitchTrace);
-  elements.lyricsToggle.addEventListener("click", () => setLyricsMode(lyricsMode === "full" ? "changes" : "full"));
+  // A score with no repeated syllables is built without this control.
+  elements.lyricsToggle?.addEventListener("click", () => setLyricsMode(lyricsMode === "full" ? "changes" : "full"));
   elements.tempo.addEventListener("input", () => {
     if (api) api.playbackSpeed = tempoControl.value() / 100;
     savePreferences();
@@ -16701,6 +17088,29 @@ function ceilPow2(v) {
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) return;
     if (event.defaultPrevented) return;
+    // Up and down step between section breaks, the way an editor steps between
+    // cuts; left and right stay on the beat, below. The score follows so the
+    // jump lands somewhere you can read, and a control that uses the arrows
+    // itself has already called preventDefault by the time this runs.
+    if (["ArrowUp", "ArrowDown"].includes(event.key) && engine && api) {
+      // Section starts only: the end of the piece is also a snap point, and
+      // seeking onto it sends the transport back to the beginning, so stepping
+      // forward stops at the last section rather than falling off the end.
+      const here = engine.currentSeconds() * 1000;
+      const stops = chapterSeekMilliseconds.filter((point) => point < engine.duration * 1000 - 1);
+      const step = event.key === "ArrowDown"
+        ? stops.find((point) => point > here + 1)
+        : [...stops].reverse().find((point) => point < here - 1);
+      if (step === undefined) { event.preventDefault(); return; }
+      // The same path a click on the score takes, so both views move their
+      // playhead and the section start is honoured exactly rather than snapped
+      // to the nearest eighth.
+      const from = playbackCursorPlace();
+      applyScoreScrubTarget({ tick: engine.tickAtSeconds(step / 1000), exactTick: true });
+      followCursorFrom(from);
+      event.preventDefault();
+      return;
+    }
     if (["ArrowLeft", "ArrowRight"].includes(event.key) && engine && api) {
       const direction = event.key === "ArrowRight" ? 1 : -1;
       const beatSeconds = 60 / Math.max(20, engine.tempoSegments[0]?.bpm || 120);
@@ -16887,7 +17297,7 @@ function ceilPow2(v) {
       buildPracticePartPicker();
       registerStaticResetTargets();
       loadAnnotations();
-      attachPaintInteraction();
+      attachMixerGestures();
       updateLoopState();
       updateNoteActionLabel();
       updatePitchCaptureAppearance();
@@ -17545,6 +17955,14 @@ SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
 OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+YouTube brand icon
+https://github.com/simple-icons/simple-icons/blob/develop/icons/youtube.svg
+
+Released under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+CC0 does not waive trademark rights. YouTube is a trademark of Google LLC;
+the icon identifies a link to YouTube and does not imply endorsement.
 
 Pitchy
 https://github.com/ianprime0509/pitchy

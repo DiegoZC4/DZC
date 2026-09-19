@@ -388,7 +388,15 @@ header nav #theme-toggle{margin-left:auto}
    scanners do not, so it keeps its own white card in either mode. */
 #qr-dialog{color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px;text-align:center;max-width:min(92vw,520px)}
 #qr-dialog::backdrop{background:rgb(8 17 30/.72)}
-#qr-dialog h2{margin-bottom:14px}
+/* Live carries a recording light, and it glows exactly when this device's edits
+   are going out to the choir. There is no third state: Live cannot be switched
+   on without a session and the reins, so a dark light always means nothing is
+   being sent, and a conductor never has to wonder which kind of on it is. */
+#progression-live{display:inline-flex;align-items:center;gap:7px;--on-air:#e5484d}
+.live-dot{flex:none;box-sizing:border-box;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--muted)}
+#progression-live[data-air="on"] .live-dot{border-color:var(--on-air);background:var(--on-air);animation:on-air 1.6s ease-in-out infinite}
+@keyframes on-air{0%,100%{box-shadow:0 0 0 0 rgb(229 72 77/.55)}50%{box-shadow:0 0 7px 3px rgb(229 72 77/.5)}}
+@media(prefers-reduced-motion:reduce){#progression-live[data-air="on"] .live-dot{animation:none;box-shadow:0 0 6px 2px rgb(229 72 77/.5)}}
 .qr-card{background:#fff;padding:12px;border-radius:12px;line-height:0;display:inline-block}
 .qr-card svg{display:block;width:min(74vw,58vh,420px);height:auto}
 .qr-note{margin:4px 0 0;color:var(--muted);font-size:.9375rem;line-height:1.5;text-wrap:pretty}
@@ -556,9 +564,16 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
 .song-vote-count[data-long]{font-size:6.6px}
 .song-vote:active .song-vote-heart{fill:var(--selected)}
 .song-vote[aria-pressed="true"]{color:var(--accent)}
+/* A vote answers the finger at once, and says so with a quick swell: a quarter
+   of a second, never a wait. Making a press slow does not make it feel sent;
+   it makes the button feel broken, and it gets in the way of voting for three
+   songs in a row. What says "everyone saw that" is the count moving on the
+   phone beside you, which is real. Only a press plays it, not a repaint. */
+@keyframes vote-swell{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+.song-vote.is-voting .song-vote-icon{animation:vote-swell .26s ease-out}
+@media(prefers-reduced-motion:reduce){.song-vote.is-voting .song-vote-icon{animation:none}}
 .song-vote[aria-pressed="true"] .song-vote-heart{fill:currentColor}
 .song-vote[aria-pressed="true"] .song-vote-count{fill:var(--surface)}
-.song-vote-hint{margin:0 0 12px;color:var(--muted);font-size:.8125rem;line-height:1.4}
 /* The drawing carries its own size: one scale for every song, cut to its ink. */
 .vocal-range{display:block;overflow:visible}
 .vocal-range .staff-line,.vocal-range .ledger{stroke:var(--muted);stroke-width:1.4;fill:none;opacity:.8}
@@ -648,7 +663,7 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
     <button class="control" id="conductor-button" type="button" hidden>Sign in</button>
   </div>
   <p id="import-timing-notice" class="rehearsal-message" hidden></p>
-  <div id="rehearsal-score"><svg class="rehearsal-notation score-system" viewBox="0 0 1060 350" data-start="0" data-dynamics-geometry="{&quot;startTime&quot;:0,&quot;endTime&quot;:64,&quot;left&quot;:0,&quot;right&quot;:434,&quot;staves&quot;:[{&quot;part&quot;:0,&quot;collapsed&quot;:false,&quot;top&quot;:68,&quot;bottom&quot;:108},{&quot;part&quot;:1,&quot;collapsed&quot;:false,&quot;top&quot;:142,&quot;bottom&quot;:182},{&quot;part&quot;:2,&quot;collapsed&quot;:false,&quot;top&quot;:223,&quot;bottom&quot;:263},{&quot;part&quot;:3,&quot;collapsed&quot;:false,&quot;top&quot;:297,&quot;bottom&quot;:337}],&quot;measures&quot;:[{&quot;measure&quot;:0,&quot;x0&quot;:34,&quot;x1&quot;:134},{&quot;measure&quot;:1,&quot;x0&quot;:134,&quot;x1&quot;:234},{&quot;measure&quot;:2,&quot;x0&quot;:234,&quot;x1&quot;:334},{&quot;measure&quot;:3,&quot;x0&quot;:334,&quot;x1&quot;:434}],&quot;notes&quot;:[{&quot;measure&quot;:0,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:98,&quot;rest&quot;:false,&quot;pitch&quot;:67},{&quot;measure&quot;:1,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:98,&quot;rest&quot;:false,&quot;pitch&quot;:67},{&quot;measure&quot;:2,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:93,&quot;rest&quot;:false,&quot;pitch&quot;:69},{&quot;measure&quot;:3,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:93,&quot;rest&quot;:false,&quot;pitch&quot;:69},{&quot;measure&quot;:0,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:182,&quot;rest&quot;:false,&quot;pitch&quot;:64},{&quot;measure&quot;:1,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:187,&quot;rest&quot;:false,&quot;pitch&quot;:62},{&quot;measure&quot;:2,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:182,&quot;rest&quot;:false,&quot;pitch&quot;:64},{&quot;measure&quot;:3,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:177,&quot;rest&quot;:false,&quot;pitch&quot;:65},{&quot;measure&quot;:0,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:238,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:1,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:243,&quot;rest&quot;:false,&quot;pitch&quot;:59},{&quot;measure&quot;:2,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:238,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:3,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:238,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:0,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:322,&quot;rest&quot;:false,&quot;pitch&quot;:48},{&quot;measure&quot;:1,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:337,&quot;rest&quot;:false,&quot;pitch&quot;:43},{&quot;measure&quot;:2,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:332,&quot;rest&quot;:false,&quot;pitch&quot;:45},{&quot;measure&quot;:3,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:342,&quot;rest&quot;:false,&quot;pitch&quot;:41}],&quot;chords&quot;:[{&quot;measure&quot;:0,&quot;pitches&quot;:[67,64,60,48]},{&quot;measure&quot;:1,&quot;pitches&quot;:[67,62,59,43]},{&quot;measure&quot;:2,&quot;pitches&quot;:[69,64,60,45]},{&quot;measure&quot;:3,&quot;pitches&quot;:[69,65,60,41]}],&quot;anchors&quot;:[{&quot;time&quot;:0,&quot;x&quot;:84},{&quot;time&quot;:16,&quot;x&quot;:184},{&quot;time&quot;:32,&quot;x&quot;:284},{&quot;time&quot;:48,&quot;x&quot;:384}]}" role="group" aria-label="SATB rehearsal, measures 1 to 4" xmlns="http://www.w3.org/2000/svg"><g class="dynamics-layer" aria-hidden="true"></g><rect class="cue-measure-fill" data-cue-measure="0" x="34" y="68" width="100" height="269"/><g class="reading-measure-target" data-cue-measure="0" role="button" tabindex="0" aria-label="Measure 1"><rect class="reading-hit" x="34" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="84" y="18">I</text><text class="score-chord-name" x="84" y="52">C</text></g><rect class="cue-measure-fill" data-cue-measure="1" x="134" y="68" width="100" height="269"/><g class="reading-measure-target" data-cue-measure="1" role="button" tabindex="0" aria-label="Measure 2"><rect class="reading-hit" x="134" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="184" y="18">V</text><text class="score-chord-name" x="184" y="52">G</text></g><rect class="cue-measure-fill" data-cue-measure="2" x="234" y="68" width="100" height="269"/><g class="reading-measure-target" data-cue-measure="2" role="button" tabindex="0" aria-label="Measure 3"><rect class="reading-hit" x="234" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="284" y="18">vi</text><text class="score-chord-name" x="284" y="52">Am</text></g><rect class="cue-measure-fill" data-cue-measure="3" x="334" y="68" width="100" height="269"/><g class="reading-measure-target" data-cue-measure="3" role="button" tabindex="0" aria-label="Measure 4"><rect class="reading-hit" x="334" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="384" y="18">IV</text><text class="score-chord-name" x="384" y="52">F</text></g><g class="reading-staff s" data-staff="0"><title>Soprano</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="0" x="34" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="0" x="34" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="0" x="134" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="0" x="134" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="0" x="234" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="0" x="234" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="0" x="334" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="0" x="334" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 4"/><path class="staff-line" d="M34 68H434"/><path class="staff-line" d="M34 78H434"/><path class="staff-line" d="M34 88H434"/><path class="staff-line" d="M34 98H434"/><path class="staff-line" d="M34 108H434"/><g class="clef-toggle" data-toggle-part="0" role="button" tabindex="0" aria-label="Soprano: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="54" width="34" height="68"/><text class="music clef" x="2" y="98"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="0" data-pitch="67" data-event="0" data-rest="false" data-staff-steps="2" role="button" tabindex="0" aria-label="Soprano G4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="83" width="28" height="30"/><text class="music notehead" x="84" y="98"></text></g><path class="barline" d="M134 68V108"/><g class="rehearsal-reading-note" data-chord="1" data-part="0" data-pitch="67" data-event="0" data-rest="false" data-staff-steps="2" role="button" tabindex="0" aria-label="Soprano G4, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="83" width="28" height="30"/><text class="music notehead" x="184" y="98"></text></g><path class="barline" d="M234 68V108"/><g class="rehearsal-reading-note" data-chord="2" data-part="0" data-pitch="69" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Soprano A4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="78" width="28" height="30"/><text class="music notehead" x="284" y="93"></text></g><path class="barline" d="M334 68V108"/><g class="rehearsal-reading-note" data-chord="3" data-part="0" data-pitch="69" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Soprano A4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="78" width="28" height="30"/><text class="music notehead" x="384" y="93"></text></g></g><g class="reading-staff a" data-staff="1"><title>Alto</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="1" x="34" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="1" x="34" y="125" width="100" height="77.5" role="button" tabindex="0" aria-label="Alto, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="1" x="134" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="1" x="134" y="125" width="100" height="77.5" role="button" tabindex="0" aria-label="Alto, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="1" x="234" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="1" x="234" y="125" width="100" height="77.5" role="button" tabindex="0" aria-label="Alto, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="1" x="334" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="1" x="334" y="125" width="100" height="77.5" role="button" tabindex="0" aria-label="Alto, measure 4"/><path class="staff-line" d="M34 142H434"/><path class="staff-line" d="M34 152H434"/><path class="staff-line" d="M34 162H434"/><path class="staff-line" d="M34 172H434"/><path class="staff-line" d="M34 182H434"/><g class="clef-toggle" data-toggle-part="1" role="button" tabindex="0" aria-label="Alto: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="128" width="34" height="68"/><text class="music clef" x="2" y="172"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="1" data-pitch="64" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Alto E4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="167" width="28" height="30"/><text class="music notehead" x="84" y="182"></text></g><path class="barline" d="M134 142V182"/><g class="rehearsal-reading-note" data-chord="1" data-part="1" data-pitch="62" data-event="0" data-rest="false" data-staff-steps="-1" role="button" tabindex="0" aria-label="Alto D4, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="172" width="28" height="30"/><text class="music notehead" x="184" y="187"></text></g><path class="barline" d="M234 142V182"/><g class="rehearsal-reading-note" data-chord="2" data-part="1" data-pitch="64" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Alto E4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="167" width="28" height="30"/><text class="music notehead" x="284" y="182"></text></g><path class="barline" d="M334 142V182"/><g class="rehearsal-reading-note" data-chord="3" data-part="1" data-pitch="65" data-event="0" data-rest="false" data-staff-steps="1" role="button" tabindex="0" aria-label="Alto F4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="162" width="28" height="30"/><text class="music notehead" x="384" y="177"></text></g></g><g class="reading-staff t" data-staff="2"><title>Tenor</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="2" x="34" y="223" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="2" x="34" y="202.5" width="100" height="77.5" role="button" tabindex="0" aria-label="Tenor, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="2" x="134" y="223" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="2" x="134" y="202.5" width="100" height="77.5" role="button" tabindex="0" aria-label="Tenor, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="2" x="234" y="223" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="2" x="234" y="202.5" width="100" height="77.5" role="button" tabindex="0" aria-label="Tenor, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="2" x="334" y="223" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="2" x="334" y="202.5" width="100" height="77.5" role="button" tabindex="0" aria-label="Tenor, measure 4"/><path class="staff-line" d="M34 223H434"/><path class="staff-line" d="M34 233H434"/><path class="staff-line" d="M34 243H434"/><path class="staff-line" d="M34 253H434"/><path class="staff-line" d="M34 263H434"/><g class="clef-toggle" data-toggle-part="2" role="button" tabindex="0" aria-label="Tenor: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="209" width="34" height="68"/><text class="music clef" x="2" y="253"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="223" width="28" height="30"/><text class="music notehead" x="84" y="238"></text></g><path class="barline" d="M134 223V263"/><g class="rehearsal-reading-note" data-chord="1" data-part="2" data-pitch="59" data-event="0" data-rest="false" data-staff-steps="4" role="button" tabindex="0" aria-label="Tenor B3, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="228" width="28" height="30"/><text class="music notehead" x="184" y="243"></text></g><path class="barline" d="M234 223V263"/><g class="rehearsal-reading-note" data-chord="2" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="223" width="28" height="30"/><text class="music notehead" x="284" y="238"></text></g><path class="barline" d="M334 223V263"/><g class="rehearsal-reading-note" data-chord="3" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="223" width="28" height="30"/><text class="music notehead" x="384" y="238"></text></g></g><g class="reading-staff b" data-staff="3"><title>Bass</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="3" x="34" y="297" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="3" x="34" y="280" width="100" height="76" role="button" tabindex="0" aria-label="Bass, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="3" x="134" y="297" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="3" x="134" y="280" width="100" height="76" role="button" tabindex="0" aria-label="Bass, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="3" x="234" y="297" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="3" x="234" y="280" width="100" height="76" role="button" tabindex="0" aria-label="Bass, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="3" x="334" y="297" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="3" x="334" y="280" width="100" height="76" role="button" tabindex="0" aria-label="Bass, measure 4"/><path class="staff-line" d="M34 297H434"/><path class="staff-line" d="M34 307H434"/><path class="staff-line" d="M34 317H434"/><path class="staff-line" d="M34 327H434"/><path class="staff-line" d="M34 337H434"/><g class="clef-toggle" data-toggle-part="3" role="button" tabindex="0" aria-label="Bass: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="283" width="34" height="68"/><text class="music clef" x="2" y="307"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="3" data-pitch="48" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Bass C3, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="307" width="28" height="30"/><text class="music notehead" x="84" y="322"></text></g><path class="barline" d="M134 297V337"/><g class="rehearsal-reading-note" data-chord="1" data-part="3" data-pitch="43" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Bass G2, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="322" width="28" height="30"/><text class="music notehead" x="184" y="337"></text></g><path class="barline" d="M234 297V337"/><g class="rehearsal-reading-note" data-chord="2" data-part="3" data-pitch="45" data-event="0" data-rest="false" data-staff-steps="1" role="button" tabindex="0" aria-label="Bass A2, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="317" width="28" height="30"/><text class="music notehead" x="284" y="332"></text></g><path class="barline" d="M334 297V337"/><g class="rehearsal-reading-note" data-chord="3" data-part="3" data-pitch="41" data-event="0" data-rest="false" data-staff-steps="-1" role="button" tabindex="0" aria-label="Bass F2, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="327" width="28" height="30"/><text class="music notehead" x="384" y="342"></text></g></g><path class="system-line" d="M34 68V337"/><path class="system-line" d="M434 68V337"/><g class="dynamics-controls"></g></svg></div>
+  <div id="rehearsal-score"><svg class="rehearsal-notation score-system" viewBox="0 0 1060 339" data-start="0" data-dynamics-geometry="{&quot;startTime&quot;:0,&quot;endTime&quot;:64,&quot;left&quot;:0,&quot;right&quot;:434,&quot;staves&quot;:[{&quot;part&quot;:0,&quot;collapsed&quot;:false,&quot;top&quot;:68,&quot;bottom&quot;:108},{&quot;part&quot;:1,&quot;collapsed&quot;:false,&quot;top&quot;:142,&quot;bottom&quot;:182},{&quot;part&quot;:2,&quot;collapsed&quot;:false,&quot;top&quot;:216,&quot;bottom&quot;:256},{&quot;part&quot;:3,&quot;collapsed&quot;:false,&quot;top&quot;:286,&quot;bottom&quot;:326}],&quot;measures&quot;:[{&quot;measure&quot;:0,&quot;x0&quot;:34,&quot;x1&quot;:134},{&quot;measure&quot;:1,&quot;x0&quot;:134,&quot;x1&quot;:234},{&quot;measure&quot;:2,&quot;x0&quot;:234,&quot;x1&quot;:334},{&quot;measure&quot;:3,&quot;x0&quot;:334,&quot;x1&quot;:434}],&quot;notes&quot;:[{&quot;measure&quot;:0,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:98,&quot;rest&quot;:false,&quot;pitch&quot;:67},{&quot;measure&quot;:1,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:98,&quot;rest&quot;:false,&quot;pitch&quot;:67},{&quot;measure&quot;:2,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:93,&quot;rest&quot;:false,&quot;pitch&quot;:69},{&quot;measure&quot;:3,&quot;part&quot;:0,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:93,&quot;rest&quot;:false,&quot;pitch&quot;:69},{&quot;measure&quot;:0,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:182,&quot;rest&quot;:false,&quot;pitch&quot;:64},{&quot;measure&quot;:1,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:187,&quot;rest&quot;:false,&quot;pitch&quot;:62},{&quot;measure&quot;:2,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:182,&quot;rest&quot;:false,&quot;pitch&quot;:64},{&quot;measure&quot;:3,&quot;part&quot;:1,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:177,&quot;rest&quot;:false,&quot;pitch&quot;:65},{&quot;measure&quot;:0,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:231,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:1,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:236,&quot;rest&quot;:false,&quot;pitch&quot;:59},{&quot;measure&quot;:2,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:231,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:3,&quot;part&quot;:2,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:231,&quot;rest&quot;:false,&quot;pitch&quot;:60},{&quot;measure&quot;:0,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:84,&quot;y&quot;:311,&quot;rest&quot;:false,&quot;pitch&quot;:48},{&quot;measure&quot;:1,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:184,&quot;y&quot;:326,&quot;rest&quot;:false,&quot;pitch&quot;:43},{&quot;measure&quot;:2,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:284,&quot;y&quot;:321,&quot;rest&quot;:false,&quot;pitch&quot;:45},{&quot;measure&quot;:3,&quot;part&quot;:3,&quot;event&quot;:0,&quot;x&quot;:384,&quot;y&quot;:331,&quot;rest&quot;:false,&quot;pitch&quot;:41}],&quot;chords&quot;:[{&quot;measure&quot;:0,&quot;pitches&quot;:[67,64,60,48]},{&quot;measure&quot;:1,&quot;pitches&quot;:[67,62,59,43]},{&quot;measure&quot;:2,&quot;pitches&quot;:[69,64,60,45]},{&quot;measure&quot;:3,&quot;pitches&quot;:[69,65,60,41]}],&quot;anchors&quot;:[{&quot;time&quot;:0,&quot;x&quot;:84},{&quot;time&quot;:16,&quot;x&quot;:184},{&quot;time&quot;:32,&quot;x&quot;:284},{&quot;time&quot;:48,&quot;x&quot;:384}]}" role="group" aria-label="SATB rehearsal, measures 1 to 4" xmlns="http://www.w3.org/2000/svg"><g class="dynamics-layer" aria-hidden="true"></g><rect class="cue-measure-fill" data-cue-measure="0" x="34" y="68" width="100" height="258"/><g class="reading-measure-target" data-cue-measure="0" role="button" tabindex="0" aria-label="Measure 1"><rect class="reading-hit" x="34" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="84" y="18">I</text><text class="score-chord-name" x="84" y="52">C</text></g><rect class="cue-measure-fill" data-cue-measure="1" x="134" y="68" width="100" height="258"/><g class="reading-measure-target" data-cue-measure="1" role="button" tabindex="0" aria-label="Measure 2"><rect class="reading-hit" x="134" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="184" y="18">V</text><text class="score-chord-name" x="184" y="52">G</text></g><rect class="cue-measure-fill" data-cue-measure="2" x="234" y="68" width="100" height="258"/><g class="reading-measure-target" data-cue-measure="2" role="button" tabindex="0" aria-label="Measure 3"><rect class="reading-hit" x="234" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="284" y="18">vi</text><text class="score-chord-name" x="284" y="52">Am</text></g><rect class="cue-measure-fill" data-cue-measure="3" x="334" y="68" width="100" height="258"/><g class="reading-measure-target" data-cue-measure="3" role="button" tabindex="0" aria-label="Measure 4"><rect class="reading-hit" x="334" y="0" width="100" height="60" rx="6"/><text class="score-roman" x="384" y="18">IV</text><text class="score-chord-name" x="384" y="52">F</text></g><g class="reading-staff s" data-staff="0"><title>Soprano</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="0" x="34" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="0" x="34" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="0" x="134" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="0" x="134" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="0" x="234" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="0" x="234" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="0" x="334" y="68" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="0" x="334" y="68" width="100" height="57" role="button" tabindex="0" aria-label="Soprano, measure 4"/><path class="staff-line" d="M34 68H434"/><path class="staff-line" d="M34 78H434"/><path class="staff-line" d="M34 88H434"/><path class="staff-line" d="M34 98H434"/><path class="staff-line" d="M34 108H434"/><g class="clef-toggle" data-toggle-part="0" role="button" tabindex="0" aria-label="Soprano: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="54" width="34" height="68"/><text class="music clef" x="2" y="98"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="0" data-pitch="67" data-event="0" data-rest="false" data-staff-steps="2" role="button" tabindex="0" aria-label="Soprano G4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="83" width="28" height="30"/><text class="music notehead" x="84" y="98"></text></g><path class="barline" d="M134 68V108"/><g class="rehearsal-reading-note" data-chord="1" data-part="0" data-pitch="67" data-event="0" data-rest="false" data-staff-steps="2" role="button" tabindex="0" aria-label="Soprano G4, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="83" width="28" height="30"/><text class="music notehead" x="184" y="98"></text></g><path class="barline" d="M234 68V108"/><g class="rehearsal-reading-note" data-chord="2" data-part="0" data-pitch="69" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Soprano A4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="78" width="28" height="30"/><text class="music notehead" x="284" y="93"></text></g><path class="barline" d="M334 68V108"/><g class="rehearsal-reading-note" data-chord="3" data-part="0" data-pitch="69" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Soprano A4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="78" width="28" height="30"/><text class="music notehead" x="384" y="93"></text></g></g><g class="reading-staff a" data-staff="1"><title>Alto</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="1" x="34" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="1" x="34" y="125" width="100" height="74" role="button" tabindex="0" aria-label="Alto, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="1" x="134" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="1" x="134" y="125" width="100" height="74" role="button" tabindex="0" aria-label="Alto, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="1" x="234" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="1" x="234" y="125" width="100" height="74" role="button" tabindex="0" aria-label="Alto, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="1" x="334" y="142" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="1" x="334" y="125" width="100" height="74" role="button" tabindex="0" aria-label="Alto, measure 4"/><path class="staff-line" d="M34 142H434"/><path class="staff-line" d="M34 152H434"/><path class="staff-line" d="M34 162H434"/><path class="staff-line" d="M34 172H434"/><path class="staff-line" d="M34 182H434"/><g class="clef-toggle" data-toggle-part="1" role="button" tabindex="0" aria-label="Alto: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="128" width="34" height="68"/><text class="music clef" x="2" y="172"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="1" data-pitch="64" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Alto E4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="167" width="28" height="30"/><text class="music notehead" x="84" y="182"></text></g><path class="barline" d="M134 142V182"/><g class="rehearsal-reading-note" data-chord="1" data-part="1" data-pitch="62" data-event="0" data-rest="false" data-staff-steps="-1" role="button" tabindex="0" aria-label="Alto D4, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="172" width="28" height="30"/><text class="music notehead" x="184" y="187"></text></g><path class="barline" d="M234 142V182"/><g class="rehearsal-reading-note" data-chord="2" data-part="1" data-pitch="64" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Alto E4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="167" width="28" height="30"/><text class="music notehead" x="284" y="182"></text></g><path class="barline" d="M334 142V182"/><g class="rehearsal-reading-note" data-chord="3" data-part="1" data-pitch="65" data-event="0" data-rest="false" data-staff-steps="1" role="button" tabindex="0" aria-label="Alto F4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="162" width="28" height="30"/><text class="music notehead" x="384" y="177"></text></g></g><g class="reading-staff t" data-staff="2"><title>Tenor</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="2" x="34" y="216" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="2" x="34" y="199" width="100" height="72" role="button" tabindex="0" aria-label="Tenor, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="2" x="134" y="216" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="2" x="134" y="199" width="100" height="72" role="button" tabindex="0" aria-label="Tenor, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="2" x="234" y="216" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="2" x="234" y="199" width="100" height="72" role="button" tabindex="0" aria-label="Tenor, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="2" x="334" y="216" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="2" x="334" y="199" width="100" height="72" role="button" tabindex="0" aria-label="Tenor, measure 4"/><path class="staff-line" d="M34 216H434"/><path class="staff-line" d="M34 226H434"/><path class="staff-line" d="M34 236H434"/><path class="staff-line" d="M34 246H434"/><path class="staff-line" d="M34 256H434"/><g class="clef-toggle" data-toggle-part="2" role="button" tabindex="0" aria-label="Tenor: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="202" width="34" height="68"/><text class="music clef" x="2" y="246"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="216" width="28" height="30"/><text class="music notehead" x="84" y="231"></text></g><path class="barline" d="M134 216V256"/><g class="rehearsal-reading-note" data-chord="1" data-part="2" data-pitch="59" data-event="0" data-rest="false" data-staff-steps="4" role="button" tabindex="0" aria-label="Tenor B3, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="221" width="28" height="30"/><text class="music notehead" x="184" y="236"></text></g><path class="barline" d="M234 216V256"/><g class="rehearsal-reading-note" data-chord="2" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="216" width="28" height="30"/><text class="music notehead" x="284" y="231"></text></g><path class="barline" d="M334 216V256"/><g class="rehearsal-reading-note" data-chord="3" data-part="2" data-pitch="60" data-event="0" data-rest="false" data-staff-steps="5" role="button" tabindex="0" aria-label="Tenor C4, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="216" width="28" height="30"/><text class="music notehead" x="384" y="231"></text></g></g><g class="reading-staff b" data-staff="3"><title>Bass</title><rect class="cue-voice-fill" data-cue-measure="0" data-cue-part="3" x="34" y="286" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="0" data-cue-part="3" x="34" y="271" width="100" height="74" role="button" tabindex="0" aria-label="Bass, measure 1"/><rect class="cue-voice-fill" data-cue-measure="1" data-cue-part="3" x="134" y="286" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="1" data-cue-part="3" x="134" y="271" width="100" height="74" role="button" tabindex="0" aria-label="Bass, measure 2"/><rect class="cue-voice-fill" data-cue-measure="2" data-cue-part="3" x="234" y="286" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="2" data-cue-part="3" x="234" y="271" width="100" height="74" role="button" tabindex="0" aria-label="Bass, measure 3"/><rect class="cue-voice-fill" data-cue-measure="3" data-cue-part="3" x="334" y="286" width="100" height="40"/><rect class="reading-voice-target" data-cue-measure="3" data-cue-part="3" x="334" y="271" width="100" height="74" role="button" tabindex="0" aria-label="Bass, measure 4"/><path class="staff-line" d="M34 286H434"/><path class="staff-line" d="M34 296H434"/><path class="staff-line" d="M34 306H434"/><path class="staff-line" d="M34 316H434"/><path class="staff-line" d="M34 326H434"/><g class="clef-toggle" data-toggle-part="3" role="button" tabindex="0" aria-label="Bass: press to hide this staff, hold to hide the others"><rect class="clef-hit" x="-6" y="272" width="34" height="68"/><text class="music clef" x="2" y="296"></text></g><g class="rehearsal-reading-note" data-chord="0" data-part="3" data-pitch="48" data-event="0" data-rest="false" data-staff-steps="3" role="button" tabindex="0" aria-label="Bass C3, I, measure 1, beat 1"><rect class="reading-hit" x="70" y="296" width="28" height="30"/><text class="music notehead" x="84" y="311"></text></g><path class="barline" d="M134 286V326"/><g class="rehearsal-reading-note" data-chord="1" data-part="3" data-pitch="43" data-event="0" data-rest="false" data-staff-steps="0" role="button" tabindex="0" aria-label="Bass G2, V, measure 2, beat 1"><rect class="reading-hit" x="170" y="311" width="28" height="30"/><text class="music notehead" x="184" y="326"></text></g><path class="barline" d="M234 286V326"/><g class="rehearsal-reading-note" data-chord="2" data-part="3" data-pitch="45" data-event="0" data-rest="false" data-staff-steps="1" role="button" tabindex="0" aria-label="Bass A2, vi, measure 3, beat 1"><rect class="reading-hit" x="270" y="306" width="28" height="30"/><text class="music notehead" x="284" y="321"></text></g><path class="barline" d="M334 286V326"/><g class="rehearsal-reading-note" data-chord="3" data-part="3" data-pitch="41" data-event="0" data-rest="false" data-staff-steps="-1" role="button" tabindex="0" aria-label="Bass F2, IV, measure 4, beat 1"><rect class="reading-hit" x="370" y="316" width="28" height="30"/><text class="music notehead" x="384" y="331"></text></g></g><path class="system-line" d="M34 68V326"/><path class="system-line" d="M434 68V326"/><g class="dynamics-controls"></g></svg></div>
 </section>
 
 <section id="signs-panel" class="app-panel" role="tabpanel" aria-labelledby="tab-signs" hidden>
@@ -667,7 +682,6 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
       <input id="song-search" type="search" aria-label="Search song titles, artists, or saved lyrics" aria-controls="song-grid" placeholder="Search title, artist, lyrics…" autocomplete="off" spellcheck="false" maxlength="160">
     </div>
     <p class="song-search-status" id="song-search-status" role="status" aria-live="polite" hidden></p>
-    <p class="song-vote-hint" id="song-vote-hint" hidden></p>
     <div class="song-grid" id="song-grid"><section class="song-column" data-song-column="1564" aria-labelledby="progression-1564">
     <div class="progression-heading"><h3 id="progression-1564">I V vi IV</h3></div>
     <ul><li data-song-row="im-yours" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://www.e-chords.com/chords/jason-mraz/im-yours" data-song="im-yours" data-progression="1564" aria-haspopup="dialog">I’m Yours</a><wbr><span class="song-credit"><span class="song-artist"> — Jason Mraz</span><a class="song-recording" href="https://www.youtube.com/watch?v=EkHTsc9PU2A" target="_blank" rel="noopener noreferrer" aria-label="I’m Yours — Jason Mraz on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="im-yours" data-vote-title="I’m Yours" aria-pressed="false" aria-label="Vote to sing I’m Yours" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="im-yours" role="spinbutton" tabindex="0" aria-label="Key for I’m Yours" title="Original recording: chord I · drag to try another key"></div><span class="song-range" data-song-range="im-yours"></span></div><p class="song-lyric-match" hidden></p></li></ul>
@@ -686,12 +700,12 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
   </section><section class="song-column" data-song-column="1456M" aria-labelledby="progression-1456M">
     <div class="progression-heading"><h3 id="progression-1456M">I IV V VI</h3></div>
     <ul><li data-song-row="hey-ya" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://www.youtube.com/watch?v=PWgvGjAhvIw" data-song="hey-ya" data-progression="1456M" aria-haspopup="dialog">Hey Ya!</a><wbr><span class="song-credit"><span class="song-artist"> — OutKast</span><a class="song-recording" href="https://www.youtube.com/watch?v=PWgvGjAhvIw" target="_blank" rel="noopener noreferrer" aria-label="Hey Ya! — OutKast on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="hey-ya" data-vote-title="Hey Ya!" aria-pressed="false" aria-label="Vote to sing Hey Ya!" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="hey-ya" role="spinbutton" tabindex="0" aria-label="Key for Hey Ya!" title="Original recording: chord I · drag to try another key"></div><span class="song-range" data-song-range="hey-ya"></span></div><p class="song-lyric-match" hidden></p></li></ul>
-  </section><section class="song-column" data-song-column="215" aria-labelledby="progression-215">
-    <div class="progression-heading"><h3 id="progression-215">ii I V</h3></div>
-    <ul><li data-song-row="wicked-game" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://www.e-chords.com/chords/chris-isaak/wicked-game" data-song="wicked-game" data-progression="215" aria-haspopup="dialog">Wicked Game</a><wbr><span class="song-credit"><span class="song-artist"> — Chris Isaak</span><a class="song-recording" href="https://www.youtube.com/watch?v=jd-qI62gNJM" target="_blank" rel="noopener noreferrer" aria-label="Wicked Game — Chris Isaak on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="wicked-game" data-vote-title="Wicked Game" aria-pressed="false" aria-label="Vote to sing Wicked Game" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="wicked-game" role="spinbutton" tabindex="0" aria-label="Key for Wicked Game" title="Original recording: I=A in this numbering; B minor is ii. · drag to try another key"></div><span class="song-range" data-song-range="wicked-game"></span></div><p class="song-lyric-match" hidden></p></li></ul>
-  </section><section class="song-column" data-song-column="2415" aria-labelledby="progression-2415">
-    <div class="progression-heading"><h3 id="progression-2415">ii IV I V</h3></div>
-    <ul><li data-song-row="radioactive" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://en.wikipedia.org/wiki/Radioactive_(Imagine_Dragons_song)" data-song="radioactive" data-progression="2415" aria-haspopup="dialog">Radioactive</a><wbr><span class="song-credit"><span class="song-artist"> — Imagine Dragons</span><a class="song-recording" href="https://www.youtube.com/watch?v=ktvTqknDobU" target="_blank" rel="noopener noreferrer" aria-label="Radioactive — Imagine Dragons on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="radioactive" data-vote-title="Radioactive" aria-pressed="false" aria-label="Vote to sing Radioactive" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="radioactive" role="spinbutton" tabindex="0" aria-label="Key for Radioactive" title="Original recording: I=A in this numbering; B minor is ii. · drag to try another key"></div><span class="song-range" data-song-range="radioactive"></span></div><p class="song-lyric-match" hidden></p></li></ul>
+  </section><section class="song-column" data-song-column="1m♭74" aria-labelledby="progression-1m♭74">
+    <div class="progression-heading"><h3 id="progression-1m♭74">i ♭VII IV</h3></div>
+    <ul><li data-song-row="wicked-game" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://www.e-chords.com/chords/chris-isaak/wicked-game" data-song="wicked-game" data-progression="1m♭74" aria-haspopup="dialog">Wicked Game</a><wbr><span class="song-credit"><span class="song-artist"> — Chris Isaak</span><a class="song-recording" href="https://www.youtube.com/watch?v=jd-qI62gNJM" target="_blank" rel="noopener noreferrer" aria-label="Wicked Game — Chris Isaak on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="wicked-game" data-vote-title="Wicked Game" aria-pressed="false" aria-label="Vote to sing Wicked Game" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="wicked-game" role="spinbutton" tabindex="0" aria-label="Key for Wicked Game" title="Original recording: B Dorian; i is B minor. · drag to try another key"></div><span class="song-range" data-song-range="wicked-game"></span></div><p class="song-lyric-match" hidden></p></li></ul>
+  </section><section class="song-column" data-song-column="1m♭3♭74" aria-labelledby="progression-1m♭3♭74">
+    <div class="progression-heading"><h3 id="progression-1m♭3♭74">i ♭III ♭VII IV</h3></div>
+    <ul><li data-song-row="radioactive" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://en.wikipedia.org/wiki/Radioactive_(Imagine_Dragons_song)" data-song="radioactive" data-progression="1m♭3♭74" aria-haspopup="dialog">Radioactive</a><wbr><span class="song-credit"><span class="song-artist"> — Imagine Dragons</span><a class="song-recording" href="https://www.youtube.com/watch?v=ktvTqknDobU" target="_blank" rel="noopener noreferrer" aria-label="Radioactive — Imagine Dragons on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="radioactive" data-vote-title="Radioactive" aria-pressed="false" aria-label="Vote to sing Radioactive" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="radioactive" role="spinbutton" tabindex="0" aria-label="Key for Radioactive" title="Original recording: B Dorian; i is B minor. · drag to try another key"></div><span class="song-range" data-song-range="radioactive"></span></div><p class="song-lyric-match" hidden></p></li></ul>
   </section><section class="song-column" data-song-column="152154" aria-labelledby="progression-152154">
     <div class="progression-heading"><h3 id="progression-152154">I V ii I V IV</h3></div>
     <ul><li data-song-row="knockin-on-heavens-door" data-song-match="whole"><div class="song-entry-title"><span class="song-entry-name"><a class="song-link" href="https://spytunes.com/knocking-on-heavens-door-chords/" data-song="knockin-on-heavens-door" data-progression="152154" aria-haspopup="dialog">Knockin’ on Heaven’s Door</a><wbr><span class="song-credit"><span class="song-artist"> — Bob Dylan</span><a class="song-recording" href="https://www.youtube.com/watch?v=rm9coqlk8fY" target="_blank" rel="noopener noreferrer" aria-label="Knockin’ on Heaven’s Door — Bob Dylan on YouTube" title="Listen on YouTube"><svg viewBox="0 3.545 24 16.91" width="20" height="14.09" fill="currentColor" aria-hidden="true" focusable="false"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a></span></span></div><div class="song-entry-meta"><button type="button" class="song-vote" data-vote="knockin-on-heavens-door" data-vote-title="Knockin’ on Heaven’s Door" aria-pressed="false" aria-label="Vote to sing Knockin’ on Heaven’s Door" hidden><svg class="song-vote-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="song-vote-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><text class="song-vote-count" x="12" y="13.3"></text></svg></button><div class="pager song-key" data-song-key="knockin-on-heavens-door" role="spinbutton" tabindex="0" aria-label="Key for Knockin’ on Heaven’s Door" title="Original recording: chord I · drag to try another key"></div><span class="song-range" data-song-range="knockin-on-heavens-door"></span></div><p class="song-lyric-match" hidden></p></li></ul>
@@ -707,7 +721,7 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
   <form id="progression-form" class="progression-editor">
     <textarea id="progression-input" rows="1" aria-label="Chord names or Roman numeral progression" maxlength="1024" autocomplete="off" autocapitalize="off" spellcheck="false">I V vi IV</textarea>
     <div class="progression-actions">
-      <button class="control" id="progression-live" type="button" aria-pressed="true" title="Edits apply as you type and reach every other device">Live</button>
+      <button class="control" id="progression-live" type="button" aria-pressed="true" data-air="off" title="Edits apply as you type and reach every other device"><span class="live-dot" aria-hidden="true"></span>Live</button>
       <button class="control icon-button" id="rehearsal-undo" type="button" aria-label="Undo" title="Undo" disabled>↺</button>
       <button class="control icon-button" id="rehearsal-redo" type="button" aria-label="Redo" title="Redo" disabled>↻</button>
       <div class="field"><span id="key-label">Key</span><div class="pager" id="key" role="spinbutton" tabindex="0" aria-labelledby="key-label" title="Drag vertically to transpose the whole score"></div></div>
@@ -743,8 +757,7 @@ textarea,input,.lyrics-reader{-webkit-user-select:text;user-select:text}
     <div id="lyrics-reader" class="lyrics-reader"></div>
   </div>
 </dialog>
-<dialog id="qr-dialog" aria-labelledby="qr-title">
-  <h2 id="qr-title">Scan to open</h2>
+<dialog id="qr-dialog" aria-label="Scan to open this page">
   <div class="qr-card" id="qr-card"></div>
   <p class="qr-note" id="qr-note" hidden>This page is open on a loopback address, which every device reads as itself — a phone would scan its way back to its own browser. Serve Chordus on all interfaces and open it at this computer’s network address instead.</p>
   <p class="qr-address" id="qr-address"></p>
@@ -1125,26 +1138,32 @@ function renderRehearsalNotation(score,availableWidth=1060,visibleParts=[true,tr
       inkCursor+=row.ascent+row.descent;
     });
     const stackH=inkCursor;
-    let cursor=0;
-    // Each staff reserves only the ledger room its own notes need, plus a fixed
-    // gap. The gap used to be wide enough for ledgers that were already paid for
-    // in `above` and `below`, which left the four staves adrift from each other.
-    const STAFF_GAP=16;
+    // Two staves stand only as far apart as something drawn requires, and two
+    // things can require it. The clefs must not run into each other: the upper
+    // clef's ink, a hair of air, the lower clef's ink. And a voice that goes low
+    // must stay one gutter clear of what is under it — from the bottom edge of
+    // its lowest notehead to the top line of the staff below, or to the top edge
+    // of that staff's highest notehead when one stands above the line. Whichever
+    // asks for more sets the gap; nothing else does. Each staff used to reserve
+    // ledger room above and below itself and then a fixed gap on top of both, so
+    // a low alto opened half a staff of air that no ink was asking for, and the
+    // gaps in one system came out different sizes for no reason a reader could see.
+    const CLEF_CLEAR=4,NOTEHEAD_REACH=5;
     // Every voice keeps its place in the stack whether or not it is showing. A
-    // switched-off voice collapses to a slim row holding just its letter, so the
-    // system gets shorter while S A T B stay in order: switching one back on
-    // expands it where the eye already expects it, rather than pulling it up from
-    // a list underneath.
-    // A switched-off voice costs no height at all. Its letter goes in the head
+    // switched-off voice costs no height at all. Its letter goes in the head
     // zone beside the nearest clef, where the chord symbols never reach, so the
     // staves close up instead of leaving a gap for a staff that is not drawn.
+    let staffAbove=null;
     const lanes=PARTS.map((_,p)=>{
-      if(!visibleParts[p])return {part:p,collapsed:true,top:cursor,bottom:cursor};
-      const row=notes[p];
-      const above=Math.max(8,(Math.max(...row.map(n=>n.steps))-8)*5+12);
-      const below=Math.max(10,-Math.min(...row.map(n=>n.steps))*5+12);
-      const top=cursor+above,bottom=top+40;cursor=bottom+below+STAFF_GAP;
-      return {part:p,collapsed:false,top,bottom};
+      if(!visibleParts[p])return {part:p,collapsed:true,top:staffAbove?.bottom??0,bottom:staffAbove?.bottom??0};
+      const steps=notes[p].map(n=>n.steps),high=Math.max(...steps),low=Math.min(...steps);
+      // How far this row's noteheads stand clear of their own staff, up and down.
+      const rise=Math.max(0,(high-8)*5+NOTEHEAD_REACH),hang=Math.max(0,NOTEHEAD_REACH-low*5);
+      const top=staffAbove
+        ?staffAbove.bottom+Math.max(CLEF_INK[staffAbove.part][1]-CLEF_INK[p][0]+CLEF_CLEAR,staffAbove.hang+GUTTER+rise)
+        :Math.max(8,(high-8)*5+12);
+      staffAbove={part:p,bottom:top+40,hang};
+      return {part:p,collapsed:false,top,bottom:top+40};
     });
     // filter keeps the same objects, so shifting a lane shifts its staff too.
     const staves=lanes.filter(lane=>!lane.collapsed);
@@ -1163,7 +1182,6 @@ function renderRehearsalNotation(score,availableWidth=1060,visibleParts=[true,tr
       const deficit=column-room;
       if(deficit<=0)continue;
       for(const lane of lanes)if(lane.part>=lower.part){lane.top+=deficit;lane.bottom+=deficit;}
-      cursor+=deficit;
     }
     const topRow=notes[parts[0]];
     const crown=Math.min(staves[0].top,
@@ -1182,7 +1200,6 @@ function renderRehearsalNotation(score,availableWidth=1060,visibleParts=[true,tr
     const topColumn=hiddenAbove*(LETTER_GAP+LETTER_CAP)-(staves[0].top+CLEF_INK[staves[0].part][0]);
     const shift=Math.max(0,headHeight-crown,topColumn);
     for(const lane of lanes){lane.top+=shift;lane.bottom+=shift;}
-    cursor+=shift;
     const headTop=crown+shift-(HEAD_GAP+lyricHeight+stackH);
     // Text rows sit on a baseline at the foot of their band; the hand sign is a
     // picture, so it hangs from the top of its own.
@@ -1441,8 +1458,12 @@ const PROGRESSIONS=[
   {id:'1241',roman:'I ii IV I',degrees:[1,2,4,1]},
   {id:'1415',roman:'I IV I V',degrees:[1,4,1,5],note:'One bar each. The tonic returns between IV and V, so the loop never drifts far from home.'},
   {id:'1456M',roman:'I IV V VI',degrees:[1,4,5,{root:6,quality:'major'}],note:'VI is major, not the diatonic vi; it lifts the cycle straight back to I.'},
-  {id:'215',roman:'ii I V',degrees:[2,1,5],note:'Dorian: ii is the resting chord.'},
-  {id:'2415',roman:'ii IV I V',degrees:[2,4,1,5],note:'Dorian: ii is the resting chord; 215 with IV inserted.'},
+  // A song is numbered from its own home chord, in whatever mode that makes it,
+  // never from the major key that happens to share its notes. Wicked Game rests
+  // on B minor, so it is i ♭VII IV in B (Dorian: the major IV is what says so),
+  // not ii I V in A — the same way Royals was already I ♭VII IV in D, Mixolydian.
+  {id:'1m♭74',roman:'i ♭VII IV',degrees:[{root:1,quality:'minor'},'b7',4],note:'Dorian: a minor home chord with a major IV.'},
+  {id:'1m♭3♭74',roman:'i ♭III ♭VII IV',degrees:[{root:1,quality:'minor'},'b3','b7',4],note:'Dorian: i ♭VII IV with ♭III inserted.'},
   {id:'152154',roman:'I V ii I V IV',editor:'I V ii \\n I V IV',degrees:[1,5,2,1,5,4],note:'Eight bars. Both halves start the same; ii in the first is answered by IV in the second, so it is written over two systems with the halves aligned.'},
   {id:'1♭74',roman:'I ♭VII IV',degrees:[1,'b7',4]}
 ];
@@ -1687,12 +1708,12 @@ const ORIGINAL_KEYS={
   'whats-my-age-again':'F♯','where-is-the-love':'F','wherever-you-will-go':'D',
   'with-or-without-you':'D','stand-by-me':'A','last-kiss':'G','so-lonely':'C→D',
   'taylor':'C','when-i-come-around':'G♭','duke-of-earl':'F','earth-angel':'A♭',
-  'apologize':'E♭','save-tonight':'C','whats-up':'A','wicked-game':'A','royals':'D',
+  'apologize':'E♭','save-tonight':'C','whats-up':'A','wicked-game':'B','royals':'D',
   'a-teenager-in-love':'D♭','all-i-have-to-do-is-dream':'E','baby':'E♭',
   'beautiful-girls':'A','blank-space':'F','blue-moon':'G','donna':'F',
   'every-breath-you-take':'A♭','in-the-still-of-the-night':'F♯','perfect':'A♭',
   'runaround-sue':'D','unchained-melody':'C','we-are-young':'F',
-  'knockin-on-heavens-door':'G','radioactive':'A','the-lion-sleeps-tonight':'D','hey-ya':'G'
+  'knockin-on-heavens-door':'G','radioactive':'B','the-lion-sleeps-tonight':'D','hey-ya':'G'
 };
 // The lowest and highest note of the tune itself, spelled in that song's own
 // recording key. A chord chart cannot give this: a progression says nothing
@@ -1723,7 +1744,7 @@ const MELODY_RANGES={
                  // by ear, Diego: a major tenth in B
   'stand-by-me':['A3','A4'],                 // Hooktheory, A: verse+chorus union
   'whats-up':['E3','C\u266f5'],                  // Musicnotes lead sheet, A
-  'radioactive':['A3','B4'],                 // Hooktheory, B dorian inside our A
+  'radioactive':['A3','B4'],                 // Hooktheory, B dorian
   'hey-ya':['G3','B4'],                      // Hooktheory, G: verse+chorus union
   'the-lion-sleeps-tonight':['A3','B4'],     // Musicnotes F C4-D5, down 3 to our D
 };
@@ -1735,8 +1756,8 @@ const ORIGINAL_KEY_NOTES={
   'so-lonely':'Original recording: I starts on C, then moves to D.',
   'apologize':'Original recording: I=E♭; the loop begins on vi (C minor).',
   'save-tonight':'Original recording: I=C; the loop begins on vi (A minor).',
-  'wicked-game':'Original recording: I=A in this numbering; B minor is ii.',
-  'radioactive':'Original recording: I=A in this numbering; B minor is ii.',
+  'wicked-game':'Original recording: B Dorian; i is B minor.',
+  'radioactive':'Original recording: B Dorian; i is B minor.',
   'the-lion-sleeps-tonight':'Diego’s chart: I=D. The 1961 Tokens single is in a different key; transpose if you sing along with it.',
   'last-kiss':'Pearl Jam recording: I=G.',
   'blue-moon':'The Marcels doo-wop version: G; jazz and sheet-music arrangements appear in other keys.',
@@ -1828,13 +1849,13 @@ const PUBLISHED_SONG_IDS=[
   'creep',                     // I – III – IV – iv
   'im-yours',                  // I V vi IV, and its vi IV I V rotation
   'knockin-on-heavens-door',   // I – V – ii – I – V – IV
-  'radioactive',               // ii – IV – I – V
+  'radioactive',               // i – ♭III – ♭VII – IV
   'royals',                    // I – ♭VII – IV
   'stand-by-me',               // I – vi – IV – V
   'whats-up',                  // I – ii – IV – I
   'hey-ya',                    // I – IV – V – VI
   'the-lion-sleeps-tonight',   // I – IV – I – V
-  'wicked-game'                // ii – I – V
+  'wicked-game'                // i – ♭VII – IV
 ];
 
 const CATALOG=[
@@ -1852,9 +1873,9 @@ const CATALOG=[
   {id:'apologize',title:'Apologize',artist:'OneRepublic',lyricsURL:'https://www.e-chords.com/chords/onerepublic/apologize',sources:['taylor-list'],fits:[{progression:'6415',scope:'Whole song',whole:true,rhythm:'One bar per chord; four-bar loop.',note:'Minor-centered loop. Here vi is the home chord; the numbers still refer to the major-key chart.',sections:[]}]},
   {id:'save-tonight',title:'Save Tonight',artist:'Eagle-Eye Cherry',lyricsURL:'https://spytunes.com/save-tonight-chords/',sources:['save-tonight','taylor-list'],fits:[{progression:'6415',scope:'Whole song',whole:true,rhythm:'Two beats per chord; two-bar loop.',note:'The same harmonic cycle supports all sections. This chart uses root-bass triads in place of the guitar’s inversions and power chords.',sections:[]}]},
   {id:'whats-up',title:'What’s Up?',artist:'4 Non Blondes',lyricsURL:'https://www.guitartabsexplorer.com/4-non-blondes/whats-up-chords',sources:['whats-up'],fits:[{progression:'1241',scope:'Whole song',whole:true,rhythm:'Two bars each: I · ii · IV · I.',note:'Start and finish each phrase on I. The ending tonic and next phrase’s tonic are adjacent holds.',sections:[]}]},
-  {id:'wicked-game',title:'Wicked Game',artist:'Chris Isaak',lyricsURL:'https://www.e-chords.com/chords/chris-isaak/wicked-game',sources:['wicked-game'],fits:[{progression:'215',scope:'Whole song',whole:true,rhythm:'ii ×1 bar · I ×1 · V ×2.',note:'The song feels Dorian, resting on ii. In this chart’s C setting, sing Dm–C–G; the recording uses Bm–A–E.',sections:[]}]},
+  {id:'wicked-game',title:'Wicked Game',artist:'Chris Isaak',lyricsURL:'https://www.e-chords.com/chords/chris-isaak/wicked-game',sources:['wicked-game'],fits:[{progression:'1m♭74',scope:'Whole song',whole:true,rhythm:'i ×1 bar · ♭VII ×1 · IV ×2.',note:'Dorian: the song rests on i, and the major IV is what keeps it from plain minor. The recording uses Bm–A–E.',sections:[]}]},
   {id:'royals',title:'Royals',artist:'Lorde',lyricsURL:'https://www.gotabs.com/lorde/royals-chords',sources:['royals'],fits:[{progression:'1♭74',scope:'Whole song',whole:true,rhythm:'Three chords, but the harmonic rhythm keeps changing: the verse holds I for whole phrases, the pre-chorus and chorus move every bar or two.',note:'Only three chords, so the difficulty is timing rather than harmony. Cue every change with a hand sign two beats early and lock the elbow out on the downbeat of the change. The verse holds I long enough that singers lose the count without that cue. Hummed chords are not the whole arrangement here; give the tighter vocal harmonies to a small group inside the chorus.',sections:[{name:'Verse',status:'change',note:'Holds I for the whole phrase. Keep the hold; adding the full loop is a reharmonization.'},{name:'Pre-chorus',status:'fit',note:'I held, then ♭VII–IV at the line ending.'},{name:'Chorus',status:'fit',note:'I–♭VII–IV, roughly two bars each.'},{name:'Bridge',status:'fit',note:'Same loop, not an exception.'}]}]},
-  {id:'radioactive',title:'Radioactive',artist:'Imagine Dragons',lyricsURL:'https://en.wikipedia.org/wiki/Radioactive_(Imagine_Dragons_song)',sources:['radioactive'],fits:[{progression:'2415',scope:'Whole song',whole:true,rhythm:'One bar per chord; four-bar loop.',note:'Verses, choruses and bridge all ride the same four-bar loop, so one chord per bar carries the song. ii is the resting chord, as in Wicked Game; the numbers still refer to the major-key chart. The recording colours IV with a suspension and the bridge with a major seventh; plain triads are enough.',sections:[]}]},
+  {id:'radioactive',title:'Radioactive',artist:'Imagine Dragons',lyricsURL:'https://en.wikipedia.org/wiki/Radioactive_(Imagine_Dragons_song)',sources:['radioactive'],fits:[{progression:'1m♭3♭74',scope:'Whole song',whole:true,rhythm:'One bar per chord; four-bar loop.',note:'Verses, choruses and bridge all ride the same four-bar loop, so one chord per bar carries the song. i is the resting chord, as in Wicked Game, and the major IV makes it Dorian. The recording colours ♭III with a suspension and the bridge with a major seventh; plain triads are enough.',sections:[]}]},
   {id:'the-lion-sleeps-tonight',title:'The Lion Sleeps Tonight',artist:'The Tokens',lyricsURL:'https://www.youtube.com/watch?v=OQlByoPdG6c',sources:['the-lion-sleeps-tonight'],fits:[{progression:'1415',scope:'Whole song',whole:true,rhythm:'One bar per chord; four-bar loop.',note:'Every verse is the same four bars, so articulating one chord per bar carries the song. The tonic returning between IV and V keeps the loop settled, which makes it forgiving to hold rather than strum. The solo line and the doo-wop syllables sit over exactly this cycle.',sections:[]}]},
   {id:'hey-ya',title:'Hey Ya!',artist:'OutKast',lyricsURL:'https://www.youtube.com/watch?v=PWgvGjAhvIw',sources:['hey-ya'],fits:[{progression:'1456M',scope:'Whole song',whole:true,rhythm:'Four chords per cycle, but not four equal bars: the recording shortens one of them. Count with the record rather than assuming a steady 4/4.',note:'Intro, verses, choruses and the long bridge all ride the same four chords, so the harmony is as simple as it looks. The catch is the metre, not the chords: the cycle drops a beat, which is what makes the song feel like it trips forward. Rehearse the count before the notes. VI is major here, so it is not the vi of the four-chord songs; it pulls straight back to I. Like Creep’s major III, that major VI is not yet in the notated palette above.',sections:[]}]},
   {id:'knockin-on-heavens-door',title:'Knockin’ on Heaven’s Door',artist:'Bob Dylan',lyricsURL:'https://spytunes.com/knocking-on-heavens-door-chords/',sources:['knockin-on-heavens-door'],fits:[{progression:'152154',scope:'Whole song',whole:true,rhythm:'I ×1 bar · V ×1 · ii ×2 · I ×1 · V ×1 · IV ×2; eight-bar loop.',note:'Intro, verses, chorus and outro all use the one eight-bar loop. The two halves are identical until the last two bars, where ii is answered by IV. The recording walks the bass under V and adds a seventh to ii; plain triads are enough.',sections:[]}]},
@@ -1885,7 +1906,8 @@ function progressionCycleKey(progression){
   const p=typeof progression==='string'?PROGRESSIONS.find(p=>p.id===progression):progression;
   if(!p?.degrees?.length)return null;
   const tokens=p.degrees.map(degree=>{
-    const chord=degree==='b7'?{root:7,alteration:-1,quality:'major'}:typeof degree==='number'?{root:degree}:degree;
+    // 'b7' is a lowered degree carrying a major triad, as modal progressions have them.
+    const chord=typeof degree==='string'?{root:Number(degree.slice(1)),alteration:-1,quality:'major'}:typeof degree==='number'?{root:degree}:degree;
     const quality=chord.quality??([2,3,6].includes(chord.root)?'minor':chord.root===7?'diminished':'major');
     return [chord.root,chord.alteration??0,quality].join(':');
   });
@@ -3031,7 +3053,7 @@ function updateSongFilter(){
   const empty=columns.every(column=>column.hidden);
   $('song-grid').hidden=empty;
   const status=$('song-search-status');
-  status.textContent=empty?'No matching songs.':result.fuzzy?'Closest matches.':'';status.hidden=!status.textContent;
+  status.textContent=empty?'No matching songs.':result.fuzzy?'Fuzzy matches.':'';status.hidden=!status.textContent;
 }
 $('song-search').addEventListener('input',event=>{if(!event.isComposing)updateSongFilter();});
 $('song-search').addEventListener('compositionend',updateSongFilter);
@@ -4708,11 +4730,6 @@ function withPending(votes,pending,now){
 const voteCount=count=>count>99?'99+':count>0?String(count):'';
 const voteLabel=(title,count,mine)=>
   (mine?'Take back your vote for ':'Vote to sing ')+title+(count?' · '+count+(count===1?' vote':' votes'):'');
-const voteHint=ttl=>{
-  const minutes=Math.max(1,Math.round(ttl/60));
-  // Short enough to stay on one line of a phone.
-  return 'Heart the songs you’d like to sing. Votes last '+minutes+' min.';
-};
 
 // Top-level Sing / Signs / Lyrics / Conductor views: one visible panel at a
 // time, chosen from a compact equal-width sliding-pill tablist. The pure
@@ -4886,6 +4903,11 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   // what everyone reads. A follower sees the editor, disabled, and can take over.
   const conducting=()=>localOnly||conductor;
   const hasReins=()=>localOnly||!reins||reins.holder===deviceId;
+  // Whether anything this device does can actually reach the choir. Live governs
+  // that one wire and nothing else, so it is offered only when the wire exists:
+  // a live session, the conductor role, and the reins in hand. Krimpatul is how
+  // a device gets them, and it switches Live on as it takes them.
+  const canStream=()=>!localOnly&&conductor&&hasReins();
   // Arranging and imposing are different rights. Anyone with the Conduct tab may
   // work out an arrangement of their own; only the device holding the reins puts
   // one in front of the choir. Taking the reins is how a prepared arrangement
@@ -4912,9 +4934,19 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     if(!score.chords.length)return;
     try{localStorage.setItem(voicingSlot(score.progression),JSON.stringify(canonicalVoicing(score)));}catch{}
   }
+  // Two progressions used to be numbered from the major key that shares their
+  // notes, and are numbered from their own home chord now: ii I V in A became
+  // i ♭VII IV in B. They are the same chords, so an arrangement a device settled
+  // under the old name is still the arrangement; its tonic is two semitones up.
+  // Keyed the way the editor writes a progression down, flats as the letter b.
+  const RENUMBERED={'i bVII IV':'ii I V','i bIII bVII IV':'ii IV I V'};
   function recallVoicing(progression){
     let held=null;
     try{held=JSON.parse(localStorage.getItem(voicingSlot(progression))??'null');}catch{}
+    if(!held&&RENUMBERED[progression])try{
+      const old=JSON.parse(localStorage.getItem(voicingSlot(RENUMBERED[progression]))??'null');
+      if(old&&Number.isInteger(old.key)&&Array.isArray(old.notes))held={...old,key:(old.key+2)%12};
+    }catch{}
     if(!held)held=(typeof PROGRESSION_VOICINGS==='object'&&PROGRESSION_VOICINGS?.[progression])||null;
     return held&&Number.isInteger(held.key)&&Array.isArray(held.notes)?held:null;
   }
@@ -4999,7 +5031,15 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     // A follower keeps the editor in view rather than losing it: disabled tells
     // them why they cannot type, where a missing panel would only puzzle them.
     el('progression-form').hidden=!conducting();
-    el('progression-input').disabled=!editing;el('progression-live').disabled=!editing;
+    el('progression-input').disabled=!editing;el('progression-live').disabled=!editing||!canStream();
+    // The light glows while this device's edits are going out, and is grey
+    // whenever they are not — because Live is off, or because there is no wire
+    // for it to be on over.
+    el('progression-live').dataset.air=liveUpdates()?'on':'off';
+    el('progression-live').title=liveUpdates()?'On air: edits reach every device as you make them'
+      :canStream()?'Off: edits stay on this device until Live is switched on'
+      :localOnly?'No live session here, so there is nothing to send to'
+      :'Another device has the reins. Krimpatul takes them, and switches Live on';
     reinsBar();
     if(!editing)closeSongActions();
     el('rehearsal-undo').disabled=!editing||!undo.length;
@@ -5219,12 +5259,13 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     if(editMeasure!==position.measure)focusMeasure(position.measure);
     dynamicPosition=position;expressionControls();
   });
-  // Sing is what the choir is singing, so it reads the published score even when
-  // this device is arranging something else: you sing along with everyone else
-  // and work on your own inversions in Conduct, and the two only become the same
-  // thing when you take the reins. The holder is the exception — their own edits
-  // are what is being published, so Sing follows them without waiting.
-  const singingScore=()=>hasReins()?score:remoteScore??score;
+  // Sing is what the room is reading, on every device including this one. So it
+  // shows this device's own work only while that work is going out: holding the
+  // reins with Live on, where an edit is already on its way and waiting for the
+  // round trip would only make Sing lag the choir. Live off, or the reins
+  // elsewhere, and Sing shows the published score — what everyone is actually
+  // looking at — while Conduct goes on showing the draft.
+  const singingScore=()=>hasReins()&&liveUpdates()?score:remoteScore??score;
   function renderReading(width=null){
     // A hidden panel measures 0. Keep the last visible width so an edit made
     // from another tab is engraved for the layout it will reappear in.
@@ -5330,7 +5371,11 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   }
   setProgressionText(writeSectionedProgression(score));fitProgressionBox();
   let liveTimer=null;
-  const liveUpdates=()=>el('progression-live').getAttribute('aria-pressed')==='true';
+  // What the conductor asked for, and what is actually happening. They differ
+  // while the reins are elsewhere: the button remembers its setting, the wire
+  // decides whether it means anything.
+  const livePressed=()=>el('progression-live').getAttribute('aria-pressed')==='true';
+  const liveUpdates=()=>livePressed()&&canStream();
   function applyProgression({quiet=false}={}){
     if(!canEdit()||publishing||drag||expressionDrag)return false;
     try{
@@ -5374,14 +5419,18 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
       if(publishing){liveTimer=setTimeout(livePass,150);return;}
       applyProgression({quiet:true});
     };
-    if(liveUpdates())liveTimer=setTimeout(livePass,900);
+    // Typed edits always land on this device's own staves. Live is about the
+    // wire out, not about whether a conductor can see what they are writing:
+    // gating this on it left a follower — who can never stream — typing into a
+    // box that did nothing until they pressed a button that would not help.
+    liveTimer=setTimeout(livePass,900);
   });
   el('progression-live').addEventListener('click',()=>{
-    if(!canEdit())return;
+    if(!canEdit()||!canStream())return;
     clearTimeout(liveTimer);
-    el('progression-live').setAttribute('aria-pressed',String(!liveUpdates()));
-    // Turning it back on commits whatever was typed while it was off, and sends
-    // the result on to whoever else has the page open.
+    el('progression-live').setAttribute('aria-pressed',String(!livePressed()));
+    // Turning it on sends whatever is on this device now, including a line still
+    // waiting on the typing pass.
     if(liveUpdates()){applyProgression();schedulePublish();}
     else{clearTimeout(publishTimer);el('rehearsal-error').textContent='';}
     controls();
@@ -5597,10 +5646,22 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   // keys until that range sits inside their own voice, and the key they settle
   // on is the one Conduct picks up.
   const songKeySlot=id=>'chordus-song-key:'+id;
+  // The same two songs: a key somebody had already paged to named the old I, two
+  // semitones under the home chord it names now. It moves up once, and the mark
+  // beside it is what stops it moving again.
+  const RENUMBERED_SONGS={'wicked-game':2,'radioactive':2};
   function songKey(song){
     // Nothing stored means the recording's own key. Number(null) is 0, which
     // would quietly put every song in C, so the empty case is checked first.
-    let held=null;try{held=localStorage.getItem(songKeySlot(song.id));}catch{}
+    let held=null;
+    try{
+      held=localStorage.getItem(songKeySlot(song.id));
+      const shift=RENUMBERED_SONGS[song.id],moved=songKeySlot(song.id)+':home';
+      if(shift&&localStorage.getItem(moved)===null){
+        if(held!==null&&held!==''&&Number.isInteger(Number(held))){held=String((Number(held)+shift)%12);localStorage.setItem(songKeySlot(song.id),held);}
+        localStorage.setItem(moved,'1');
+      }
+    }catch{}
     const chosen=held===null||held===''?NaN:Number(held);
     return Number.isInteger(chosen)&&KEYS[chosen]?chosen:borrowKeyIndex(song)??0;
   }
@@ -6032,8 +6093,6 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
       const label=button.querySelector('.song-vote-count');
       if(label&&label.textContent!==text){label.textContent=text;label.toggleAttribute?.('data-long',text.length>2);}
     }
-    const hint=el('song-vote-hint');
-    if(hint){hint.textContent=voteHint(votes.ttl);hint.hidden=false;}
   }
   // The catalog's own order is noted the first time through, so a song nobody
   // wants any more goes back to where it always was.
@@ -6085,8 +6144,16 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
   songGrid?.addEventListener('click',event=>{
     const button=event.target.closest?.('[data-vote]');
     if(!button||button.hidden||!votesLive)return;
-    const song=button.dataset.vote;
-    void sendVote(song,!(song in shownVotes().mine));
+    const song=button.dataset.vote,on=!(song in shownVotes().mine);
+    // The swell belongs to the press that casts a vote, so it is asked for here
+    // and not left to the stylesheet, which would play it on every repaint.
+    if(on&&button.classList){
+      button.classList.remove('is-voting');void button.offsetWidth;button.classList.add('is-voting');
+      // Taken off by the clock rather than by animationend, which never comes
+      // when motion is reduced or the page is in the background.
+      setTimeout(()=>button.classList.remove('is-voting'),400);
+    }
+    void sendVote(song,on);
   });
   function acceptStatus(data){
     // A slow earlier poll must not roll back a just-published score or cue.
@@ -6217,6 +6284,9 @@ function createTabs({list,thumb=null,tabs,initial=DEFAULT_TAB,onChange=null}){
     publishing=true;controls();
     try{
       acceptStatus(await request({action:'seize',label:deviceName}));
+      // Taking the reins is saying this device drives the room, so Live comes on
+      // with them. Nobody presses Krimpatul meaning to hold the reins quietly.
+      el('progression-live').setAttribute('aria-pressed','true');
       el('rehearsal-error').textContent='';
     }catch(error){el('rehearsal-error').textContent=error.message;}
     finally{publishing=false;save();controls();}

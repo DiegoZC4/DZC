@@ -21,9 +21,24 @@
   --muted: #6f746e;
   --line: rgba(32, 37, 34, 0.15);
   --line-strong: rgba(32, 37, 34, 0.24);
-  --accent: #386e66;
-  --accent-bright: #4d8a7f;
-  --accent-soft: #dce9e5;
+  /* Voice-part colours, shared with Chordus so a singer reads the same colour
+     for their part in either app. Parts past the fourth carry on in the same
+     register. */
+  --part-1: #ac345e;
+  --part-2: #855418;
+  --part-3: #086b7c;
+  --part-4: #64499b;
+  --part-5: #4f8265;
+  --part-6: #925b91;
+  --part-7: #a75e3b;
+  --part-8: #3d7898;
+  /* Colour means voice part here, so the UI's own accent is whichever part is
+     being practised rather than a hue of its own. --practice-color is set from
+     the practice part; the fallback is a blue that belongs to no part, for the
+     moment before one is chosen. */
+  --accent: var(--practice-color, #235d99);
+  --accent-bright: color-mix(in srgb, var(--accent) 80%, #fff);
+  --accent-soft: color-mix(in srgb, var(--accent) 15%, var(--field));
   --selection-highlight: color-mix(in srgb, var(--accent-bright) 14%, transparent);
   --danger: #a54b42;
   --shadow: 0 8px 30px rgba(62, 50, 37, 0.10);
@@ -47,9 +62,12 @@
   --pan-detent: rgba(32, 37, 34, 0.58);
   --ink-faint: rgba(32, 37, 34, 0.11);
   --ink-fainter: rgba(32, 37, 34, 0.055);
-  --loop-border: #c48633;
-  --loop-fill: #f3e3c9;
-  --loop-ink: #70491e;
+  /* The one mark in the toolbar that carries a brand colour: a red wash
+     inside the outline so the link is recognisably YouTube at a glance. */
+  --demo-mark-tint: #f0a09e;
+  --loop-border: var(--accent);
+  --loop-fill: var(--accent-soft);
+  --loop-ink: var(--accent);
   --score-filter: none;
   --pitch-surface: rgba(255, 255, 255, 0.38);
   --pitch-grid: rgba(32, 37, 34, 0.15);
@@ -562,6 +580,8 @@ button { color: inherit; }
   user-select: none;
 }
 
+.mixer-row-label.is-group-drag.is-horizontal { cursor: ew-resize; }
+
 .part-heading,
 .matrix-cell,
 .mixer .drag-number,
@@ -798,7 +818,7 @@ button { color: inherit; }
    stroke is set so that at this height both draw the same 1.25px the rest of
    the toolbar uses; the two differ because the crops are at different scales. */
 .icon-button.display-theme svg { stroke-width: 1.575; }
-.icon-button.display-demo svg { stroke-width: 1.178; }
+.icon-button.display-demo svg { stroke-width: 1.178; fill: var(--demo-mark-tint); }
 .display-control-row > :first-child { width: var(--toolbar-unit-width); justify-self: end; text-align: right; }
 .display-control-row > :last-child { justify-self: start; }
 .display-direction-row .pill-toggle {
@@ -986,6 +1006,7 @@ button { color: inherit; }
   min-width: 0;
   display: block;
 }
+
 
 .practice-part-pager {
   width: 100%;
@@ -1212,7 +1233,8 @@ button { color: inherit; }
 }
 
 .bar-system-background { fill: var(--pitch-surface); }
-.bar-loop-region { fill: color-mix(in srgb, var(--loop-border) 13%, transparent); }
+.bar-repeat-sign { fill: var(--accent); }
+.bar-next-pitch { opacity: 0.85; }
 .bar-measure-line { stroke: var(--pitch-grid); stroke-width: 0.75; vector-effect: non-scaling-stroke; }
 .bar-measure-line.is-system-edge { stroke: var(--pitch-grid-strong); stroke-width: 1; }
 .bar-measure-number { fill: var(--muted); font: 650 var(--bar-measure-font-size, 11px)/1 Inter, ui-sans-serif, system-ui, sans-serif; }
@@ -1230,6 +1252,9 @@ button { color: inherit; }
 .bar-pitch-trace-halo { stroke: var(--pitch-trace-halo); stroke-width: 4.2; opacity: 0.9; }
 .bar-pitch-trace { stroke-width: 2.2; }
 .bar-reattack-line { stroke: var(--pitch-reattack); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+/* Shorter and thinner than a reattack, and rising from the bar's lower edge, so
+   a beat inside a note never reads as a new attack. */
+.bar-beat-tick { stroke: var(--pitch-reattack); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.7; }
 .bar-playhead { stroke: var(--accent-bright); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
 
 .at-surface-svg { filter: var(--score-filter); }
@@ -1577,13 +1602,19 @@ textarea:focus-visible {
     --muted: #aeb8b1;
     --line: rgba(237, 242, 238, 0.16);
     --line-strong: rgba(237, 242, 238, 0.27);
-    --accent: #6eb1a5;
-    --accent-bright: #87cabe;
-    --accent-soft: #263f3a;
+    --part-1: #f292b2;
+    --part-2: #e9bc79;
+    --part-3: #7ec7d6;
+    --part-4: #b9a4eb;
+    --part-5: #86c9a4;
+    --part-6: #d79fd5;
+    --part-7: #eaa47c;
+    --part-8: #8fbadd;
+    --accent: var(--practice-color, #87baf5);
     --selection-highlight: color-mix(in srgb, var(--accent-bright) 19%, transparent);
     --danger: #ed8e83;
     --shadow: 0 8px 30px rgba(0, 0, 0, 0.34);
-    --page-glow: rgba(110, 177, 165, 0.13);
+    --page-glow: color-mix(in srgb, var(--accent) 13%, transparent);
     --page-top: #1d231f;
     --control: rgba(255, 255, 255, 0.075);
     --control-soft: rgba(255, 255, 255, 0.09);
@@ -1603,9 +1634,10 @@ textarea:focus-visible {
     --pan-detent: rgba(237, 242, 238, 0.72);
     --ink-faint: rgba(237, 242, 238, 0.14);
     --ink-fainter: rgba(237, 242, 238, 0.075);
-    --loop-border: #d9a65f;
-    --loop-fill: #4a3925;
-    --loop-ink: #f1cf9c;
+    --demo-mark-tint: #c76a67;
+    --loop-border: var(--accent);
+    --loop-fill: var(--accent-soft);
+    --loop-ink: var(--accent);
     --score-filter: invert(0.88) hue-rotate(180deg) saturate(0.9);
     --pitch-surface: rgba(255, 255, 255, 0.035);
     --pitch-grid: rgba(237, 242, 238, 0.17);
@@ -1640,13 +1672,19 @@ textarea:focus-visible {
   --muted: #aeb8b1;
   --line: rgba(237, 242, 238, 0.16);
   --line-strong: rgba(237, 242, 238, 0.27);
-  --accent: #6eb1a5;
-  --accent-bright: #87cabe;
-  --accent-soft: #263f3a;
+  --part-1: #f292b2;
+  --part-2: #e9bc79;
+  --part-3: #7ec7d6;
+  --part-4: #b9a4eb;
+  --part-5: #86c9a4;
+  --part-6: #d79fd5;
+  --part-7: #eaa47c;
+  --part-8: #8fbadd;
+  --accent: var(--practice-color, #87baf5);
   --selection-highlight: color-mix(in srgb, var(--accent-bright) 19%, transparent);
   --danger: #ed8e83;
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.34);
-  --page-glow: rgba(110, 177, 165, 0.13);
+  --page-glow: color-mix(in srgb, var(--accent) 13%, transparent);
   --page-top: #1d231f;
   --control: rgba(255, 255, 255, 0.075);
   --control-soft: rgba(255, 255, 255, 0.09);
@@ -1666,9 +1704,10 @@ textarea:focus-visible {
   --pan-detent: rgba(237, 242, 238, 0.72);
   --ink-faint: rgba(237, 242, 238, 0.14);
   --ink-fainter: rgba(237, 242, 238, 0.075);
-  --loop-border: #d9a65f;
-  --loop-fill: #4a3925;
-  --loop-ink: #f1cf9c;
+  --demo-mark-tint: #c76a67;
+  --loop-border: var(--accent);
+  --loop-fill: var(--accent-soft);
+  --loop-ink: var(--accent);
   --score-filter: invert(0.88) hue-rotate(180deg) saturate(0.9);
   --pitch-surface: rgba(255, 255, 255, 0.035);
   --pitch-grid: rgba(237, 242, 238, 0.17);
@@ -11604,11 +11643,11 @@ function ceilPow2(v) {
   </score-partwise>
 </script>
     <script id="playback-data" type="application/json">{"chapters":[{"label":"Start","measure":1,"tick":0},{"label":"A","measure":17,"tick":46080},{"label":"B","measure":33,"tick":93120}],"division":960,"endTick":110400,"lyrics":[[1,0,0,"Feel"],[2,0,0,"Feel"],[3,0,0,"Feel"],[1,480,0,"the"],[2,480,0,"the"],[3,480,0,"the"],[1,960,0,"fall-"],[2,960,0,"fall-"],[3,960,0,"fall-"],[1,2400,0,"ing"],[2,2400,0,"ing"],[3,2400,0,"ing"],[1,2880,0,"air,"],[2,2880,0,"air,"],[3,2880,0,"air,"],[1,5280,0,"The"],[1,5760,0,"light"],[2,5760,0,"light"],[3,5760,0,"light"],[1,6240,0,"be-"],[2,6240,0,"be-"],[3,6240,0,"be-"],[1,6720,0,"com-"],[2,6720,0,"com-"],[3,6720,0,"com-"],[1,8160,0,"ing"],[2,8160,0,"ing"],[3,8160,0,"ing"],[1,8640,0,"gold-"],[2,8640,0,"gold-"],[3,8640,0,"gold-"],[1,9600,0,"en;"],[2,9600,0,"en;"],[3,9600,0,"en;"],[1,11520,0,"Trees"],[2,11520,0,"Trees"],[3,11520,0,"Trees"],[1,12000,0,"their"],[2,12000,0,"their"],[3,12000,0,"their"],[1,12480,0,"col-"],[2,12480,0,"col-"],[3,12480,0,"col-"],[1,13920,0,"ors"],[2,13920,0,"ors"],[3,13920,0,"ors"],[1,14400,0,"wear,"],[2,14400,0,"wear,"],[3,14400,0,"wear,"],[1,16320,0,"Deep"],[2,16320,0,"Deep"],[3,16320,0,"Deep"],[1,16800,0,"and"],[2,16800,0,"and"],[3,16800,0,"and"],[1,17280,0,"all-"],[2,17280,0,"all-"],[3,17280,0,"all-"],[1,18240,0,"en-"],[2,18240,0,"en-"],[3,18240,0,"en-"],[1,19200,0,"fold-"],[2,19200,0,"fold-"],[3,19200,0,"fold-"],[1,20160,0,"ing."],[2,20160,0,"ing."],[3,20160,0,"ing."],[0,22560,0,"The"],[0,23040,0,"au-"],[1,23040,0,"au-"],[2,23040,0,"au-"],[3,23040,0,"au-"],[0,23520,0,"tumn"],[1,23520,0,"tumn"],[2,23520,0,"tumn"],[3,23520,0,"tumn"],[0,24000,0,"leaves"],[1,24000,0,"leaves"],[2,24000,0,"leaves"],[3,24000,0,"leaves"],[0,25440,0,"em-"],[1,25440,0,"em-"],[2,25440,0,"em-"],[3,25440,0,"em-"],[0,25920,0,"brac-"],[1,25920,0,"brac-"],[2,25920,0,"brac-"],[3,25920,0,"brac-"],[0,26880,0,"ing;"],[1,26880,0,"ing;"],[2,26880,0,"ing;"],[3,26880,0,"ing;"],[0,28320,0,"But"],[0,28800,0,"soon"],[1,28800,0,"soon"],[2,28800,0,"soon"],[3,28800,0,"soon"],[0,29280,0,"they"],[1,29280,0,"they"],[2,29280,0,"they"],[3,29280,0,"they"],[0,29760,0,"all"],[1,29760,0,"all"],[2,29760,0,"all"],[3,29760,0,"all"],[0,30720,0,"must"],[1,30720,0,"must"],[2,30720,0,"must"],[3,30720,0,"must"],[0,31680,0,"fall,"],[1,31680,0,"fall,"],[2,31680,0,"fall,"],[3,31680,0,"fall,"],[0,34080,0,"The"],[0,34560,0,"sum-"],[1,34560,0,"sum-"],[2,34560,0,"sum-"],[3,34560,0,"sum-"],[0,35040,0,"mer"],[1,35040,0,"mer"],[2,35040,0,"mer"],[3,35040,0,"mer"],[0,35520,0,"green"],[1,35520,0,"green"],[2,35520,0,"green"],[3,35520,0,"green"],[0,36960,0,"e-"],[1,36960,0,"e-"],[2,36960,0,"e-"],[3,36960,0,"e-"],[0,37440,0,"ras-"],[1,37440,0,"ras-"],[2,37440,0,"ras-"],[3,37440,0,"ras-"],[0,38400,0,"ing,"],[1,38400,0,"ing,"],[2,38400,0,"ing,"],[3,38400,0,"ing,"],[0,39840,0,"To"],[0,40320,0,"an-"],[1,40320,0,"an-"],[2,40320,0,"an-"],[3,40320,0,"an-"],[0,40800,0,"swer"],[1,40800,0,"swer"],[2,40800,0,"swer"],[3,40800,0,"swer"],[0,41280,0,"win-"],[1,41280,0,"win-"],[2,41280,0,"win-"],[3,41280,0,"win-"],[0,42240,0,"ter’s"],[1,42240,0,"ter’s"],[2,42240,0,"ter’s"],[3,42240,0,"ter’s"],[0,43200,0,"call."],[1,43200,0,"call."],[2,43200,0,"call."],[3,43200,0,"call."],[1,45600,0,"And"],[1,46080,0,"here"],[2,46080,0,"here"],[3,46080,0,"here"],[1,47040,0,"once"],[2,47040,0,"once"],[3,47040,0,"once"],[1,48480,0,"a-"],[2,48480,0,"a-"],[3,48480,0,"a-"],[1,48960,0,"gain"],[2,48960,0,"gain"],[3,48960,0,"gain"],[1,51360,0,"Fa-"],[2,51360,0,"Fa-"],[3,51360,0,"Fa-"],[1,51840,0,"mil-"],[2,51840,0,"mil-"],[3,51840,0,"mil-"],[1,52320,0,"iar"],[2,52320,0,"iar"],[3,52320,0,"iar"],[1,52800,0,"paths"],[2,52800,0,"paths"],[3,52800,0,"paths"],[1,54240,0,"I"],[2,54240,0,"I"],[3,54240,0,"I"],[1,54720,0,"wan-"],[2,54720,0,"wan-"],[3,54720,0,"wan-"],[1,55680,0,"der;"],[2,55680,0,"der;"],[3,55680,0,"der;"],[0,56640,0,"Fa-"],[0,57600,0,"mil-"],[1,57600,0,"Through"],[2,57600,0,"Through"],[3,57600,0,"Through"],[1,58080,0,"the"],[2,58080,0,"the"],[3,58080,0,"the"],[1,58560,0,"west-"],[2,58560,0,"west-"],[3,58560,0,"west-"],[0,59520,0,"iar"],[1,60000,0,"mark"],[2,60000,0,"mark"],[3,60000,0,"mark"],[0,60480,0,"paths"],[1,60480,0,"end"],[2,60480,0,"end"],[3,60480,0,"end"],[1,61920,0,"the"],[0,62400,0,"I"],[1,62400,0,"liv-"],[2,62400,0,"liv-"],[3,62400,0,"liv-"],[1,62880,0,"ing"],[2,62880,0,"ing"],[3,62880,0,"ing"],[0,63360,0,"wan-"],[1,63360,0,"earth"],[2,63360,0,"earth"],[3,63360,0,"earth"],[1,64320,0,"I"],[2,64320,0,"I"],[3,64320,0,"I"],[1,65280,0,"pon-"],[2,65280,0,"pon-"],[3,65280,0,"pon-"],[1,66240,0,"der."],[2,66240,0,"der."],[3,66240,0,"der."],[0,67200,0,"der."],[0,68640,0,"Though"],[0,69120,0,"fad-"],[1,69120,0,"fad-"],[2,69120,0,"fad-"],[3,69120,0,"fad-"],[0,69600,0,"ing"],[1,69600,0,"ing"],[2,69600,0,"ing"],[3,69600,0,"ing"],[0,70080,0,"days"],[1,70080,0,"days"],[2,70080,0,"days"],[3,70080,0,"days"],[0,71520,0,"are"],[1,71520,0,"are"],[2,71520,0,"are"],[3,71520,0,"are"],[0,72000,0,"cold-"],[1,72000,0,"cold-"],[2,72000,0,"cold-"],[3,72000,0,"cold-"],[0,72960,0,"er,"],[1,72960,0,"er,"],[2,72960,0,"er,"],[3,72960,0,"er,"],[0,74400,0,"And"],[0,74880,0,"soon"],[1,74880,0,"soon"],[2,74880,0,"soon"],[3,74880,0,"soon"],[0,75360,0,"the"],[1,75360,0,"the"],[2,75360,0,"the"],[3,75360,0,"the"],[0,75840,0,"dark-"],[1,75840,0,"dark-"],[2,75840,0,"dark-"],[3,75840,0,"dark-"],[0,76800,0,"ness"],[1,76800,0,"ness"],[2,76800,0,"ness"],[3,76800,0,"ness"],[0,77760,0,"long,"],[1,77760,0,"long,"],[2,77760,0,"long,"],[3,77760,0,"long,"],[0,80160,0,"My"],[0,80640,0,"spi-"],[1,80640,0,"spi-"],[2,80640,0,"spi-"],[3,80640,0,"spi-"],[0,81120,0,"rit-"],[1,81120,0,"rit-"],[2,81120,0,"rit-"],[3,81120,0,"rit-"],[0,81600,0,"fire"],[1,81600,0,"fire"],[2,81600,0,"fire"],[3,81600,0,"fire"],[0,83040,0,"grows"],[1,83040,0,"grows"],[2,83040,0,"grows"],[3,83040,0,"grows"],[0,83520,0,"bold-"],[1,83520,0,"bold-"],[2,83520,0,"bold-"],[3,83520,0,"bold-"],[0,84480,0,"er,"],[1,84480,0,"er,"],[2,84480,0,"er,"],[3,84480,0,"er,"],[0,85920,0,"And"],[0,86400,0,"in"],[1,86400,0,"in"],[2,86400,0,"in"],[3,86400,0,"in"],[0,86880,0,"my"],[1,86880,0,"my"],[2,86880,0,"my"],[3,86880,0,"my"],[0,87360,0,"heart"],[1,87360,0,"heart"],[2,87360,0,"heart"],[3,87360,0,"heart"],[0,88320,0,"a"],[1,88320,0,"a"],[2,88320,0,"a"],[3,88320,0,"a"],[0,89280,0,"song."],[1,89280,0,"song."],[2,89280,0,"song."],[3,89280,0,"song."],[0,91680,0,"E-"],[1,92160,0,"E-"],[2,92160,0,"E-"],[3,92160,0,"E-"],[0,92640,0,"ven"],[1,92640,0,"ven"],[2,92640,0,"ven"],[3,92640,0,"ven"],[0,93120,0,"when"],[1,93120,0,"when"],[2,93120,0,"when"],[3,93120,0,"when"],[0,94080,0,"shad-"],[1,94080,0,"shad-"],[2,94080,0,"shad-"],[3,94080,0,"shad-"],[0,94560,0,"ows"],[1,94560,0,"ows"],[2,94560,0,"ows"],[3,94560,0,"ows"],[0,95040,0,"length-"],[1,95040,0,"length-"],[2,95040,0,"length-"],[3,95040,0,"length-"],[0,96000,0,"en,"],[1,96000,0,"en,"],[2,96000,0,"en,"],[3,96000,0,"en,"],[0,98400,0,"I’m"],[0,98880,0,"here"],[1,98880,0,"where"],[2,98880,0,"where"],[3,98880,0,"where"],[0,99360,0,"where"],[0,99840,0,"I"],[1,99840,0,"I"],[2,99840,0,"I"],[3,99840,0,"I"],[0,100800,0,"be-"],[1,100800,0,"be-"],[2,100800,0,"be-"],[3,100800,0,"be-"],[0,101760,0,"long."],[1,101760,0,"long."],[2,101760,0,"long."],[3,101760,0,"long."]],"measures":[[0,2880,3,4],[2880,2880,3,4],[5760,2880,3,4],[8640,2880,3,4],[11520,2880,3,4],[14400,2880,3,4],[17280,2880,3,4],[20160,2880,3,4],[23040,2880,3,4],[25920,2880,3,4],[28800,2880,3,4],[31680,2880,3,4],[34560,2880,3,4],[37440,2880,3,4],[40320,2880,3,4],[43200,2880,3,4],[46080,2880,3,4],[48960,2880,3,4],[51840,2880,3,4],[54720,2880,3,4],[57600,2880,3,4],[60480,2880,3,4],[63360,2880,3,4],[66240,2880,3,4],[69120,2880,3,4],[72000,2880,3,4],[74880,2880,3,4],[77760,2880,3,4],[80640,2880,3,4],[83520,2880,3,4],[86400,2880,3,4],[89280,3840,4,4],[93120,2880,3,4],[96000,2880,3,4],[98880,2880,3,4],[101760,2880,3,4],[104640,2880,3,4],[107520,2880,3,4]],"notes":[[1,0,480,60,47],[2,0,480,57,31],[3,0,480,45,31],[3,0,480,52,31],[1,480,960,62,47],[2,480,960,57,31],[3,480,960,45,31],[3,480,960,52,31],[1,960,2400,62,47],[2,960,2400,57,31],[3,960,2400,41,31],[3,960,2400,50,31],[1,2400,2880,57,47],[2,2400,2880,57,31],[3,2400,2880,41,31],[3,2400,2880,50,31],[1,2880,5280,59,47],[2,2880,5760,57,31],[3,2880,5760,43,31],[3,2880,5760,50,31],[1,5280,5760,59,47],[1,5760,6240,60,47],[2,5760,6240,57,31],[3,5760,6240,45,31],[3,5760,6240,52,31],[1,6240,6720,62,47],[2,6240,6720,57,31],[3,6240,6720,45,31],[3,6240,6720,52,31],[1,6720,8160,62,47],[2,6720,8160,57,31],[3,6720,8160,41,31],[3,6720,8160,50,31],[1,8160,8640,57,47],[2,8160,8640,57,31],[3,8160,8640,41,31],[3,8160,8640,50,31],[1,8640,9600,60,47],[2,8640,9600,57,31],[3,8640,9600,43,31],[3,8640,9600,50,31],[1,9600,11520,59,47],[2,9600,11520,57,31],[3,9600,11520,43,31],[3,9600,11520,50,31],[1,11520,12000,60,47],[2,11520,12000,57,31],[3,11520,12000,45,31],[3,11520,12000,52,31],[1,12000,12480,62,47],[2,12000,12480,57,31],[3,12000,12480,45,31],[3,12000,12480,52,31],[1,12480,13920,62,47],[2,12480,13920,57,31],[3,12480,13920,41,31],[3,12480,13920,50,31],[1,13920,14400,57,47],[2,13920,14400,57,31],[3,13920,14400,41,31],[3,13920,14400,50,31],[1,14400,16320,59,47],[2,14400,16320,57,31],[3,14400,16320,43,31],[3,14400,16320,50,31],[1,16320,16800,59,47],[2,16320,16800,55,31],[3,16320,16800,40,31],[3,16320,16800,50,31],[1,16800,17280,60,47],[2,16800,17280,55,31],[3,16800,17280,40,31],[3,16800,17280,50,31],[1,17280,18240,60,47],[2,17280,18240,57,31],[3,17280,18240,45,31],[3,17280,18240,52,31],[1,18240,19200,62,47],[2,18240,19200,57,31],[3,18240,19200,50,31],[3,18240,19200,53,31],[1,19200,20160,64,47],[2,19200,20160,60,31],[3,19200,20160,45,31],[3,19200,20160,52,31],[1,20160,22560,62,47],[2,20160,22560,59,31],[3,20160,22560,43,31],[3,20160,22560,50,31],[0,22560,23040,69,31],[0,23040,23520,74,31],[1,23040,23520,65,31],[2,23040,23520,57,31],[3,23040,23520,50,31],[0,23520,24000,69,31],[1,23520,24000,65,31],[2,23520,24000,57,31],[3,23520,24000,50,31],[0,24000,25440,72,31],[1,24000,25440,62,31],[1,24000,25440,64,31],[2,24000,25440,52,31],[2,24000,25440,60,31],[3,24000,25440,45,31],[0,25440,25920,69,31],[1,25440,25920,62,31],[1,25440,25920,64,31],[2,25440,25920,52,31],[2,25440,25920,60,31],[3,25440,25920,45,31],[0,25920,26400,71,31],[1,25920,26880,59,31],[1,25920,26880,62,31],[2,25920,26880,50,31],[3,25920,26880,43,31],[0,26400,26880,69,31],[0,26880,28320,69,31],[1,26880,28800,60,31],[1,26880,28800,62,31],[2,26880,28800,52,31],[3,26880,28800,45,31],[0,28320,28800,69,31],[0,28800,29280,74,31],[1,28800,29280,65,31],[2,28800,29280,57,31],[3,28800,29280,50,31],[0,29280,29760,69,31],[1,29280,29760,65,31],[2,29280,29760,57,31],[3,29280,29760,50,31],[0,29760,30720,72,31],[1,29760,30720,60,31],[1,29760,30720,64,31],[2,29760,30720,52,31],[3,29760,30720,45,31],[0,30720,31680,71,31],[1,30720,31680,59,31],[1,30720,31680,62,31],[2,30720,31680,50,31],[3,30720,31680,43,31],[0,31680,34080,69,31],[1,31680,34560,57,31],[1,31680,32640,62,31],[2,31680,34560,52,31],[3,31680,34560,45,31],[1,32640,34560,61,31],[0,34080,34560,69,31],[0,34560,35040,74,31],[1,34560,35040,65,31],[2,34560,35040,57,31],[3,34560,35040,50,31],[0,35040,35520,69,31],[1,35040,35520,65,31],[2,35040,35520,57,31],[3,35040,35520,50,31],[0,35520,36960,72,31],[1,35520,36960,60,31],[1,35520,36960,64,31],[2,35520,36960,52,31],[3,35520,36960,45,31],[0,36960,37440,69,31],[1,36960,37440,60,31],[1,36960,37440,64,31],[2,36960,37440,52,31],[3,36960,37440,45,31],[0,37440,37920,71,31],[1,37440,38400,59,31],[1,37440,38400,62,31],[2,37440,38400,50,31],[3,37440,38400,43,31],[0,37920,38400,69,31],[0,38400,39840,69,31],[1,38400,40320,60,31],[1,38400,39360,62,31],[2,38400,40320,52,31],[3,38400,40320,45,31],[1,39360,40320,64,31],[0,39840,40320,69,31],[0,40320,40800,74,47],[1,40320,40800,65,47],[2,40320,40800,62,47],[3,40320,40800,50,47],[0,40800,41280,76,47],[1,40800,41280,65,47],[2,40800,41280,62,47],[3,40800,41280,50,47],[0,41280,42240,72,47],[1,41280,42240,69,47],[2,41280,42240,64,47],[3,41280,42240,53,47],[0,42240,43200,71,47],[1,42240,43200,69,47],[2,42240,43200,62,47],[3,42240,43200,55,47],[0,43200,45600,69,47],[1,43200,45600,64,47],[2,43200,45600,57,47],[3,43200,45600,57,47],[1,45600,46080,57,47],[1,46080,46560,60,47],[2,46080,47040,57,31],[3,46080,47040,45,31],[3,46080,47040,52,31],[1,46560,47040,62,47],[1,47040,48480,62,47],[2,47040,48480,57,31],[3,47040,48480,41,31],[3,47040,48480,50,31],[1,48480,48960,57,47],[2,48480,48960,57,31],[3,48480,48960,41,31],[3,48480,48960,50,31],[1,48960,51360,59,47],[2,48960,51360,57,31],[3,48960,51360,43,31],[3,48960,51360,50,31],[1,51360,51840,59,47],[2,51360,51840,57,31],[3,51360,51840,43,31],[3,51360,51840,50,31],[1,51840,52320,60,47],[2,51840,52320,57,31],[3,51840,52320,45,31],[3,51840,52320,52,31],[1,52320,52800,62,47],[2,52320,52800,57,31],[3,52320,52800,45,31],[3,52320,52800,52,31],[1,52800,54240,62,47],[2,52800,54240,57,31],[3,52800,54240,41,31],[3,52800,54240,50,31],[1,54240,54720,57,47],[2,54240,54720,57,31],[3,54240,54720,41,31],[3,54240,54720,50,31],[1,54720,55680,60,47],[2,54720,55680,57,31],[3,54720,55680,43,31],[3,54720,55680,50,31],[1,55680,57600,59,47],[2,55680,57600,57,31],[3,55680,57600,43,31],[3,55680,57600,50,31],[0,56640,57600,67,31],[0,57600,59520,69,31],[1,57600,58080,60,47],[2,57600,58080,57,31],[3,57600,58080,45,31],[3,57600,58080,52,31],[1,58080,58560,62,47],[2,58080,58560,57,31],[3,58080,58560,45,31],[3,58080,58560,52,31],[1,58560,60000,62,47],[2,58560,60000,57,31],[3,58560,60000,41,31],[3,58560,60000,50,31],[0,59520,60480,72,31],[1,60000,60480,57,47],[2,60000,60480,57,31],[3,60000,60480,41,31],[3,60000,60480,50,31],[0,60480,61440,62,31],[1,60480,61920,59,47],[2,60480,62400,59,31],[3,60480,62400,43,31],[3,60480,62400,50,31],[0,61440,62400,64,31],[1,61920,62400,59,47],[0,62400,63360,67,31],[1,62400,62880,59,47],[2,62400,62880,55,31],[3,62400,62880,40,31],[3,62400,62880,50,31],[1,62880,63360,60,47],[2,62880,63360,55,31],[3,62880,63360,40,31],[3,62880,63360,50,31],[0,63360,67200,69,47],[1,63360,64320,60,63],[2,63360,64320,57,47],[3,63360,64320,45,47],[3,63360,64320,52,47],[1,64320,65280,62,63],[2,64320,65280,57,47],[3,64320,65280,50,47],[3,64320,65280,53,47],[1,65280,66240,64,63],[2,65280,66240,60,47],[3,65280,66240,45,47],[3,65280,66240,52,47],[1,66240,68640,62,63],[2,66240,68160,59,47],[3,66240,68640,43,47],[3,66240,68640,50,47],[0,67200,68640,67,47],[2,68160,68640,59,47],[0,68640,69120,69,31],[0,69120,69600,74,31],[1,69120,69600,65,31],[2,69120,69600,57,31],[3,69120,69600,50,31],[0,69600,70080,69,31],[1,69600,70080,65,31],[2,69600,70080,57,31],[3,69600,70080,50,31],[0,70080,71520,72,31],[1,70080,71520,62,31],[1,70080,71520,64,31],[2,70080,71520,52,31],[2,70080,71520,60,31],[3,70080,71520,45,31],[0,71520,72000,69,31],[1,71520,72000,62,31],[1,71520,72000,64,31],[2,71520,72000,52,31],[2,71520,72000,60,31],[3,71520,72000,45,31],[0,72000,72480,71,31],[1,72000,72960,59,31],[1,72000,72960,62,31],[2,72000,72960,50,31],[3,72000,72960,43,31],[0,72480,72960,69,31],[0,72960,74400,69,31],[1,72960,74880,60,31],[1,72960,74880,62,31],[2,72960,74880,52,31],[3,72960,74880,45,31],[0,74400,74880,69,31],[0,74880,75360,74,31],[1,74880,75360,65,31],[2,74880,75360,57,31],[3,74880,75360,50,31],[0,75360,75840,69,31],[1,75360,75840,65,31],[2,75360,75840,57,31],[3,75360,75840,50,31],[0,75840,76800,72,31],[1,75840,76800,60,31],[1,75840,76800,64,31],[2,75840,76800,52,31],[3,75840,76800,45,31],[0,76800,77760,71,31],[1,76800,77760,59,31],[1,76800,77760,62,31],[2,76800,77760,50,31],[3,76800,77760,43,31],[0,77760,80160,69,31],[1,77760,80640,57,31],[1,77760,78720,62,31],[2,77760,80640,52,31],[3,77760,80640,45,31],[1,78720,80640,61,31],[0,80160,80640,64,47],[0,80640,81120,69,47],[1,80640,81120,60,47],[2,80640,81120,52,47],[3,80640,81120,45,47],[0,81120,81600,64,47],[1,81120,81600,60,47],[2,81120,81600,52,47],[3,81120,81600,45,47],[0,81600,83040,67,47],[1,81600,83040,59,47],[2,81600,83040,55,47],[3,81600,83040,40,47],[3,81600,83040,47,47],[0,83040,83520,64,47],[1,83040,83520,59,47],[2,83040,83520,55,47],[3,83040,83520,40,47],[3,83040,83520,47,47],[0,83520,84000,66,47],[1,83520,84480,57,47],[2,83520,84480,54,47],[3,83520,84480,38,47],[3,83520,84480,45,47],[0,84000,84480,64,47],[0,84480,85920,64,47],[1,84480,85440,57,47],[2,84480,86400,55,47],[3,84480,86400,40,47],[3,84480,86400,47,47],[1,85440,86400,59,47],[0,85920,86400,64,47],[0,86400,86880,69,63],[1,86400,86880,60,63],[2,86400,86880,52,63],[3,86400,86880,45,63],[0,86880,87360,71,63],[1,86880,87360,60,63],[2,86880,87360,52,63],[3,86880,87360,45,63],[0,87360,88320,67,63],[1,87360,88320,64,63],[2,87360,88320,59,63],[3,87360,88320,48,63],[0,88320,89280,66,63],[1,88320,89280,64,63],[2,88320,89280,57,63],[3,88320,89280,50,63],[0,89280,91680,64,63],[1,89280,92160,59,63],[2,89280,92160,57,63],[3,89280,92160,52,63],[0,91680,92160,71,47],[0,92160,92640,76,47],[1,92160,92640,67,47],[2,92160,92640,59,47],[3,92160,92640,52,47],[0,92640,93120,78,47],[1,92640,93120,67,47],[2,92640,93120,59,47],[3,92640,93120,52,47],[0,93120,94080,74,47],[1,93120,94080,62,47],[1,93120,94080,66,47],[2,93120,94080,54,47],[3,93120,94080,47,47],[0,94080,94560,71,47],[1,94080,94560,62,47],[1,94080,94560,66,47],[2,94080,94560,54,47],[3,94080,94560,47,47],[0,94560,95040,74,47],[1,94560,95040,62,47],[1,94560,95040,66,47],[2,94560,95040,54,47],[3,94560,95040,47,47],[0,95040,95520,73,47],[1,95040,96000,61,47],[1,95040,96000,64,47],[2,95040,96000,52,47],[3,95040,96000,45,47],[0,95520,96000,71,47],[0,96000,98400,71,47],[1,96000,98880,59,47],[1,96000,96960,64,47],[2,96000,98880,54,47],[3,96000,98880,47,47],[1,96960,98880,63,47],[0,98400,98880,71,47],[0,98880,99360,69,47],[1,98880,99840,59,47],[1,98880,99840,62,47],[2,98880,99840,50,47],[3,98880,99840,43,47],[0,99360,99840,71,47],[0,99840,100800,67,47],[1,99840,100800,60,47],[1,99840,100800,64,47],[2,99840,100800,52,47],[3,99840,100800,45,47],[0,100800,101760,66,47],[1,100800,101760,59,47],[1,100800,101760,62,47],[2,100800,101760,54,47],[3,100800,101760,47,47],[0,101760,109440,64,31],[1,101760,109440,59,31],[2,101760,109440,55,31],[3,101760,109440,40,31],[3,101760,109440,52,31]],"parts":[{"index":0,"name":"Soprano","short":"S"},{"index":1,"name":"Alto","short":"A"},{"index":2,"name":"Tenor","short":"T"},{"index":3,"name":"Bass","short":"B"}],"tempos":[[0,48]],"version":1}</script>
-    <script id="trainer-config" type="application/json">{"chapters":[{"label":"Feel the falling air","tick":0},{"label":"The autumn leaves embracing","tick":22560},{"label":"And here once again","tick":45600},{"label":"Fading days are colder","tick":69120},{"label":"Even when shadows lengthen","tick":91680}],"composer":"","demoVideo":"https://youtu.be/_KEp0DETKEw","favicon":"🍁","schemaVersion":1,"slug":"autumn","title":"Autumn"}</script>
-    <script id="build-metadata" type="application/json">{"build":{"builder":"choir-practice-builder","builderVersion":"1","fingerprint":"a88f37bc8a7e0f46","normalizedScoreSha256":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","playbackSha256":"b39b7a0ead72f3c1ab76996d2b825d7e0a3e8a0b22b8e2eb297db7c7f0f6a7e6","source":{"format":"mscz","name":"Autumn.mscz","sha256":"5ab48416be3a88f7fcf24238e986d6864c8bfd0dd10fefb8b15ab89f954b7dac"}},"composer":"","counts":{"chapters":3,"lyrics":372,"measures":38,"notes":465,"tempos":1,"tracks":4},"creators":[{"name":"Composer / arranger","type":"composer"},{"name":"Text by Charles Anthony Silvestri","type":"lyrics"},{"name":"Music by Ola Gjeilo","type":"artist"}],"favicon":"🍁","fingerprint":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","fingerprintAlgorithm":"sha256","layoutBreaksRemoved":28,"measureCount":38,"noteCount":465,"repeatedLyricsMarked":0,"schemaVersion":1,"slug":"autumn","sourceFile":"score.musicxml","title":"Autumn","trackCount":4,"version":1,"warnings":[]}</script>
+    <script id="trainer-config" type="application/json">{"chapters":[{"label":"Feel the falling air","tick":0},{"label":"The autumn leaves embracing","tick":22560},{"label":"And here once again","tick":45600},{"label":"Though fading days are colder","tick":68640},{"label":"Even when shadows lengthen","tick":91680}],"composer":"","demoVideo":"https://youtu.be/_KEp0DETKEw","favicon":"🍁","schemaVersion":1,"slug":"autumn","title":"Autumn"}</script>
+    <script id="build-metadata" type="application/json">{"build":{"builder":"choir-practice-builder","builderVersion":"1","fingerprint":"c184709abbd61817","normalizedScoreSha256":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","playbackSha256":"b39b7a0ead72f3c1ab76996d2b825d7e0a3e8a0b22b8e2eb297db7c7f0f6a7e6","source":{"format":"mscz","name":"Autumn.mscz","sha256":"5ab48416be3a88f7fcf24238e986d6864c8bfd0dd10fefb8b15ab89f954b7dac"}},"composer":"","counts":{"chapters":3,"lyrics":372,"measures":38,"notes":465,"tempos":1,"tracks":4},"creators":[{"name":"Composer / arranger","type":"composer"},{"name":"Text by Charles Anthony Silvestri","type":"lyrics"},{"name":"Music by Ola Gjeilo","type":"artist"}],"favicon":"🍁","fingerprint":"1ae3b512c12c1c142c02eb3da4d32268971cece8e9cbf8c5005b788085d361cc","fingerprintAlgorithm":"sha256","layoutBreaksRemoved":28,"measureCount":38,"noteCount":465,"repeatedLyricsMarked":0,"schemaVersion":1,"slug":"autumn","sourceFile":"score.musicxml","title":"Autumn","trackCount":4,"version":1,"warnings":[]}</script>
     <script id="portable-state" type="application/json"></script>
       <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%22.9em%22%20text-anchor%3D%22middle%22%20font-size%3D%2290%22%3E%F0%9F%8D%81%3C%2Ftext%3E%3C%2Fsvg%3E" />
-    <!-- standalone-build:a88f37bc8a7e0f46 -->
+    <!-- standalone-build:c184709abbd61817 -->
   </head>
   <body>
     <a class="skip-link" href="#score">Skip to score</a>
@@ -11793,16 +11832,20 @@ function ceilPow2(v) {
 (() => {
   "use strict";
 
+  // Voice-part colours live in the stylesheet, as --part-1 upward, so the dark
+  // theme can lift them off its own ground. These are only the fallbacks the
+  // var() calls carry, and they match the light theme's values.
   const PALETTE = Object.freeze([
-    "#b44c68",
-    "#3d7898",
-    "#8b6635",
-    "#5f6fa8",
+    "#ac345e",
+    "#855418",
+    "#086b7c",
+    "#64499b",
     "#4f8265",
     "#925b91",
     "#a75e3b",
-    "#477f82",
+    "#3d7898",
   ]);
+  const partPaint = (index) => `var(--part-${(index % PALETTE.length) + 1}, ${PALETTE[index % PALETTE.length]})`;
   const TEMPO_VALUES = Object.freeze([25, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]);
   const VERTICAL_VALUES = Object.freeze([50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160]);
   const STANDARD_HORIZONTAL_VALUES = Object.freeze([5, 10, 15, 20, 25, 35, 50, 65, 80, 100, 120, 140, 160, 180, 200]);
@@ -11815,6 +11858,11 @@ function ceilPow2(v) {
   const SCHEDULER_HORIZON_SECONDS = 0.34;
   const SCHEDULER_LEAD_SECONDS = 0.028;
   const PITCH_BAR_LYRIC_LANES = 3;
+  const PITCH_BAR_HYPHEN_LEEWAY = 2;
+  // Fractions of a bar note's height, by metric weight: downbeat, middle of the
+  // bar, plain beat. The tallest stays clear of a reattack line, which cuts the
+  // whole height and means something else entirely.
+  const BEAT_TICK_HEIGHTS = Object.freeze([0.7, 0.55, 0.4]);
   const MIXER_SOLO_HOLD_MS = 500;
   const PITCH_AUDITION_HOLD_MS = 250;
   const PITCH_AUDITION_RELEASE_SECONDS = 0.12;
@@ -11823,7 +11871,7 @@ function ceilPow2(v) {
   const PITCH_CAPTURE_BUFFER_SIZE = 4096;
   const PITCH_CAPTURE_MIN_FREQUENCY = 55;
   const PITCH_CAPTURE_MAX_FREQUENCY = 1200;
-  const PITCH_TRACE_STORAGE_VERSION = 2;
+  const PITCH_TRACE_STORAGE_VERSION = 3;
   const PITCH_TRACE_BINS_PER_QUARTER = 16;
   const PITCH_TRACE_SAVE_DELAY_MS = 850;
   const PITCH_TRACE_MAX_DRAW_GAP_SECONDS = 0.25;
@@ -11886,6 +11934,7 @@ function ceilPow2(v) {
   let loopStartMeasure = null;
   let loopEndMeasure = null;
   let practicePartIndex = null;
+  let partDivisi = [];
   let practicePartPager = null;
   let activePracticeMix = null;
   let practiceMixUndo = null;
@@ -11899,12 +11948,18 @@ function ceilPow2(v) {
   let settingsPanelPreferenceKey = "choir-practice:settings-open:v1";
   let annotationKey = "choir-practice-trainer:notes:v3";
   let legacyAnnotationKeys = [];
+  let legacyPreferenceKeys = [];
+  let legacySettingsPanelKeys = [];
+  let legacyPitchTraceKeys = [];
   let pitchTraceKey = "choir-practice-trainer:pitch-trace:v2";
-  let pitchTracePitches = new Uint16Array(0);
-  let pitchTraceBreaks = new Uint8Array(0);
+  // One contour per divisi line, so the upper and the lower line of the same
+  // passage can both be kept instead of the second take erasing the first.
+  // Lane 0 is the top line, and the only lane an undivided part ever uses.
+  const pitchTraceLanes = new Map();
   let pitchTraceCount = 0;
   let pitchTraceSaveTimer = 0;
   let pitchCaptureState = "off";
+  let wantsPitchCapture = false;
   let pitchCaptureRequestGeneration = 0;
   let pitchCaptureStream = null;
   let pitchCaptureContext = null;
@@ -12018,9 +12073,22 @@ function ceilPow2(v) {
     elements.settingsTooltip.style.top = `${Math.round(top)}px`;
   }
 
+  // A control's own line, then how to reset it. Row and section labels carry no
+  // line of their own, so theirs names what it resets; anywhere else the
+  // tooltip already sits on the thing, so it does not repeat the name.
+  const SETTING_HELP_SELECTOR = "[data-help], [data-reset-scope]";
+
+  function settingHelpMessage(target) {
+    const own = target.dataset.help?.trim();
+    const scope = target.dataset.resetScope;
+    if (!scope) return own || "";
+    const hold = target.dataset.resetHold === "true" ? " or hold" : "";
+    return [own, `Right-click${hold} to reset${own ? "" : ` ${scope}`}.`].filter(Boolean).join(" ");
+  }
+
   function showSettingsTooltip(target, { delay = 120 } = {}) {
     if (!settingsHelpEnabled || !(target instanceof Element)) return;
-    const message = target.dataset.help?.trim();
+    const message = settingHelpMessage(target);
     if (!message) return;
     window.clearTimeout(settingsTooltipTimer);
     const reveal = () => {
@@ -12030,7 +12098,7 @@ function ceilPow2(v) {
         settingsTooltipTarget.removeAttribute("aria-describedby");
       }
       settingsTooltipTarget = target;
-      elements.settingsTooltip.textContent = message;
+      elements.settingsTooltip.textContent = settingHelpMessage(target);
       elements.settingsTooltip.hidden = false;
       elements.settingsTooltip.setAttribute("aria-hidden", "false");
       target.setAttribute("aria-describedby", "settingsTooltip");
@@ -12054,27 +12122,41 @@ function ceilPow2(v) {
     elements.settingsHelp.addEventListener("click", () => setSettingsHelp(!settingsHelpEnabled));
     elements.settingsPanel.addEventListener("pointerover", (event) => {
       if (!settingsHelpEnabled || event.pointerType === "touch") return;
-      const target = event.target.closest?.("[data-help]");
+      const target = event.target.closest?.(SETTING_HELP_SELECTOR);
       if (!target || target.contains(event.relatedTarget)) return;
       showSettingsTooltip(target);
     });
     elements.settingsPanel.addEventListener("pointerout", (event) => {
       if (!settingsHelpEnabled || event.pointerType === "touch") return;
-      const target = event.target.closest?.("[data-help]");
+      const target = event.target.closest?.(SETTING_HELP_SELECTOR);
       if (!target || target.contains(event.relatedTarget)) return;
       hideSettingsTooltip();
     });
     elements.settingsPanel.addEventListener("focusin", (event) => {
-      if (settingsHelpEnabled) showSettingsTooltip(event.target.closest?.("[data-help]"), { delay: 0 });
+      if (settingsHelpEnabled) showSettingsTooltip(event.target.closest?.(SETTING_HELP_SELECTOR), { delay: 0 });
     });
     elements.settingsPanel.addEventListener("focusout", (event) => {
       if (settingsTooltipTarget?.contains(event.relatedTarget)) return;
       hideSettingsTooltip();
     });
+    // Only a touch has to spend its tap on reading: with no hover there is no
+    // other way to see a tooltip. A mouse or pen has already been shown one on
+    // the way in, so its click is left to do its job and help mode stops
+    // standing between the user and the control. A click that changes what the
+    // control says refreshes the tooltip it is already showing.
+    let inspectByTouch = false;
     const inspectSetting = (event) => {
       if (!settingsHelpEnabled || event.target.closest?.("#settingsHelp")) return;
-      const target = event.target.closest?.("[data-help]");
+      if (event.type === "pointerdown") inspectByTouch = event.pointerType === "touch";
+      else if (!event.detail) inspectByTouch = false;
+      const target = event.target.closest?.(SETTING_HELP_SELECTOR);
       if (!target || !elements.settingsPanel.contains(target)) return;
+      if (!inspectByTouch) {
+        if (event.type === "click" && target === settingsTooltipTarget) {
+          requestAnimationFrame(() => showSettingsTooltip(target, { delay: 0 }));
+        }
+        return;
+      }
       event.preventDefault();
       event.stopImmediatePropagation();
       showSettingsTooltip(target, { delay: 0 });
@@ -12171,7 +12253,7 @@ function ceilPow2(v) {
         id: String(source.id || override.id || `P${index + 1}`),
         name,
         short: String(override.short || source.short || sensibleShortName(name, index)),
-        color: String(override.color || config.partColors?.[name] || source.color || PALETTE[index % PALETTE.length]),
+        color: String(override.color || config.partColors?.[name] || source.color || partPaint(index)),
       };
     });
   }
@@ -13066,6 +13148,10 @@ function ceilPow2(v) {
     element.setAttribute("aria-description", holdToReset
       ? `Right-click, long-press, or press Shift+F10 to reset ${label}`
       : `Right-click or press Shift+F10 to reset ${label}`);
+    // The same news for everyone else: help mode adds this to the control's own
+    // tooltip, so the gesture is not something only a screen reader is told.
+    element.dataset.resetScope = label;
+    element.dataset.resetHold = String(holdToReset);
 
     let holdTimer = 0;
     let holdPointerId = null;
@@ -13237,6 +13323,9 @@ function ceilPow2(v) {
         audible: [...practiceMixUndo.audible],
         volumes: [...practiceMixUndo.volumes],
       } : null,
+      loopStart: loopStartMeasure,
+      loopEnd: loopEndMeasure,
+      sing: pitchCaptureEnabled(),
     };
   }
 
@@ -13264,10 +13353,64 @@ function ceilPow2(v) {
     if (Array.isArray(stored.pans) && stored.pans.length === parts.length) {
       trackPans = stored.pans.map((value) => nearestAllowed(clamp(Number(value) || 0, -100, 100), PAN_VALUES));
     }
+    // A loop outlives the page it was set on, but only if it still points at
+    // measures this score has: a shorter rebuild would otherwise restore a loop
+    // running off the end.
+    const lastMeasure = (sequence?.measures?.length || 0) - 1;
+    if (Number.isInteger(stored.loopStart) && Number.isInteger(stored.loopEnd)
+      && stored.loopStart >= 0 && stored.loopEnd <= lastMeasure && stored.loopStart <= stored.loopEnd) {
+      loopStartMeasure = stored.loopStart;
+      loopEndMeasure = stored.loopEnd;
+    }
+    wantsPitchCapture = stored.sing === true;
     const storedMixUndo = normalizePracticeMixUndo(stored.practiceMixUndo);
     if (storedMixUndo && ["learn", "check"].includes(stored.practiceMixMode) && practiceMixMatches(stored.practiceMixMode)) {
       activePracticeMix = stored.practiceMixMode;
       practiceMixUndo = storedMixUndo;
+    }
+  }
+
+  // Reads the current key, or the first older key that still holds something,
+  // moving it across so the next read finds it in its proper place.
+  function storedValueFor(key, legacyKeys = []) {
+    try {
+      const current = localStorage.getItem(key);
+      if (current !== null) return current;
+      for (const legacy of legacyKeys) {
+        const value = localStorage.getItem(legacy);
+        if (value === null) continue;
+        localStorage.setItem(key, value);
+        localStorage.removeItem(legacy);
+        return value;
+      }
+    } catch {
+      // Device-local storage is optional.
+    }
+    return null;
+  }
+
+  // Names used to carry the build's fingerprint, so every rebuild left the
+  // previous build's entries behind under a name nothing would ever ask for
+  // again. By the time this runs the adoptions above have taken whatever this
+  // build still wanted, so anything left under a fingerprint is dead, as are
+  // this song's own superseded :vN names. Other songs' entries are left alone
+  // and clear themselves the next time those songs are opened, and nothing
+  // outside this app's prefix is touched — the site shares one origin.
+  function sweepSupersededStorage(slug) {
+    const fingerprinted = /^choir-practice:[0-9a-f]{16}:/;
+    const ownPrefix = `choir-practice:${slug}:`;
+    const superseded = (key) => fingerprinted.test(key) || (key.startsWith(ownPrefix) && /:v\d+$/.test(key));
+    try {
+      const doomed = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key && superseded(key)) doomed.push(key);
+      }
+      doomed.forEach((key) => localStorage.removeItem(key));
+      return doomed.length;
+    } catch {
+      // Device-local storage is optional.
+      return 0;
     }
   }
 
@@ -13276,7 +13419,7 @@ function ceilPow2(v) {
     let stored = null;
     let importedPortableState = false;
     try {
-      const localValue = localStorage.getItem(preferenceKey);
+      const localValue = storedValueFor(preferenceKey, legacyPreferenceKeys);
       if (localValue !== null) stored = JSON.parse(localValue);
     } catch {
       // Device-local preferences are optional.
@@ -13308,7 +13451,7 @@ function ceilPow2(v) {
 
   function loadSettingsOpenState() {
     try {
-      const stored = localStorage.getItem(settingsPanelPreferenceKey);
+      const stored = storedValueFor(settingsPanelPreferenceKey, legacySettingsPanelKeys);
       if (stored === "open") return true;
       if (stored === "closed") return false;
     } catch {
@@ -13444,8 +13587,13 @@ function ceilPow2(v) {
     const mode = currentPracticeMix();
     const selectedPart = Number.isInteger(practicePartIndex) ? parts[practicePartIndex] : null;
     elements.practicePart.classList.toggle("has-part", Boolean(selectedPart));
-    if (selectedPart) elements.practicePart.style.setProperty("--part-color", selectedPart.color);
-    else elements.practicePart.style.removeProperty("--part-color");
+    if (selectedPart) {
+      elements.practicePart.style.setProperty("--part-color", selectedPart.color);
+      document.documentElement.style.setProperty("--practice-color", selectedPart.color);
+    } else {
+      elements.practicePart.style.removeProperty("--part-color");
+      document.documentElement.style.removeProperty("--practice-color");
+    }
     renderPracticeMixIcon(elements.mixLearn, "learn");
     renderPracticeMixIcon(elements.mixCheck, "check");
     elements.mixLearn.setAttribute("aria-pressed", String(mode === "learn"));
@@ -13630,13 +13778,15 @@ function ceilPow2(v) {
     return label;
   }
 
-  // Dragging a row label rides every part at once. The parts move by the same
-  // number of steps rather than to the same value, so the balance between them
-  // survives the trip, and the shift stops as soon as any one part reaches an
-  // end of the scale. Both mean a drag back to where it started restores the
+  // Dragging a row label rides every part at once, along the axis that row's
+  // own controls use: volumes are dragged up, pans sideways. The parts move by
+  // the same number of steps rather than to the same value, so the balance
+  // between them survives the trip, and the shift stops as soon as any one part
+  // reaches an end of the scale. Both mean a drag back to where it started restores the
   // mix exactly. Each step emits the same "input" the part's own control does,
   // so mixing, persistence and preset handling stay in one place.
-  function attachGroupDrag(label, controls, values, pixelsPerStep) {
+  function attachGroupDrag(label, controls, values, pixelsPerStep, { horizontal = false } = {}) {
+    const along = (event) => horizontal ? event.clientX : -event.clientY;
     const indicesNow = () => controls.map((control) => values.indexOf(nearestAllowed(control.value(), values)));
     const shift = (startIndices, steps) => {
       if (startIndices.some((index) => index < 0)) return;
@@ -13645,19 +13795,19 @@ function ceilPow2(v) {
     };
 
     let pointerId = null;
-    let startY = 0;
+    let startPoint = 0;
     let startIndices = [];
     label.addEventListener("pointerdown", (event) => {
       if (event.button !== 0 || !controls.length) return;
       pointerId = event.pointerId;
-      startY = event.clientY;
+      startPoint = along(event);
       startIndices = indicesNow();
       try { label.setPointerCapture(pointerId); } catch {}
       event.preventDefault();
     });
     label.addEventListener("pointermove", (event) => {
       if (event.pointerId !== pointerId || !label.hasPointerCapture(pointerId)) return;
-      shift(startIndices, Math.round((startY - event.clientY) / pixelsPerStep));
+      shift(startIndices, Math.round((along(event) - startPoint) / pixelsPerStep));
     });
     const release = (event) => {
       if (event.pointerId !== pointerId) return;
@@ -13758,7 +13908,10 @@ function ceilPow2(v) {
     });
     attachGroupDrag(volumeLabel, volumeControls, VOLUME_VALUES, 4);
 
-    appendMixerLabel("Pan", (state, defaults) => { state.pans = [...defaults.pans]; });
+    const panLabel = appendMixerLabel("Pan", (state, defaults) => { state.pans = [...defaults.pans]; });
+    panLabel.classList.add("is-group-drag", "is-horizontal");
+    panLabel.dataset.help = "Drag horizontally to pan every part.";
+    panLabel.setAttribute("aria-label", "All part pans");
     parts.forEach((part, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -13786,6 +13939,8 @@ function ceilPow2(v) {
       registerResetTarget(button, `${part.name} pan`, (state, defaults) => { state.pans[index] = defaults.pans[index]; });
       panControls.push(control);
     });
+    // Same feel as a pan dial's own drag, which also steps every four pixels.
+    attachGroupDrag(panLabel, panControls, PAN_VALUES, 4, { horizontal: true });
 
     updateMixerAppearance();
   }
@@ -13793,9 +13948,8 @@ function ceilPow2(v) {
   function loadAnnotations() {
     annotations.clear();
     try {
-      let source = [annotationKey, ...legacyAnnotationKeys]
-        .map((key) => ({ key, value: localStorage.getItem(key) }))
-        .find((candidate) => candidate.value);
+      const adopted = storedValueFor(annotationKey, legacyAnnotationKeys);
+      let source = adopted ? { key: annotationKey, value: adopted } : null;
       if (!source) {
         const embeddedAnnotations = portableStateForCurrentScore()?.annotations;
         if (embeddedAnnotations && typeof embeddedAnnotations === "object" && !Array.isArray(embeddedAnnotations)) {
@@ -14050,7 +14204,7 @@ function ceilPow2(v) {
     highlight.dataset.measureIndex = String(measureIndex);
     highlight.dataset.partIndex = String(selectedScorePartIndex);
     highlight.dataset.geometry = geometry;
-    highlight.style.setProperty("--part-color", parts[selectedScorePartIndex]?.color || PALETTE[selectedScorePartIndex % PALETTE.length]);
+    highlight.style.setProperty("--part-color", parts[selectedScorePartIndex]?.color || partPaint(selectedScorePartIndex));
     highlight.style.left = `${x}px`;
     highlight.style.top = `${y}px`;
     highlight.style.width = `${width}px`;
@@ -14158,11 +14312,11 @@ function ceilPow2(v) {
   function applyScoreScrubTarget(target) {
     if (!target || !engine || !ready) return;
     cancelVerticalFollowAnimation(true);
-    const rawTick = clamp(Math.round(Number(target.tick) || 0), 0, Math.max(0, sequence.endTick - 1));
+    const rawTick = clamp(Math.round(Number(target.tick) || 0), 0, latestSeekTick());
     const requestedTick = target.exactTick ? rawTick : clamp(snapTickToEighth(
       rawTick,
       Number.isFinite(target.snapStartTick) ? target.snapStartTick : 0,
-    ), 0, Math.max(0, sequence.endTick - 1));
+    ), 0, latestSeekTick());
     if (Number.isInteger(target.partIndex) && visibleTracks.has(target.partIndex)) {
       selectedScorePartIndex = target.partIndex;
       elements.score.dataset.selectedPart = String(selectedScorePartIndex);
@@ -14423,7 +14577,7 @@ function ceilPow2(v) {
       const anchorBottom = Math.max(6, staffTop - 5);
       const location = scoreLocationAtTick(tick);
       const partName = parts[partIndex]?.name || `Part ${partIndex + 1}`;
-      const partColor = parts[partIndex]?.color || PALETTE[partIndex % PALETTE.length];
+      const partColor = parts[partIndex]?.color || partPaint(partIndex);
       const noteText = String(text || "");
       const boxWidth = scoreNoteBoxWidth(noteText, location);
       const boxLeft = anchorX + 4;
@@ -14630,9 +14784,14 @@ function ceilPow2(v) {
     return clamp(low - 1, 0, sequence.measures.length - 1);
   }
 
-  function currentMeasureIndex() {
+  function currentMeasureIndex({ trailing = false } = {}) {
     if (!engine) return 0;
-    return measureIndexAtTick(engine.tickAtSeconds(engine.currentSeconds()));
+    const tick = engine.tickAtSeconds(engine.currentSeconds());
+    const index = measureIndexAtTick(tick);
+    // A cursor parked on a barline is drawn at the end of the measure that just
+    // finished, so that is the measure a closing repeat belongs to.
+    if (trailing && index > 0 && Math.abs(tick - sequence.measures[index][0]) < 1) return index - 1;
+    return index;
   }
 
   function updateLoopState({ persist = false } = {}) {
@@ -14647,11 +14806,14 @@ function ceilPow2(v) {
     elements.loopStart.dataset.help = hasStart ? `Move loop start; currently measure ${loopStartMeasure + 1}.` : "Set loop start at selected measure. Shortcut: [";
     elements.loopEnd.dataset.help = hasEnd ? `Move loop end; currently measure ${loopEndMeasure + 1}.` : "Set loop end at selected measure. Shortcut: ]";
     elements.loopClear.disabled = !(hasStart || hasEnd);
-    elements.loopControls.classList.toggle("has-partial-loop", hasStart !== hasEnd);
-    elements.loopControls.classList.toggle("has-complete-loop", hasStart && hasEnd);
+    // A closing repeat with no opening one repeats from the top, the way it
+    // does in print, so an End on its own is a complete loop. An opening one
+    // alone is not: there is nothing yet to come back from.
+    elements.loopControls.classList.toggle("has-partial-loop", hasStart && !hasEnd);
+    elements.loopControls.classList.toggle("has-complete-loop", hasEnd);
 
-    if (hasStart && hasEnd) {
-      const start = sequence.measures[loopStartMeasure][0];
+    if (hasEnd) {
+      const start = hasStart ? sequence.measures[loopStartMeasure][0] : 0;
       const endMeasure = sequence.measures[loopEndMeasure];
       const end = endMeasure[0] + endMeasure[1];
       engine?.setLoop(start, end);
@@ -14669,7 +14831,7 @@ function ceilPow2(v) {
   }
 
   function setLoopPoint(kind) {
-    const current = currentMeasureIndex();
+    const current = currentMeasureIndex({ trailing: kind === "end" });
     if (kind === "start") {
       loopStartMeasure = current;
       if (Number.isInteger(loopEndMeasure) && Number.isInteger(loopStartMeasure) && loopStartMeasure > loopEndMeasure) loopEndMeasure = null;
@@ -14677,7 +14839,7 @@ function ceilPow2(v) {
       loopEndMeasure = current;
       if (Number.isInteger(loopStartMeasure) && Number.isInteger(loopEndMeasure) && loopEndMeasure < loopStartMeasure) loopStartMeasure = null;
     }
-    updateLoopState();
+    updateLoopState({ persist: true });
     if (Number.isInteger(loopStartMeasure) && Number.isInteger(loopEndMeasure)) {
       showToast(`Looping measures ${loopStartMeasure + 1}–${loopEndMeasure + 1}`);
     }
@@ -14686,7 +14848,7 @@ function ceilPow2(v) {
   function clearLoop() {
     loopStartMeasure = null;
     loopEndMeasure = null;
-    updateLoopState();
+    updateLoopState({ persist: true });
   }
 
   function autoChapters() {
@@ -14731,7 +14893,12 @@ function ceilPow2(v) {
   function snapSeekMilliseconds(milliseconds) {
     const maximum = Number(elements.seek.max) || Math.round((engine?.duration || 0) * 1000) || 1;
     const value = clamp(Number(milliseconds) || 0, 0, maximum);
-    const points = chapterSeekMilliseconds.length ? chapterSeekMilliseconds : [0, maximum];
+    // Every snap point attracts anything within a measure of it, so leaving the
+    // end of the piece in would swallow the whole final bar and there would be
+    // no way to place the playhead inside it. It is not a section to practise
+    // from either; End still goes there directly.
+    const points = (chapterSeekMilliseconds.length ? chapterSeekMilliseconds : [0, maximum])
+      .filter((point) => point < maximum);
     const nearest = points.reduce((best, point) => {
       const [lower, upper] = chapterSnapBoundsMilliseconds(point);
       if (value < lower || value > upper) return best;
@@ -14758,6 +14925,21 @@ function ceilPow2(v) {
     return [...chapterSeekMilliseconds].reverse().find((point) => point < value - 1) ?? chapterSeekMilliseconds[0] ?? value;
   }
 
+  // Seeking too close to the score's last tick reads as past the end to the
+  // player, which answers by rewinding to the beginning. Measured on this
+  // build the last tick that behaves is two short of the end, so stop a
+  // sixty-fourth short: far too little to hear, and it does not depend on
+  // where exactly the player draws that line.
+  function latestSeekTick() {
+    const endTick = Number(sequence?.endTick) || 1;
+    const division = Number(sequence?.division) || 960;
+    return Math.max(0, endTick - Math.max(1, Math.round(division / 16)));
+  }
+
+  function seekTickFor(milliseconds) {
+    return clamp(Math.round(engine.tickAtSeconds(Number(milliseconds) / 1000)), 0, latestSeekTick());
+  }
+
   function previewSeek(milliseconds, updateScore = false) {
     const value = snapSeekMilliseconds(milliseconds);
     elements.seek.value = String(value);
@@ -14765,7 +14947,7 @@ function ceilPow2(v) {
     updateSeekAppearance(value);
     if (updateScore && ready && engine && api) {
       cancelVerticalFollowAnimation(true);
-      api.tickPosition = engine.tickAtSeconds(value / 1000);
+      api.tickPosition = seekTickFor(value);
     }
     return value;
   }
@@ -14962,7 +15144,9 @@ function ceilPow2(v) {
         return;
       }
       if (this.basePosition >= this.duration - 0.005) this.basePosition = 0;
-      if (this.hasLoop() && (this.basePosition < this.loopStartSeconds || this.basePosition >= this.loopEndSeconds)) this.basePosition = this.loopStartSeconds;
+      // Pressing play with a loop set plays the loop, wherever the playhead was.
+      if (this.hasLoop() && !this.withinLoop(this.basePosition)) this.basePosition = this.loopStartSeconds;
+      this.loopArmed = this.withinLoop(this.basePosition);
       this.playing = true;
       this.anchorTime = this.context.currentTime;
       this.resetScheduler();
@@ -14980,9 +15164,13 @@ function ceilPow2(v) {
     }
 
     seek(seconds) {
-      let requested = clamp(seconds, 0, this.duration);
-      if (this.hasLoop() && requested >= this.loopEndSeconds - 0.001) requested = this.loopStartSeconds;
+      // A seek goes where it was asked to go, even past the loop end: moving
+      // out there is how the loop's end gets moved further out. Playback only
+      // wraps once it has been inside the loop, so landing beyond it plays on
+      // instead of snapping straight back.
+      const requested = clamp(seconds, 0, this.duration);
       this.basePosition = requested;
+      this.loopArmed = this.withinLoop(requested);
       if (this.context) this.anchorTime = this.context.currentTime;
       this.stopVoices();
       if (this.playing) this.resetScheduler();
@@ -15001,7 +15189,7 @@ function ceilPow2(v) {
         this.transition.gain.setValueAtTime(Math.max(0.0001, this.transition.gain.value), now);
         this.transition.gain.linearRampToValueAtTime(0.0001, now + 0.018);
         this.stopVoices(0.018);
-        this.resetScheduler(0.045);
+        this.resetScheduler(0.045, { carryHeldNotes: true });
         this.transition.gain.setValueAtTime(0.0001, now + 0.026);
         this.transition.gain.linearRampToValueAtTime(1, now + 0.075);
       }
@@ -15021,10 +15209,15 @@ function ceilPow2(v) {
       }
       this.loopStartSeconds = this.secondsAtTick(startTick);
       this.loopEndSeconds = this.secondsAtTick(endTick);
+      this.loopArmed = this.withinLoop(this.currentSeconds());
       if (this.playing && (this.currentSeconds() < this.loopStartSeconds || this.currentSeconds() >= this.loopEndSeconds)) this.seek(this.loopStartSeconds);
     }
 
     hasLoop() { return Number.isFinite(this.loopStartSeconds) && Number.isFinite(this.loopEndSeconds); }
+
+    withinLoop(position) {
+      return this.hasLoop() && position >= this.loopStartSeconds && position < this.loopEndSeconds;
+    }
 
     updateMix(audible, volumes, pans, immediate = false) {
       if (!this.context || !this.trackStrips.length) return;
@@ -15054,13 +15247,20 @@ function ceilPow2(v) {
       return low;
     }
 
-    resetScheduler(minimumLead = SCHEDULER_LEAD_SECONDS) {
+    // Chamber protocol: play your pickups, but a note struck before you came in
+    // is not yours to sound. Starting part-way through a phrase therefore opens
+    // with whatever articulates from here, and the chord already ringing stays
+    // silent. A tempo change is not a fresh start, so it carries its notes on
+    // rather than cutting them off mid-sound.
+    resetScheduler(minimumLead = SCHEDULER_LEAD_SECONDS, { carryHeldNotes = false } = {}) {
       const position = this.basePosition;
       this.nextNoteIndex = this.findNext(this.notes, position, "start");
       this.nextClickIndex = this.findNext(this.clicks, position, "time");
-      this.notes.slice(0, this.nextNoteIndex).forEach((note) => {
-        if (note.end > position) this.scheduleNote(note, position, minimumLead);
-      });
+      if (carryHeldNotes) {
+        this.notes.slice(0, this.nextNoteIndex).forEach((note) => {
+          if (note.end > position) this.scheduleNote(note, position, minimumLead);
+        });
+      }
       this.scheduleAhead(minimumLead);
     }
 
@@ -15232,7 +15432,8 @@ function ceilPow2(v) {
     update() {
       if (!this.playing) return;
       const position = this.currentSeconds();
-      if (this.hasLoop() && position >= this.loopEndSeconds - 0.002) {
+      if (!this.loopArmed) this.loopArmed = this.withinLoop(position);
+      if (this.loopArmed && this.hasLoop() && position >= this.loopEndSeconds - 0.002) {
         this.basePosition = this.loopStartSeconds;
         this.anchorTime = this.context.currentTime;
         this.stopVoices(0.012);
@@ -15325,25 +15526,77 @@ function ceilPow2(v) {
     return { lanes, lineCount: Math.max(1, laneEnds.length) };
   }
 
+  // A word-splitting hyphen only earns its width when the syllables it joins
+  // are far enough apart to read as separate words anyway. Measured from the
+  // last letter, the dash needs room for itself and as much again to sit in;
+  // any tighter and it is about to touch what follows, so it goes, and
+  // "Fa mil iar" on one line reads better than "Fa- iar" with "mil-" stranded
+  // underneath. This runs before lanes are handed out, so the packing sees the
+  // width the dashes give back.
+  function relaxLyricHyphens(syllables) {
+    syllables.forEach((syllable, index) => {
+      const next = syllables[index + 1];
+      if (!next || !syllable.hyphenWidth) return;
+      const reach = next.left - (syllable.left + syllable.width - syllable.hyphenWidth);
+      if (reach >= syllable.hyphenWidth * PITCH_BAR_HYPHEN_LEEWAY) return;
+      syllable.width -= syllable.hyphenWidth;
+      syllable.trimmed = true;
+    });
+  }
+
+  // Dropping the hyphen does not always buy enough room, and a word broken
+  // across two lines needs its dash back to still read as one word. Lanes are
+  // settled by now, so a hyphen can return whenever its own lane has room for
+  // it; where it does not, the overlap would be worse than the missing dash.
+  // A dash is set tight against the syllable it belongs to, so it only has to
+  // clear what follows, not keep the margin two separate syllables want.
+  function restoreSplitWordHyphens(syllables, lanes) {
+    const nextOnLane = new Map();
+    const previousOnLane = new Map();
+    syllables.forEach((syllable, index) => {
+      const earlier = previousOnLane.get(lanes[index]);
+      if (earlier !== undefined) nextOnLane.set(earlier, syllable);
+      previousOnLane.set(lanes[index], index);
+    });
+    syllables.forEach((syllable, index) => {
+      if (!syllable.trimmed || lanes[index + 1] === lanes[index]) return;
+      const follower = nextOnLane.get(index);
+      const limit = follower ? follower.left : Infinity;
+      if (syllable.left + syllable.width + syllable.hyphenWidth > limit) return;
+      syllable.width += syllable.hyphenWidth;
+      syllable.trimmed = false;
+    });
+  }
+
   function packPitchBarLyrics(systems) {
     systems.forEach(({ svg, lyricTop, lyricLineHeight, lyricVerses }) => {
       if (!lyricVerses?.length || !Number.isFinite(lyricTop)) return;
       const byVerse = new Map();
       svg.querySelectorAll(".bar-lyric-text").forEach((text) => {
         const verse = Number(text.dataset.verse) || 0;
+        const written = text.dataset.syllable ?? text.textContent ?? "";
+        const hyphenated = written.length > 1 && written.endsWith("-");
+        text.dataset.syllable = written;
+        text.textContent = written;
         if (!byVerse.has(verse)) byVerse.set(verse, []);
         byVerse.get(verse).push({
           text,
+          written,
           left: Number(text.getAttribute("x")) || 0,
           width: measuredSvgTextLength(text),
+          hyphenWidth: hyphenated ? measuredSvgTextLength(text, written.length - 1, 1) : 0,
         });
       });
 
       let usedLines = 0;
       lyricVerses.forEach((verse) => {
         const syllables = (byVerse.get(verse) || []).sort((left, right) => left.left - right.left);
-        const { lanes, lineCount } = assignLyricLanes(syllables, lyricLineHeight * 0.15);
+        const gap = lyricLineHeight * 0.15;
+        relaxLyricHyphens(syllables);
+        const { lanes, lineCount } = assignLyricLanes(syllables, gap);
+        restoreSplitWordHyphens(syllables, lanes);
         syllables.forEach((syllable, index) => {
+          if (syllable.trimmed) syllable.text.textContent = syllable.written.slice(0, -1);
           syllable.text.setAttribute("y", String(lyricTop + (usedLines + lanes[index]) * lyricLineHeight));
         });
         usedLines += lineCount;
@@ -15407,19 +15660,40 @@ function ceilPow2(v) {
     };
   }
 
+  // A key signature names two keys, a major and its relative minor, and
+  // MuseScore often exports the signature without saying which. Autumn is in
+  // A minor but exports as bare "no sharps or flats", so the guides would
+  // otherwise centre on C. The music decides: whichever of the two tonics the
+  // piece actually dwells on, measured by how long its pitch class sounds.
+  // Major keeps the benefit of the doubt unless the minor is clearly ahead.
+  function soundsMinor(majorTonic) {
+    const weights = new Map();
+    for (const [, startTick, endTick, key] of sequence?.notes || []) {
+      const pitchClass = ((key % 12) + 12) % 12;
+      weights.set(pitchClass, (weights.get(pitchClass) || 0) + Math.max(0, endTick - startTick));
+    }
+    const major = weights.get(majorTonic) || 0;
+    const relativeMinor = weights.get((majorTonic + 9) % 12) || 0;
+    return relativeMinor > major * 1.2;
+  }
+
   function configurePitchGuides(xml) {
     try {
       const documentXml = new DOMParser().parseFromString(xml, "application/xml");
       const fifths = Number([...documentXml.getElementsByTagName("*")]
         .find((element) => element.localName === "fifths")?.textContent || 0);
+      // An absent mode is not a declaration of major; it is the question the
+      // music has to answer below.
       const mode = String([...documentXml.getElementsByTagName("*")]
-        .find((element) => element.localName === "mode")?.textContent || "major").toLowerCase();
+        .find((element) => element.localName === "mode")?.textContent || "").toLowerCase();
       const majorTonic = ((7 * fifths) % 12 + 12) % 12;
-      const tonic = mode.includes("minor") ? (majorTonic + 9) % 12 : majorTonic;
+      const declared = mode.includes("minor") ? "minor" : mode.includes("major") ? "major" : null;
+      const minor = declared ? declared === "minor" : soundsMinor(majorTonic);
+      const tonic = minor ? (majorTonic + 9) % 12 : majorTonic;
       scoreKeyPitchClasses = {
         tonic,
         dominant: (tonic + 7) % 12,
-        third: (tonic + (mode.includes("minor") ? 3 : 4)) % 12,
+        third: (tonic + (minor ? 3 : 4)) % 12,
       };
     } catch {
       scoreKeyPitchClasses = { tonic: 0, dominant: 7, third: 4 };
@@ -15485,28 +15759,130 @@ function ceilPow2(v) {
     });
   }
 
+  // Every beat boundary strictly inside a span, each with the weight of the
+  // beat it falls on: the downbeat, the middle of the bar where the meter has
+  // one, then the rest. The grid is the bar's and never the note's, so a
+  // syncopated note's first tick comes wherever the next pulse falls rather
+  // than a beat after its onset: these are for feeling the pulse, not for
+  // counting off a note's own length. Anything shorter than a beat has none, so only notes
+  // worth counting are marked, and nothing below the beat is marked at all —
+  // a long note is counted in beats and bars, not in its subdivisions.
+  // Compound meters count in dotted beats, the way they are conducted, rather
+  // than in their notated eighths.
+  function beatTicksWithin(fromTick, toTick) {
+    const ticks = [];
+    for (let index = measureIndexAtTick(fromTick); index < sequence.measures.length; index += 1) {
+      const [measureStart, measureDuration, beats, beatType] = sequence.measures[index];
+      if (measureStart >= toTick) break;
+      const unit = (sequence.division * 4) / (beatType || 4);
+      const step = beatType >= 8 && beats > 3 && beats % 3 === 0 ? unit * 3 : unit;
+      const middle = measureStart + measureDuration / 2;
+      for (let tick = measureStart; tick < measureStart + measureDuration; tick += step) {
+        if (tick <= fromTick || tick >= toTick) continue;
+        ticks.push({ tick, level: tick === measureStart ? 0 : (beats % 2 === 0 && tick === middle ? 1 : 2) });
+      }
+    }
+    return ticks;
+  }
+
+  // A part's divisi, worked out from the notes: the build folds both encodings
+  // — a second voice, and a chord inside one voice — into a single track, so
+  // what is left to go on is how many pitches the part sounds at once. Lines
+  // are numbered from the top, the way divisi are labelled.
+  function analysePartDivisi() {
+    return parts.map((_, track) => {
+      const notes = (sequence.notes || []).filter((note) => note[0] === track);
+      const edges = [...new Set(notes.flatMap((note) => [note[1], note[2]]))].sort((a, b) => a - b);
+      const spans = [];
+      let maxLines = 1;
+      for (let index = 0; index < edges.length - 1; index += 1) {
+        const [start, end] = [edges[index], edges[index + 1]];
+        const pitches = [...new Set(notes.filter((note) => note[1] <= start && note[2] >= end).map((note) => note[3]))]
+          .sort((a, b) => b - a);
+        if (!pitches.length) continue;
+        maxLines = Math.max(maxLines, pitches.length);
+        const previous = spans.at(-1);
+        // One span per stack, so a held chord is not chopped at its neighbours'
+        // edges.
+        if (previous && previous.end === start && previous.pitches.join() === pitches.join()) previous.end = end;
+        else spans.push({ start, end, pitches });
+      }
+      return { maxLines, spans };
+    });
+  }
+
+  // Which line to sing where the part divides into fewer lines than the singer
+  // chose from. The position is kept proportional, so a middle voice stays in
+  // the middle instead of being pushed to the floor and leaving the middle line
+  // unsung; a singer who falls exactly between two lines goes to the lower one,
+  // which is the side that wants the extra body.
+  function divisiLineFor(chosen, maxLines, available) {
+    if (available <= 1 || maxLines <= 1) return 0;
+    const position = clamp(chosen, 0, maxLines - 1) / (maxLines - 1);
+    return clamp(Math.round(position * (available - 1)), 0, available - 1);
+  }
+
+  function divisiSpanAt(track, tick) {
+    const spans = partDivisi[track]?.spans || [];
+    let low = 0;
+    let high = spans.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (spans[middle].end <= tick) low = middle + 1;
+      else high = middle;
+    }
+    const span = spans[low];
+    return span && span.start <= tick ? span : null;
+  }
+
   function pitchStripe(defs, systemIndex, tracks, cache) {
-    if (tracks.length === 1) return parts[tracks[0]]?.color || PALETTE[tracks[0] % PALETTE.length];
+    if (tracks.length === 1) return parts[tracks[0]]?.color || partPaint(tracks[0]);
     const key = tracks.join("-");
     if (cache.has(key)) return cache.get(key);
     const id = `pitch-stripe-${systemIndex}-${key}`;
     const pattern = createSvgElement("pattern", { id, width: tracks.length * 6, height: 6, patternUnits: "userSpaceOnUse" });
-    tracks.forEach((track, index) => pattern.append(createSvgElement("rect", {
-      x: index * 6, y: 0, width: 6, height: 6, fill: parts[track]?.color || PALETTE[track % PALETTE.length],
-    })));
+    tracks.forEach((track, index) => {
+      const stripe = createSvgElement("rect", { x: index * 6, y: 0, width: 6, height: 6 });
+      stripe.style.fill = parts[track]?.color || partPaint(track);
+      pattern.append(stripe);
+    });
     defs.append(pattern);
     const fill = `url(#${id})`;
     cache.set(key, fill);
     return fill;
   }
 
-  function expectedPitchErrorCents(tick, pitchCents) {
-    const visibleNotes = (sequence.notes || []).filter(([track]) => visibleTracks.has(track));
-    let candidates = visibleNotes.filter(([, startTick, endTick]) => tick >= startTick && tick < endTick);
-    if (!candidates.length) {
-      const latestEnd = visibleNotes.reduce((latest, [, , endTick]) => endTick <= tick ? Math.max(latest, endTick) : latest, -1);
-      if (latestEnd >= 0) candidates = visibleNotes.filter(([, , endTick]) => endTick === latestEnd);
+  // The pitch a singer is meant to be on. With a part chosen there is a real
+  // answer, so it is graded against that part alone, and against the chosen
+  // line where the part divides: singing the other line, or another part
+  // altogether, is exactly what a singer wants to be told about. With no part
+  // chosen there is no "mine", so the nearest note on screen stands in.
+  function expectedPitchAt(tick, line = null) {
+    const mine = Number.isInteger(practicePartIndex);
+    const pool = (sequence.notes || []).filter(([track]) => mine ? track === practicePartIndex : visibleTracks.has(track));
+    let candidates = pool.filter(([, startTick, endTick]) => tick >= startTick && tick < endTick);
+    // A contour recorded on one line is judged against that line, so drifting
+    // onto the other one reads as the wrong note rather than as a second take.
+    if (mine && candidates.length > 1 && Number.isInteger(line)) {
+      const span = divisiSpanAt(practicePartIndex, tick);
+      const lines = partDivisi[practicePartIndex]?.maxLines || 1;
+      if (span && span.pitches.length > 1 && lines > 1) {
+        const wanted = span.pitches[divisiLineFor(line, lines, span.pitches.length)];
+        const onThatLine = candidates.filter((note) => note[3] === wanted);
+        if (onThatLine.length) candidates = onThatLine;
+      }
     }
+    if (!candidates.length) {
+      // Between phrases, hold the last note of whatever is being graded rather
+      // than letting the trace drift to some other part's note.
+      const latestEnd = pool.reduce((latest, [, , endTick]) => endTick <= tick ? Math.max(latest, endTick) : latest, -1);
+      if (latestEnd >= 0) candidates = pool.filter(([, , endTick]) => endTick === latestEnd);
+    }
+    return candidates;
+  }
+
+  function expectedPitchErrorCents(tick, pitchCents, line = null) {
+    const candidates = expectedPitchAt(tick, line);
     if (!candidates.length) return null;
     return candidates.reduce((best, note) => {
       const error = pitchCents - note[3] * 100;
@@ -15535,7 +15911,44 @@ function ceilPow2(v) {
   }
 
   function pitchTraceBinAtTick(tick) {
-    return clamp(Math.round((Number(tick) || 0) / pitchTraceBinTicks()), 0, pitchTracePitches.length - 1);
+    return clamp(Math.round((Number(tick) || 0) / pitchTraceBinTicks()), 0, pitchTraceBinCount() - 1);
+  }
+
+  function pitchTraceLane(line, { create = false } = {}) {
+    const existing = pitchTraceLanes.get(line);
+    if (existing || !create) return existing || null;
+    const bins = pitchTraceBinCount();
+    const lane = { pitches: new Uint16Array(bins), breaks: new Uint8Array(bins) };
+    pitchTraceLanes.set(line, lane);
+    return lane;
+  }
+
+  const pitchTraceLaneList = () => [...pitchTraceLanes.entries()].sort(([left], [right]) => left - right);
+
+  // Which line a sung sample belongs to, decided sample by sample. Both lines
+  // of a divisi are real music, so which one is being sung is the singer's to
+  // change whenever they like — mid-note included — and each line keeps its own
+  // contour rather than the first one claiming the passage.
+  function pitchTraceLaneAt(tick, cents) {
+    if (!Number.isInteger(practicePartIndex)) return 0;
+    const lines = partDivisi[practicePartIndex]?.maxLines || 1;
+    if (lines < 2) return 0;
+    const span = divisiSpanAt(practicePartIndex, tick);
+    if (!span || span.pitches.length < 2) return 0;
+    let nearest = 0;
+    let smallest = Infinity;
+    span.pitches.forEach((pitch, index) => {
+      const error = Math.abs(cents - pitch * 100);
+      if (error < smallest) {
+        smallest = error;
+        nearest = index;
+      }
+    });
+    // The nearest pitch is a position in this passage's stack; the lane is the
+    // line that position stands for where the part divides furthest.
+    return span.pitches.length === lines
+      ? nearest
+      : clamp(Math.round((nearest / (span.pitches.length - 1)) * (lines - 1)), 0, lines - 1);
   }
 
   function pitchTraceTickAtBin(bin) {
@@ -15543,31 +15956,30 @@ function ceilPow2(v) {
   }
 
   function resetPitchTraceGrid() {
-    pitchTracePitches = new Uint16Array(pitchTraceBinCount());
-    pitchTraceBreaks = new Uint8Array(pitchTracePitches.length);
+    pitchTraceLanes.clear();
     pitchTraceCount = 0;
   }
 
-  function previousOccupiedPitchBin(bin) {
-    for (let index = Math.min(bin - 1, pitchTracePitches.length - 1); index >= 0; index -= 1) {
-      if (pitchTracePitches[index]) return index;
+  function previousOccupiedPitchBin(lane, bin) {
+    for (let index = Math.min(bin - 1, lane.pitches.length - 1); index >= 0; index -= 1) {
+      if (lane.pitches[index]) return index;
     }
     return -1;
   }
 
-  function nextOccupiedPitchBin(bin) {
-    for (let index = Math.max(0, bin + 1); index < pitchTracePitches.length; index += 1) {
-      if (pitchTracePitches[index]) return index;
+  function nextOccupiedPitchBin(lane, bin) {
+    for (let index = Math.max(0, bin + 1); index < lane.pitches.length; index += 1) {
+      if (lane.pitches[index]) return index;
     }
     return -1;
   }
 
-  function occupiedPitchBinsForSystem(system) {
-    const first = clamp(Math.ceil(system.startTick / pitchTraceBinTicks()), 0, pitchTracePitches.length - 1);
-    const last = clamp(Math.floor(system.endTick / pitchTraceBinTicks()), first, pitchTracePitches.length - 1);
+  function occupiedPitchBinsForSystem(lane, system) {
+    const first = clamp(Math.ceil(system.startTick / pitchTraceBinTicks()), 0, lane.pitches.length - 1);
+    const last = clamp(Math.floor(system.endTick / pitchTraceBinTicks()), first, lane.pitches.length - 1);
     const bins = [];
     for (let bin = first; bin <= last; bin += 1) {
-      if (pitchTracePitches[bin]) bins.push(bin);
+      if (lane.pitches[bin]) bins.push(bin);
     }
     return bins;
   }
@@ -15584,23 +15996,24 @@ function ceilPow2(v) {
     const toBin = Number(edge.dataset.toBin);
     edge.remove();
     system.traceEdges.delete(key);
+    const line = edge.dataset.line;
     [fromBin, toBin].forEach((bin) => {
-      const keys = system.traceEdgesByBin.get(bin);
+      const keys = system.traceEdgesByBin.get(`${line}:${bin}`);
       keys?.delete(key);
-      if (!keys?.size) system.traceEdgesByBin.delete(bin);
+      if (!keys?.size) system.traceEdgesByBin.delete(`${line}:${bin}`);
     });
   }
 
-  function removePitchTraceEdgesAtBin(system, bin) {
-    [...(system.traceEdgesByBin?.get(bin) || [])].forEach((key) => removePitchTraceEdge(system, key));
+  function removePitchTraceEdgesAtBin(system, line, bin) {
+    [...(system.traceEdgesByBin?.get(`${line}:${bin}`) || [])].forEach((key) => removePitchTraceEdge(system, key));
   }
 
-  function appendPitchTraceEdge(system, fromBin, toBin) {
-    const key = `${fromBin}:${toBin}`;
+  function appendPitchTraceEdge(system, line, lane, fromBin, toBin) {
+    const key = `${line}:${fromBin}:${toBin}`;
     if (system.traceEdges?.has(key)) return;
-    const fromCents = pitchTracePitches[fromBin];
-    const toCents = pitchTracePitches[toBin];
-    if (!fromCents || !toCents || pitchTraceBreaks[toBin]) return;
+    const fromCents = lane.pitches[fromBin];
+    const toCents = lane.pitches[toBin];
+    if (!fromCents || !toCents || lane.breaks[toBin]) return;
     const fromTick = pitchTraceTickAtBin(fromBin);
     const toTick = pitchTraceTickAtBin(toBin);
     const gap = Math.abs(engine.secondsAtTick(toTick) - engine.secondsAtTick(fromTick));
@@ -15612,9 +16025,10 @@ function ceilPow2(v) {
     const x2 = system.xAtTick(toTick);
     const y1 = system.yAtPitch(startPitch);
     const y2 = system.yAtPitch(endPitch);
-    const traceColor = pitchTraceColor(expectedPitchErrorCents(toTick, toCents));
+    const traceColor = pitchTraceColor(expectedPitchErrorCents(toTick, toCents, line));
     const edge = createSvgElement("g", {
       class: "bar-pitch-trace-edge",
+      "data-line": line,
       "data-from-bin": fromBin,
       "data-to-bin": toBin,
       "aria-hidden": "true",
@@ -15626,8 +16040,9 @@ function ceilPow2(v) {
     system.traceLayer.append(edge);
     system.traceEdges.set(key, edge);
     [fromBin, toBin].forEach((bin) => {
-      if (!system.traceEdgesByBin.has(bin)) system.traceEdgesByBin.set(bin, new Set());
-      system.traceEdgesByBin.get(bin).add(key);
+      const indexKey = `${line}:${bin}`;
+      if (!system.traceEdgesByBin.has(indexKey)) system.traceEdgesByBin.set(indexKey, new Set());
+      system.traceEdgesByBin.get(indexKey).add(key);
     });
   }
 
@@ -15636,35 +16051,69 @@ function ceilPow2(v) {
       system.traceLayer.replaceChildren();
       system.traceEdges.clear();
       system.traceEdgesByBin.clear();
-      const bins = occupiedPitchBinsForSystem(system);
-      for (let index = 1; index < bins.length; index += 1) appendPitchTraceEdge(system, bins[index - 1], bins[index]);
+      pitchTraceLaneList().forEach(([line, lane]) => {
+        const bins = occupiedPitchBinsForSystem(lane, system);
+        for (let index = 1; index < bins.length; index += 1) {
+          appendPitchTraceEdge(system, line, lane, bins[index - 1], bins[index]);
+        }
+      });
     });
     updatePitchCaptureAppearance();
   }
 
-  function updatePitchTraceIncrementally(changedBins) {
-    if (!changedBins?.size || scoreView !== "bars" || !barSystems.length) {
+  // `changed` maps a line to the bins that moved in it, so a take of one line
+  // never redraws — or erases — another line's contour.
+  function updatePitchTraceIncrementally(changed) {
+    if (!changed?.size || scoreView !== "bars" || !barSystems.length) {
       updatePitchCaptureAppearance();
       return;
     }
-    const affected = new Set(changedBins);
-    changedBins.forEach((bin) => {
-      const previous = previousOccupiedPitchBin(bin);
-      const next = nextOccupiedPitchBin(bin);
-      if (previous >= 0) affected.add(previous);
-      if (next >= 0) affected.add(next);
-    });
-    barSystems.forEach((system) => {
-      affected.forEach((bin) => removePitchTraceEdgesAtBin(system, bin));
-      affected.forEach((bin) => {
-        if (!pitchTracePitches[bin] || !pitchTraceBinIsInSystem(system, bin)) return;
-        const previous = previousOccupiedPitchBin(bin);
-        const next = nextOccupiedPitchBin(bin);
-        if (previous >= 0 && pitchTraceBinIsInSystem(system, previous)) appendPitchTraceEdge(system, previous, bin);
-        if (next >= 0 && pitchTraceBinIsInSystem(system, next)) appendPitchTraceEdge(system, bin, next);
+    changed.forEach((bins, line) => {
+      const lane = pitchTraceLane(line);
+      if (!lane) return;
+      const affected = new Set(bins);
+      bins.forEach((bin) => {
+        const previous = previousOccupiedPitchBin(lane, bin);
+        const next = nextOccupiedPitchBin(lane, bin);
+        if (previous >= 0) affected.add(previous);
+        if (next >= 0) affected.add(next);
+      });
+      barSystems.forEach((system) => {
+        affected.forEach((bin) => removePitchTraceEdgesAtBin(system, line, bin));
+        affected.forEach((bin) => {
+          if (!lane.pitches[bin] || !pitchTraceBinIsInSystem(system, bin)) return;
+          const previous = previousOccupiedPitchBin(lane, bin);
+          const next = nextOccupiedPitchBin(lane, bin);
+          if (previous >= 0 && pitchTraceBinIsInSystem(system, previous)) appendPitchTraceEdge(system, line, lane, previous, bin);
+          if (next >= 0 && pitchTraceBinIsInSystem(system, next)) appendPitchTraceEdge(system, line, lane, bin, next);
+        });
       });
     });
     updatePitchCaptureAppearance();
+  }
+
+  // ||: and :|| drawn the way they are engraved — thick bar, thin bar, two
+  // dots facing the music they enclose — sized to sit beside a measure number
+  // without crowding it. `facing` is +1 for an opening sign drawn rightward
+  // from the barline, -1 for a closing one drawn leftward.
+  function pitchBarRepeatSign(barlineX, baseline, height, facing) {
+    const thick = Math.max(1.1, height * 0.2);
+    const thin = Math.max(0.55, height * 0.085);
+    const gap = Math.max(0.9, height * 0.14);
+    const dot = Math.max(0.6, height * 0.095);
+    const top = baseline - height;
+    const from = (offset, width) => facing > 0 ? barlineX + offset : barlineX - offset - width;
+    const group = createSvgElement("g", { class: "bar-repeat-sign" });
+    group.append(
+      createSvgElement("rect", { x: from(0, thick), y: top, width: thick, height }),
+      createSvgElement("rect", { x: from(thick + gap, thin), y: top, width: thin, height }),
+    );
+    const dotX = from(thick + gap + thin + gap, dot * 2) + dot;
+    group.append(
+      createSvgElement("circle", { cx: dotX, cy: top + height * 0.3, r: dot }),
+      createSvgElement("circle", { cx: dotX, cy: top + height * 0.7, r: dot }),
+    );
+    return { group, width: thick + gap + thin + gap + dot * 2 };
   }
 
   function renderBarScore() {
@@ -15684,7 +16133,9 @@ function ceilPow2(v) {
     const pitchStep = clamp(5.5 * typographyScale, 3, 10);
     const lyricFontSize = LYRIC_FONT_SIZE * typographyScale;
     const lyricLineHeight = 17.5 * typographyScale;
-    elements.barScore.style.setProperty("--bar-measure-font-size", `${11 * typographyScale}px`);
+    const measureFontSize = 11 * typographyScale;
+    const repeatSignHeight = measureFontSize * 0.78;
+    elements.barScore.style.setProperty("--bar-measure-font-size", `${measureFontSize}px`);
     elements.barScore.style.setProperty("--bar-lyric-font-size", `${lyricFontSize}px`);
     const fragment = document.createDocumentFragment();
     const nextSystems = [];
@@ -15696,11 +16147,28 @@ function ceilPow2(v) {
       const endTick = lastMeasure[0] + lastMeasure[1];
       const rowSegments = segments.filter((segment) => segment.endTick > startTick && segment.startTick < endTick);
       const rowPitches = rowSegments.map((segment) => segment.pitch);
-      const baseMinPitch = (rowPitches.length ? Math.min(...rowPitches) : 60) - 1;
-      const baseMaxPitch = (rowPitches.length ? Math.max(...rowPitches) : 60) + 1;
+      // Where each part goes at the line break. A leap is only readable if you
+      // can see both ends of it, so the pitch it lands on is marked at the end
+      // of the line it leaves, and counts towards this line's pitch range so it
+      // is never off the top or bottom. Only parts singing on this line are
+      // marked: without a note to leap from there is no leap to show, and an
+      // entry from another register would stretch the line for nothing.
+      const nextMeasures = sequence.measures.slice(first + measuresPerLine, first + measuresPerLine * 2);
+      const nextEndTick = nextMeasures.length ? nextMeasures.at(-1)[0] + nextMeasures.at(-1)[1] : endTick;
+      const continuations = [...new Set(rowSegments.flatMap((segment) => segment.tracks))].flatMap((track) => {
+        const next = segments.find((segment) => segment.tracks.includes(track)
+          && segment.endTick > endTick && segment.startTick < nextEndTick);
+        return next ? [{ track, pitch: next.pitch }] : [];
+      });
+      const reachPitches = continuations.map((continuation) => continuation.pitch);
+      const baseMinPitch = (rowPitches.length ? Math.min(...rowPitches, ...reachPitches) : 60) - 1;
+      const baseMaxPitch = (rowPitches.length ? Math.max(...rowPitches, ...reachPitches) : 60) + 1;
       const { minPitch, maxPitch, referencePitch } = pitchGuideRange(baseMinPitch, baseMaxPitch);
       const leftPad = 34;
-      const rightPad = 6;
+      // The gutter past the closing barline, which the line-break cues stand in
+      // so they read as what comes next rather than as part of this line. It is
+      // cut to the cue's own size, which follows the row height.
+      const rightPad = pitchStep * 2 + 2;
       const topPad = 18;
       const plotWidth = continuous ? rowMeasures.length * measureWidth : availableWidth - leftPad - rightPad;
       const plotHeight = (maxPitch - minPitch + 2) * pitchStep;
@@ -15731,17 +16199,11 @@ function ceilPow2(v) {
       defs.append(clip);
       svg.append(defs, createSvgElement("rect", { class: "bar-system-background", x: leftPad, y: topPad, width: plotWidth, height: plotHeight }));
 
-      if (Number.isInteger(loopStartMeasure) && Number.isInteger(loopEndMeasure)) {
-        const loopStart = sequence.measures[loopStartMeasure][0];
-        const loopMeasure = sequence.measures[loopEndMeasure];
-        const loopEnd = loopMeasure[0] + loopMeasure[1];
-        const visibleStart = Math.max(loopStart, startTick);
-        const visibleEnd = Math.min(loopEnd, endTick);
-        if (visibleEnd > visibleStart) svg.append(createSvgElement("rect", {
-          class: "bar-loop-region", x: xAtTick(visibleStart), y: topPad,
-          width: Math.max(1, xAtTick(visibleEnd) - xAtTick(visibleStart)), height: plotHeight,
-        }));
-      }
+      // The closing sign is what makes a loop; an opening one is drawn only
+      // when the repeat starts somewhere other than the top, exactly as it is
+      // printed.
+      const hasLoop = Number.isInteger(loopEndMeasure);
+      const hasOpening = hasLoop && Number.isInteger(loopStartMeasure);
 
       rowMeasures.forEach((measure, offset) => {
         const x = xAtTick(measure[0]);
@@ -15750,17 +16212,45 @@ function ceilPow2(v) {
           class: `bar-measure-line${offset === 0 ? " is-system-edge" : ""}`,
           x1: x, x2: x, y1: topPad, y2: topPad + plotHeight,
         }));
+        // Both signs stand on the barlines they belong to, the way they are
+        // engraved: the opening one just before its measure's number, the
+        // closing one at the end of the last measure the loop covers.
+        let numberX = x + 3;
+        if (hasOpening && first + offset === loopStartMeasure) {
+          const sign = pitchBarRepeatSign(x + 1, 11, repeatSignHeight, 1);
+          svg.append(sign.group);
+          numberX = x + sign.width + 4;
+        }
         const label = createSvgElement("text", {
           class: `bar-measure-number${chapters.has(first + offset) ? " is-chapter" : ""}`,
-          x: x + 3, y: 11,
+          x: numberX, y: 11,
         });
         label.textContent = String(number);
         svg.append(label);
+        if (hasLoop && first + offset === loopEndMeasure) {
+          svg.append(pitchBarRepeatSign(xAtTick(measure[0] + measure[1]) - 1, 11, repeatSignHeight, -1).group);
+        }
       });
       svg.append(createSvgElement("line", {
         class: "bar-measure-line is-system-edge", x1: leftPad + plotWidth, x2: leftPad + plotWidth,
         y1: topPad, y2: topPad + plotHeight,
       }));
+
+      // A triangle, not a bar: nothing in the score is that shape, so it cannot
+      // be mistaken for a note to sing, and it points on to where the note
+      // really is. Its vertical edge stands on the closing barline at a bar
+      // note's height, it is as wide as it is tall, and its apex marks the
+      // pitch.
+      continuations.forEach(({ track, pitch }) => {
+        const edge = leftPad + plotWidth;
+        const middle = topPad + (maxPitch - pitch + 1) * pitchStep;
+        const cue = createSvgElement("polygon", {
+          class: "bar-next-pitch",
+          points: `${edge},${middle - pitchStep} ${edge + pitchStep * 2},${middle} ${edge},${middle + pitchStep}`,
+        });
+        cue.style.fill = parts[track]?.color || partPaint(track);
+        svg.append(cue);
+      });
 
       const guidePitches = [];
       for (let pitch = minPitch; pitch <= maxPitch; pitch += 1) {
@@ -15785,11 +16275,31 @@ function ceilPow2(v) {
       rowSegments.forEach((segment) => {
         const x = xAtTick(Math.max(startTick, segment.startTick));
         const endX = xAtTick(Math.min(endTick, segment.endTick));
-        svg.append(createSvgElement("rect", {
+        const note = createSvgElement("rect", {
           class: "bar-note", x, y: topPad + (maxPitch - segment.pitch) * pitchStep,
           width: Math.max(0.8, endX - x), height: pitchStep * 2,
-          fill: pitchStripe(defs, systemIndex, segment.tracks, patternCache),
-        }));
+        });
+        note.style.fill = pitchStripe(defs, systemIndex, segment.tracks, patternCache);
+        svg.append(note);
+      });
+
+      // Counted from the notes rather than the drawn bars: a bar splits wherever
+      // another part joins or leaves the same pitch, and a note is a note either
+      // way. Two parts in unison therefore ask for the same tick twice.
+      const drawnBeatTicks = new Set();
+      rawNotes.forEach(([, noteStart, noteEnd, pitch]) => {
+        if (noteEnd <= startTick || noteStart >= endTick) return;
+        const top = topPad + (maxPitch - pitch) * pitchStep;
+        beatTicksWithin(noteStart, noteEnd).forEach(({ tick, level }) => {
+          if (tick <= startTick || tick >= endTick) return;
+          const key = `${pitch}:${tick}`;
+          if (drawnBeatTicks.has(key)) return;
+          drawnBeatTicks.add(key);
+          svg.append(createSvgElement("line", {
+            class: "bar-beat-tick", x1: xAtTick(tick), x2: xAtTick(tick),
+            y1: top + pitchStep * 2 * (1 - BEAT_TICK_HEIGHTS[level]), y2: top + pitchStep * 2,
+          }));
+        });
       });
 
       rowLyrics.forEach(([track, tick, verse, text]) => {
@@ -15920,8 +16430,12 @@ function ceilPow2(v) {
     elements.settingsToggle.classList.toggle("has-active-microphone", armed);
   }
 
+  // What a saved contour must match is the music it was sung against, not the
+  // build that produced the page: rebuilding the same score should not throw
+  // practice away. The playback hash covers the notes and their timing.
   function pitchTraceFingerprint() {
-    return String(buildMetadata.build?.fingerprint || buildMetadata.fingerprint || config.slug || config.title || "score");
+    return String(buildMetadata.build?.playbackSha256
+      || buildMetadata.build?.fingerprint || buildMetadata.fingerprint || config.slug || config.title || "score");
   }
 
   function bytesToBase64(bytes) {
@@ -15939,9 +16453,9 @@ function ceilPow2(v) {
     return bytes;
   }
 
-  function packedPitchTraceBreaks() {
-    const packed = new Uint8Array(Math.ceil(pitchTraceBreaks.length / 8));
-    pitchTraceBreaks.forEach((value, index) => {
+  function packedPitchTraceBreaks(breaks) {
+    const packed = new Uint8Array(Math.ceil(breaks.length / 8));
+    breaks.forEach((value, index) => {
       if (value) packed[index >> 3] |= 1 << (index & 7);
     });
     return packed;
@@ -15953,32 +16467,49 @@ function ceilPow2(v) {
     return unpacked;
   }
 
-  function loadPitchTraceV2(stored) {
-    if (stored.binTicks !== pitchTraceBinTicks() || stored.length !== pitchTraceBinCount()
-      || typeof stored.pitches !== "string" || typeof stored.breaks !== "string") return false;
-    const pitchBytes = base64ToBytes(stored.pitches);
-    const breakBytes = base64ToBytes(stored.breaks);
-    if (pitchBytes.byteLength !== stored.length * Uint16Array.BYTES_PER_ELEMENT
-      || breakBytes.byteLength !== Math.ceil(stored.length / 8)) return false;
-    pitchTracePitches = new Uint16Array(pitchBytes.buffer.slice(
+  function readPitchTraceLane(line, source, length) {
+    if (typeof source?.pitches !== "string" || typeof source?.breaks !== "string") return false;
+    const pitchBytes = base64ToBytes(source.pitches);
+    const breakBytes = base64ToBytes(source.breaks);
+    if (pitchBytes.byteLength !== length * Uint16Array.BYTES_PER_ELEMENT
+      || breakBytes.byteLength !== Math.ceil(length / 8)) return false;
+    const pitches = new Uint16Array(pitchBytes.buffer.slice(
       pitchBytes.byteOffset,
       pitchBytes.byteOffset + pitchBytes.byteLength,
     ));
-    pitchTraceBreaks = unpackPitchTraceBreaks(breakBytes, stored.length);
-    pitchTraceCount = 0;
-    pitchTracePitches.forEach((cents, index) => {
-      if (cents >= 2000 && cents <= 11000) pitchTraceCount += 1;
+    const breaks = unpackPitchTraceBreaks(breakBytes, length);
+    let kept = 0;
+    pitches.forEach((cents, index) => {
+      if (cents >= 2000 && cents <= 11000) kept += 1;
       else {
-        pitchTracePitches[index] = 0;
-        pitchTraceBreaks[index] = 0;
+        pitches[index] = 0;
+        breaks[index] = 0;
       }
     });
+    if (!kept) return true;
+    pitchTraceLanes.set(line, { pitches, breaks });
+    pitchTraceCount += kept;
     return true;
+  }
+
+  function loadPitchTraceV3(stored) {
+    if (stored.binTicks !== pitchTraceBinTicks() || stored.length !== pitchTraceBinCount()
+      || !Array.isArray(stored.lanes)) return false;
+    return stored.lanes.every((source) =>
+      readPitchTraceLane(clamp(Math.round(Number(source?.line) || 0), 0, 15), source, stored.length));
+  }
+
+  // A contour saved before lines existed is one voice's worth of singing, so it
+  // becomes the top line.
+  function loadPitchTraceV2(stored) {
+    if (stored.binTicks !== pitchTraceBinTicks() || stored.length !== pitchTraceBinCount()) return false;
+    return readPitchTraceLane(0, stored, stored.length);
   }
 
   function migratePitchTraceV1(stored) {
     if (!Array.isArray(stored.samples)) return false;
     resetPitchTraceGrid();
+    const lane = pitchTraceLane(0, { create: true });
     let previousSegment = null;
     stored.samples.map((sample) => Array.isArray(sample) ? sample.map(Number) : [])
       .filter(([tick, cents, clarity, segment]) => Number.isInteger(tick) && tick >= 0 && tick <= sequence.endTick
@@ -15988,20 +16519,50 @@ function ceilPow2(v) {
       .sort((left, right) => left[0] - right[0] || left[3] - right[3])
       .forEach(([tick, cents, , segment]) => {
         const bin = pitchTraceBinAtTick(tick);
-        if (!pitchTracePitches[bin]) pitchTraceCount += 1;
-        pitchTracePitches[bin] = cents;
-        if (previousSegment !== null && segment !== previousSegment) pitchTraceBreaks[bin] = 1;
+        if (!lane.pitches[bin]) pitchTraceCount += 1;
+        lane.pitches[bin] = cents;
+        if (previousSegment !== null && segment !== previousSegment) lane.breaks[bin] = 1;
         previousSegment = segment;
       });
     return true;
   }
 
+  // A trace carries the fingerprint of the music it was sung against, so one
+  // saved under any older name still belongs to this song when they match.
+  // Adoption by name only rescues a trace this same build wrote; this rescues
+  // the ones whose key named a build that no longer exists, which is every
+  // trace recorded before the names carried the song's slug.
+  function adoptedPitchTrace() {
+    const named = storedValueFor(pitchTraceKey, legacyPitchTraceKeys);
+    if (named !== null) return named;
+    const wanted = pitchTraceFingerprint();
+    try {
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key?.startsWith("choir-practice:") || !key.includes("pitch-trace")) continue;
+        const value = localStorage.getItem(key);
+        // Cheap reject before parsing what can be a megabyte of samples.
+        if (!value?.includes(wanted) || JSON.parse(value)?.fingerprint !== wanted) continue;
+        localStorage.setItem(pitchTraceKey, value);
+        localStorage.removeItem(key);
+        return value;
+      }
+    } catch {
+      // Device-local storage is optional.
+    }
+    return null;
+  }
+
   function loadPitchTrace() {
     resetPitchTraceGrid();
     try {
-      const stored = JSON.parse(localStorage.getItem(pitchTraceKey) || "null");
+      const stored = JSON.parse(adoptedPitchTrace() || "null");
       if (!stored || stored.fingerprint !== pitchTraceFingerprint()) return;
-      if (stored.version === PITCH_TRACE_STORAGE_VERSION && loadPitchTraceV2(stored)) return;
+      if (stored.version === PITCH_TRACE_STORAGE_VERSION && loadPitchTraceV3(stored)) return;
+      if (stored.version === 2 && loadPitchTraceV2(stored)) {
+        savePitchTraceNow();
+        return;
+      }
       if (stored.version === 1 && migratePitchTraceV1(stored)) savePitchTraceNow();
     } catch {
       // Pitch traces are optional device-local practice data.
@@ -16017,13 +16578,16 @@ function ceilPow2(v) {
         version: PITCH_TRACE_STORAGE_VERSION,
         fingerprint: pitchTraceFingerprint(),
         binTicks: pitchTraceBinTicks(),
-        length: pitchTracePitches.length,
-        pitches: bytesToBase64(new Uint8Array(
-          pitchTracePitches.buffer,
-          pitchTracePitches.byteOffset,
-          pitchTracePitches.byteLength,
-        )),
-        breaks: bytesToBase64(packedPitchTraceBreaks()),
+        length: pitchTraceBinCount(),
+        lanes: pitchTraceLaneList().map(([line, lane]) => ({
+          line,
+          pitches: bytesToBase64(new Uint8Array(
+            lane.pitches.buffer,
+            lane.pitches.byteOffset,
+            lane.pitches.byteLength,
+          )),
+          breaks: bytesToBase64(packedPitchTraceBreaks(lane.breaks)),
+        })),
       }));
     } catch {
       showToast("Pitch contour could not be saved on this device", "error");
@@ -16111,37 +16675,52 @@ function ceilPow2(v) {
   function replacePitchTraceWindows(frames) {
     const accepted = frames.filter((frame) => frame && Number.isFinite(frame.pitchCents));
     if (!accepted.length) return;
-    const changed = new Set();
+    const changed = new Map();
     const binTicks = pitchTraceBinTicks();
+    const mark = (line, bin) => {
+      if (!changed.has(line)) changed.set(line, new Set());
+      changed.get(line).add(bin);
+    };
+    // Grouped by the line each frame was sung on, so re-singing the upper line
+    // replaces the upper contour and leaves the lower one where it was.
+    const byLine = new Map();
     accepted.forEach((frame) => {
-      const first = clamp(Math.ceil(frame.startTick / binTicks), 0, pitchTracePitches.length - 1);
-      const last = clamp(Math.floor(frame.endTick / binTicks), first, pitchTracePitches.length - 1);
-      for (let bin = first; bin <= last; bin += 1) {
-        if (pitchTracePitches[bin]) pitchTraceCount -= 1;
-        pitchTracePitches[bin] = 0;
-        pitchTraceBreaks[bin] = 0;
-        changed.add(bin);
-      }
-      const next = nextOccupiedPitchBin(last);
-      if (next >= 0) {
-        pitchTraceBreaks[next] = 1;
-        changed.add(next);
-      }
+      const line = pitchTraceLaneAt(frame.tick, frame.pitchCents);
+      if (!byLine.has(line)) byLine.set(line, []);
+      byLine.get(line).push(frame);
     });
-    const updates = new Map();
-    accepted.sort((left, right) => left.tick - right.tick).forEach((frame) => {
-      const bin = pitchTraceBinAtTick(frame.tick);
-      const previous = updates.get(bin);
-      updates.set(bin, {
-        cents: Math.round(frame.pitchCents),
-        breakBefore: Boolean(frame.breakBefore || previous?.breakBefore),
+    byLine.forEach((lineFrames, line) => {
+      const lane = pitchTraceLane(line, { create: true });
+      lineFrames.forEach((frame) => {
+        const first = clamp(Math.ceil(frame.startTick / binTicks), 0, lane.pitches.length - 1);
+        const last = clamp(Math.floor(frame.endTick / binTicks), first, lane.pitches.length - 1);
+        for (let bin = first; bin <= last; bin += 1) {
+          if (lane.pitches[bin]) pitchTraceCount -= 1;
+          lane.pitches[bin] = 0;
+          lane.breaks[bin] = 0;
+          mark(line, bin);
+        }
+        const next = nextOccupiedPitchBin(lane, last);
+        if (next >= 0) {
+          lane.breaks[next] = 1;
+          mark(line, next);
+        }
       });
-    });
-    updates.forEach(({ cents, breakBefore }, bin) => {
-      if (!pitchTracePitches[bin]) pitchTraceCount += 1;
-      pitchTracePitches[bin] = clamp(cents, 2000, 11000);
-      pitchTraceBreaks[bin] = breakBefore ? 1 : 0;
-      changed.add(bin);
+      const updates = new Map();
+      lineFrames.sort((left, right) => left.tick - right.tick).forEach((frame) => {
+        const bin = pitchTraceBinAtTick(frame.tick);
+        const previous = updates.get(bin);
+        updates.set(bin, {
+          cents: Math.round(frame.pitchCents),
+          breakBefore: Boolean(frame.breakBefore || previous?.breakBefore),
+        });
+      });
+      updates.forEach(({ cents, breakBefore }, bin) => {
+        if (!lane.pitches[bin]) pitchTraceCount += 1;
+        lane.pitches[bin] = clamp(cents, 2000, 11000);
+        lane.breaks[bin] = breakBefore ? 1 : 0;
+        mark(line, bin);
+      });
     });
     updatePitchTraceIncrementally(changed);
     schedulePitchTraceSave();
@@ -16230,6 +16809,7 @@ function ceilPow2(v) {
     pitchCaptureStream?.getAudioTracks().forEach((track) => { track.enabled = false; });
     if (pitchCaptureContext && pitchCaptureContext !== engine?.context) void pitchCaptureContext.suspend();
     updatePitchCaptureAppearance();
+    savePreferences();
     if (announce) showToast("Microphone off");
   }
 
@@ -16240,12 +16820,13 @@ function ceilPow2(v) {
     if (playing) startPitchSampling();
     else beginPitchCapturePass();
     updatePitchCaptureAppearance();
+    savePreferences();
     showToast(playing ? "Microphone on · recording pitch" : "Microphone on · press play to record");
   }
 
-  async function startPitchCapture() {
+  async function startPitchCapture({ quiet = false } = {}) {
     if (!pitchCaptureSupported() || !engine) {
-      showToast("Microphone pitch tracking is unavailable here", "error");
+      if (!quiet) showToast("Microphone pitch tracking is unavailable here", "error");
       return;
     }
     if (scoreView !== "bars") setScoreView("bars");
@@ -16256,7 +16837,7 @@ function ceilPow2(v) {
         await Promise.all([engine.context.resume(), pitchCaptureContext?.resume()]);
         activateCachedPitchCapture();
       } catch {
-        showToast("Microphone pitch tracking could not resume", "error");
+        if (!quiet) showToast("Microphone pitch tracking could not resume", "error");
       }
       return;
     }
@@ -16309,7 +16890,7 @@ function ceilPow2(v) {
       pitchCaptureState = "off";
       if (pitchCaptureContext && pitchCaptureContext !== engine?.context) void pitchCaptureContext.suspend();
       updatePitchCaptureAppearance();
-      showToast(error?.name === "NotAllowedError" ? "Microphone access was blocked" : "Microphone pitch tracking could not start", "error");
+      if (!quiet) showToast(error?.name === "NotAllowedError" ? "Microphone access was blocked" : "Microphone pitch tracking could not start", "error");
     }
   }
 
@@ -17009,7 +17590,7 @@ function ceilPow2(v) {
     if (!ready || !engine) return;
     seeking = false;
     const value = previewSeek(Number(elements.seek.value));
-    api.tickPosition = engine.tickAtSeconds(value / 1000);
+    api.tickPosition = seekTickFor(value);
   });
   elements.seek.addEventListener("pointercancel", () => { seeking = false; });
   elements.seek.addEventListener("keydown", (event) => {
@@ -17276,7 +17857,6 @@ function ceilPow2(v) {
         elements.demoVideo.hidden = false;
       }
       fullScoreXml = embeddedText("score-data");
-      configurePitchGuides(fullScoreXml);
       const playbackJson = embeddedText("playback-data");
       sequence = JSON.parse(playbackJson);
       if (!Number.isFinite(sequence.division) || !Number.isFinite(sequence.endTick) || !sequence.notes?.length || !sequence.measures?.length) {
@@ -17284,12 +17864,24 @@ function ceilPow2(v) {
       }
       parts = normalizeParts(sequence.parts);
       if (!parts.length) throw new Error("No score parts were found");
-      preferenceKey = `choir-practice:${buildMetadata.fingerprint || config.slug || config.title || "score"}:v2`;
-      settingsPanelPreferenceKey = `choir-practice:${config.slug || config.title || "score"}:settings-open:v1`;
-      pitchTraceKey = `choir-practice:${buildMetadata.build?.fingerprint || buildMetadata.fingerprint || config.slug || config.title || "score"}:pitch-trace:v2`;
-      const annotationPrefix = `choir-practice:${config.slug || config.title || "score"}:notes`;
-      annotationKey = `${annotationPrefix}:v3`;
-      legacyAnnotationKeys = [`${annotationPrefix}:v2`, `${preferenceKey}:notes`];
+      configurePitchGuides(fullScoreXml);
+      partDivisi = analysePartDivisi();
+      // One key per kind of saved data, named after the song and never
+      // versioned. Keying on the build's fingerprint meant every rebuild of the
+      // same song started from nothing and left the last build's data behind,
+      // unreachable. Anything found under an older key is adopted once and the
+      // old entry removed.
+      const songKey = (suffix) => `choir-practice:${config.slug || config.title || "score"}:${suffix}`;
+      const buildFingerprint = buildMetadata.build?.fingerprint || buildMetadata.fingerprint;
+      preferenceKey = songKey("preferences");
+      legacyPreferenceKeys = [`choir-practice:${buildMetadata.fingerprint}:v2`];
+      settingsPanelPreferenceKey = songKey("settings-open");
+      legacySettingsPanelKeys = [`${songKey("settings-open")}:v1`];
+      pitchTraceKey = songKey("pitch-trace");
+      legacyPitchTraceKeys = [`choir-practice:${buildFingerprint}:pitch-trace:v2`];
+      annotationKey = songKey("notes");
+      legacyAnnotationKeys = [`${songKey("notes")}:v3`, `${songKey("notes")}:v2`,
+        `choir-practice:${buildMetadata.fingerprint}:v2:notes`];
       setSettingsOpen(loadSettingsOpenState(), { persist: false });
       loadPreferences();
       loadPitchTrace();
@@ -17297,6 +17889,7 @@ function ceilPow2(v) {
       buildPracticePartPicker();
       registerStaticResetTargets();
       loadAnnotations();
+      sweepSupersededStorage(config.slug || config.title || "score");
       attachMixerGestures();
       updateLoopState();
       updateNoteActionLabel();
@@ -17347,6 +17940,10 @@ function ceilPow2(v) {
       buildTimelineSegments();
       engine.attach(api);
       engine.setMetronome(metronomeControl.value());
+      // Singing survives a refresh. Where this origin already has permission
+      // the browser hands the microphone straight back; where it does not, this
+      // gives up without a word and the toggle stays off.
+      if (wantsPitchCapture) void startPitchCapture({ quiet: true });
 
       api.scoreLoaded.on((score) => {
         scoreTracks = score.tracks;

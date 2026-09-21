@@ -43,7 +43,7 @@ https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/J4vdsSKB7LzAvaAMB
 
 15:52 - Thou Art Godshatter by Eliezer Yudkowsky
 
-(Optional) The Goddess of Everything Else by Scott Alexander (no narration this week)
+27:40 - (Optional) The Goddess of Everything Else by Scott Alexander
 https://slatestarcodex.com/2015/08/17/the-goddess-of-everything-else-2/
 
 Read along: https://diegozc.com/sequences-audio.html#lsrg-99
@@ -51,14 +51,17 @@ Read along: https://diegozc.com/sequences-audio.html#lsrg-99
 Sources
 Rationality: From AI to Zombies, by Eliezer Yudkowsky
 https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast
+https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else
 ]]></description>
-      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
       <itunes:episode>99</itunes:episode>
       <itunes:episodeType>full</itunes:episodeType>
-      <itunes:duration>1660</itunes:duration>
+      <itunes:duration>2446</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-99-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-99-weekly.m4a" length="10385677" type="audio/mp4" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-99-weekly.m4a" length="15245972" type="audio/mp4" />
     </item>
     <item>
       <title>#98 - Group Selection</title>

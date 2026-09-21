@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "author": "Eliezer Yudkowsky",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
   "title": "#99 - Godshatter",
   "podcastName": "Lighthaven Sequences Reading Group Audio",
   "description": "Weekly reading packet for September 22, 2026.",
@@ -23,6 +23,12 @@
       "endTime": 1660.272222,
       "title": "Thou Art Godshatter",
       "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/cSXZpvqpa9vbGGLtG"
+    },
+    {
+      "startTime": 1660.272222,
+      "endTime": 2446.172222,
+      "title": "(Optional) The Goddess of Everything Else",
+      "url": "https://slatestarcodex.com/2015/08/17/the-goddess-of-everything-else-2/"
     }
   ]
 }

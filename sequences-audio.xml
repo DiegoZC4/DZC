@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 14 Sep 2026 21:06:07 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 21 Sep 2026 21:33:06 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,36 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#99 - Godshatter</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-99</link>
+      <guid isPermaLink="false">urn:lsrg:99:weekly</guid>
+      <pubDate>Mon, 21 Sep 2026 21:33:06 +0000</pubDate>
+      <description><![CDATA[
+0:00 - An Especially Elegant Evpsych Experiment by Eliezer Yudkowsky
+https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/J4vdsSKB7LzAvaAMB
+
+7:38 - Superstimuli and the Collapse of Western Civilization by Eliezer Yudkowsky
+
+15:52 - Thou Art Godshatter by Eliezer Yudkowsky
+
+(Optional) The Goddess of Everything Else by Scott Alexander (no narration this week)
+https://slatestarcodex.com/2015/08/17/the-goddess-of-everything-else-2/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-99
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>99</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>1660</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-99-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-99-weekly.m4a" length="10385677" type="audio/mp4" />
+    </item>
     <item>
       <title>#98 - Group Selection</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-98</link>

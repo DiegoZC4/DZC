@@ -1,0 +1,28 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky",
+  "title": "#99 - Godshatter",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for September 22, 2026.",
+  "fileName": "lsrg-99-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 458.057143,
+      "title": "An Especially Elegant Evpsych Experiment",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/J4vdsSKB7LzAvaAMB"
+    },
+    {
+      "startTime": 458.057143,
+      "endTime": 951.618866,
+      "title": "Superstimuli and the Collapse of Western Civilization",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/Jq73GozjsuhdwMLEG"
+    },
+    {
+      "startTime": 951.618866,
+      "endTime": 1660.272222,
+      "title": "Thou Art Godshatter",
+      "url": "https://www.lesswrong.com/s/MH2b8NfWv22dBtrs8/p/cSXZpvqpa9vbGGLtG"
+    }
+  ]
+}

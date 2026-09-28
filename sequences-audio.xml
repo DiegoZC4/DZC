@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 21 Sep 2026 21:33:06 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 28 Sep 2026 22:40:40 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,39 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#100 - Intelligence</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-100</link>
+      <guid isPermaLink="false">urn:lsrg:100:weekly</guid>
+      <pubDate>Mon, 28 Sep 2026 22:40:40 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Belief in Intelligence by Eliezer Yudkowsky
+https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/HktFCy6dgsqJ9WPpX
+
+6:39 - Humans in Funny Suits by Eliezer Yudkowsky
+
+17:54 - Optimization and the Intelligence Explosion by Eliezer Yudkowsky
+
+32:16 - (Optional) Yudkowsky Contra Christiano On AI Takeoff Speeds by Scott Alexander
+https://www.astralcodexten.com/p/yudkowsky-contra-christiano-on-ai
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-100
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast
+https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>100</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>5597</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-100-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-100-weekly.m4a" length="32428231" type="audio/mp4" />
+    </item>
     <item>
       <title>#99 - Godshatter</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-99</link>

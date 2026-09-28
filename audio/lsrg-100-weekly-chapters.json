@@ -1,0 +1,34 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#100 - Intelligence",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for September 29, 2026.",
+  "fileName": "lsrg-100-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 399.21356,
+      "title": "Belief in Intelligence",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/HktFCy6dgsqJ9WPpX"
+    },
+    {
+      "startTime": 399.21356,
+      "endTime": 1073.721315,
+      "title": "Humans in Funny Suits",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/Zkzzjg3h7hW5Z36hK"
+    },
+    {
+      "startTime": 1073.721315,
+      "endTime": 1936.1278459999999,
+      "title": "Optimization and the Intelligence Explosion",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/8vpf46nLMDYPC6wA4"
+    },
+    {
+      "startTime": 1936.1278459999999,
+      "endTime": 5597.328005,
+      "title": "(Optional) Yudkowsky Contra Christiano On AI Takeoff Speeds",
+      "url": "https://www.astralcodexten.com/p/yudkowsky-contra-christiano-on-ai"
+    }
+  ]
+}

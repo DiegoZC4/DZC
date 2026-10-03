@@ -1,6 +1,2 @@
-<Files "get-it-right.mscz">
-  ForceType application/octet-stream
-  <IfModule mod_headers.c>
-    Header set Content-Disposition "attachment; filename=get-it-right.mscz"
-  </IfModule>
-</Files>
+Redirect 301 /get-it-right/get-it-right.pdf /get-it-right.pdf
+Redirect 301 /get-it-right/get-it-right.mscz /get-it-right.mscz

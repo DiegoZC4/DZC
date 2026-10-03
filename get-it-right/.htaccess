@@ -1,6 +1,6 @@
 <Files "get-it-right.mscz">
   ForceType application/octet-stream
   <IfModule mod_headers.c>
-    Header set Content-Disposition "attachment; filename=\"Get It Right.mscz\""
+    Header set Content-Disposition "attachment; filename=get-it-right.mscz"
   </IfModule>
 </Files>

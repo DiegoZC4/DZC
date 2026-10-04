@@ -7579,20 +7579,35 @@ stop percussion</words></direction-type></direction>
         : y < system.y || y > system.y + system.h) continue;
 
       // Engraved spacing is not proportional to time. Interpolate between
-      // actual beat columns, including rests, so hidden voices can change
-      // harmony beneath a visible part's longer note.
+      // notehead left edges, including rest columns between notes. Use performed
+      // onset ticks when the sequence carries swing, not straight notation time.
       const [start, duration] = sequence.measures[index];
       const columns = new Map();
       for (const bar of master.bars || []) {
         if (!visibleTracks.has(partIndexForTrack(bar.bar?.staff?.track))) continue;
         for (const beat of bar.beats || []) {
-          const tick = Number(beat.beat?.absolutePlaybackStart);
-          const head = beat.notes?.[0]?.noteHeadBounds;
-          const position = head ? head.x + head.w / 2 : beat.realBounds?.x;
-          if (Number.isFinite(tick) && Number.isFinite(position) && !columns.has(tick)) columns.set(tick, position);
+          let tick = Number(beat.beat?.absolutePlaybackStart);
+          const swing = sequence.swing;
+          const unit = swing?.unit === "16th" ? sequence.division / 4
+            : swing?.unit === "eighth" ? sequence.division / 2 : 0;
+          if (unit > 0 && swing.ratio > 0 && swing.ratio < 100) {
+            const pair = unit * 2, first = pair * swing.ratio / 100;
+            const pairStart = Math.floor(tick / pair) * pair, offset = tick - pairStart;
+            tick = Math.round(pairStart + (offset <= unit ? offset * first / unit
+              : first + (offset - unit) * (pair - first) / unit));
+          }
+          const heads = (beat.notes || []).map((note) => note.noteHeadBounds?.x).filter(Number.isFinite);
+          const hasHead = heads.length > 0;
+          const position = hasHead ? Math.min(...heads) : beat.realBounds?.x;
+          if (!Number.isFinite(tick) || !Number.isFinite(position)) continue;
+          const previous = columns.get(tick);
+          if (!previous || (hasHead && !previous.hasHead)
+            || (hasHead === previous.hasHead && position < previous.x)) {
+            columns.set(tick, { x: position, hasHead });
+          }
         }
       }
-      const anchors = [...columns].map(([tick, position]) => ({ tick, x: position }))
+      const anchors = [...columns].map(([tick, column]) => ({ tick, x: column.x }))
         .sort((a, b) => a.x - b.x);
       if (!anchors.length) anchors.push({ tick: start, x: box.x });
       anchors.push({ tick: start + duration, x: box.x + box.w });
@@ -7604,7 +7619,7 @@ stop percussion</words></direction-type></direction>
         tick = left.tick + fraction * (right.tick - left.tick);
         if (x < right.x) break;
       }
-      return { tick: clamp(Math.round(tick), start, start + duration - 1), exactTick: true,
+      return { tick: clamp(Math.floor(tick), start, start + duration - 1), exactTick: true,
         partIndex: currentScorePartIndex() };
     }
     return null;

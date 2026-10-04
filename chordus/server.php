@@ -58,8 +58,9 @@ function chordus_meter_length(mixed $meter): int {
     chordus_require(in_array($meter, ['2/4','3/4','4/4','5/4','6/8','7/8','9/8','12/8'], true), 'Invalid time signature.');
     [$count,$unit]=array_map('intval',explode('/',$meter));return (int)($count*16/$unit);
 }
-function chordus_rhythm(mixed $pattern, string $meter): array {
-    $length=chordus_meter_length($meter);
+function chordus_rhythm(mixed $pattern, string $meter, ?int $length=null): array {
+    $length??=chordus_meter_length($meter);
+    chordus_require($length>=1&&$length<=256,'Invalid duration.');
     chordus_require(is_string($pattern) && strlen($pattern)<=180,'Invalid rhythm.');
     $text=strtolower(trim($pattern)) ?: 'bar';
     if($text==='bar'){
@@ -80,6 +81,43 @@ function chordus_rhythm(mixed $pattern, string $meter): array {
     chordus_require($start===$length,'Rhythm must fill the measure.');
     foreach($events as $i=>$event)if($event['tie'])chordus_require(isset($events[$i+1])&&!$events[$i+1]['rest'],'A tie needs another note in this measure.');
     return $events;
+}
+// Matches rehearsalTimeline: chord-index anchors stay stable, while each event
+// also has a real bar number and offset. Durations are quarter-note units;
+// entries without duration fields are independent whole-note measures.
+function chordus_timeline(array $score): array {
+    $entries=$score['chords']??[];$timed=false;
+    foreach($entries as $entry)if(array_key_exists('duration',$entry)||array_key_exists('barEnd',$entry))$timed=true;
+    $events=[];$measures=[];$start=0;$offset=0;$first=0;
+    foreach($entries as $index=>$entry){
+        if($timed){
+            $explicit=array_key_exists('duration',$entry)||array_key_exists('barEnd',$entry);
+            if($explicit){
+            $duration=$entry['duration']??null;
+            chordus_require((is_int($duration)||is_float($duration))&&is_finite((float)$duration)&&$duration>=.25&&$duration<=64&&floor($duration*4)==$duration*4,'Use a duration from 0.25 to 64 quarter notes, in steps of 0.25.');
+            chordus_require(is_bool($entry['barEnd']??null),'Timed chords need a bar ending.');
+            $length=(int)($duration*4);$barEnd=$entry['barEnd'];
+            }else{
+                chordus_require($offset===0,'A chord without a duration starts its own whole-note measure.');
+                $length=16;$barEnd=true;
+            }
+            $nextSection=$entries[$index+1]['section']??'';
+            if(is_string($nextSection)&&preg_match('/\S/u',$nextSection)===1)$barEnd=true;
+            chordus_require(!($entry['repeatStart']??false)||$offset===0,'Start repeats at a barline.');
+            chordus_require(!($entry['repeatEnd']??false)||$barEnd,'End repeats at a barline.');
+            chordus_require(!($entry['systemBreak']??false)||$offset===0,'Put line breaks between complete measures.');
+        }else{$length=chordus_meter_length($score['meter']??'4/4');$barEnd=true;}
+        $events[]=['measure'=>count($measures),'offset'=>$offset,'start'=>$start,'length'=>$length];
+        $start+=$length;$offset+=$length;
+        // Timed runs may share one bar; per-chord and score limits bound it.
+        if($barEnd){
+            $unit=$offset%4===0?4:($offset%2===0?8:16);
+            $measures[]=['first'=>$first,'count'=>$index-$first+1,'start'=>$start-$offset,'length'=>$offset,'meter'=>$timed?($offset/(16/$unit)).'/'.$unit:($score['meter']??'4/4')];
+            $first=$index+1;$offset=0;
+        }
+    }
+    chordus_require($offset===0,'Close the last timed measure with |.');
+    return ['timed'=>$timed,'events'=>$events,'measures'=>$measures];
 }
 function chordus_imported_song(mixed $value,int $chordCount): array {
     $length=static fn(string $s): int => intdiv(strlen(iconv('UTF-8','UTF-16LE',$s)),2);
@@ -118,26 +156,33 @@ function chordus_validate_score(mixed $score): array {
     chordus_require(count($tokens) > 0 && count($tokens) <= 48, 'Use one to 48 chords.');
     $entries = $score['chords'] ?? null;
     chordus_require(is_array($entries) && array_is_list($entries) && count($entries) === count($tokens), 'Score and progression differ.');
+    foreach($entries as $entry)chordus_require(is_array($entry),'Invalid chord.');
+    $timeline=chordus_timeline($score);
     $clean = [];
     foreach ($entries as $index => $entry) {
         chordus_require(is_array($entry) && ($entry['symbol'] ?? null) === $tokens[$index], 'Invalid chord.');
-        $pcs = chordus_pcs($tokens[$index], $key); $notes = $entry['notes'] ?? null;
+        chordus_pcs($tokens[$index], $key); // Validate the chord symbol, not membership of authored pitches.
+        $notes = $entry['notes'] ?? null;
         chordus_require(is_array($notes) && array_is_list($notes) && count($notes) === 4, 'Each chord needs four pitches.');
         // Matches cleanRehearsalScore in rehearsal.mjs: a hand-arranged voicing may
-        // share a pitch between voices or leave a chord tone out, and the parts
+        // share a pitch, include pedal/non-chord tones or leave a tone out, and the parts
         // read top to bottom. Crossed voices are restacked rather than refused —
         // a score stored before that rule must still be readable, or every poll
         // that touches it fails instead of the one edit that caused it.
-        foreach ($notes as $note) chordus_require(is_int($note) && $note >= 36 && $note <= 84 && in_array($note % 12, $pcs, true), 'Every pitch must be a chord tone in singable range.');
+        foreach ($notes as $note) chordus_require(is_int($note) && $note >= 0 && $note <= 127, 'Every pitch must be a whole-number MIDI pitch from 0 to 127.');
         rsort($notes);
-        // The bass never goes below low D. Checked after restacking, so it is the
-        // bottom voice that is measured however the four pitches arrived.
-        chordus_require($notes[3] >= 38, 'The bass never goes below low D.');
         $rhythms=$entry['rhythms']??['bar','bar','bar','bar'];
         chordus_require(is_array($rhythms)&&array_is_list($rhythms)&&count($rhythms)===4,'Four rhythms required.');
-        foreach($rhythms as &$pattern){chordus_rhythm($pattern,$meter);$pattern=preg_replace('/\s+/',' ',strtolower(trim($pattern))) ?: 'bar';}unset($pattern);
+        foreach($rhythms as &$pattern){chordus_rhythm($pattern,$meter,$timeline['events'][$index]['length']);$pattern=preg_replace('/\s+/',' ',strtolower(trim($pattern))) ?: 'bar';}unset($pattern);
         $section=$entry['section']??'';
-        chordus_require(is_string($section)&&($section===''||preg_match('/^[A-Z0-9][A-Z0-9 .-]{0,7}$/D',$section)===1),'Invalid section label.');
+        chordus_require(is_string($section)&&preg_match('/[\x00-\x1f\x7f\x{2028}\x{2029}]/u',$section)===0,'Section names must be single-line text.');
+        $section=preg_replace('/^\s+|\s+$/u','',$section);
+        $instruction=array_key_exists('instruction',$entry)?$entry['instruction']:'';
+        chordus_require(is_string($instruction)&&!preg_match('/[\x00-\x1f\x7f\x{2028}\x{2029}]/u',$instruction)&&intdiv(strlen(iconv('UTF-8','UTF-16LE',$instruction)),2)<=160,'Use a single-line instruction of at most 160 characters.');
+        $instruction=preg_replace('/^\s+|\s+$/u','',$instruction);
+        $systemText=array_key_exists('systemText',$entry)?$entry['systemText']:'';
+        chordus_require(is_string($systemText)&&!preg_match('/[\[\]\x00-\x1f\x7f\x{2028}\x{2029}]/u',$systemText)&&intdiv(strlen(iconv('UTF-8','UTF-16LE',$systemText)),2)<=160,'Use single-line system text of at most 160 characters, without brackets inside it.');
+        $systemText=preg_replace('/^\s+|\s+$/u','',$systemText);
         foreach(['repeatStart','repeatEnd'] as $flag)chordus_require(!array_key_exists($flag,$entry)||is_bool($entry[$flag]),'Invalid repeat sign.');
         chordus_require(!array_key_exists('systemBreak',$entry)||is_bool($entry['systemBreak']),'Invalid system break.');
         if(array_key_exists('repeatTimes',$entry))chordus_require(is_int($entry['repeatTimes'])&&$entry['repeatTimes']>=2&&$entry['repeatTimes']<=999,'Invalid repeat count.');
@@ -146,8 +191,18 @@ function chordus_validate_score(mixed $score): array {
         chordus_require(preg_match_all('/./us',$lyrics)<=512&&substr_count($lyrics,"\n")<8&&!preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/',$lyrics),'Use up to 512 characters and eight lines per chord.');
         $clean[] = ['symbol' => $tokens[$index], 'notes' => $notes, 'edited' => ($entry['edited'] ?? false) === true, 'rhythms'=>$rhythms,'section'=>$section,'repeatStart'=>($entry['repeatStart']??false)===true,'repeatEnd'=>($entry['repeatEnd']??false)===true,'systemBreak'=>($entry['systemBreak']??false)===true];
         if(($entry['repeatEnd']??false)&&array_key_exists('repeatTimes',$entry))$clean[array_key_last($clean)]['repeatTimes']=$entry['repeatTimes'];
+        if($instruction!=='')$clean[array_key_last($clean)]['instruction']=$instruction;
+        if($systemText!=='')$clean[array_key_last($clean)]['systemText']=$systemText;
+        if(array_key_exists('duration',$entry)){
+            $clean[array_key_last($clean)]['duration']=$entry['duration'];
+            $clean[array_key_last($clean)]['barEnd']=$entry['barEnd'];
+        }
         $clean[array_key_last($clean)]['lyrics']=$lyrics;
     }
+    // Older saved scores may have a false flag before a section heading.
+    // Match the browser's normalized bar boundaries without changing pitches
+    // or durations, and never rewrite the stored source text as a side effect.
+    foreach($clean as $index=>$entry)if($index>0&&$entry['section']!==''&&array_key_exists('duration',$clean[$index-1]))$clean[$index-1]['barEnd']=true;
     $dynamics=array_key_exists('dynamics',$score)?$score['dynamics']:[];
     chordus_require(is_array($dynamics)&&array_is_list($dynamics)&&count($dynamics)<=1152,'Invalid dynamics envelope.');
     $points=[];$seen=[];$onsets=[];
@@ -156,7 +211,7 @@ function chordus_validate_score(mixed $score): array {
         $measure=$point['measure']??null;$offset=$point['offset']??null;$level=$point['level']??null;
         chordus_require(is_int($measure)&&$measure>=0&&isset($clean[$measure]),'Dynamics need an existing measure.');
         if(!isset($onsets[$measure])){
-            $onsets[$measure]=[];foreach($clean[$measure]['rhythms'] as $pattern)foreach(chordus_rhythm($pattern,$meter) as $event)if(!$event['rest'])$onsets[$measure][$event['start']]=true;
+            $onsets[$measure]=[];foreach($clean[$measure]['rhythms'] as $pattern)foreach(chordus_rhythm($pattern,$meter,$timeline['events'][$measure]['length']) as $event)if(!$event['rest'])$onsets[$measure][$event['start']]=true;
         }
         chordus_require(is_int($offset)&&isset($onsets[$measure][$offset]),'Place dynamics on a note onset.');
         chordus_require(is_int($level)&&$level>=0&&$level<=100,'Dynamics range from pp to ff.');
@@ -170,7 +225,25 @@ function chordus_validate_score(mixed $score): array {
     $display=is_array($score['display']??null)?$score['display']:[];
     $rows=['hand'=>($display['hand']??false)===true,'roman'=>($display['roman']??true)!==false,'name'=>($display['name']??true)!==false];
     $result=['version' => 1, 'key' => $key, 'meter'=>$meter,'progression' => implode(' ', $tokens), 'chords' => $clean,'display'=>$rows,'dynamics'=>$points];
+    if(array_key_exists('bpm',$score)){
+        $bpm=$score['bpm'];
+        chordus_require((is_int($bpm)||is_float($bpm))&&is_finite((float)$bpm)&&$bpm>=1&&$bpm<=600,'Use bpm=1 to bpm=600, in quarter notes per minute.');
+        $result['bpm']=$bpm;
+    }
+    if(array_key_exists('articulation',$score)){
+        $articulation=$score['articulation'];
+        if($articulation==='legato')$articulation=100;
+        if($articulation==='normal')$articulation=85;
+        chordus_require((is_int($articulation)||is_float($articulation))&&is_finite((float)$articulation)&&$articulation>=1&&$articulation<=100,'Use articulation=1 to articulation=100 (100 is legato).');
+        $result['articulation']=$articulation;
+    }
     if(array_key_exists('song',$score))$result['song']=chordus_imported_song($score['song'],count($clean));
+    if(array_key_exists('title',$score)){
+        $title=$score['title'];
+        chordus_require(is_string($title)&&!preg_match('/[\x00-\x1f\x7f\x{2028}\x{2029}]/u',$title)&&intdiv(strlen(iconv('UTF-8','UTF-16LE',$title)),2)<=160,'Use a single-line title of at most 160 characters.');
+        $title=preg_replace('/^\s+|\s+$/u','',$title);
+        if($title!=='')$result['title']=$title;
+    }
     return $result;
 }
 function chordus_client(string $raw): string {
@@ -194,7 +267,7 @@ function chordus_reins(PDO $db): ?array {
 function chordus_score_changes(?array $before, array $after): array {
     $changes = [];
     if ($before === null) return [['field' => 'published', 'to' => $after['progression'] ?? '']];
-    foreach (['progression' => 'progression', 'key' => 'key', 'meter' => 'meter'] as $field => $name) {
+    foreach (['progression' => 'progression', 'key' => 'key', 'meter' => 'meter', 'title' => 'title', 'bpm' => 'tempo', 'articulation' => 'articulation'] as $field => $name) {
         $was = $before[$field] ?? null; $now = $after[$field] ?? null;
         if ($was !== $now) $changes[] = ['field' => $name, 'from' => $was, 'to' => $now];
     }
@@ -203,13 +276,18 @@ function chordus_score_changes(?array $before, array $after): array {
         if ($was !== $now) $changes[] = ['field' => 'show ' . $row, 'from' => $was, 'to' => $now];
     }
     $old = $before['chords'] ?? []; $new = $after['chords'] ?? [];
+    $timeline=chordus_timeline($after);
     foreach ($new as $index => $chord) {
         $previous = $old[$index] ?? null;
         if ($previous === null) continue;
         if (($previous['notes'] ?? null) !== ($chord['notes'] ?? null)) {
-            $changes[] = ['field' => 'voicing', 'measure' => $index + 1,
+            $changes[] = ['field' => 'voicing', 'measure' => $timeline['events'][$index]['measure'] + 1,
                 'symbol' => $chord['symbol'] ?? '',
                 'from' => $previous['notes'] ?? [], 'to' => $chord['notes'] ?? []];
+        }
+        foreach(['section','instruction','systemText','duration','barEnd'] as $field){
+            $was=$previous[$field]??'';$now=$chord[$field]??'';
+            if($was!==$now)$changes[]=['field'=>$field,'measure'=>$timeline['events'][$index]['measure']+1,'from'=>$was,'to'=>$now];
         }
     }
     return $changes;
@@ -287,11 +365,30 @@ function chordus_current(PDO $db, array $seed): array {
 // refused, so a cue stored before the field went away stays readable.
 function chordus_validate_cue(mixed $cue,array $score): ?array {
     if($cue===null)return null;
+    if(is_array($cue)&&array_key_exists('notes',$cue)){
+        chordus_require(is_array($cue['notes'])&&array_is_list($cue['notes'])&&count($cue['notes'])>0&&count($cue['notes'])<=6144,'Choose one or more notes.');
+        $unique=[];
+        foreach($cue['notes'] as $item){
+            chordus_require(is_array($item)&&!array_key_exists('notes',$item)&&isset($item['event'])&&is_int($item['event']),'Choose an existing note.');
+            $note=chordus_validate_cue($item,$score);
+            $unique[$note['measure'].':'.$note['part'].':'.$note['event']]=$note;
+        }
+        $notes=array_values($unique);
+        usort($notes,fn($a,$b)=>($a['measure']<=>$b['measure'])?:($a['part']<=>$b['part'])?:($a['event']<=>$b['event']));
+        return count($notes)===1?$notes[0]:['notes'=>$notes];
+    }
     chordus_require(is_array($cue)&&array_key_exists('measure',$cue)&&array_key_exists('part',$cue),'Invalid cue.');
     ['measure'=>$measure,'part'=>$part]=$cue;
     chordus_require(is_int($measure)&&$measure>=0&&isset($score['chords'][$measure]),'Choose an existing measure.');
     chordus_require($part===null||(is_int($part)&&$part>=0&&$part<4),'Invalid cue voice.');
-    return ['measure'=>$measure,'part'=>$part];
+    $timeline=chordus_timeline($score);
+    if(array_key_exists('event',$cue)){
+        chordus_require($part!==null&&is_int($cue['event'])&&$cue['event']>=0,'Choose an existing note in a voice.');
+        $events=chordus_rhythm($score['chords'][$measure]['rhythms'][$part]??'bar',$score['meter']??'4/4',$timeline['events'][$measure]['length']);
+        chordus_require(isset($events[$cue['event']]),'Choose an existing note in a voice.');
+        return ['measure'=>$measure,'part'=>$part,'event'=>$cue['event']];
+    }
+    return ['measure'=>$timeline['measures'][$timeline['events'][$measure]['measure']]['first'],'part'=>$part];
 }
 function chordus_current_cue(PDO $db,int $revision): array {
     $row=$db->query('SELECT serial,score_revision,body FROM cue WHERE id=1')->fetch(PDO::FETCH_ASSOC);

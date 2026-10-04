@@ -26,13 +26,6 @@ function chordus_schema(PDO $db): void {
     // take it whenever they like, and an expiry would only add a second way to
     // lose control unexpectedly.
     $db->exec('CREATE TABLE IF NOT EXISTS reins (id INTEGER PRIMARY KEY CHECK(id=1), holder TEXT NOT NULL, label TEXT NOT NULL, since INTEGER NOT NULL, seen INTEGER NOT NULL, prior TEXT NOT NULL DEFAULT \'\', prior_label TEXT NOT NULL DEFAULT \'\')');
-    // A session already running when this shipped has the row but not the two
-    // columns, and CREATE TABLE IF NOT EXISTS will not add them. Dropping the
-    // row instead would evict whoever is conducting right now.
-    $columns = array_column($db->query('PRAGMA table_info(reins)')->fetchAll(PDO::FETCH_ASSOC), 'name');
-    foreach (['prior', 'prior_label'] as $column) {
-        if (!in_array($column, $columns, true)) $db->exec('ALTER TABLE reins ADD COLUMN ' . $column . ' TEXT NOT NULL DEFAULT \'\'');
-    }
     // What the choir actually saw, and who put it there. Only published state is
     // recorded: an arrangement being polished before Krimpatul never reaches the
     // Sing tab, so it is nobody's business but its author's. Cues are left out
@@ -147,6 +140,8 @@ function chordus_imported_song(mixed $value,int $chordCount): array {
 }
 function chordus_validate_score(mixed $score): array {
     chordus_require(is_array($score) && ($score['version'] ?? null) === 1, 'Invalid score.');
+    $fields=['version','key','meter','progression','chords','display','dynamics','song','title','bpm','gate'];
+    foreach(array_keys($score) as $field)chordus_require(in_array($field,$fields,true),'Unknown score field: '.$field.'.');
     $key = $score['key'] ?? null;
     chordus_require(is_int($key) && $key >= 0 && $key < 12, 'Invalid key.');
     $meter=$score['meter']??'4/4';chordus_meter_length($meter);
@@ -166,10 +161,8 @@ function chordus_validate_score(mixed $score): array {
         chordus_require(is_array($notes) && array_is_list($notes) && count($notes) === 4, 'Each chord needs four pitches.');
         // Matches cleanRehearsalScore in rehearsal.mjs: a hand-arranged voicing may
         // share a pitch, include pedal/non-chord tones or leave a tone out, and the parts
-        // read top to bottom. Crossed voices are restacked rather than refused —
-        // a score stored before that rule must still be readable, or every poll
-        // that touches it fails instead of the one edit that caused it.
-        foreach ($notes as $note) chordus_require(is_int($note) && $note >= 0 && $note <= 127, 'Every pitch must be a whole-number MIDI pitch from 0 to 127.');
+        // read top to bottom after an inversion edit.
+        foreach ($notes as $note) chordus_require(is_int($note) && $note >= 21 && $note <= 108, 'Every pitch must be within the 88-key piano range, A0–C8 (MIDI 21–108).');
         rsort($notes);
         $rhythms=$entry['rhythms']??['bar','bar','bar','bar'];
         chordus_require(is_array($rhythms)&&array_is_list($rhythms)&&count($rhythms)===4,'Four rhythms required.');
@@ -199,9 +192,7 @@ function chordus_validate_score(mixed $score): array {
         }
         $clean[array_key_last($clean)]['lyrics']=$lyrics;
     }
-    // Older saved scores may have a false flag before a section heading.
-    // Match the browser's normalized bar boundaries without changing pitches
-    // or durations, and never rewrite the stored source text as a side effect.
+    // A section boundary is a barline in the canonical score model.
     foreach($clean as $index=>$entry)if($index>0&&$entry['section']!==''&&array_key_exists('duration',$clean[$index-1]))$clean[$index-1]['barEnd']=true;
     $dynamics=array_key_exists('dynamics',$score)?$score['dynamics']:[];
     chordus_require(is_array($dynamics)&&array_is_list($dynamics)&&count($dynamics)<=1152,'Invalid dynamics envelope.');
@@ -220,8 +211,7 @@ function chordus_validate_score(mixed $score): array {
     }
     usort($points,static fn($a,$b)=>($a['measure']<=>$b['measure'])?:($a['offset']<=>$b['offset']));
     // Matches cleanRehearsalDisplay in rehearsal.mjs: what the choir reads above
-    // each measure. A score stored before the setting existed read numerals and
-    // chord names, so that stays the answer when it is missing.
+    // each measure. New scores show numerals and chord names by default.
     $display=is_array($score['display']??null)?$score['display']:[];
     $rows=['hand'=>($display['hand']??false)===true,'roman'=>($display['roman']??true)!==false,'name'=>($display['name']??true)!==false];
     $result=['version' => 1, 'key' => $key, 'meter'=>$meter,'progression' => implode(' ', $tokens), 'chords' => $clean,'display'=>$rows,'dynamics'=>$points];
@@ -230,12 +220,10 @@ function chordus_validate_score(mixed $score): array {
         chordus_require((is_int($bpm)||is_float($bpm))&&is_finite((float)$bpm)&&$bpm>=1&&$bpm<=600,'Use bpm=1 to bpm=600, in quarter notes per minute.');
         $result['bpm']=$bpm;
     }
-    if(array_key_exists('articulation',$score)){
-        $articulation=$score['articulation'];
-        if($articulation==='legato')$articulation=100;
-        if($articulation==='normal')$articulation=85;
-        chordus_require((is_int($articulation)||is_float($articulation))&&is_finite((float)$articulation)&&$articulation>=1&&$articulation<=100,'Use articulation=1 to articulation=100 (100 is legato).');
-        $result['articulation']=$articulation;
+    if(array_key_exists('gate',$score)){
+        $gate=$score['gate'];
+        chordus_require((is_int($gate)||is_float($gate))&&is_finite((float)$gate)&&$gate>=1&&$gate<=100,'Use gate=1 to gate=100 (100 is legato).');
+        $result['gate']=$gate;
     }
     if(array_key_exists('song',$score))$result['song']=chordus_imported_song($score['song'],count($clean));
     if(array_key_exists('title',$score)){
@@ -267,7 +255,7 @@ function chordus_reins(PDO $db): ?array {
 function chordus_score_changes(?array $before, array $after): array {
     $changes = [];
     if ($before === null) return [['field' => 'published', 'to' => $after['progression'] ?? '']];
-    foreach (['progression' => 'progression', 'key' => 'key', 'meter' => 'meter', 'title' => 'title', 'bpm' => 'tempo', 'articulation' => 'articulation'] as $field => $name) {
+    foreach (['progression' => 'progression', 'key' => 'key', 'meter' => 'meter', 'title' => 'title', 'bpm' => 'tempo', 'gate' => 'gate'] as $field => $name) {
         $was = $before[$field] ?? null; $now = $after[$field] ?? null;
         if ($was !== $now) $changes[] = ['field' => $name, 'from' => $was, 'to' => $now];
     }

@@ -1,0 +1,28 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky",
+  "title": "#101 - Ghosts in the Machine",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for October 6, 2026.",
+  "fileName": "lsrg-101-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 468.166531,
+      "title": "Ghosts in the Machine",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/cnYHFNBF3kZEyx24v"
+    },
+    {
+      "startTime": 468.166531,
+      "endTime": 1199.16508,
+      "title": "Artificial Addition",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/YhgjmCxcQXixStWMC"
+    },
+    {
+      "startTime": 1199.16508,
+      "endTime": 1959.465079,
+      "title": "Terminal Values and Instrumental Values",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/n5ucT5ZbPdhfGNLtP"
+    }
+  ]
+}

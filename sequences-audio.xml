@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Mon, 28 Sep 2026 22:40:40 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 05 Oct 2026 21:40:10 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,34 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#101 - Ghosts in the Machine</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-101</link>
+      <guid isPermaLink="false">urn:lsrg:101:weekly</guid>
+      <pubDate>Mon, 05 Oct 2026 21:40:10 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Ghosts in the Machine by Eliezer Yudkowsky
+https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/cnYHFNBF3kZEyx24v
+
+7:48 - Artificial Addition by Eliezer Yudkowsky
+
+19:59 - Terminal Values and Instrumental Values by Eliezer Yudkowsky
+Assigned excerpt: Stop right before you get to the line "So now let's look at some complications"
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-101
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky</itunes:author>
+      <itunes:episode>101</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>1959</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-101-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-101-weekly.m4a" length="12288571" type="audio/mp4" />
+    </item>
     <item>
       <title>#100 - Intelligence</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-100</link>

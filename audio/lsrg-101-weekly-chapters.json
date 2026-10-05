@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "author": "Eliezer Yudkowsky",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
   "title": "#101 - Ghosts in the Machine",
   "podcastName": "Lighthaven Sequences Reading Group Audio",
   "description": "Weekly reading packet for October 6, 2026.",
@@ -20,9 +20,15 @@
     },
     {
       "startTime": 1199.16508,
-      "endTime": 1959.465079,
+      "endTime": 1959.46508,
       "title": "Terminal Values and Instrumental Values",
       "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/n5ucT5ZbPdhfGNLtP"
+    },
+    {
+      "startTime": 1959.46508,
+      "endTime": 2322.065079,
+      "title": "(Optional) The Blue-Minimizing Robot",
+      "url": "https://www.lesswrong.com/posts/hQHuXuRGZxxWXaPgg/the-blue-minimizing-robot"
     }
   ]
 }

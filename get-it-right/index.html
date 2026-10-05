@@ -597,6 +597,23 @@ button { color: inherit; }
 
 .mixer-row-label.is-group-drag.is-horizontal { cursor: ew-resize; }
 
+.divisi-select {
+  width: var(--toolbar-unit-width);
+  height: var(--toolbar-row-height);
+  padding: 0 1px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--control);
+  color: var(--ink);
+  font: 650 9px system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.divisi-select:has(option:checked:not([value=""])) {
+  color: var(--part-color);
+  border-color: var(--part-color);
+}
+
 .part-heading,
 .matrix-cell,
 .mixer .drag-number,
@@ -663,8 +680,12 @@ button { color: inherit; }
   min-width: var(--toolbar-unit-width);
   max-width: var(--toolbar-unit-width);
   height: var(--toolbar-row-height);
-  padding: 0 7px;
-  border-radius: 7px;
+  position: relative;
+  padding: 0 12px 0 2px;
+  border-color: transparent;
+  border-bottom: 1px dotted var(--line-strong);
+  border-radius: 3px;
+  background: transparent;
   color: var(--ink);
   cursor: ns-resize;
   font-size: 0.68rem;
@@ -677,8 +698,24 @@ button { color: inherit; }
 .mixer .drag-number {
   min-width: var(--toolbar-unit-width);
   max-width: var(--toolbar-unit-width);
-  padding: 0 3px;
+  padding: 0 12px 0 2px;
   font-size: 0.61rem;
+}
+
+.drag-affordance {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 .pan-ring {
@@ -1057,7 +1094,7 @@ button { color: inherit; }
   display: grid;
   place-items: center;
   overflow: hidden;
-  padding: 0 5px;
+  padding: 0 14px 0 4px;
   color: inherit;
   font-size: 0.59rem;
   font-weight: 760;
@@ -4822,6 +4859,7 @@ stop percussion</words></direction-type></direction>
   const BEAT_TICK_HEIGHTS = Object.freeze([0.7, 0.55, 0.4]);
   const MIXER_SOLO_HOLD_MS = 500;
   const PITCH_AUDITION_HOLD_MS = 250;
+  const PITCH_AUDITION_TAP_SECONDS = 0.22;
   const PITCH_AUDITION_RELEASE_SECONDS = 0.12;
   const PITCH_CAPTURE_INTERVAL_MS = 1000 / 15;
   const PITCH_CAPTURE_FALLBACK_INTERVAL_MS = 100;
@@ -4894,6 +4932,7 @@ stop percussion</words></direction-type></direction>
   let loopEndMeasure = null;
   let practicePartIndex = null;
   let partDivisi = [];
+  let divisiSelections = [];
   let practicePartPager = null;
   let activePracticeMix = null;
   let practiceMixPartIndex = null;
@@ -4902,6 +4941,7 @@ stop percussion</words></direction-type></direction>
   let annotationDragActive = false;
   let selectedScoreTick = null;
   let selectedScorePartIndex = null;
+  let keyboardAudition = null;
   let scoreScrub = null;
   const pitchAuditions = new Map();
   let sectionGuideGeneration = 0;
@@ -5394,7 +5434,18 @@ stop percussion</words></direction-type></direction>
     });
   }
 
+  function addDragAffordance(control) {
+    const icon = elements.flowToggle.querySelector('[data-flow="wrap"] svg')?.cloneNode(true);
+    if (!icon) return;
+    icon.classList.add("drag-affordance");
+    control.append(icon);
+  }
+
   function createDragNumber(button, options) {
+    const valueLabel = document.createElement("span");
+    valueLabel.className = "drag-number-value";
+    button.replaceChildren(valueLabel);
+    addDragAffordance(button);
     const values = options.values;
     const initialValue = Number(button.dataset.value);
     const defaultValue = () => typeof options.defaultValue === "function" ? options.defaultValue() : options.defaultValue;
@@ -5432,7 +5483,7 @@ stop percussion</words></direction-type></direction>
       const changed = nextValue !== value;
       value = nextValue;
       button.dataset.value = String(value);
-      button.textContent = options.format(value);
+      valueLabel.textContent = options.format(value);
       button.setAttribute("aria-valuenow", String(value));
       button.setAttribute("aria-valuemin", String(values[0]));
       button.setAttribute("aria-valuemax", String(values.at(-1)));
@@ -5614,6 +5665,7 @@ stop percussion</words></direction-type></direction>
         this.element.append(layer);
         return layer;
       });
+      addDragAffordance(this.element);
       this.element.setAttribute("aria-valuemin", "0");
       this.element.setAttribute("aria-valuemax", String(this.options.length - 1));
       this.setTransition("none");
@@ -6228,6 +6280,7 @@ stop percussion</words></direction-type></direction>
       audible: parts.map((_, index) => audibleTracks.has(index)),
       volumes: [...trackVolumes],
       pans: [...trackPans],
+      divisi: [...divisiSelections],
       practiceMixMode: activePracticeMix,
       practiceMixPart: practiceMixPartIndex,
       practiceMixUndo: practiceMixUndo ? {
@@ -6249,6 +6302,7 @@ stop percussion</words></direction-type></direction>
       audible: [...state.audible],
       volumes: [...state.volumes],
       pans: [...state.pans],
+      divisi: [...(state.divisi || [])],
       practiceMixUndo: state.practiceMixUndo ? {
         audible: [...state.practiceMixUndo.audible],
         volumes: [...state.practiceMixUndo.volumes],
@@ -6285,6 +6339,9 @@ stop percussion</words></direction-type></direction>
     state.audible.forEach((audible, index) => { if (audible) audibleTracks.add(index); });
     trackVolumes = state.volumes.map((value) => nearestAllowed(clamp(Number(value), 0, 150), VOLUME_VALUES));
     trackPans = state.pans.map((value) => nearestAllowed(clamp(Number(value), -100, 100), PAN_VALUES));
+    divisiSelections = normalizeDivisiSelections(state.divisi);
+    updateDivisiControls();
+    engine?.setDivisi(divisiSelections);
     practicePartIndex = Number.isInteger(state.practicePart) ? state.practicePart : null;
     activePracticeMix = ["learn", "check"].includes(state.practiceMixMode) ? state.practiceMixMode : null;
     practiceMixPartIndex = activePracticeMix ? state.practiceMixPart ?? practicePartIndex : null;
@@ -6426,6 +6483,7 @@ stop percussion</words></direction-type></direction>
 
   function registerStaticResetTargets() {
     const resetAllParts = (state, defaults) => {
+      state.divisi = parts.map(() => null);
       state.visible = parts.map(() => true);
       state.audible = parts.map(() => true);
       state.volumes = [...defaults.volumes];
@@ -6483,6 +6541,7 @@ stop percussion</words></direction-type></direction>
     parts.forEach((_, index) => { visibleTracks.add(index); audibleTracks.add(index); });
     trackVolumes = [...defaults.volumes];
     trackPans = [...defaults.pans];
+    divisiSelections = parts.map(() => null);
     practicePartIndex = defaults.practicePart;
     activePracticeMix = null;
     practiceMixPartIndex = null;
@@ -6523,6 +6582,7 @@ stop percussion</words></direction-type></direction>
       audible: parts.map((_, index) => audibleTracks.has(index)),
       volumes: [...trackVolumes],
       pans: [...trackPans],
+      divisi: [...divisiSelections],
       practiceMixMode: activePracticeMix,
       practiceMixPart: practiceMixPartIndex,
       practiceMixUndo: practiceMixUndo ? {
@@ -6538,6 +6598,7 @@ stop percussion</words></direction-type></direction>
   function applyPreferenceState(stored) {
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) return;
     restoreAnnotationLayouts(stored, { render: false, persist: false });
+    divisiSelections = normalizeDivisiSelections(stored.divisi);
     if (TEMPO_VALUES.includes(stored.tempo)) tempoControl.setValue(stored.tempo, false);
     if (METRONOME_VALUES.includes(stored.metronome)) metronomeControl.setValue(stored.metronome, false);
     if (VERTICAL_VALUES.includes(stored.vertical)) verticalControl.setValue(stored.vertical, false);
@@ -6832,6 +6893,7 @@ stop percussion</words></direction-type></direction>
   function setPracticePart(selected) {
     const mode = currentPracticeMix();
     practicePartIndex = Number.isInteger(selected) && selected >= 0 && selected < parts.length ? selected : null;
+    selectedScorePartIndex = null;
     if (mode && practicePartIndex !== null) {
       // Follow the new singer without replacing the pre-preset mix snapshot.
       applyPracticeMix(mode, { toggle: false });
@@ -7186,7 +7248,54 @@ stop percussion</words></direction-type></direction>
     // Same feel as a pan dial's own drag, which also steps every four pixels.
     attachGroupDrag(panLabel, panControls, PAN_VALUES, 4, { horizontal: true, clampIndividually: true });
 
+    if (partDivisi.some((part) => part.maxLines > 1)) {
+      appendMixerLabel("Divisi", (state) => { state.divisi = parts.map(() => null); });
+      parts.forEach((part, track) => {
+        const count = partDivisi[track]?.maxLines || 1;
+        if (count < 2) {
+          const blank = document.createElement("span");
+          blank.className = "divisi-empty";
+          blank.setAttribute("aria-hidden", "true");
+          elements.mixer.append(blank);
+          return;
+        }
+        const select = document.createElement("select");
+        select.className = "divisi-select";
+        select.dataset.divisiIndex = String(track);
+        select.style.setProperty("--part-color", part.color);
+        select.setAttribute("aria-label", `${part.name} divisi playback`);
+        select.dataset.help = `Hear all ${part.name} notes, or just one divisi line. Unison passages stay audible.`;
+        const choices = [{ value: "", label: "All" }, ...Array.from({ length: count }, (_, index) => ({
+          value: String(index), label: count === 2 ? (index === 0 ? "Upper" : "Lower") : String(index + 1),
+        }))];
+        for (const { value, label } of choices) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          select.append(option);
+        }
+        select.addEventListener("change", () => {
+          divisiSelections[track] = select.value === "" ? null : Number(select.value);
+          engine?.setDivisi(divisiSelections);
+          savePreferences();
+        });
+        elements.mixer.append(select);
+      });
+      updateDivisiControls();
+    }
+
     updateMixerAppearance();
+  }
+
+  function normalizeDivisiSelections(raw) {
+    return parts.map((_, index) => Number.isInteger(raw?.[index]) && raw[index] >= 0
+      && raw[index] < (partDivisi[index]?.maxLines || 1) ? raw[index] : null);
+  }
+
+  function updateDivisiControls() {
+    elements.mixer.querySelectorAll("[data-divisi-index]").forEach((select) => {
+      select.value = divisiSelections[Number(select.dataset.divisiIndex)] ?? "";
+    });
   }
 
   function loadAnnotations() {
@@ -7550,11 +7659,13 @@ stop percussion</words></direction-type></direction>
           if (!nearest && (x < box.x - padding || x > box.x + box.w + padding
             || y < box.y - padding || y > box.y + box.h + padding)) continue;
           const distance = Math.hypot(x - box.x - box.w / 2, y - box.y - box.h / 2);
-          if (!closest || distance < closest.distance) closest = { key, track, distance };
+          if (!closest || distance < closest.distance) closest = {
+            key, track, distance, tick: Number(beat.beat?.absolutePlaybackStart),
+          };
         }
       }
     }
-    return closest ? { key: closest.key, track: closest.track } : null;
+    return closest ? { key: closest.key, track: closest.track, tick: closest.tick } : null;
   }
 
   function chordNotesAtTick(tick) {
@@ -7768,6 +7879,33 @@ stop percussion</words></direction-type></direction>
 
   function cancelPitchAuditions() {
     for (const finish of pitchAuditions.values()) finish();
+    keyboardAudition?.();
+    keyboardAudition = null;
+  }
+
+  function stepScoreNote(direction) {
+    if (!ready || !engine || !api) return;
+    const track = currentScorePartIndex();
+    const here = engine.currentSeconds();
+    const notes = engine.notes.flatMap((note) => note.segments || [note])
+      .filter((note) => note.track === track).sort((a, b) => a.start - b.start);
+    const target = direction > 0 ? notes.find((note) => note.start > here + 0.002)
+      : [...notes].reverse().find((note) => note.start < here - 0.002);
+    if (!target) return;
+    const from = playbackCursorPlace();
+    engine.pauseTransport();
+    cancelPitchAuditions();
+    applyScoreScrubTarget({ tick: engine.tickAtSeconds(target.start), exactTick: true, partIndex: track });
+    const keys = [...new Set(notes.filter((note) => Math.abs(note.start - target.start) < 1e-6).map((note) => note.key))];
+    const voices = keys.map((key) => engine.holdNote(key, track));
+    const finish = () => {
+      window.clearTimeout(timer);
+      for (const voice of voices) voice.release();
+      if (keyboardAudition === finish) keyboardAudition = null;
+    };
+    const timer = window.setTimeout(finish, PITCH_AUDITION_TAP_SECONDS * 1000);
+    keyboardAudition = finish;
+    followCursorFrom(from);
   }
 
   // The starting region fixes note/chord mode. Audio is immediate; only an
@@ -7794,11 +7932,11 @@ stop percussion</words></direction-type></direction>
         voices.set(id, engine.holdNote(n.key, n.track, { fullChord }));
       }
     };
-    const finish = () => {
+    const finish = (minimumSeconds = 0) => {
       if (controller.signal.aborted) return;
       controller.abort();
       pitchAuditions.delete(pointerId);
-      for (const voice of voices.values()) voice.release();
+      for (const voice of voices.values()) voice.release({ minimumSeconds });
       voices.clear();
       surface?.classList.remove("is-auditioning-score");
       try { if (surface?.hasPointerCapture(pointerId)) surface.releasePointerCapture(pointerId); } catch {}
@@ -7829,11 +7967,12 @@ stop percussion</words></direction-type></direction>
     window.addEventListener("pointerup", (upEvent) => {
       if (upEvent.pointerId !== pointerId) return;
       upEvent.preventDefault();
-      finish();
       // Cold audio startup can delay dispatch of an already released pointer.
       // Classify the physical input interval, not time spent running JavaScript.
       const releasedAt = Number.isFinite(upEvent.timeStamp) ? upEvent.timeStamp : performance.now();
-      if (!dragging && releasedAt - pressedAt < PITCH_AUDITION_HOLD_MS && initialTarget) {
+      const tap = !dragging && releasedAt - pressedAt < PITCH_AUDITION_HOLD_MS;
+      finish(tap ? PITCH_AUDITION_TAP_SECONDS : 0);
+      if (tap && initialTarget) {
         applyScoreScrubTarget(initialTarget);
       }
     }, { signal: controller.signal });
@@ -8544,7 +8683,10 @@ stop percussion</words></direction-type></direction>
       try {
         // Activate inside the gesture, before AlphaTab marks playback started.
         await this.prepareAudio();
-        if (request === this.transportRequest) this.api.play();
+        if (request === this.transportRequest) {
+          if (this.basePosition >= this.duration - 0.005) this.api.tickPosition = 0;
+          this.api.play();
+        }
       } catch (error) {
         if (request !== this.transportRequest) return;
         console.error(error);
@@ -8685,6 +8827,20 @@ stop percussion</words></direction-type></direction>
       });
     }
 
+    setDivisi(selections) {
+      const key = JSON.stringify(selections);
+      if (key === this.divisiKey) return;
+      this.divisiKey = key;
+      this.allNotes ||= this.notes;
+      this.notes = filterDivisiNotes(this.allNotes, selections, partDivisi, (tick) => this.secondsAtTick(tick));
+      if (this.playing) {
+        this.basePosition = this.currentSeconds();
+        this.anchorTime = this.context.currentTime;
+        this.stopVoices();
+        this.resetScheduler(SCHEDULER_LEAD_SECONDS, { carryHeldNotes: true });
+      }
+    }
+
     findNext(items, position, field) {
       // Tick-to-time conversions can round an exact onset slightly into the past.
       const boundary = position - 0.000001;
@@ -8813,12 +8969,12 @@ stop percussion</words></direction-type></direction>
       oscillator.start(start);
       vibrato.start(start);
       let released = false;
-      const release = () => {
+      const release = ({ minimumSeconds = 0 } = {}) => {
         if (released) return;
         released = true;
         this.held.delete(voice);
-        const now = this.context.currentTime;
-        if (this.context.state !== "running") {
+        const now = Math.max(this.context.currentTime, start + minimumSeconds);
+        if (this.context.state !== "running" && minimumSeconds === 0) {
           // A released cold-start preview must not sound after resume resolves.
           try { oscillator.stop(now); } catch {}
           try { vibrato.stop(now); } catch {}
@@ -8826,7 +8982,8 @@ stop percussion</words></direction-type></direction>
         }
         const gain = envelope.gain;
         // Preserve the attack's current level before canceling automation.
-        const current = Math.max(0.0001, Number(gain.value) || 0.0001);
+        const current = now > this.context.currentTime && now >= attackEnd
+          ? level : Math.max(0.0001, Number(gain.value) || 0.0001);
         if (typeof gain.cancelAndHoldAtTime === "function") gain.cancelAndHoldAtTime(now);
         else {
           gain.cancelScheduledValues(now);
@@ -8887,7 +9044,10 @@ stop percussion</words></direction-type></direction>
     }
 
     pushPosition() {
-      this.output?.updatePosition((this.currentSeconds() / this.rate) * 1000);
+      // AlphaTab rewinds when handed the exact end. Keep its cursor on the
+      // final chord while our own clock and elapsed-time display reach the end.
+      const last = this.secondsAtTick(Math.max(0, this.endTick - Math.max(1, this.division / 16)));
+      this.output?.updatePosition((Math.min(this.currentSeconds(), last) / this.rate) * 1000);
     }
 
     update() {
@@ -8903,13 +9063,15 @@ stop percussion</words></direction-type></direction>
         return;
       }
       if (position >= this.duration - 0.004) {
-        this.basePosition = this.duration;
-        this.pushPosition();
         this.playing = false;
         window.clearInterval(this.timer);
         this.timer = 0;
         this.stopVoices();
         this.api?.pause();
+        // Pausing AlphaTab seeks its external output to the last beat onset.
+        // Restore the completed audio clock after that callback, not before it.
+        this.basePosition = this.duration;
+        this.pushPosition();
         return;
       }
       this.scheduleAhead();
@@ -9141,7 +9303,13 @@ stop percussion</words></direction-type></direction>
       values: VOLUME_VALUES, defaultValue: () => 100, format: (v) => `${v}%`,
       aria: (v) => `Percussion volume ${v} percent`, pixelsPerStep: 4,
     });
-    const dial = cell("bodyPan", "pan-ring", "Percussion stereo pan");
+    const dial = cell("bodyPan", "pan-ring", "Percussion stereo pan", row("divisi"));
+    if (row("divisi")) {
+      const blank = document.createElement("span");
+      blank.className = "divisi-empty percussion-cell";
+      blank.setAttribute("aria-hidden", "true");
+      mixer.append(blank);
+    }
     dial.dataset.value = String(percussionState.pan);
     const ring = document.createElement("span");
     ring.className = "pan-arc";
@@ -10039,6 +10207,36 @@ function prepareSystemAnnotations() {
     }
     const span = spans[low];
     return span && span.start <= tick ? span : null;
+  }
+
+  function filterDivisiNotes(notes, selections, profiles, secondsAtTick) {
+    const ranges = profiles.map((profile, track) => !Number.isInteger(selections[track]) ? null
+      : profile.spans.map((span) => ({ start: secondsAtTick(span.start), end: secondsAtTick(span.end),
+        key: span.pitches[divisiLineFor(selections[track], profile.maxLines, span.pitches.length)] })));
+    return notes.flatMap((note) => {
+      const allowed = ranges[note.track];
+      if (!allowed) return [note];
+      // Clip at changes in the stack, including a held lower line beneath a
+      // moving upper line. Preserve contiguous slur segments in the adapter.
+      const segments = (note.segments || [note]).flatMap((segment) => {
+        const pieces = [];
+        for (const range of allowed) {
+          if (range.key !== segment.key || range.end <= segment.start || range.start >= segment.end) continue;
+          const start = Math.max(segment.start, range.start), end = Math.min(segment.end, range.end);
+          if (pieces.length && Math.abs(pieces.at(-1).end - start) < 1e-6) pieces.at(-1).end = end;
+          else pieces.push({ ...segment, start, end });
+        }
+        return pieces;
+      });
+      const groups = [];
+      for (const segment of segments) {
+        const previous = groups.at(-1);
+        if (previous && Math.abs(previous.at(-1).end - segment.start) < 1e-6) previous.push(segment);
+        else groups.push([segment]);
+      }
+      return groups.map((group) => ({ ...group[0], end: group.at(-1).end,
+        ...(note.segments ? { segments: group } : {}) }));
+    }).sort((a, b) => a.start - b.start || a.track - b.track);
   }
 
   function pitchStripe(defs, systemIndex, tracks, cache) {
@@ -11444,8 +11642,8 @@ function prepareSystemAnnotations() {
   }
 
   function interruptVerticalFollow() {
-    if (!verticalFollowAnimationFrame && !predictiveFollowRange) return;
-    cancelVerticalFollowAnimation(true);
+    if (verticalFollowAnimationFrame || predictiveFollowRange) cancelVerticalFollowAnimation(true);
+    // Real input must also end the grace period after a completed auto-scroll.
     automaticScrollUntil = 0;
   }
 
@@ -11512,14 +11710,9 @@ function prepareSystemAnnotations() {
       break;
     }
     if (nextMeasureIndex < 0 || !nextBox) return null;
-    const cursorBounds = cursor.getBoundingClientRect();
-    const logicalHeight = Number(currentBox.h);
-    const measuredScaleY = Number.isFinite(logicalHeight) && logicalHeight > 0
-      ? cursorBounds.height / logicalHeight
-      : 1;
-    const scaleY = Number.isFinite(measuredScaleY) && measuredScaleY > 0 ? measuredScaleY : 1;
-    const nextTop = cursorBounds.top + (Number(nextBox.y) - currentY) * scaleY;
-    const nextHeight = Math.max(1, (Number(nextBox.h) || logicalHeight || cursorBounds.height) * scaleY);
+    const origin = elements.score.getBoundingClientRect();
+    const nextTop = origin.top + Number(nextBox.y) - elements.score.scrollTop;
+    const nextHeight = Math.max(1, Number(nextBox.h) || Number(currentBox.h));
     return {
       currentTick,
       tick: Number(sequence.measures[nextMeasureIndex]?.[0]) || 0,
@@ -11556,10 +11749,10 @@ function prepareSystemAnnotations() {
   }
 
   function gentleFollowCursor() {
-    if (pendingNotationReload || scoreScrub) return;
+    if (!engine?.playing || pendingNotationReload || scoreScrub) return;
     if (performance.now() - lastFollow < FOLLOW_CHECK_INTERVAL_MS) return;
     lastFollow = performance.now();
-    const cursor = playbackCursorElement();
+    const cursor = playbackCursorBounds();
     if (!cursor) return;
     if (playbackDetached) {
       updatePlaybackReturn();
@@ -11591,7 +11784,7 @@ function prepareSystemAnnotations() {
   }
 
   function playbackCursorPlace() {
-    const bounds = playbackCursorElement()?.getBoundingClientRect();
+    const bounds = playbackCursorBounds();
     return bounds ? `${Math.round(bounds.left)}:${Math.round(bounds.top)}` : null;
   }
 
@@ -11604,10 +11797,8 @@ function prepareSystemAnnotations() {
     let frames = 0;
     const attempt = () => {
       if (playbackCursorPlace() !== place) {
-        // Always park it, even when the target is technically already in view,
-        // so a jump lands in the same spot every time. The minimal destination
-        // is the reading line whichever way the playhead moved.
-        scrollToPlayback(playbackDirection() || "down", "smooth", true);
+        const direction = playbackDirection();
+        if (direction) scrollToPlayback(direction, "smooth", true);
         return;
       }
       if ((frames += 1) < 12) requestAnimationFrame(attempt);
@@ -11615,14 +11806,26 @@ function prepareSystemAnnotations() {
     requestAnimationFrame(attempt);
   }
 
-  function playbackCursorElement() {
-    if (scoreView === "bars" && activeBarSystemIndex >= 0) return barSystems[activeBarSystemIndex]?.cursor || null;
-    return elements.score.querySelector(".at-cursor-bar");
+  function playbackCursorBounds() {
+    if (!engine || pendingNotationReload) return null;
+    const tick = clamp(engine.tickAtSeconds(engine.currentSeconds()), 0, Math.max(0, sequence.endTick - 1));
+    if (scoreView === "bars") {
+      const system = barSystems.find((system) => tick >= system.startTick && tick < system.endTick);
+      return system?.cursor.getBoundingClientRect() || null;
+    }
+    // The animated AlphaTab cursor can still belong to the previous system
+    // when its position event fires. Follow the current measure's geometry.
+    const box = masterBarLayoutBox(measureIndexAtTick(tick));
+    if (!box) return null;
+    const origin = elements.score.getBoundingClientRect();
+    const left = origin.left + box.x - elements.score.scrollLeft;
+    const top = origin.top + box.y - elements.score.scrollTop;
+    return { left, top, right: left + box.w, bottom: top + box.h, width: box.w, height: box.h };
   }
 
-  function playbackDirection(cursor = playbackCursorElement()) {
+  function playbackDirection(cursor = playbackCursorBounds()) {
     if (!cursor) return null;
-    const bounds = cursor.getBoundingClientRect();
+    const bounds = cursor;
     const header = elements.transport.getBoundingClientRect().height;
     const topLimit = header + 8;
     const bottomLimit = window.innerHeight - 20;
@@ -11639,11 +11842,11 @@ function prepareSystemAnnotations() {
     return null;
   }
 
-  function cursorOutsideReadingBand(cursor = playbackCursorElement()) {
+  function cursorOutsideReadingBand(cursor = playbackCursorBounds()) {
     if (!cursor) return false;
     const direction = playbackDirection(cursor);
     if (["left", "right"].includes(direction)) return true;
-    const bounds = cursor.getBoundingClientRect();
+    const bounds = cursor;
     const header = elements.transport.getBoundingClientRect().height;
     const usableTop = header + 8;
     const usableBottom = window.innerHeight - 20;
@@ -11659,7 +11862,7 @@ function prepareSystemAnnotations() {
   }
 
   function updatePlaybackReturn() {
-    const cursor = playbackCursorElement();
+    const cursor = playbackCursorBounds();
     if (!playbackDetached || !cursor) {
       hidePlaybackReturn();
       return;
@@ -11685,12 +11888,12 @@ function prepareSystemAnnotations() {
   }
 
   function scrollToPlayback(direction = playbackDirection(), behavior = "smooth", minimal = false) {
-    const cursor = playbackCursorElement();
+    const cursor = playbackCursorBounds();
     if (!cursor) return false;
     playbackDetached = false;
     predictiveFollowRange = null;
     hidePlaybackReturn();
-    const bounds = cursor.getBoundingClientRect();
+    const bounds = cursor;
     const header = elements.transport.getBoundingClientRect().height;
     const topLimit = header + 8;
     const bottomLimit = window.innerHeight - 20;
@@ -11726,7 +11929,7 @@ function prepareSystemAnnotations() {
       followScrollFrame = 0;
       if (Date.now() < automaticScrollUntil) return;
       cancelVerticalFollowAnimation(true);
-      const cursor = playbackCursorElement();
+      const cursor = playbackCursorBounds();
       if (!cursor) {
         hidePlaybackReturn();
         return;
@@ -11784,7 +11987,9 @@ function prepareSystemAnnotations() {
       const target = standardChordTargetAtClientPoint(pointer.clientX, pointer.clientY, false);
       return target ? { notes: chordNotesAtTick(target.tick) } : null;
     };
-    const targetAtPointer = (pointerEvent) => chord || standardScoreTargetAtClientPoint(
+    const targetAtPointer = (pointerEvent) => note && Number.isFinite(note.tick)
+      ? { tick: note.tick, exactTick: true, partIndex: note.track }
+      : chord || standardScoreTargetAtClientPoint(
       pointerEvent.clientX,
       pointerEvent.clientY,
       currentScorePartIndex(),
@@ -11890,7 +12095,7 @@ function prepareSystemAnnotations() {
 
   function isTextEntryTarget(target) {
     if (!(target instanceof Element)) return false;
-    if (target instanceof HTMLTextAreaElement || target.isContentEditable) return true;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return true;
     return target instanceof HTMLInputElement
       && ["text", "search", "email", "url", "tel", "password"].includes(target.type);
   }
@@ -11922,8 +12127,10 @@ function prepareSystemAnnotations() {
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) return;
     if (event.defaultPrevented) return;
+    if (event.key.startsWith("Arrow") && target instanceof Element
+      && target.closest("button, select, [role='spinbutton'], [role='slider'], [role='tab']")) return;
     // Up and down step between section breaks, the way an editor steps between
-    // cuts; left and right stay on the beat, below. The score follows so the
+    // cuts; left and right audition adjacent notes of the selected part. The score follows so the
     // jump lands somewhere you can read, and a control that uses the arrows
     // itself has already called preventDefault by the time this runs.
     if (["ArrowUp", "ArrowDown"].includes(event.key) && engine && api) {
@@ -11947,10 +12154,7 @@ function prepareSystemAnnotations() {
     }
     if (["ArrowLeft", "ArrowRight"].includes(event.key) && engine && api) {
       const direction = event.key === "ArrowRight" ? 1 : -1;
-      const beatSeconds = 60 / Math.max(20, engine.tempoSegments[0]?.bpm || 120);
-      const next = clamp(engine.currentSeconds() + direction * beatSeconds, 0, engine.duration);
-      cancelVerticalFollowAnimation(true);
-      api.tickPosition = engine.tickAtSeconds(next);
+      stepScoreNote(direction);
       event.preventDefault();
       return;
     }
@@ -12238,6 +12442,7 @@ function prepareSystemAnnotations() {
       api = new window.alphaTab.AlphaTabApi(elements.score, settings);
       engine = new ArrangementEngine(sequence);
       installPercussionControl(engine);
+      engine.setDivisi(divisiSelections);
       engine.onPreparationChanged = syncPlaybackButton;
       buildTimelineSegments();
       engine.attach(api);
@@ -12316,6 +12521,7 @@ function prepareSystemAnnotations() {
       });
       api.playerStateChanged.on((event) => {
         playing = event.state === window.alphaTab.synth.PlayerState.Playing;
+        if (!playing) cancelVerticalFollowAnimation(true);
         syncPlaybackButton();
         if ("mediaSession" in navigator) navigator.mediaSession.playbackState = playing ? "playing" : "paused";
         if (playing) startPitchSampling();

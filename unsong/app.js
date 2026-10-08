@@ -46,8 +46,9 @@ function scope() { return !local ? '' : '?' + new URLSearchParams(previewMode ==
 function resource(path) { return path + scope(); }
 function duration(s) { s = Math.max(0, Math.round(s || 0)); return s >= 3600 ? Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0') : Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function dateLabel(value, time=false) { return new Intl.DateTimeFormat(undefined, {timeZone:catalog.timeZone,month:'short',day:'numeric', ...(time?{weekday:'short',hour:'numeric',minute:'2-digit',timeZoneName:'short'}:{})}).format(new Date(value)); }
+function discussionDateLabel(value) { return new Intl.DateTimeFormat(undefined, {timeZone:catalog.timeZone,weekday:'short',month:'short',day:'numeric'}).format(new Date(value)); }
 function syncPill(id, value, attr) { const parent = $(id), buttons = [...parent.querySelectorAll('button')]; for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset[attr] === value)); const selected=buttons.find(b=>b.dataset[attr]===value); if(!selected) return; const thumb=parent.querySelector('.thumb'); thumb.style.width=selected.offsetWidth+'px'; thumb.style.height=selected.offsetHeight+'px'; thumb.style.transform='translateX('+(selected.offsetLeft-3)+'px)'; }
-function safeFetch(path) { return fetch(path).then(r=>{if(!r.ok) throw Error('Could not load '+path.split('?')[0]+' ('+r.status+').'); return r.json();}); }
+function safeFetch(path,options) { return fetch(path,options).then(r=>{if(!r.ok) throw Error('Could not load '+path.split('?')[0]+' ('+r.status+').'); return r.json();}); }
 function progress() { return saved.weeks[week.id] ||= {}; }
 function savePosition() { if (!week) return; const p=progress(); if (audio.src && Number.isFinite(audio.currentTime)) p.time=audio.currentTime; if(readingBlock) p.block=readingBlock; saved.lastWeek=week.id; persist(); }
 function displayError(error) { $('status').textContent = error.message || String(error); }
@@ -69,28 +70,28 @@ function renderSchedule() {
   const list=$('schedule-list');list.replaceChildren();
   catalog.weeks.forEach(w=>{
     const button=document.createElement('button');button.className='schedule-week'+(week?.id===w.id?' current':'');button.disabled=!w.available;button.type='button';button.dataset.week=w.id;
-    const left=document.createElement('span'),strong=document.createElement('strong'),small=document.createElement('small'),right=document.createElement('span');
-    strong.textContent=w.number.toString().padStart(2,'0')+'  '+w.label;small.textContent=w.available?'Available':'Unlocks '+dateLabel(w.releaseAt);left.append(strong,small);
-    right.className='date';if(saved.weeks[w.id]?.done){const done=document.createElement('small');done.textContent='Finished';right.append(done);}
-    button.append(left,right);button.addEventListener('click',()=>{$('schedule-dialog').close();loadWeek(w.id).catch(displayError);});list.append(button);
+    if(week?.id===w.id)button.setAttribute('aria-current','true');
+    const left=document.createElement('span'),strong=document.createElement('strong'),date=document.createElement('time'),small=document.createElement('small'),right=document.createElement('span');
+    date.dateTime=w.discussionAt;date.textContent=discussionDateLabel(w.discussionAt);strong.append(date);small.textContent=w.label;left.append(strong,small);
+    right.className='date';
+    if(!w.available){const unlock=document.createElement('small');unlock.textContent='Unlocks '+dateLabel(w.releaseAt);right.append(unlock);}
+    if(saved.weeks[w.id]?.done){const done=document.createElement('small');done.textContent='Finished';right.append(done);}
+    button.append(left);if(right.childElementCount)button.append(right);button.addEventListener('click',()=>{$('schedule-dialog').close();loadWeek(w.id).catch(displayError);});list.append(button);
   });
   $('release-count').textContent=catalog.weeks.filter(w=>w.available).length+'/10 available';
 }
-function updateFeeds() {
-  for(const type of ['opus','mp3']){$(type+'-feed').href=resource(type==='opus'?'feed-opus.xml':'feed.xml');}
-  $('feed-notice').textContent=local ? 'Local preview. '+(previewMode==='all'?'These preview feeds contain all ten packets.':'These feeds contain only the packets released by the simulated date.')+' Use diegozc.com/unsong for the public release schedule.' : 'New assignments enter the feeds on their release Mondays. Your podcast app may refresh on its own schedule.';
-}
 async function loadCatalog(preferred) {
+  resetSearch();$('search-open').disabled=true;
   savePosition();audio.pause();const token=++loading;const data=await safeFetch(resource('data/catalog.json'));if(token!==loading)return;
-  catalog=data;$('preview').hidden=!(local&&catalog.localOnly);$('clock-label').hidden=previewMode==='all';$('preview-date').value=asOf;syncPill('visibility-pill',previewMode,'mode');updateFeeds();
+  catalog=data;$('preview').hidden=!(local&&catalog.localOnly);$('clock-label').hidden=previewMode==='all';$('preview-date').value=asOf;syncPill('visibility-pill',previewMode,'mode');
   const hash=location.hash.slice(1).match(/^(week-\d\d)(?:@([\d.]+))?$/);const requested=preferred||hash?.[1]||saved.lastWeek;
   let target=catalog.weeks.find(w=>w.id===requested&&w.available);
   target ||= [...catalog.weeks].reverse().find(w=>w.available&&new Date(w.releaseAt)<=new Date(catalog.clock)) || catalog.weeks.find(w=>w.available);
-  renderSchedule();
+  renderSchedule();updateSearchScope();$('search-open').disabled=false;
   if(target){await loadWeek(target.id,hash?.[1]===target.id&&hash[2]!==undefined?Number(hash[2]):null);}
   else{
     packet=null;mountReferences();
-    week=null;$('reader').replaceChildren();$('week-title').textContent='First packet has not been released';$('week-number').textContent='UNSONG';$('finish').hidden=true;$('play').disabled=true;$('share').disabled=true;audio.removeAttribute('src');audio.load();$('chapter-list').replaceChildren();$('status').textContent='Opens '+dateLabel(catalog.weeks[0].releaseAt,true)+'.';
+    week=null;$('reader').replaceChildren();$('week-title').textContent='First packet has not been released';$('week-number').textContent='UNSONG';$('week-number').removeAttribute('datetime');$('finish').hidden=true;$('play').disabled=true;$('share').disabled=true;audio.removeAttribute('src');audio.load();$('chapter-list').replaceChildren();$('status').textContent='Opens '+dateLabel(catalog.weeks[0].releaseAt,true)+'.';
   }
 }
 async function loadWeek(id, explicitTime=null) {
@@ -99,12 +100,20 @@ async function loadWeek(id, explicitTime=null) {
   savePosition();audio.pause();const token=++loading;$('status').textContent='Loading reading…';$('play').disabled=true;$('share').disabled=true;
   const key=next.packet;let data=packetCache.get(key);if(!data){data=await safeFetch(resource(key));packetCache.set(key,data);}if(token!==loading)return;
   week=next;packet=data;readingBlock=null;activeWord=null;attached=true;wordNodes.clear();times=packet.timings;
-  $('reader').innerHTML=packet.html;for(const node of $('reader').querySelectorAll('[data-w]'))wordNodes.set(Number(node.dataset.w),node);
+  $('reader').innerHTML=packet.html;
+  // Use the existing source URL on the title itself, keeping packet text and
+  // timing anchors intact while removing the separate "Original" row.
+  for(const source of $('reader').querySelectorAll('a.source-link')){
+    const heading=source.previousElementSibling;if(!heading?.matches('h2[id^="section-"]'))continue;
+    source.className='chapter-source';source.title='Read the original chapter (opens in a new tab)';
+    source.replaceChildren(...heading.childNodes);heading.append(source);
+  }
+  for(const node of $('reader').querySelectorAll('[data-w]'))wordNodes.set(Number(node.dataset.w),node);
   for(const [idx] of times)wordNodes.get(idx)?.classList.add('timed');
   mountReferences();
-  $('week-number').textContent='Assignment '+week.number+' of 10';$('week-title').textContent=week.label;$('share').disabled=false;
+  $('week-number').textContent=discussionDateLabel(week.discussionAt);$('week-number').dateTime=week.discussionAt;$('week-title').textContent=week.label;$('share').disabled=false;
   $('chapter-summary').textContent='Chapters & interludes';$('chapter-list').replaceChildren();
-  week.chapters.forEach(c=>{const li=document.createElement('li'),button=document.createElement('button'),time=document.createElement('small');button.textContent=c.label;time.textContent=duration(c.start);button.append(time);button.addEventListener('click',()=>{seek(c.start);$('chapter-details').open=false;scrollToNode($(c.id));});li.append(button);$('chapter-list').append(li);});
+  week.chapters.forEach(c=>{const li=document.createElement('li'),button=document.createElement('button'),time=document.createElement('small');button.textContent=c.label;time.textContent=duration(c.start);button.append(time);button.addEventListener('click',()=>{seek(c.start);$('chapter-details').open=false;$('schedule-dialog').close();scrollToNode($(c.id));});li.append(button);$('chapter-list').append(li);});
   $('chapter-details').open=false;$('finish').hidden=false;$('finish-detail').textContent='The next assignment never starts automatically.';
   const nextWeek=catalog.weeks[week.number];$('next-week').hidden=!nextWeek;$('next-week').disabled=!nextWeek?.available;$('next-week').textContent=nextWeek?.available?'Next assignment':nextWeek?'Next unlocks '+dateLabel(nextWeek.releaseAt):'';
   updateDone();$('alignment-detail').textContent='Word timing coverage: '+(100*week.alignmentCoverage).toFixed(1)+'%. '+(week.addedAlignedWords?week.addedAlignedWords.toLocaleString()+' large-v3 gap fills included. ':'')+'Untimed words are readable but not highlighted or seekable. No interpolated timings.';
@@ -150,11 +159,26 @@ async function copy(text){try{await navigator.clipboard.writeText(text);toast('L
 /* Reviewed references travel with each released packet, never with a global spoiler index. */
 let referenceNotes = new Map(), referenceFocusNodes = [], referenceOrigin = null;
 let referenceSection = null, selectedLookup = '', selectionTimer;
-let markersVisible = saved.references !== false;
 const boundedScore=(value,fallback)=>Number.isInteger(value)&&value>=0&&value<=10?value:fallback;
-let minConfidence=boundedScore(saved.referenceConfidence,8), minUsefulness=boundedScore(saved.referenceUsefulness,8);
-saved.hiddenReferences ||= {};
-let showHiddenReferences=false;
+// Present the meaningful 6–10 source range as 1–5; group the rare lower scores
+// at 1 without changing the original, auditable reference records.
+const referenceImportance=note=>Math.max(1,Math.min(5,note.usefulness-5));
+const referenceDensityLevels=[
+  {label:'None',minimumImportance:null},
+  {label:'Few',minimumImportance:4},
+  {label:'More',minimumImportance:3},
+  {label:'All',minimumImportance:1}
+];
+const legacyUsefulness=boundedScore(saved.referenceUsefulness,8);
+let referenceDensity=referenceDensityLevels.findIndex(level=>level.label.toLowerCase()===saved.referenceDensity);
+if(referenceDensity<0)referenceDensity=saved.references===false?0:legacyUsefulness>=9?1:legacyUsefulness>=8?2:3;
+// One control owns reference density. Retire individual hiding without changing
+// reading progress or unrelated settings; old hidden markers reappear normally.
+delete saved.referenceConfidence;
+delete saved.referenceUsefulness;
+delete saved.references;
+delete saved.hiddenReferences;
+saved.referenceDensity=referenceDensityLevels[referenceDensity].label.toLowerCase();
 const referenceKinds = {history:'History / real people',scripture:'Biblical text',tradition:'Religious tradition',literature:'Literature',science:'Science / mathematics',fiction:'Fictional worldbuilding'};
 const referenceStatuses = {real:'Real-world source',adapted:'Adapted in Unsong',invented:'Unsong invention',allusion:'Source allusion',uncertain:'Connection uncertain'};
 const referenceIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>';
@@ -172,15 +196,6 @@ function clearReferenceFocus() {
   referenceFocusNodes.forEach(n=>n.classList.remove('reference-focus'));referenceFocusNodes=[];
   $('reader').querySelector('[aria-current="true"].reference-mark')?.removeAttribute('aria-current');
 }
-function referenceHelp() {
-  delete $('reference-detail').dataset.referenceId;
-  $('reference-detail').replaceChildren(
-    referenceElement('h3','','History, scripture, or invention?'),
-    referenceElement('p','','Tap a small reference marker to see a sourced note. Ctrl/Cmd-click or middle-click the marker opens its source in a new tab.'),
-    referenceElement('p','muted small','A real person can still have fictional actions here. “Religious tradition” identifies an existing belief or text, not an established historical event.'),
-    referenceElement('p','reference-footnote',(packet?.referenceReview?.complete?'All '+packet.referenceReview.reviewedSections+' sections of this assignment were reviewed sentence by sentence. ':'')+'Notes are editorial suggestions, not Scott’s annotations. Each has independent confidence and usefulness scores. The review can still miss allusions; absence of a marker means unannotated or filtered, not invented.')
-  );
-}
 function sectionAtReadingPosition() {
   const headings=[...$('reader').querySelectorAll('h2[id^="section-"]')];
   return (headings.findLast(h=>h.getBoundingClientRect().top<Math.min(innerHeight*.3,240)) || headings[0])?.id;
@@ -188,42 +203,37 @@ function sectionAtReadingPosition() {
 function renderNearby(sectionId) {
   referenceSection=sectionId;
   const chapter=week?.chapters.find(c=>c.id===sectionId);
-  $('reference-nearby-label').textContent=chapter?'Notes · '+chapter.label:'Notes in this chapter';
+  $('reference-nearby-label').textContent=chapter?'References · '+chapter.label:'References in this chapter';
   const list=$('reference-nearby-list');list.replaceChildren();
   const seen=new Set();
   const ordered=[...(packet?.referenceOccurrences || [])].sort((a,b)=>{
     const x=referenceNotes.get(a.referenceId),y=referenceNotes.get(b.referenceId);
-    return (y?.usefulness||0)-(x?.usefulness||0) || (y?.confidence||0)-(x?.confidence||0);
+    return referenceImportance(y)-referenceImportance(x);
   });
   for(const occurrence of ordered){
     if(occurrence.sectionId!==sectionId || seen.has(occurrence.referenceId))continue;
     const note=referenceNotes.get(occurrence.referenceId);if(!note||!referencePasses(note))continue;
     seen.add(occurrence.referenceId);
     const button=referenceElement('button','',note.title);button.type='button';button.dataset.referenceId=note.id;
-    button.append(referenceElement('span','reference-list-score',' · C'+note.confidence+' / U'+note.usefulness+(saved.hiddenReferences[note.id]?' · hidden':'')));
+    button.append(referenceElement('span','reference-list-score',' · Importance '+referenceImportance(note)+'/5'));
     button.addEventListener('click',()=>showReference(note.id,occurrence));list.append(button);
   }
-  if(!seen.size)list.append(referenceElement('p','muted small','No notes meet these filters here. Lower the minimum scores, or look up a selection.'));
+  if(!seen.size)list.append(referenceElement('p','muted small','No references at this level here. Drag Refs upward in the player to show more, or look up a selection.'));
 }
 function referencePasses(note) {
-  return note.confidence>=minConfidence && note.usefulness>=minUsefulness && (showHiddenReferences||!saved.hiddenReferences[note.id]);
+  return referenceDensity>0 && referenceImportance(note)>=referenceDensityLevels[referenceDensity].minimumImportance;
 }
 function applyReferenceFilters() {
-  const visible=[...referenceNotes.values()].filter(referencePasses);
   for(const marker of $('reader').querySelectorAll('.reference-mark'))marker.hidden=!referencePasses(referenceNotes.get(marker.dataset.referenceId));
-  $('reference-coverage').textContent=visible.length+' / '+referenceNotes.size+' notes shown · '+Object.keys(saved.hiddenReferences).length+' hidden by you';
-  $('reference-filter-label').textContent='Filter · confidence ≥ '+minConfidence+' · usefulness ≥ '+minUsefulness;
-  for(const [name,value] of [['confidence',minConfidence],['usefulness',minUsefulness]]){
-    const el=$('reference-'+name);el.textContent=value;el.dataset.value=value;el.setAttribute('aria-valuenow',value);
-  }
-  $('reference-restore-hidden').disabled=!Object.keys(saved.hiddenReferences).length;
+  const level=referenceDensityLevels[referenceDensity],control=$('notes-density');
+  $('notes-density-value').textContent=level.label;
+  control.dataset.value=referenceDensity;control.dataset.importance=level.minimumImportance??'none';
+  control.setAttribute('aria-valuenow',referenceDensity);control.setAttribute('aria-valuetext',referenceDensity===0?'No references':level.label+' references');
   if(referenceSection)renderNearby(referenceSection);
-  updateReferenceSearch();
 }
-function setReferenceThreshold(name,value) {
-  value=Math.max(0,Math.min(10,Math.round(value)));
-  if(name==='confidence'){minConfidence=value;saved.referenceConfidence=value;}
-  else{minUsefulness=value;saved.referenceUsefulness=value;}
+function setReferenceDensity(value) {
+  referenceDensity=Math.max(0,Math.min(3,Math.round(value)));
+  saved.referenceDensity=referenceDensityLevels[referenceDensity].label.toLowerCase();
   persist();applyReferenceFilters();
 }
 function setReferencePanel(open, origin=null) {
@@ -232,7 +242,6 @@ function setReferencePanel(open, origin=null) {
   const before=anchor?.isConnected?anchor.getBoundingClientRect().top:null;
   if(origin)referenceOrigin=origin;
   $('reference-panel').hidden=!open;document.body.classList.toggle('references-open',open);
-  $('references-open').setAttribute('aria-expanded',String(open));
   if(open){attached=false;$('lookup-selection').hidden=true;}
   if(open!==wasOpen && before!==null){
     programmaticUntil=performance.now()+400;
@@ -241,7 +250,7 @@ function setReferencePanel(open, origin=null) {
   if(open){$('reference-heading').focus({preventScroll:true});}
   else{
     clearReferenceFocus();
-    (referenceOrigin?.isConnected&&!referenceOrigin.hidden&&markersVisible?referenceOrigin:$('references-open')).focus({preventScroll:true});
+    (referenceOrigin?.isConnected&&!referenceOrigin.hidden?referenceOrigin:$('search-open')).focus({preventScroll:true});
   }
 }
 function showReference(id, occurrence=null, trigger=null) {
@@ -253,11 +262,14 @@ function showReference(id, occurrence=null, trigger=null) {
     for(let i=occurrence.firstWord;i<=occurrence.lastWord;i++){const n=wordNodes.get(i);if(n){n.classList.add('reference-focus');referenceFocusNodes.push(n);}}
   }
   const detail=$('reference-detail');detail.replaceChildren();detail.dataset.referenceId=id;
+  $('reference-heading').textContent=note.title;
+  $('reference-heading-scores').hidden=false;
+  const importance=referenceImportance(note),value=$('reference-note-importance');
+  value.textContent=importance+'/5';value.setAttribute('aria-label',importance+' out of 5');
   const badges=referenceElement('div','reference-badges');
   badges.append(referenceElement('span','reference-badge',referenceKinds[note.kind]));
   const status=referenceElement('span','reference-badge',referenceStatuses[note.status]);status.dataset.status=note.status;badges.append(status);
-  detail.append(badges,referenceElement('h3','',note.title),referenceElement('p','reference-summary',note.summary));
-  detail.append(referenceElement('p','reference-scores','Confidence '+note.confidence+'/10 · Usefulness '+note.usefulness+'/10'),referenceElement('p','muted small',note.scoreReason));
+  detail.append(badges,referenceElement('p','reference-summary',note.summary));
   if(note.inStory){const here=referenceElement('p','reference-story');here.append(referenceElement('strong','','In this passage: '),document.createTextNode(note.inStory));detail.append(here);}
   const sources=referenceElement('ul','reference-source-list');
   for(const source of note.sources){
@@ -267,74 +279,221 @@ function showReference(id, occurrence=null, trigger=null) {
     const li=document.createElement('li');li.append(a,referenceElement('small','',locator));sources.append(li);
   }
   detail.append(sources);
-  const actions=referenceElement('div','reference-actions'),back=referenceElement('button','','Back to passage');back.type='button';
-  back.addEventListener('click',()=>{const target=occurrence?.firstWord===null?$(occurrence.blockId):wordNodes.get(occurrence.firstWord);setReferencePanel(false);scrollToNode(target);});actions.append(back);detail.append(actions);
-  const hide=referenceElement('button','',saved.hiddenReferences[id]?'Restore this note':'Hide this note');hide.type='button';hide.dataset.hideReference=id;
-  hide.addEventListener('click',()=>{if(saved.hiddenReferences[id])delete saved.hiddenReferences[id];else saved.hiddenReferences[id]=true;persist();applyReferenceFilters();hide.textContent=saved.hiddenReferences[id]?'Restore this note':'Hide this note';});actions.append(hide);
-  detail.append(referenceElement('p','reference-footnote',(note.verifiedOn?'Source check '+note.verifiedOn:'Suggested reference; source check incomplete')+'. Links open separately; external pages may contain spoilers.'));
+  detail.append(referenceElement('p','reference-footnote','Editorial annotation, not Scott’s. '+(note.verifiedOn?'Source check '+note.verifiedOn:'Suggested reference; source check incomplete')+'. Links open separately; external pages may contain spoilers.'));
   renderNearby(occurrence?.sectionId || sectionAtReadingPosition());setReferencePanel(true,marker);$('reference-panel').scrollTop=0;
 }
 function mountReferences() {
   clearReferenceFocus();referenceNotes=new Map((packet?.references || []).map(n=>[n.id,n]));referenceOrigin=null;referenceSection=null;
-  $('reference-panel').hidden=true;document.body.classList.remove('references-open');$('references-open').setAttribute('aria-expanded','false');
+  $('reference-panel').hidden=true;document.body.classList.remove('references-open');
   $('reader').querySelectorAll('.reference-mark').forEach(n=>n.remove());
   (packet?.referenceOccurrences || []).forEach((occurrence,index)=>{
     const note=referenceNotes.get(occurrence.referenceId);if(!note)return;
     const target=occurrence.lastWord===null?$(occurrence.blockId):wordNodes.get(occurrence.lastWord);if(!target)return;
     const marker=sourceAnchor(note.sources[0]);if(!marker)return;
     marker.className='reference-mark';marker.innerHTML=referenceIcon;marker.dataset.referenceId=note.id;marker.dataset.occurrence=index;
-    marker.dataset.confidence=note.confidence;marker.dataset.usefulness=note.usefulness;
-    marker.dataset.tier=note.confidence>=8&&note.usefulness>=8?'high':note.confidence<7||note.usefulness<6?'low':'medium';
-    marker.setAttribute('aria-label','Reference: '+note.title);marker.title=note.title+' · confidence '+note.confidence+'/10 · usefulness '+note.usefulness+'/10 — preview; Ctrl/Cmd-click opens source';
+    const importance=referenceImportance(note);marker.dataset.importance=importance;
+    marker.dataset.tier=importance>=3?'high':importance===1?'low':'medium';
+    marker.setAttribute('aria-label','Reference: '+note.title);marker.title=note.title+' · Importance '+importance+'/5 — preview; Ctrl/Cmd-click opens source';
     marker.setAttribute('aria-controls','reference-panel');
     if(occurrence.lastWord===null)target.append(marker);else target.after(marker);
   });
-  document.body.classList.toggle('references-hidden',!markersVisible);
   applyReferenceFilters();
   $('reference-provenance').textContent=JSON.stringify(packet?.references || []);
-  $('reference-query').value='';updateReferenceSearch();referenceHelp();selectedLookup='';$('lookup-selection').hidden=true;
+  selectedLookup='';$('lookup-selection').hidden=true;
 }
-function setReferenceMarkers(on) {
-  markersVisible=on;saved.references=on;persist();document.body.classList.toggle('references-hidden',!on);
-  syncPill('references-pill',on?'on':'off','markers');
+
+/* Build the search index only on demand, from the same release-gated packets
+   the reader can open. Never fetch a novel-wide index containing future text. */
+let searchGeneration=0,searchRun=0,searchBuild=null,searchTimer=null;
+let searchMatches=[],searchLimit=40,searchNeedle='';
+const searchIndexes=new Map();
+function searchFold(text) {
+  return text.normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/ς/g,'σ').replace(/[‘’]/g,"'").replace(/[‐‑‒–—]/g,'-').replace(/\s+/g,' ');
 }
-function updateReferenceSearch() {
-  const query=$('reference-query').value.trim(),lower=query.toLocaleLowerCase();
-  $('reference-search-links').hidden=!query;
-  $('reference-wikipedia').href='https://en.wikipedia.org/w/index.php?search='+encodeURIComponent(query);
-  // The same reference/keyword handler used by BibleHub's own homepage form.
-  $('reference-biblehub').href='https://biblehub.com/biblemenus/search.php?q='+encodeURIComponent(query);
-  const list=$('reference-matches');list.replaceChildren();if(query.length<2)return;
-  const section=Number((referenceSection || sectionAtReadingPosition() || '').split('-')[1]);
-  const matches=[...referenceNotes.values()].filter(n=>referencePasses(n)&&(!n.sections||n.sections.includes(section)) && [n.title,...n.terms].some(t=>t.toLocaleLowerCase().includes(lower)||lower.includes(t.toLocaleLowerCase()))).sort((a,b)=>b.usefulness-a.usefulness||b.confidence-a.confidence).slice(0,12);
-  for(const note of matches){const button=referenceElement('button','',note.title+' · C'+note.confidence+' / U'+note.usefulness);button.type='button';button.addEventListener('click',()=>showReference(note.id));list.append(button);}
-  if(!matches.length)list.append(referenceElement('p','muted small','No reviewed note for this phrase here. Search results are not a fact/fiction classification.'));
+// Keep original character offsets for highlighting smart quotes/diacritics
+// without replacing the novel's text or altering any word-timing anchors.
+function searchProjection(text) {
+  let folded='',offset=0;const starts=[],ends=[];
+  for(const character of text){
+    const value=searchFold(character);
+    for(let i=0;i<value.length;i++){
+      if(value[i]===' '&&folded.endsWith(' '))continue;
+      folded+=value[i];starts.push(offset);ends.push(offset+character.length);
+    }
+    offset+=character.length;
+  }
+  return {text:folded,starts,ends};
 }
+function searchTextSegments(block) {
+  const segments=[],walker=document.createTreeWalker(block,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);let node;
+  while((node=walker.nextNode())){
+    if(node.nodeType===Node.TEXT_NODE)segments.push({node,text:node.textContent});
+    else if(node.tagName==='BR')segments.push({node,text:'\n'});
+  }
+  return segments;
+}
+function updateSearchScope() {
+  const released=catalog?.weeks.filter(w=>w.available)||[],last=released.at(-1);
+  const label=local&&catalog?.preview?'readings · all-reading preview':'released reading'+(released.length===1?'':'s');
+  $('search-scope').textContent=released.length+' '+label+(last?' · through '+discussionDateLabel(last.discussionAt):'');
+}
+function cancelSearchWork() {
+  clearTimeout(searchTimer);searchRun++;searchBuild?.controller.abort();searchBuild=null;
+  $('search-results').setAttribute('aria-busy','false');
+}
+function resetSearch() {
+  cancelSearchWork();searchGeneration++;searchIndexes.clear();searchMatches=[];
+  $('search-results').replaceChildren();$('search-more').hidden=true;$('search-retry').hidden=true;
+  $('search-status').textContent='';$('search-status').dataset.state='idle';
+}
+function indexSearchPacket(reading,data) {
+  const template=document.createElement('template');template.innerHTML=data.html;
+  const entries=[],locations=new Map(),chapters=new Map(reading.chapters.map(c=>[c.id,c]));
+  let chapter=null,order=0;
+  for(const block of template.content.querySelectorAll('h2[id^="section-"],[id^="block-"]')){
+    if(chapters.has(block.id))chapter=chapters.get(block.id);
+    if(!chapter)continue;
+    const text=searchTextSegments(block).map(part=>part.text).join(''),entry={kind:'text',weekId:reading.id,chapter:chapter.label,sectionId:chapter.id,blockId:block.id,text,order:order++};
+    entry.folded=searchFold(text);entries.push(entry);locations.set(block.id,entry);
+  }
+  const notes=new Map((data.references||[]).map(note=>[note.id,note])),seen=new Set();
+  (data.referenceOccurrences||[]).forEach((occurrence,index)=>{
+    const note=notes.get(occurrence.referenceId),place=locations.get(occurrence.blockId)||locations.get(occurrence.sectionId);
+    const key=occurrence.sectionId+'|'+occurrence.referenceId;
+    if(!note||!place||seen.has(key))return;
+    seen.add(key);
+    const fields=[note.summary,note.inStory,referenceKinds[note.kind],referenceStatuses[note.status],...(note.terms||[]),...(note.sources||[]).flatMap(source=>[source.title,source.locator])].filter(Boolean);
+    const text=[note.title,...fields].join('\n');
+    entries.push({...place,kind:'reference',referenceId:note.id,occurrence:index,title:note.title,fields,text,folded:searchFold(text)});
+  });
+  return entries.sort((a,b)=>a.order-b.order||Number(a.kind==='reference')-Number(b.kind==='reference'));
+}
+function getSearchIndex() {
+  if(searchBuild)return searchBuild.promise;
+  const readings=catalog.weeks.filter(w=>w.available),generation=searchGeneration,suffix=scope();
+  const job={controller:new AbortController()};searchBuild=job;
+  job.promise=(async()=>{
+    for(const reading of readings){
+      if(!searchIndexes.has(reading.id)){
+        const data=packetCache.get(reading.packet)||await safeFetch(reading.packet+suffix,{signal:job.controller.signal});
+        if(job.controller.signal.aborted||generation!==searchGeneration)throw new DOMException('Search cancelled','AbortError');
+        searchIndexes.set(reading.id,indexSearchPacket(reading,data));
+        // Yield between packets so typing/closing stays responsive on phones.
+        await new Promise(resolve=>setTimeout(resolve,0));
+      }
+      if(job.controller.signal.aborted||generation!==searchGeneration)throw new DOMException('Search cancelled','AbortError');
+    }
+    return readings.flatMap(reading=>searchIndexes.get(reading.id));
+  })().finally(()=>{if(searchBuild===job)searchBuild=null;});
+  return job.promise;
+}
+function searchSnippet(text,needle) {
+  const projection=searchProjection(text),at=projection.text.indexOf(needle),fragment=document.createDocumentFragment();
+  const first=at<0?0:projection.starts[at],last=at<0?0:projection.ends[at+needle.length-1];
+  const start=Math.max(0,first-75),end=Math.min(text.length,Math.max(last+100,start+190));
+  if(start)fragment.append(document.createTextNode('…'));
+  let cursor=start,match=at;
+  while(match>=0){
+    const from=projection.starts[match],to=projection.ends[match+needle.length-1];
+    if(from>=end)break;
+    if(from>=cursor){fragment.append(document.createTextNode(text.slice(cursor,from)),referenceElement('mark','',text.slice(from,to)));cursor=to;}
+    match=projection.text.indexOf(needle,match+needle.length);
+  }
+  fragment.append(document.createTextNode(text.slice(cursor,end)));
+  if(end<text.length)fragment.append(document.createTextNode('…'));
+  return fragment;
+}
+function renderSearchResults() {
+  const list=$('search-results');list.replaceChildren();
+  for(const entry of searchMatches.slice(0,searchLimit)){
+    const reading=catalog.weeks.find(w=>w.id===entry.weekId&&w.available);if(!reading)continue;
+    const li=document.createElement('li'),button=referenceElement('button','search-result');button.type='button';
+    button.dataset.searchKind=entry.kind;button.dataset.searchWeek=entry.weekId;button.dataset.searchBlock=entry.blockId;
+    if(entry.referenceId)button.dataset.searchReference=entry.referenceId;
+    button.append(referenceElement('span','search-result-location',discussionDateLabel(reading.discussionAt)+' · '+entry.chapter+(entry.kind==='reference'?' · Reference':'')));
+    if(entry.title){const title=referenceElement('span','search-result-title');title.append(searchSnippet(entry.title,searchNeedle));button.append(title);}
+    // A title/alias-only match still needs explanatory context, not a repeated
+    // keyword. Prefer matching prose; otherwise show the annotation's summary.
+    const context=entry.fields?.slice(0,2).find(field=>field.length>40&&searchFold(field).includes(searchNeedle))||entry.fields?.[0]||entry.text;
+    const snippet=referenceElement('span','search-result-snippet');snippet.append(searchSnippet(context,searchNeedle));button.append(snippet);
+    button.addEventListener('click',()=>openSearchResult(entry).catch(error=>toast(error.message)));
+    li.append(button);list.append(li);
+  }
+  const remaining=searchMatches.length-searchLimit;
+  $('search-more').hidden=remaining<=0;$('search-more').textContent='Show '+Math.min(40,remaining)+' more';
+}
+async function runSearch() {
+  clearTimeout(searchTimer);const run=++searchRun,query=$('search-query').value.trim(),needle=searchFold(query).trim();
+  $('search-external').hidden=!query;
+  $('search-wikipedia').href='https://en.wikipedia.org/w/index.php?search='+encodeURIComponent(query);
+  $('search-biblehub').href='https://biblehub.com/biblemenus/search.php?q='+encodeURIComponent(query);
+  $('search-results').replaceChildren();$('search-more').hidden=true;$('search-retry').hidden=true;searchLimit=40;
+  if(!needle){$('search-status').textContent='Search book text and all reference annotations.';$('search-status').dataset.state='idle';return;}
+  $('search-results').setAttribute('aria-busy','true');$('search-status').textContent='Searching released readings…';$('search-status').dataset.state='loading';
+  try{
+    const entries=await getSearchIndex();if(run!==searchRun||!$('search-dialog').open)return;
+    searchNeedle=needle;searchMatches=entries.filter(entry=>entry.folded.includes(needle));
+    const passages=searchMatches.filter(entry=>entry.kind==='text').length,references=searchMatches.length-passages;
+    $('search-status').textContent=searchMatches.length?passages+' passage'+(passages===1?'':'s')+' · '+references+' reference'+(references===1?'':'s'):'No matches in these readings.';
+    $('search-status').dataset.state='ready';renderSearchResults();
+  }catch(error){
+    if(run!==searchRun||error.name==='AbortError')return;
+    $('search-status').textContent='Couldn’t load every released reading. Retry to search the complete set.';
+    $('search-status').dataset.state='error';$('search-retry').hidden=false;
+  }finally{if(run===searchRun)$('search-results').setAttribute('aria-busy','false');}
+}
+function openSearch(query) {
+  if(!catalog)return;
+  if(!$('reference-panel').hidden)setReferencePanel(false);
+  attached=false;$('lookup-selection').hidden=true;
+  if(query!==undefined)$('search-query').value=query;
+  updateSearchScope();$('search-dialog').showModal();$('search-open').setAttribute('aria-expanded','true');
+  $('search-query').focus({preventScroll:true});runSearch();
+}
+function highlightSearchPassage(block,needle) {
+  for(const node of $('reader').querySelectorAll('.search-hit'))node.classList.remove('search-hit');
+  const segments=searchTextSegments(block),projection=searchProjection(segments.map(part=>part.text).join('')),index=projection.text.indexOf(needle);
+  if(index<0)return block;
+  const start=projection.starts[index],end=projection.ends[index+needle.length-1];
+  let offset=0,target=null;
+  for(const {node,text} of segments){
+    const next=offset+text.length;
+    if(node.nodeType===Node.TEXT_NODE&&offset<end&&next>start){const word=node.parentElement.closest('[data-w]');if(word){word.classList.add('search-hit');target ||= word;}}
+    offset=next;
+  }
+  return target||block;
+}
+async function openSearchResult(entry) {
+  if(!catalog.weeks.some(w=>w.id===entry.weekId&&w.available))return;
+  const needle=searchNeedle;$('search-dialog').close();
+  if(week?.id!==entry.weekId)await loadWeek(entry.weekId);
+  if(week?.id!==entry.weekId)return;
+  await new Promise(requestAnimationFrame);attached=false;
+  const block=$(entry.blockId)||$(entry.sectionId);if(!block)return;
+  const target=entry.kind==='text'?highlightSearchPassage(block,needle):block;
+  scrollToNode(target,'instant');readingBlock=block.id;savePosition();
+  if(entry.kind==='reference')showReference(entry.referenceId,packet.referenceOccurrences[entry.occurrence]);
+  else{$('reader').focus({preventScroll:true});clearReferenceFocus();}
+}
+$('search-open').addEventListener('click',()=>openSearch());
+$('search-from-reference').addEventListener('click',()=>openSearch());
+$('search-dialog').addEventListener('close',()=>{cancelSearchWork();$('search-open').setAttribute('aria-expanded','false');});
+$('search-query').addEventListener('input',()=>{
+  clearTimeout(searchTimer);searchRun++;$('search-results').replaceChildren();$('search-more').hidden=true;
+  $('search-status').textContent='';$('search-status').dataset.state='pending';searchTimer=setTimeout(runSearch,140);
+});
+$('search-form').addEventListener('submit',e=>{e.preventDefault();runSearch();});
+$('search-query').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();$('search-dialog').close();}});
+$('search-more').addEventListener('click',()=>{searchLimit+=40;renderSearchResults();});
+$('search-retry').addEventListener('click',runSearch);
 $('reader').addEventListener('click',e=>{
   const marker=e.target.closest('.reference-mark');if(!marker || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button!==0)return;
   e.preventDefault();if(window.getSelection()?.toString())return;
   showReference(marker.dataset.referenceId,packet.referenceOccurrences[Number(marker.dataset.occurrence)],marker);
 });
-$('references-open').addEventListener('click',()=>{
-  if(!$('reference-panel').hidden){setReferencePanel(false);return;}
-  clearReferenceFocus();referenceHelp();renderNearby(sectionAtReadingPosition());setReferencePanel(true);
-});
 $('references-close').addEventListener('click',()=>setReferencePanel(false));
-$('references-pill').addEventListener('click',()=>setReferenceMarkers(!markersVisible));
-$('references-pill').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();setReferenceMarkers(e.key==='ArrowLeft');}});
-$('reference-query').addEventListener('input',updateReferenceSearch);
-$('reference-show-hidden').addEventListener('change',()=>{showHiddenReferences=$('reference-show-hidden').checked;applyReferenceFilters();});
-$('reference-restore-hidden').addEventListener('click',()=>{saved.hiddenReferences={};persist();applyReferenceFilters();const id=$('reference-detail').dataset.referenceId;if(id)showReference(id);});
-$('reference-export-review').addEventListener('click',()=>{
-  const data={schemaVersion:1,exportedAt:new Date().toISOString(),minimumConfidence:minConfidence,minimumUsefulness:minUsefulness,hiddenReferenceIds:Object.keys(saved.hiddenReferences).sort()};
-  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+'\n'],{type:'application/json'}));
-  const link=document.createElement('a');link.href=url;link.download='unsong-reference-review.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-});
-$('reference-lookup').addEventListener('submit',e=>{e.preventDefault();updateReferenceSearch();});
 $('lookup-selection').addEventListener('pointerdown',e=>e.preventDefault());
-$('lookup-selection').addEventListener('click',()=>{
-  referenceHelp();renderNearby(sectionAtReadingPosition());$('reference-query').value=selectedLookup;updateReferenceSearch();setReferencePanel(true);$('reference-query').focus({preventScroll:true});
-});
+$('lookup-selection').addEventListener('click',()=>openSearch(selectedLookup));
 document.addEventListener('selectionchange',()=>{
   clearTimeout(selectionTimer);selectionTimer=setTimeout(()=>{
     const selection=window.getSelection(),text=selection?.toString().trim() || '';
@@ -344,7 +503,7 @@ document.addEventListener('selectionchange',()=>{
   },120);
 });
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]')&&!$('reference-panel').hidden){e.preventDefault();setReferencePanel(false);}});
-for(const name of ['schedule','settings','subscribe']){$(name+'-open').addEventListener('click',()=>{if(name==='schedule')renderSchedule();$(name+'-dialog').showModal();if(name==='settings'){syncPill('codec-pill',codec,'codec');syncPill('references-pill',markersVisible?'on':'off','markers');}});}
+for(const name of ['schedule','settings','subscribe']){$(name+'-open').addEventListener('click',()=>{if(name==='schedule')renderSchedule();$(name+'-dialog').showModal();if(name==='schedule')syncPill('visibility-pill',previewMode,'mode');if(name==='settings')syncPill('codec-pill',codec,'codec');});}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
 function chooseVisibility(mode){if(mode===previewMode)return;previewMode=mode;const q=new URLSearchParams({preview:previewMode,...(previewMode==='released'?{asOf}: {})});history.replaceState(null,'','?'+q+location.hash);loadCatalog().catch(displayError);}
@@ -361,7 +520,7 @@ $('return-audio').addEventListener('click',()=>{attached=true;scrollToNode(activ
 $('mark-done').addEventListener('click',()=>{progress().done=!progress().done;persist();updateDone();renderSchedule();});
 $('next-week').addEventListener('click',()=>{const next=catalog.weeks[week.number];if(next?.available)loadWeek(next.id).catch(displayError);});
 $('share').addEventListener('click',()=>{if(week)copy(new URL(location.pathname+location.search+'#'+week.id+'@'+audio.currentTime.toFixed(2),location.origin).href);});
-document.querySelectorAll('[data-copy-feed]').forEach(b=>b.addEventListener('click',()=>copy($(b.dataset.copyFeed+'-feed').href)));
+$('copy-feed').addEventListener('click',()=>copy($('copy-feed').dataset.feed));
 let textDown=null;
 $('reader').addEventListener('pointerdown',e=>{textDown={x:e.clientX,y:e.clientY};});
 $('reader').addEventListener('click',e=>{const word=e.target.closest('.timed');if(!word||!textDown||Math.hypot(e.clientX-textDown.x,e.clientY-textDown.y)>8||window.getSelection()?.toString())return;const timing=times.find(row=>row[0]===Number(word.dataset.w));if(timing){attached=true;seek(timing[1]/1000);}});
@@ -375,10 +534,10 @@ audio.addEventListener('ended',()=>{syncPlay();savePosition();toast('Assignment 
 audio.addEventListener('error',()=>{if(audio.getAttribute('src')){$('status').textContent='Audio could not load. Try the other format in Reader settings, or reload after encoding finishes.';syncPlay();}});
 document.addEventListener('visibilitychange',()=>{savePosition();if(!document.hidden)updatePlayback();});window.addEventListener('pagehide',savePosition);
 window.addEventListener('hashchange',()=>{const m=location.hash.match(/^#(week-\d\d)(?:@([\d.]+))?$/);if(m&&catalog)loadWeek(m[1],m[2]===undefined?null:Number(m[2])).catch(displayError);});
-window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open){syncPill('codec-pill',codec,'codec');syncPill('references-pill',markersVisible?'on':'off','markers');}});
+window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open)syncPill('codec-pill',codec,'codec');});
 if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>audio.play().catch(displayPlaybackError),pause:()=>audio.pause(),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
 bindDrag('speed',()=>rate,setRate,.05,6,.5,3);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
-bindDrag('reference-confidence',()=>minConfidence,v=>setReferenceThreshold('confidence',v),1,12,0,10);
-bindDrag('reference-usefulness',()=>minUsefulness,v=>setReferenceThreshold('usefulness',v),1,12,0,10);
+// Keep all four stops reachable downward from the bottom toolbar on a phone.
+bindDrag('notes-density',()=>referenceDensity,setReferenceDensity,1,10,0,3);
 new ResizeObserver(entries=>{document.documentElement.style.setProperty('--player-height',entries[0].target.getBoundingClientRect().height+'px');}).observe(document.querySelector('.transport'));
 loadCatalog().catch(displayError);

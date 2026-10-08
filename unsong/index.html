@@ -16,8 +16,12 @@
     })();
   </script>
   <title>UNSONG Reading Group</title>
-  <link rel="stylesheet" href="styles.css?v=20261008-mobile">
-  <link rel="stylesheet" href="player.css?v=20261008-word-outline">
+  <!-- Original site icons from https://unsongbook.com/; local copies, no hotlinking. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=20261008-search">
+  <link rel="stylesheet" href="player.css?v=20261008-search">
   <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · MP3" href="feed.xml">
   <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · Opus" href="feed-opus.xml">
 </head>
@@ -28,28 +32,13 @@
     <nav aria-label="Reading tools">
       <button id="schedule-open" type="button">Readings</button>
       <button id="subscribe-open" type="button">RSS</button>
-      <button id="references-open" type="button" aria-label="Reference notes" title="Reference notes" aria-expanded="false" aria-controls="reference-panel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg></button>
+      <button id="search-open" type="button" aria-label="Search text and references" title="Search text and references" aria-haspopup="dialog" aria-expanded="false" aria-controls="search-dialog" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
       <button id="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button>
       <button id="settings-open" type="button" aria-label="Reader settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/></svg></button>
     </nav>
   </header>
-  <aside id="preview" class="preview-bar" hidden>
-    <span>Local preview</span>
-    <div id="visibility-pill" class="pill" role="group" aria-label="Preview visibility">
-      <span class="thumb" aria-hidden="true"></span>
-      <button type="button" data-mode="all" aria-pressed="true">All 10</button>
-      <button type="button" data-mode="released" aria-pressed="false">Released</button>
-    </div>
-    <label id="clock-label" hidden>As of <input id="preview-date" type="date" aria-label="Simulated release date"></label>
-    <span id="release-count" class="muted"></span>
-  </aside>
   <div class="reading-layout">
   <main>
-    <section class="assignment" aria-label="Current assignment">
-      <div class="eyebrow"><span id="week-number">Loading…</span></div>
-      <h1 id="week-title">UNSONG</h1>
-      <details id="chapter-details"><summary id="chapter-summary">Included chapters & interludes</summary><ol id="chapter-list"></ol></details>
-    </section>
     <p id="status" role="status" aria-live="polite"></p>
     <article id="reader" aria-label="This week’s reading" tabindex="-1"></article>
     <section id="finish" hidden>
@@ -59,36 +48,31 @@
     </section>
     <footer>Text by <a href="https://unsongbook.com/" target="_blank" rel="noopener">Scott Alexander</a> · Narrated by <a href="https://unsong.libsyn.com/" target="_blank" rel="noopener">Matt Arnold</a><br><span>Progress stays on this device. No accounts or analytics.</span></footer>
   </main>
-  <aside id="reference-panel" class="reference-panel" aria-label="Reference notes" hidden>
-    <div class="reference-heading"><h2 id="reference-heading" tabindex="-1">References</h2><button id="references-close" type="button" aria-label="Close reference notes">Close</button></div>
-    <p id="reference-coverage" class="muted small"></p>
-    <details id="reference-filter-settings">
-      <summary id="reference-filter-label">Filter notes</summary>
-      <div class="reference-filter-row"><span>Minimum confidence</span><button id="reference-confidence" class="drag-number" type="button" role="spinbutton" aria-label="Minimum reference confidence; drag vertically or use arrow keys" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8" data-value="8">8</button></div>
-      <div class="reference-filter-row"><span>Minimum usefulness</span><button id="reference-usefulness" class="drag-number" type="button" role="spinbutton" aria-label="Minimum reference usefulness; drag vertically or use arrow keys" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8" data-value="8">8</button></div>
-      <p class="muted small">Confidence = strength of identification. Usefulness = likely reading value. Editorial 0–10 judgments, not probabilities. Drag up/down; 0 shows every score.</p>
-      <label class="reference-hidden-option"><input id="reference-show-hidden" type="checkbox"> Include notes I hid</label>
-      <div class="reference-review-actions"><button id="reference-export-review" type="button">Export my review</button><button id="reference-restore-hidden" type="button">Restore hidden notes</button></div>
-    </details>
+  <aside id="reference-panel" class="reference-panel" aria-labelledby="reference-heading" hidden>
+    <div class="reference-heading">
+      <h2 id="reference-heading" tabindex="-1">Reference</h2>
+      <dl id="reference-heading-scores" hidden>
+        <div><dt>Importance</dt><dd id="reference-note-importance"></dd></div>
+      </dl>
+      <button id="references-close" type="button" aria-label="Close references"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <p class="reference-tip">Tap a reference icon to preview; ⌘/Ctrl-click opens its source in a new tab.</p>
     <div id="reference-detail" aria-live="polite"></div>
-    <details id="reference-nearby"><summary id="reference-nearby-label">Notes in this chapter</summary><div id="reference-nearby-list"></div></details>
-    <form id="reference-lookup" class="reference-lookup">
-      <label for="reference-query">Look up anything else</label>
-      <input id="reference-query" type="search" maxlength="180" placeholder="Select text, or type a reference" autocomplete="off">
-      <div id="reference-matches"></div>
-      <div id="reference-search-links" class="reference-links" hidden><a id="reference-wikipedia" target="_blank" rel="noopener noreferrer">Wikipedia search</a><a id="reference-biblehub" target="_blank" rel="noopener noreferrer">BibleHub search</a></div>
-      <p class="muted small">Searches open in a new tab only when clicked. No automatic text uploads. External pages may contain spoilers.</p>
-    </form>
+    <details id="reference-nearby"><summary id="reference-nearby-label">References in this chapter</summary><div id="reference-nearby-list"></div></details>
+    <button id="search-from-reference" class="search-from-reference" type="button">Search text and references</button>
   </aside>
   </div>
-  <button id="lookup-selection" class="lookup-selection" type="button" hidden>Look up selection</button>
+  <button id="lookup-selection" class="lookup-selection" type="button" hidden>Search selection</button>
   <script id="reference-provenance" type="application/json">[]</script>
   <div class="transport" aria-label="Audio player">
     <div class="transport-inner">
       <div class="scrubber"><div class="seek-track" aria-hidden="true"><div id="seek-progress"></div><div id="chapter-ticks"></div></div><input id="seek" type="range" min="0" max="1" step="0.05" value="0" aria-label="Audio position"></div>
       <div class="player-times"><span id="elapsed">0:00</span><span id="playing-chapter">Choose an assignment</span><button id="time" type="button" aria-label="Show remaining listening time">0:00</button></div>
       <div class="playback-controls" role="group" aria-label="Playback controls">
-        <button id="speed" class="drag-number" type="button" role="spinbutton" aria-label="Playback speed; drag vertically or use arrow keys" aria-valuemin="0.5" aria-valuemax="3" aria-valuenow="1" data-value="1">1×</button>
+        <div class="playback-options">
+          <button id="notes-density" class="drag-number" type="button" role="spinbutton" aria-label="References; drag up for more or use arrow keys" title="References: None; Few (Importance 4–5); More (3–5); All (1–5). Drag vertically or use arrow keys." aria-valuemin="0" aria-valuemax="3" aria-valuenow="2" aria-valuetext="More references" data-value="2" data-importance="3"><span id="notes-density-value">More</span><span class="notes-density-label">Refs</span></button>
+          <button id="speed" class="drag-number" type="button" role="spinbutton" aria-label="Playback speed; drag vertically or use arrow keys" aria-valuemin="0.5" aria-valuemax="3" aria-valuenow="1" data-value="1">1×</button>
+        </div>
         <div class="transport-buttons">
           <button id="back" class="skip-button" type="button" aria-label="Back 15 seconds" title="Back 15 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">15</span></button>
           <button id="play" class="primary icon" type="button" aria-label="Play" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
@@ -100,25 +84,66 @@
   </div>
   <button id="return-audio" class="return-audio" type="button" aria-label="Return to narration" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19 0-14m-7 7 7-7 7 7"/></svg></button>
   <audio id="audio" preload="metadata"></audio>
-  <dialog id="schedule-dialog"><div class="dialog-heading"><h2>Readings</h2><button type="button" data-close aria-label="Close readings">Close</button></div><div id="schedule-list"></div></dialog>
+  <dialog id="search-dialog" aria-labelledby="search-heading">
+    <div class="dialog-heading"><h2 id="search-heading">Search</h2><button type="button" data-close aria-label="Close search"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+    <form id="search-form" role="search">
+      <input id="search-query" type="search" aria-label="Search released text and annotations" aria-describedby="search-scope" placeholder="Text or annotation…" maxlength="180" autocomplete="off" spellcheck="false">
+      <p id="search-scope" class="muted"></p>
+    </form>
+    <p id="search-status" role="status" aria-live="polite"></p>
+    <div class="search-scroll">
+      <ol id="search-results" aria-label="Search results"></ol>
+      <button id="search-more" type="button" hidden>Show more results</button>
+      <button id="search-retry" type="button" hidden>Retry search</button>
+    </div>
+    <div id="search-external" hidden>
+      <div class="reference-links"><a id="search-wikipedia" target="_blank" rel="noopener noreferrer">Wikipedia</a><a id="search-biblehub" target="_blank" rel="noopener noreferrer">BibleHub</a></div>
+      <p class="muted">External sources may contain spoilers.</p>
+    </div>
+  </dialog>
+  <dialog id="schedule-dialog">
+    <div class="dialog-heading"><h2>Readings</h2><button type="button" data-close aria-label="Close readings">Close</button></div>
+    <section class="assignment" aria-label="Current assignment">
+      <div class="eyebrow"><time id="week-number">Loading…</time></div>
+      <h3 id="week-title">UNSONG</h3>
+      <details id="chapter-details"><summary id="chapter-summary">Included chapters & interludes</summary><ol id="chapter-list"></ol></details>
+    </section>
+    <div id="schedule-list"></div>
+    <aside id="preview" class="preview-bar" hidden>
+      <span>Local preview</span>
+      <div id="visibility-pill" class="pill" role="group" aria-label="Preview visibility">
+        <span class="thumb" aria-hidden="true"></span>
+        <button type="button" data-mode="all" aria-pressed="true">All 10</button>
+        <button type="button" data-mode="released" aria-pressed="false">Released</button>
+      </div>
+      <label id="clock-label" hidden>As of <input id="preview-date" type="date" aria-label="Simulated release date"></label>
+      <span id="release-count" class="muted"></span>
+    </aside>
+  </dialog>
   <dialog id="settings-dialog"><div class="dialog-heading"><h2>Reader</h2><button type="button" data-close>Close</button></div>
     <div class="setting"><label for="theme-mode">Theme</label><select id="theme-mode"><option value="system">Device</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
     <div class="setting"><span>Text size</span><button id="font-size" class="drag-number" type="button" role="spinbutton" aria-label="Text size; drag vertically or use arrow keys" aria-valuemin="14" aria-valuemax="28" aria-valuenow="19" data-value="19">19</button></div>
     <div class="setting"><span>Follow narration</span><button id="follow" type="button" aria-pressed="true">On</button></div>
-    <div class="setting"><span>Reference markers</span><div id="references-pill" class="pill" role="group" aria-label="Reference markers"><span class="thumb" aria-hidden="true"></span><button type="button" data-markers="on" aria-pressed="true">On</button><button type="button" data-markers="off" aria-pressed="false">Off</button></div></div>
     <div class="setting"><span>Audio format</span><div id="codec-pill" class="pill" role="group" aria-label="Audio format"><span class="thumb" aria-hidden="true"></span><button type="button" data-codec="opus" aria-pressed="true">Opus</button><button type="button" data-codec="mp3" aria-pressed="false">MP3</button></div></div>
     <p id="codec-detail" class="muted small"></p><a id="download" download>Download this assignment</a>
     <p class="muted small">Drag numbers up/down, or focus them and use arrow keys. Click a timed word to seek. Space plays/pauses; ←/→ skip 15 seconds.</p>
     <p id="alignment-detail" class="muted small"></p>
   </dialog>
-  <dialog id="subscribe-dialog"><div class="dialog-heading"><h2>Listen in your podcast app</h2><button type="button" data-close>Close</button></div>
-    <p>One episode per assignment, with chapter markers. Choose one feed; subscribing to both duplicates the readings.</p>
-    <div class="feed-choice"><div><strong>Opus · smaller files</strong><p class="muted small">For AntennaPod and other compatible players.</p></div><a id="opus-feed" href="feed-opus.xml">Open feed</a><button type="button" data-copy-feed="opus">Copy URL</button></div>
-    <div class="feed-choice"><div><strong>MP3 · broader compatibility</strong><p class="muted small">For Apple Podcasts and other players.</p></div><a id="mp3-feed" href="feed.xml">Open feed</a><button type="button" data-copy-feed="mp3">Copy URL</button></div>
-    <p id="feed-notice" class="muted small"></p><p class="muted small">The browser stops at the end of each packet. Your podcast app controls its own autoplay.</p>
-    <details><summary>Format references & credits</summary><p class="small"><a href="https://forum.antennapod.org/t/play-audio-from-a-specified-folder-file-instead-of-subscribed-podcast/887/2" target="_blank" rel="noopener">AntennaPod on Opus</a> · <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple audio requirements</a> · <a href="https://unsong.libsyn.com/" target="_blank" rel="noopener">Original narration</a></p></details>
+  <dialog id="subscribe-dialog" aria-labelledby="subscribe-title">
+    <div class="dialog-heading"><h2 id="subscribe-title">Listen</h2><button type="button" data-close aria-label="Close podcast apps">Close</button></div>
+    <!-- Exact brand SVGs from sequences-audio.html. Public, release-gated feeds
+         are intentional: loopback preview feeds cannot work in other devices/apps. -->
+    <nav class="podcast-apps" aria-label="Listen in a podcast app">
+      <a class="podcast-app" data-podcast-app="apple-podcasts" href="podcast://diegozc.com/unsong/feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Apple Podcasts" title="Apple Podcasts"><span class="subscribe-logo" style="--brand:#9933CC" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.34 0A5.328 5.328 0 000 5.34v13.32A5.328 5.328 0 005.34 24h13.32A5.328 5.328 0 0024 18.66V5.34A5.328 5.328 0 0018.66 0zm6.525 2.568c2.336 0 4.448.902 6.056 2.587 1.224 1.272 1.912 2.619 2.264 4.392.12.59.12 2.2.007 2.864a8.506 8.506 0 01-3.24 5.296c-.608.46-2.096 1.261-2.336 1.261-.088 0-.096-.091-.056-.46.072-.592.144-.715.48-.856.536-.224 1.448-.874 2.008-1.435a7.644 7.644 0 002.008-3.536c.208-.824.184-2.656-.048-3.504-.728-2.696-2.928-4.792-5.624-5.352-.784-.16-2.208-.16-3 0-2.728.56-4.984 2.76-5.672 5.528-.184.752-.184 2.584 0 3.336.456 1.832 1.64 3.512 3.192 4.512.304.2.672.408.824.472.336.144.408.264.472.856.04.36.03.464-.056.464-.056 0-.464-.176-.896-.384l-.04-.03c-2.472-1.216-4.056-3.274-4.632-6.012-.144-.706-.168-2.392-.03-3.04.36-1.74 1.048-3.1 2.192-4.304 1.648-1.737 3.768-2.656 6.128-2.656zm.134 2.81c.409.004.803.04 1.106.106 2.784.62 4.76 3.408 4.376 6.174-.152 1.114-.536 2.03-1.216 2.88-.336.43-1.152 1.15-1.296 1.15-.023 0-.048-.272-.048-.603v-.605l.416-.496c1.568-1.878 1.456-4.502-.256-6.224-.664-.67-1.432-1.064-2.424-1.246-.64-.118-.776-.118-1.448-.008-1.02.167-1.81.562-2.512 1.256-1.72 1.704-1.832 4.342-.264 6.222l.413.496v.608c0 .336-.027.608-.06.608-.03 0-.264-.16-.512-.36l-.034-.011c-.832-.664-1.568-1.842-1.872-2.997-.184-.698-.184-2.024.008-2.72.504-1.878 1.888-3.335 3.808-4.019.41-.145 1.133-.22 1.814-.211zm-.13 2.99c.31 0 .62.06.844.178.488.253.888.745 1.04 1.259.464 1.578-1.208 2.96-2.72 2.254h-.015c-.712-.331-1.096-.956-1.104-1.77 0-.733.408-1.371 1.112-1.745.224-.117.534-.176.844-.176zm-.011 4.728c.988-.004 1.706.349 1.97.97.198.464.124 1.932-.218 4.302-.232 1.656-.36 2.074-.68 2.356-.44.39-1.064.498-1.656.288h-.003c-.716-.257-.87-.605-1.164-2.644-.341-2.37-.416-3.838-.218-4.302.262-.616.974-.966 1.97-.97z" /></svg></span><span class="podcast-app-label">Apple Podcasts</span></a>
+      <a class="podcast-app" data-podcast-app="youtube-music" href="https://music.youtube.com/library/podcasts?addrssfeed=https%3A%2F%2Fdiegozc.com%2Funsong%2Ffeed.xml" target="_blank" rel="noopener noreferrer" aria-label="YouTube Music" title="YouTube Music"><span class="subscribe-logo" style="--brand:#FF0000" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228s6.228-2.796 6.228-6.228S15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z" /></svg></span><span class="podcast-app-label">YouTube Music</span></a>
+      <a class="podcast-app" data-podcast-app="overcast" href="overcast://x-callback-url/add?url=https%3A%2F%2Fdiegozc.com%2Funsong%2Ffeed.xml" target="_blank" rel="noopener noreferrer" aria-label="Overcast" title="Overcast"><span class="subscribe-logo" style="--brand:#FC7E0F" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 24C5.389 24.018.017 18.671 0 12.061V12C0 5.35 5.351 0 12 0s12 5.35 12 12c0 6.649-5.351 12-12 12zm0-4.751.9-.899-.9-3.45-.9 3.45.9.899zm-1.15-.05L10.4 20.9l1.05-1.052-.6-.649zm2.3 0l-.6.601 1.05 1.051-.45-1.652zm.85 3.102L12 20.3l-2 2.001c.65.1 1.3.199 2 .199s1.35-.05 2-.199zM12 1.5C6.201 1.5 1.5 6.201 1.5 12c-.008 4.468 2.825 8.446 7.051 9.899l2.25-8.35c-.511-.372-.809-.968-.801-1.6 0-1.101.9-2.001 2-2.001s2 .9 2 2.001c0 .649-.301 1.2-.801 1.6l2.25 8.35c4.227-1.453 7.06-5.432 7.051-9.899 0-5.799-4.701-10.5-10.5-10.5zm6.85 15.7c-.255.319-.714.385-1.049.15-.313-.207-.4-.628-.194-.941.014-.021.028-.04.044-.06 0 0 1.35-1.799 1.35-4.35s-1.35-4.35-1.35-4.35c-.239-.289-.198-.719.091-.957.02-.016.039-.031.06-.044.335-.235.794-.169 1.049.15.1.101 1.65 2.15 1.65 5.2S18.949 17.1 18.85 17.2zm-3.651-1.95c-.3-.3-.249-.85.051-1.15 0 0 .75-.799.75-2.1s-.75-2.051-.75-2.1c-.3-.301-.3-.801-.051-1.15.232-.303.666-.357.969-.125.029.022.056.047.082.074C16.301 8.75 17.5 10 17.5 12s-1.199 3.25-1.25 3.301c-.301.299-.75.25-1.051-.051zm-6.398 0c-.301.301-.75.35-1.051.051C7.699 15.199 6.5 14 6.5 12s1.199-3.199 1.25-3.301c.301-.299.801-.299 1.051.051.3.3.249.85-.051 1.15 0 .049-.75.799-.75 2.1s.75 2.1.75 2.1c.3.3.351.799.051 1.15zm-2.602 2.101c-.335.234-.794.169-1.05-.15C5.051 17.1 3.5 15.05 3.5 12s1.551-5.1 1.649-5.2c.256-.319.715-.386 1.05-.15.313.206.4.628.194.941-.013.02-.028.04-.043.059C6.35 7.65 5 9.449 5 12s1.35 4.35 1.35 4.35c.25.3.15.75-.151 1.001z" /></svg></span><span class="podcast-app-label">Overcast</span></a>
+      <a class="podcast-app" data-podcast-app="antennapod" href="https://antennapod.org/deeplink/subscribe?url=https%3A%2F%2Fdiegozc.com%2Funsong%2Ffeed-opus.xml&amp;title=UNSONG%20Reading%20Group" target="_blank" rel="noopener noreferrer" aria-label="AntennaPod" title="AntennaPod"><span class="subscribe-logo" style="--brand:#364FF3" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 7.188 10.98l3.339-9.459a2.118 2.118 0 1 1 2.946 0l3.339 9.46A12 12 0 0 0 24 12 12 12 0 0 0 12 0m0 2.824a9.177 9.177 0 0 1 4.969 16.892l-.486-1.376a7.765 7.765 0 1 0-8.967 0l-.485 1.376A9.177 9.177 0 0 1 12 2.824m0 3.529a5.647 5.647 0 0 1 3.739 9.879l-.521-1.478a4.235 4.235 0 1 0-6.436 0l-.522 1.478A5.647 5.647 0 0 1 12 6.353m0 8.298-1.618 4.584a7.4 7.4 0 0 0 3.236 0zm-2.21 6.258-.937 2.656A12 12 0 0 0 12 24a12 12 0 0 0 3.146-.435l-.937-2.656a9.2 9.2 0 0 1-2.209.267 9.2 9.2 0 0 1-2.21-.267" /></svg></span><span class="podcast-app-label">AntennaPod</span></a>
+      <a class="podcast-app" data-podcast-app="pocket-casts" href="https://pocketcasts.com/follow/https%3A%2F%2Fdiegozc.com%2Funsong%2Ffeed.xml" target="_blank" rel="noopener noreferrer" aria-label="Pocket Casts" title="Pocket Casts"><span class="subscribe-logo" style="--brand:#F43E37" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm3.564 12A3.564 3.564 0 0 0 12 8.436 3.564 3.564 0 0 0 8.436 12 3.564 3.564 0 0 0 12 15.564V17.6A5.6 5.6 0 0 1 6.4 12 5.6 5.6 0 0 1 12 6.4a5.6 5.6 0 0 1 5.6 5.6zm3.436 0a7 7 0 0 0-7-7 7 7 0 0 0-7 7 7 7 0 0 0 7 7v2.333A9.333 9.333 0 0 1 2.667 12 9.333 9.333 0 0 1 12 2.667 9.333 9.333 0 0 1 21.333 12z" /></svg></span><span class="podcast-app-label">Pocket Casts</span></a>
+      <a class="podcast-app" data-podcast-app="podcast-addict" href="podcastaddict://diegozc.com/unsong/feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Podcast Addict" title="Podcast Addict"><span class="subscribe-logo" style="--brand:#F4842D" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.36.037C2.41.037 0 2.447 0 5.397v13.207c0 2.95 2.41 5.36 5.36 5.36h13.28c2.945 0 5.36-2.41 5.36-5.36V5.396c0-2.95-2.415-5.36-5.36-5.36zm6.585 4.285a7.72 7.72 0 017.717 7.544l.005 7.896h-3.39v-1.326a7.68 7.68 0 01-4.327 1.326 7.777 7.777 0 01-2.384-.378v-4.63a3.647 3.647 0 002.416.91 3.666 3.666 0 003.599-2.97h-1.284a2.416 2.416 0 01-4.73-.66v-.031c0-1.095.728-2.023 1.728-2.316V8.403a3.67 3.67 0 00-2.975 3.6v6.852a7.72 7.72 0 013.625-14.533zm.031 1.87V7.43h.006a4.575 4.575 0 014.573 4.574v.01h1.237v-.01a5.81 5.81 0 00-5.81-5.81zm0 2.149v1.246h.006a2.413 2.413 0 012.415 2.416v.01h1.247v-.01a3.662 3.662 0 00-3.662-3.662zm0 2.252c-.78 0-1.409.629-1.409 1.41 0 .78.629 1.409 1.41 1.409.78 0 1.409-.629 1.409-1.41 0-.78-.629-1.409-1.41-1.409z" /></svg></span><span class="podcast-app-label">Podcast Addict</span></a>
+      <button class="podcast-app" id="copy-feed" type="button" data-feed="https://diegozc.com/unsong/feed.xml" aria-label="Copy RSS feed" title="Copy RSS feed"><span class="subscribe-logo" style="--brand:#F26522" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z" /></svg></span><span class="podcast-app-label">Copy RSS</span></button>
+    </nav>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js?v=20261008-mobile" defer></script>
+  <script src="app.js?v=20261008-search" defer></script>
 </body>
 </html>

@@ -44,9 +44,9 @@ body { padding-bottom: calc(var(--player-height) + 30px); }
 #chapter-summary { min-height: 38px; display: list-item; padding-top: 10px; }
 #reader h2 { margin-top: 24px; }
 #reader .reader-word.active, #reader .reader-word:target {
-  background: transparent; border-radius: 0; box-shadow: none;
-  text-decoration: underline; text-decoration-color: currentColor;
-  text-decoration-thickness: .07em; text-underline-offset: .18em;
-  text-decoration-skip-ink: auto;
+  /* Reuse sequences-audio.html's rounded .synced-word outline for narration. */
+  background: transparent; border-radius: 2px; box-shadow: none;
+  text-decoration: none;
+  outline: 1px solid var(--accent); outline-offset: 1px;
 }
-@media print { #reader .reader-word.active, #reader .reader-word:target { text-decoration: none; } }
+@media print { #reader .reader-word.active, #reader .reader-word:target { outline: none; } }

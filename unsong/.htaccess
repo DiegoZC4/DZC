@@ -1,0 +1,10 @@
+Options -Indexes
+DirectoryIndex index.html
+RewriteEngine On
+# Run the release check even when a guessed filename looks like static media.
+RewriteRule ^(?:data/.*|media/.*|feed(?:-opus)?\.xml)$ release.php [END]
+<Files "release.php">
+    # The PHP handler sets cache policy after the release check.
+    Header set X-Content-Type-Options "nosniff"
+</Files>
+SetEnv no-gzip 1

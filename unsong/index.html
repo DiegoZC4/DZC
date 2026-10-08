@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f7f5ef">
+  <script>
+    // Apply a saved override before the stylesheet paints; otherwise follow the device.
+    (() => {
+      let theme;
+      try { theme = JSON.parse(localStorage.getItem('tachylexics-unsong-ten-v1') || '{}').theme; } catch {}
+      const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#181c1b' : '#f7f5ef';
+    })();
+  </script>
+  <title>UNSONG Reading Group</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="player.css">
+  <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · MP3" href="feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · Opus" href="feed-opus.xml">
+</head>
+<body>
+  <a href="#reader" class="skip-link">Skip to reading</a>
+  <header class="topbar">
+    <a class="brand" href="#week-01">UNSONG</a>
+    <nav aria-label="Reading tools">
+      <button id="schedule-open" type="button">Schedule</button>
+      <button id="subscribe-open" type="button">RSS</button>
+      <button id="references-open" type="button" aria-label="Reference notes" title="Reference notes" aria-expanded="false" aria-controls="reference-panel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg></button>
+      <button id="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button>
+      <button id="settings-open" type="button" aria-label="Reader settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/></svg></button>
+    </nav>
+  </header>
+  <aside id="preview" class="preview-bar" hidden>
+    <span>Local preview</span>
+    <div id="visibility-pill" class="pill" role="group" aria-label="Preview visibility">
+      <span class="thumb" aria-hidden="true"></span>
+      <button type="button" data-mode="all" aria-pressed="true">All 10</button>
+      <button type="button" data-mode="released" aria-pressed="false">Released</button>
+    </div>
+    <label id="clock-label" hidden>As of <input id="preview-date" type="date" aria-label="Simulated release date"></label>
+    <span id="release-count" class="muted"></span>
+  </aside>
+  <div class="reading-layout">
+  <main>
+    <section class="assignment" aria-label="Current assignment">
+      <div class="eyebrow"><span id="week-number">Loading…</span><button id="share" type="button" class="text-button">Copy position link</button></div>
+      <h1 id="week-title">UNSONG</h1>
+      <p id="meeting-line" class="muted"></p>
+      <p id="packet-stats" class="stats"></p>
+      <details id="chapter-details"><summary id="chapter-summary">Included chapters & interludes</summary><ol id="chapter-list"></ol></details>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <article id="reader" aria-label="This week’s reading" tabindex="-1"></article>
+    <section id="finish" hidden>
+      <h2>That’s this week’s reading.</h2>
+      <p id="finish-detail" class="muted"></p>
+      <div class="finish-actions"><button id="mark-done" type="button" aria-pressed="false">Mark finished</button><button id="next-week" type="button">Next assignment</button></div>
+    </section>
+    <footer>Text by <a href="https://unsongbook.com/" target="_blank" rel="noopener">Scott Alexander</a> · Narrated by <a href="https://unsong.libsyn.com/" target="_blank" rel="noopener">Matt Arnold</a><br><span>Progress stays on this device. No accounts or analytics.</span></footer>
+  </main>
+  <aside id="reference-panel" class="reference-panel" aria-label="Reference notes" hidden>
+    <div class="reference-heading"><h2 id="reference-heading" tabindex="-1">References</h2><button id="references-close" type="button" aria-label="Close reference notes">Close</button></div>
+    <p id="reference-coverage" class="muted small"></p>
+    <details id="reference-filter-settings">
+      <summary id="reference-filter-label">Filter notes</summary>
+      <div class="reference-filter-row"><span>Minimum confidence</span><button id="reference-confidence" class="drag-number" type="button" role="spinbutton" aria-label="Minimum reference confidence; drag vertically or use arrow keys" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8" data-value="8">8</button></div>
+      <div class="reference-filter-row"><span>Minimum usefulness</span><button id="reference-usefulness" class="drag-number" type="button" role="spinbutton" aria-label="Minimum reference usefulness; drag vertically or use arrow keys" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8" data-value="8">8</button></div>
+      <p class="muted small">Confidence = strength of identification. Usefulness = likely reading value. Editorial 0–10 judgments, not probabilities. Drag up/down; 0 shows every score.</p>
+      <label class="reference-hidden-option"><input id="reference-show-hidden" type="checkbox"> Include notes I hid</label>
+      <div class="reference-review-actions"><button id="reference-export-review" type="button">Export my review</button><button id="reference-restore-hidden" type="button">Restore hidden notes</button></div>
+    </details>
+    <div id="reference-detail" aria-live="polite"></div>
+    <details id="reference-nearby"><summary id="reference-nearby-label">Notes in this chapter</summary><div id="reference-nearby-list"></div></details>
+    <form id="reference-lookup" class="reference-lookup">
+      <label for="reference-query">Look up anything else</label>
+      <input id="reference-query" type="search" maxlength="180" placeholder="Select text, or type a reference" autocomplete="off">
+      <div id="reference-matches"></div>
+      <div id="reference-search-links" class="reference-links" hidden><a id="reference-wikipedia" target="_blank" rel="noopener noreferrer">Wikipedia search</a><a id="reference-biblehub" target="_blank" rel="noopener noreferrer">BibleHub search</a></div>
+      <p class="muted small">Searches open in a new tab only when clicked. No automatic text uploads. External pages may contain spoilers.</p>
+    </form>
+  </aside>
+  </div>
+  <button id="lookup-selection" class="lookup-selection" type="button" hidden>Look up selection</button>
+  <script id="reference-provenance" type="application/json">[]</script>
+  <div class="transport" aria-label="Audio player">
+    <div class="transport-inner">
+      <div class="scrubber"><div class="seek-track" aria-hidden="true"><div id="seek-progress"></div><div id="chapter-ticks"></div></div><input id="seek" type="range" min="0" max="1" step="0.05" value="0" aria-label="Audio position"></div>
+      <div class="player-times"><span id="elapsed">0:00</span><span id="playing-chapter">Choose an assignment</span><button id="time" type="button" aria-label="Show remaining listening time">0:00</button></div>
+      <div class="playback-controls" role="group" aria-label="Playback controls">
+        <button id="speed" class="drag-number" type="button" role="spinbutton" aria-label="Playback speed; drag vertically or use arrow keys" aria-valuemin="0.5" aria-valuemax="3" aria-valuenow="1" data-value="1">1×</button>
+        <div class="transport-buttons">
+          <button id="back" class="skip-button" type="button" aria-label="Back 15 seconds" title="Back 15 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">15</span></button>
+          <button id="play" class="primary icon" type="button" aria-label="Play" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
+          <button id="forward" class="skip-button" type="button" aria-label="Forward 15 seconds" title="Forward 15 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">15</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button id="return-audio" class="return-audio" type="button" aria-label="Return to narration" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19 0-14m-7 7 7-7 7 7"/></svg></button>
+  <audio id="audio" preload="metadata"></audio>
+  <dialog id="schedule-dialog"><div class="dialog-heading"><h2>Ten Sundays</h2><button type="button" data-close aria-label="Close schedule">Close</button></div><p id="schedule-note" class="muted"></p><div id="schedule-list"></div><p class="muted small">No meeting November 29. Packets unlock Monday after the previous discussion; the first is available now.</p></dialog>
+  <dialog id="settings-dialog"><div class="dialog-heading"><h2>Reader</h2><button type="button" data-close>Close</button></div>
+    <div class="setting"><label for="theme-mode">Theme</label><select id="theme-mode"><option value="system">Device</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+    <div class="setting"><span>Text size</span><button id="font-size" class="drag-number" type="button" role="spinbutton" aria-label="Text size; drag vertically or use arrow keys" aria-valuemin="14" aria-valuemax="28" aria-valuenow="19" data-value="19">19</button></div>
+    <div class="setting"><span>Follow narration</span><button id="follow" type="button" aria-pressed="true">On</button></div>
+    <div class="setting"><span>Reference markers</span><div id="references-pill" class="pill" role="group" aria-label="Reference markers"><span class="thumb" aria-hidden="true"></span><button type="button" data-markers="on" aria-pressed="true">On</button><button type="button" data-markers="off" aria-pressed="false">Off</button></div></div>
+    <div class="setting"><span>Audio format</span><div id="codec-pill" class="pill" role="group" aria-label="Audio format"><span class="thumb" aria-hidden="true"></span><button type="button" data-codec="opus" aria-pressed="true">Opus</button><button type="button" data-codec="mp3" aria-pressed="false">MP3</button></div></div>
+    <p id="codec-detail" class="muted small"></p><a id="download" download>Download this assignment</a>
+    <p class="muted small">Drag numbers up/down, or focus them and use arrow keys. Click a timed word to seek. Space plays/pauses; ←/→ skip 15 seconds.</p>
+    <p id="alignment-detail" class="muted small"></p>
+  </dialog>
+  <dialog id="subscribe-dialog"><div class="dialog-heading"><h2>Listen in your podcast app</h2><button type="button" data-close>Close</button></div>
+    <p>One episode per assignment, with chapter markers. Choose one feed; subscribing to both duplicates the readings.</p>
+    <div class="feed-choice"><div><strong>Opus · smaller files</strong><p class="muted small">For AntennaPod and other compatible players.</p></div><a id="opus-feed" href="feed-opus.xml">Open feed</a><button type="button" data-copy-feed="opus">Copy URL</button></div>
+    <div class="feed-choice"><div><strong>MP3 · broader compatibility</strong><p class="muted small">For Apple Podcasts and other players.</p></div><a id="mp3-feed" href="feed.xml">Open feed</a><button type="button" data-copy-feed="mp3">Copy URL</button></div>
+    <p id="feed-notice" class="muted small"></p><p class="muted small">The browser stops at the end of each packet. Your podcast app controls its own autoplay.</p>
+    <details><summary>Format references & credits</summary><p class="small"><a href="https://forum.antennapod.org/t/play-audio-from-a-specified-folder-file-instead-of-subscribed-podcast/887/2" target="_blank" rel="noopener">AntennaPod on Opus</a> · <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple audio requirements</a> · <a href="https://unsong.libsyn.com/" target="_blank" rel="noopener">Original narration</a></p></details>
+  </dialog>
+  <div id="toast" role="status" hidden></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

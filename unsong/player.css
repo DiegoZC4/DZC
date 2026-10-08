@@ -18,7 +18,10 @@ body { padding-bottom: calc(var(--player-height) + 30px); }
 #playing-chapter { text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #time { border: 0; background: none; padding: 0; min-height: 20px; font-size: inherit; color: inherit; font-variant-numeric: inherit; }
 .playback-controls { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; padding-top: 4px; }
-.playback-controls #speed { justify-self: end; font-size: 13px; min-width: 48px; min-height: 40px; }
+.playback-controls #speed { justify-self: end; font-size: 13px; min-width: 48px; min-height: 44px; }
+.position-link { justify-self: start; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); }
+.position-link:hover { color: var(--text); background: var(--selected); }
+.position-link svg { width: 21px; height: 21px; }
 .transport-buttons { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .transport-buttons #play { border-radius: 50%; width: 50px; height: 50px; }
 #play svg { width: 26px; height: 26px; fill: currentColor; stroke: none; }
@@ -32,3 +35,18 @@ body { padding-bottom: calc(var(--player-height) + 30px); }
 .reference-panel { bottom: var(--player-height); }
 @media(max-width:900px),(pointer:coarse) { .reference-panel { bottom: calc(var(--player-height) + 8px); } }
 @media print { body { padding-bottom: 0; } }
+
+/* Reading-first header and a quiet, layout-stable narration cursor. */
+.assignment { padding: 14px 0 10px; }
+.assignment .eyebrow { margin-bottom: 5px; }
+.assignment h1 { font-size: 21px; }
+#chapter-details { margin-top: 3px; }
+#chapter-summary { min-height: 38px; display: list-item; padding-top: 10px; }
+#reader h2 { margin-top: 24px; }
+#reader .reader-word.active, #reader .reader-word:target {
+  background: transparent; border-radius: 0; box-shadow: none;
+  text-decoration: underline; text-decoration-color: currentColor;
+  text-decoration-thickness: .07em; text-underline-offset: .18em;
+  text-decoration-skip-ink: auto;
+}
+@media print { #reader .reader-word.active, #reader .reader-word:target { text-decoration: none; } }

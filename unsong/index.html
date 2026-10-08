@@ -16,8 +16,8 @@
     })();
   </script>
   <title>UNSONG Reading Group</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="player.css">
+  <link rel="stylesheet" href="styles.css?v=20261008-mobile">
+  <link rel="stylesheet" href="player.css?v=20261008-mobile">
   <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · MP3" href="feed.xml">
   <link rel="alternate" type="application/rss+xml" title="UNSONG assignments · Opus" href="feed-opus.xml">
 </head>
@@ -26,7 +26,7 @@
   <header class="topbar">
     <a class="brand" href="#week-01">UNSONG</a>
     <nav aria-label="Reading tools">
-      <button id="schedule-open" type="button">Schedule</button>
+      <button id="schedule-open" type="button">Readings</button>
       <button id="subscribe-open" type="button">RSS</button>
       <button id="references-open" type="button" aria-label="Reference notes" title="Reference notes" aria-expanded="false" aria-controls="reference-panel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg></button>
       <button id="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button>
@@ -46,10 +46,8 @@
   <div class="reading-layout">
   <main>
     <section class="assignment" aria-label="Current assignment">
-      <div class="eyebrow"><span id="week-number">Loading…</span><button id="share" type="button" class="text-button">Copy position link</button></div>
+      <div class="eyebrow"><span id="week-number">Loading…</span></div>
       <h1 id="week-title">UNSONG</h1>
-      <p id="meeting-line" class="muted"></p>
-      <p id="packet-stats" class="stats"></p>
       <details id="chapter-details"><summary id="chapter-summary">Included chapters & interludes</summary><ol id="chapter-list"></ol></details>
     </section>
     <p id="status" role="status" aria-live="polite"></p>
@@ -96,12 +94,13 @@
           <button id="play" class="primary icon" type="button" aria-label="Play" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
           <button id="forward" class="skip-button" type="button" aria-label="Forward 15 seconds" title="Forward 15 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">15</span></button>
         </div>
+        <button id="share" class="position-link" type="button" aria-label="Copy position link" title="Copy position link" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
       </div>
     </div>
   </div>
   <button id="return-audio" class="return-audio" type="button" aria-label="Return to narration" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19 0-14m-7 7 7-7 7 7"/></svg></button>
   <audio id="audio" preload="metadata"></audio>
-  <dialog id="schedule-dialog"><div class="dialog-heading"><h2>Ten Sundays</h2><button type="button" data-close aria-label="Close schedule">Close</button></div><p id="schedule-note" class="muted"></p><div id="schedule-list"></div><p class="muted small">No meeting November 29. Packets unlock Monday after the previous discussion; the first is available now.</p></dialog>
+  <dialog id="schedule-dialog"><div class="dialog-heading"><h2>Readings</h2><button type="button" data-close aria-label="Close readings">Close</button></div><div id="schedule-list"></div></dialog>
   <dialog id="settings-dialog"><div class="dialog-heading"><h2>Reader</h2><button type="button" data-close>Close</button></div>
     <div class="setting"><label for="theme-mode">Theme</label><select id="theme-mode"><option value="system">Device</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
     <div class="setting"><span>Text size</span><button id="font-size" class="drag-number" type="button" role="spinbutton" aria-label="Text size; drag vertically or use arrow keys" aria-valuemin="14" aria-valuemax="28" aria-valuenow="19" data-value="19">19</button></div>
@@ -120,6 +119,6 @@
     <details><summary>Format references & credits</summary><p class="small"><a href="https://forum.antennapod.org/t/play-audio-from-a-specified-folder-file-instead-of-subscribed-podcast/887/2" target="_blank" rel="noopener">AntennaPod on Opus</a> · <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple audio requirements</a> · <a href="https://unsong.libsyn.com/" target="_blank" rel="noopener">Original narration</a></p></details>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=20261008-mobile" defer></script>
 </body>
 </html>

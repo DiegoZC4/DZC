@@ -1,9 +1,9 @@
 {
-  "builtAt": "2026-10-08T04:07:50.375Z",
+  "builtAt": "2026-10-08T04:15:02.134Z",
   "hashes": {
     "api.php": "597120e23a3ab3665c5f81a763b814bbe7122f7d5a5becf9db7bbed37cfcb500",
     "hex-game.php": "1593ab82369b5cb454fcf52b90d5dea4ba15a32258f6d5c101b596c98541d819",
     "table-setup.json": "5840f7a9731bcdacd78c146986d254e8f1000b9b4ff164ea29482dc41db9fc63",
-    "freezeflag.html": "2908b8c6da15aa671e1aff0c421647ec14368d03e19f956dd6c5c7048fb96317"
+    "freezeflag.html": "01da54f4df539eeb0763a7b7e9fbc30f6537c60011f2211b8ccfb3ed6d4f8e08"
   }
 }

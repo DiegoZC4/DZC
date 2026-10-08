@@ -39,8 +39,28 @@ function read_json(string $path): array {
     return $value;
 }
 function room_snapshot(array $room, HexGame $game, int $team): array {
-    return ['id' => $room['id'], 'revision' => $room['revision'], 'setup' => $room['setup'], 'joined' => $room['joined'],
+    $snapshot = ['id' => $room['id'], 'revision' => $room['revision'], 'setup' => $room['setup'], 'joined' => $room['joined'],
         'online' => array_map(fn($seen) => $seen > time() - 12, $room['seen']), 'expiresAt' => $room['expiresAt'], 'view' => $game->view($team)];
+    if (isset($room['match'])) $snapshot['match'] = $room['match'];
+    return $snapshot;
+}
+function shared_table_id(): string { return substr(hash('sha256', 'freeze-flag-shared-table-v1'), 0, 24); }
+function table_status(array $room): array {
+    return ['id' => $room['id'], 'revision' => $room['revision'], 'match' => $room['match'], 'setup' => $room['setup'],
+        'seats' => array_map(fn($team) => ['claimed' => $room['joined'][$team],
+            'online' => $room['joined'][$team] && $room['seen'][$team] > time() - 12,
+            'reservedUntil' => $room['joined'][$team] ? $room['seen'][$team] + 900 : null], [0, 1])];
+}
+function expire_table_seats(array &$room): bool {
+    $changed = false;
+    foreach ([0, 1] as $team) if ($room['joined'][$team] && $room['seen'][$team] <= time() - 900) {
+        $room['keys'][$team] = null;
+        $room['joined'][$team] = false;
+        $room['seen'][$team] = 0;
+        $room['revision']++;
+        $changed = true;
+    }
+    return $changed;
 }
 
 try {
@@ -63,7 +83,7 @@ try {
         $urls = $lan ? json_decode(getenv('QUANTUM_TAG_LAN_URLS') ?: '[]', true) : [];
         $host = parse_url($ownOrigin, PHP_URL_HOST);
         $shareUrl = $lan ? (in_array($host, ['localhost', '127.0.0.1'], true) ? ($urls[0] ?? $ownOrigin . '/') : $ownOrigin . '/') : null;
-        reply(['ok' => true, 'version' => 1, 'service' => 'quantum-tag-rooms', 'hosting' => $lan ? 'lan' : 'website', 'shareUrl' => $shareUrl, 'urls' => $urls]);
+        reply(['ok' => true, 'version' => 1, 'service' => 'quantum-tag-rooms', 'sharedTable' => true, 'hosting' => $lan ? 'lan' : 'website', 'shareUrl' => $shareUrl, 'urls' => $urls]);
     }
     if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 131072) reply(['ok' => false, 'error' => 'Request is too large.'], 413);
     $request = [];
@@ -77,6 +97,37 @@ try {
     $directory = getenv('QUANTUM_TAG_DATA_DIR') ?: dirname(__DIR__, 2) . '/.quantum-tag-rooms';
     if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) throw new RuntimeException('Cannot initialize storage.');
     $action = $method === 'GET' ? 'read' : ($request['action'] ?? '');
+    if (in_array($action, ['table_status', 'table_claim'], true)) {
+        $id = shared_table_id();
+        $path = $directory . '/room-' . $id . '.json';
+        $lock = lock_file($directory . '/room-' . $id . '.lock');
+        if (is_file($path)) $room = read_json($path);
+        else {
+            $setup = HexGame::validateSetup(read_json(__DIR__ . '/table-setup.json'));
+            $game = new HexGame($setup);
+            $room = ['id' => $id, 'match' => 1, 'revision' => 0, 'setup' => $setup, 'state' => $game->state,
+                'keys' => [null, null], 'joined' => [false, false], 'seen' => [0, 0],
+                'expiresAt' => time() + 7 * 86400, 'processed' => [], 'closed' => false];
+            save_json($path, $room);
+        }
+        if (expire_table_seats($room)) save_json($path, $room);
+        if ($action === 'table_status') reply(['ok' => true, 'table' => table_status($room)]);
+        $team = $request['team'] ?? null;
+        $key = $_SERVER['HTTP_X_QUANTUM_KEY'] ?? '';
+        if (!valid_integer($team, 0, 1) || !preg_match('/^[A-Za-z0-9_-]{43}$/D', $key)) reply(['ok' => false, 'error' => 'Choose Player 1 or Player 2.'], 400);
+        $hash = hash('sha256', $key);
+        if ($room['keys'][1 - $team] === $hash) reply(['ok' => false, 'error' => 'This browser already has the other player. Leave that seat first.'], 409);
+        if ($room['keys'][$team] !== null && !hash_equals($room['keys'][$team], $hash)) reply(['ok' => false, 'error' => 'That player has just been claimed. Choose the other player.', 'table' => table_status($room)], 409);
+        if (!$room['joined'][$team]) {
+            $room['keys'][$team] = $hash;
+            $room['joined'][$team] = true;
+            $room['revision']++;
+        }
+        $room['seen'][$team] = time();
+        $room['expiresAt'] = time() + 7 * 86400;
+        save_json($path, $room);
+        reply(['ok' => true, 'table' => table_status($room), 'snapshot' => room_snapshot($room, new HexGame($room['setup'], $room['state']), $team)]);
+    }
     if ($action === 'create') {
         $setup = HexGame::validateSetup($request['setup'] ?? null);
         if ($setup['version'] < 2) reply(['ok' => false, 'error' => 'New rooms use symmetric boards. Reload the board editor and create the room again.'], 400);
@@ -92,7 +143,7 @@ try {
         $live = 0;
         foreach ($roomFiles as $path) {
             $old = read_json($path);
-            if (($old['expiresAt'] ?? 0) < time()) {
+            if (!isset($old['match']) && ($old['expiresAt'] ?? 0) < time()) {
                 $oldLockPath = substr($path, 0, -5) . '.lock';
                 $oldLock = fopen($oldLockPath, 'c+');
                 if ($oldLock && flock($oldLock, LOCK_EX | LOCK_NB)) {
@@ -123,9 +174,10 @@ try {
     $lock = lock_file($directory . '/room-' . $id . '.lock');
     if (!is_file($path)) reply(['ok' => false, 'error' => 'Room not found or expired.'], 404);
     $room = read_json($path); $team = null;
-    foreach ([0, 1] as $candidate) if (hash_equals($room['keys'][$candidate], hash('sha256', $key))) $team = $candidate;
+    if (isset($room['match']) && expire_table_seats($room)) save_json($path, $room);
+    foreach ([0, 1] as $candidate) if (is_string($room['keys'][$candidate]) && hash_equals($room['keys'][$candidate], hash('sha256', $key))) $team = $candidate;
     if ($team === null) reply(['ok' => false, 'error' => 'Room link is invalid.'], 403);
-    if ($room['closed'] || $room['expiresAt'] < time()) reply(['ok' => false, 'error' => 'This room has ended or expired.'], 410);
+    if ($room['closed'] || (!isset($room['match']) && $room['expiresAt'] < time())) reply(['ok' => false, 'error' => 'This room has ended or expired.'], 410);
     $game = new HexGame($room['setup'], $room['state']);
     $room['setup'] = $game->state['setup'];
     $room['state'] = $game->state;
@@ -143,15 +195,30 @@ try {
         }
         else {
             if ((int)$request['revision'] !== $room['revision']) reply(['ok' => false, 'error' => 'The board changed. Check the updated position and try again.', 'snapshot' => room_snapshot($room, $game, $team)], 409);
-            if ((!($game->state['ready'] ?? null) || !in_array($request['command']['kind'] ?? '', ['deploy', 'ready', 'configure'], true)) && (!$room['joined'][0] || !$room['joined'][1])) reply(['ok' => false, 'error' => 'Wait for the other team to join.'], 409);
-            $accepted = $game->command($team, $request['command']);
+            if (($request['command']['kind'] ?? '') === 'new_game' && isset($room['match'])) {
+                $setup = HexGame::validateSetup($request['command']['setup'] ?? $room['setup']);
+                if ($setup['version'] !== 10) reply(['ok' => false, 'error' => 'Use the current board editor for a new online game.'], 400);
+                $nextGame = new HexGame($setup);
+                save_json($directory . '/table-archive-' . $room['match'] . '-' . $room['revision'] . '.json', $room);
+                $game = $nextGame;
+                $room['match']++;
+                $accepted = true;
+            } else {
+                if ((!($game->state['ready'] ?? null) || !in_array($request['command']['kind'] ?? '', ['deploy', 'ready', 'configure'], true)) && (!$room['joined'][0] || !$room['joined'][1])) reply(['ok' => false, 'error' => 'Wait for the other team to join.'], 409);
+                $accepted = $game->command($team, $request['command']);
+            }
             if ($accepted) { $room['revision']++; $room['expiresAt'] = time() + 7 * 86400; }
             $room['processed'][$receipt] = ['accepted' => $accepted, 'fingerprint' => $fingerprint];
             $room['processed'] = array_slice($room['processed'], -128, null, true);
             $room['state'] = $game->state;
             $room['setup'] = $game->state['setup'];
         }
+    } elseif ($action === 'table_leave' && isset($room['match'])) {
+        $room['keys'][$team] = null; $room['joined'][$team] = false; $room['seen'][$team] = 0; $room['revision']++;
+        save_json($path, $room);
+        reply(['ok' => true, 'table' => table_status($room)]);
     } elseif ($action === 'close') {
+        if (isset($room['match'])) reply(['ok' => false, 'error' => 'Leave your seat or start a new game instead.'], 400);
         if ($team !== 0) reply(['ok' => false, 'error' => 'Only the room creator can close it.'], 403);
         $room['closed'] = true;
     } elseif ($action !== 'read') reply(['ok' => false, 'error' => 'Unknown room action.'], 400);

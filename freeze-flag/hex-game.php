@@ -9,6 +9,12 @@ function hex_center(array $h): array { return ['x' => $h['q'] + $h['r'] / 2 + .5
 function player_key(array $p): string { return $p['team'] . ':' . $p['index']; }
 function player_label(array $p): string { return ($p['team'] === 0 ? 'R' : 'B') . ($p['index'] + 1); }
 function valid_integer($value, int $min, int $max): bool { return (is_int($value) || is_float($value)) && is_finite((float)$value) && floor((float)$value) === (float)$value && $value >= $min && $value <= $max; }
+function valid_role($role): bool {
+    if (is_string($role)) return in_array($role, ['standard', 'scout', 'freezer', 'heater', 'courier', 'seer', 'medic', 'samurai'], true);
+    if (!is_array($role) || !is_string($role['name'] ?? null) || trim($role['name']) === '' || preg_match_all('/./us', $role['name']) > 40) return false;
+    foreach (['hotcold', 'hot', 'cold', 'carry'] as $key) if (!valid_integer($role[$key] ?? null, 0, 2080)) return false;
+    return valid_integer($role['movement'] ?? null, -30, 30);
+}
 function sector_name(int $angle): string { return $angle === 30 ? 'twelve mirrored sectors' : 'six reflected sectors'; }
 
 final class HexGrid {
@@ -241,10 +247,6 @@ final class HexGame {
             if (!is_bool($setup['config']['postThawTouches'])) throw new InvalidArgumentException('Invalid postThawTouches.');
             $config['postThawTouches'] = $setup['config']['postThawTouches'];
         }
-        if (array_key_exists('trajectoryLock', $setup['config'])) {
-            if (!is_bool($setup['config']['trajectoryLock'])) throw new InvalidArgumentException('Invalid trajectoryLock.');
-            $config['trajectoryLock'] = $setup['config']['trajectoryLock'];
-        }
         if (array_key_exists('fog', $setup['config'])) {
             if (!is_bool($setup['config']['fog'])) throw new InvalidArgumentException('Invalid fog.');
             $config['fog'] = $setup['config']['fog'];
@@ -304,8 +306,10 @@ final class HexGame {
         foreach ([0, 1] as $team) {
             $list = $setup['roles'][$team] ?? null;
             if (!is_array($list) || count($list) !== $config['playersPerTeam']) throw new InvalidArgumentException('Both teams need the same nonzero number of pawns before playing.');
-            foreach ($list as $role) if (!in_array($role, ['standard', 'scout', 'freezer', 'heater', 'courier', 'seer', 'medic', 'samurai'], true)) throw new InvalidArgumentException('Invalid role.');
+            foreach ($list as $role) if (!valid_role($role)) throw new InvalidArgumentException('Invalid role.');
             if (!valid_integer($setup['carriers'][$team] ?? null, 0, $config['playersPerTeam'] - 1)) throw new InvalidArgumentException('Invalid flag carrier.');
+            $carrierRole = $list[$setup['carriers'][$team]];
+            if (is_array($carrierRole) && $carrierRole['carry'] < 1) throw new InvalidArgumentException('Choose a starting flag carrier with room for a flag.');
             $roles[] = array_values($list); $carriers[] = (int)$setup['carriers'][$team];
             if ($explicit && $setup['version'] < 6) {
                 $cells = $setup['positions'][$team] ?? null;
@@ -355,6 +359,7 @@ final class HexGame {
         if (isset($setup['symmetry']) && !$grid->sectorSymmetric($setup['symmetry']['center'], $sectorAngle, $covered)) $add('asymmetric-terrain', 'Field and obstacles must match the ' . sector_name($sectorAngle) . '.');
         foreach ([0, 1] as $team) {
             $name = ['Red', 'Blue'][$team]; $zone = $zones[$team]; $count = count($setup['roles'][$team]);
+            if ($count && !array_filter($setup['roles'][$team], fn($role) => is_string($role) || ($role['carry'] ?? 0) > 0)) $add("no-carrier-$team", "$name needs a pawn with flag capacity.", $zone);
             if (!$zone) $add("missing-endzone-$team", "$name endzone is missing. Paint it with 3.");
             else {
                 if (count($zone) < max(1, $count)) $add("small-endzone-$team", "$name endzone has " . count($zone) . ' tiles; needs at least ' . max(1, $count) . '.', $zone);
@@ -437,7 +442,7 @@ final class HexGame {
             if (isset($this->state['waitingView'])) {
                 $waiting =& $this->state['waitingView'];
                 if (valid_integer($waiting['config']['freezeRounds'] ?? null, 0, 12)) $waiting['config']['freezeRounds'] = max(2, min(6, $waiting['config']['freezeRounds']));
-                unset($waiting['config']['peekDiameter']);
+                unset($waiting['config']['peekDiameter'], $waiting['config']['trajectoryLock']);
                 if ($waiting['observation'] === 'awake') $waiting['observation'] = 'active';
                 if (!isset($waiting['enemyHistory'])) {
                     $waiting['enemyHistory'] = self::historyFromPlayers($waiting['enemies']);
@@ -491,9 +496,13 @@ final class HexGame {
         return max(0, min($this->remaining(), $this->state['turnStartedAt'] + $this->state['setup']['config']['turnDuration'] + $this->role($player['role'])['movement'] - $this->state['time']));
     }
     private function slot(int $team, int $index): int { return $team * $this->state['setup']['config']['playersPerTeam'] + $index; }
-    private function role(string $role): array {
+    private function role(string|array $role): array {
         $count = $this->state['setup']['config']['playersPerTeam'];
         $actions = ['sleep' => [], 'active' => ['vision', 'movement', 'touch']];
+        if (is_array($role)) return [
+            'name' => $role['name'], 'carry' => $role['carry'], 'movement' => $role['movement'], 'actions' => $actions,
+            'touches' => array_merge(array_fill(0, $role['hotcold'], 'hotcold'), array_fill(0, $role['hot'], 'hot'), array_fill(0, $role['cold'], 'cold')),
+        ];
         if ($role === 'seer') $actions = ['sleep' => ['vision'], 'active' => ['movement', 'touch']];
         $touches = match ($role) {
             'scout', 'courier' => [],
@@ -672,7 +681,6 @@ final class HexGame {
         $view = $this->view($team);
         if (!is_array($plan) || !is_array($plan['players'] ?? null) || array_values($plan['players']) !== $plan['players'] || count($plan['players']) !== count($view['own'])) return null;
         $visible = array_fill_keys($view['visible'], true);
-        $locked = (bool)($view['config']['trajectoryLock'] ?? false); $started = $view['time'] > $view['turnStartedAt'];
         $board = []; $owners = [];
         foreach ($view['own'] as $p) { $board[player_key($p)] = $p; $owners[$p['index']] = player_key($p); }
         foreach ($view['enemies'] as $p) if ($p['visible']) $board[player_key($p)] = $p;
@@ -690,9 +698,7 @@ final class HexGame {
                 if (!$this->grid->has($cell) || !$this->grid->open($cell) || hex_distance($previous, $cell) > 1) return null;
                 $previous = ['q' => (int)$cell['q'], 'r' => (int)$cell['r']]; $route[] = $previous;
             }
-            if ($locked && $started && $route !== $p['route']) return null;
-            if ($locked && !$started && $route && !isset($visible[hex_key($previous)])) return null;
-            if (!$stepping && !($locked && $started) && $route && !isset($visible[hex_key($previous)])) return null;
+            if (!$stepping && $route && !isset($visible[hex_key($previous)])) return null;
             if ($route && array_filter($view['enemies'], fn($enemy) => $enemy['visible'] && $enemy['cell'] === $previous)) return null;
             $ammo = $p['touches'];
             foreach ($input['contacts'] as $contact) {
@@ -831,13 +837,45 @@ final class HexGame {
         if ($this->state['winner'] !== null) unset($this->state['waitingView']);
         return true;
     }
+    private function movementOpportunities(array $view): array {
+        $found = [];
+        $targets = array_merge(array_filter($view['own'], fn($p) => $p['frozen']), array_filter($view['enemies'], fn($p) => $p['visible'] && !$p['frozen']));
+        foreach ($targets as $target) foreach ($view['own'] as $actor) {
+            $kind = $target['team'] === $view['team'] ? 'hot' : 'cold';
+            if ($actor['frozen'] || $actor['team'] === $target['team'] && $actor['index'] === $target['index'] || !in_array('touch', $this->actions($actor), true)
+                || !array_intersect([$kind, 'hotcold'], $actor['touches']) || hex_distance($actor['cell'], $target['cell']) > 1 || !$this->grid->clearSight($actor['cell'], $target['cell'])) continue;
+            $found['touch:' . $actor['index'] . ':' . $target['team'] . ':' . $target['index']] = ['message' => player_label($actor) . ' can ' . ($kind === 'hot' ? 'thaw' : 'freeze') . ' ' . player_label($target) . '.', 'cells' => [$target['cell']]];
+        }
+        foreach ($view['own'] as $actor) foreach ($view['flags'] as $flag) if ($flag['visible'] && $this->canGrabFlag($actor, $flag)) {
+            $found['flag:' . $actor['index'] . ':' . $flag['team']] = ['message' => player_label($actor) . ' can grab the ' . ($flag['team'] === 0 ? 'Red' : 'Blue') . ' flag.', 'cells' => [$flag['cell']]];
+        }
+        return $found;
+    }
+    private function movementDiscoveries(array $before, array $after): ?array {
+        if ($after['winner'] !== null) return null;
+        $seen = array_column(array_filter($before['enemies'], fn($p) => $p['visible']), 'index');
+        $enemies = array_values(array_filter($after['enemies'], fn($p) => $p['visible'] && !in_array($p['index'], $seen, true)));
+        $actions = array_values(array_diff_key($this->movementOpportunities($after), $this->movementOpportunities($before)));
+        if (!$enemies && !$actions) return null;
+        $message = $enemies ? implode(', ', array_map('player_label', $enemies)) . ' came into view.' : $actions[0]['message'];
+        $cells = [];
+        foreach (array_merge(array_column($enemies, 'cell'), ...array_column($actions, 'cells')) as $cell) $cells[hex_key($cell)] = $cell;
+        return ['message' => 'Movement paused: ' . $message, 'cells' => array_values($cells)];
+    }
     private function run(int $team, $plan): bool {
         if ($this->state['setup']['version'] < 9 || $this->resolving || $this->remaining() <= 0 || $this->previewTurn($team, $plan) === null) return false;
         $startedAt = $this->state['time'];
+        $this->state['movementPause'] = null;
         $hasOrders = fn($plan) => count(array_filter($plan['players'], fn($p) => count($p['route']) || count($p['contacts']) || count($p['drops']))) > 0;
         while ($this->remaining() > 0 && $this->team() === $team && $this->state['winner'] === null && $hasOrders($plan)) {
-            if (!$this->advance($team, $plan)) break;
+            $before = $this->view($team);
+            if (!$this->advance($team, $plan)) {
+                $this->state['movementPause'] = ['message' => 'Movement paused: a route is blocked. Adjust it before continuing.', 'cells' => array_values(array_map(fn($p) => $p['route'][0], array_filter($plan['players'], fn($p) => count($p['route']) > 0)))];
+                break;
+            }
             $view = $this->view($team); $next = [];
+            $this->state['movementPause'] = $this->movementDiscoveries($before, $view);
+            if ($this->state['movementPause']) break;
             foreach ($view['own'] as $p) {
                 $prior = array_values(array_filter($plan['players'], fn($entry) => $entry['index'] === $p['index']))[0];
                 $ammo = $p['touches']; $contacts = [];
@@ -857,20 +895,24 @@ final class HexGame {
     private function finishTurn(int $team): bool {
         if ($this->state['setup']['version'] < 9 || $this->resolving || !$this->unstacked()) return false;
         while ($this->remaining() > 0 && $this->state['winner'] === null) {
-            $locked = (bool)($this->state['setup']['config']['trajectoryLock'] ?? false);
-            $players = array_values(array_map(fn($p) => ['index' => $p['index'], 'route' => $locked ? $p['route'] : [], 'contacts' => [], 'drops' => []], array_filter($this->state['players'], fn($p) => $p['team'] === $team)));
+            $players = array_values(array_map(fn($p) => ['index' => $p['index'], 'route' => [], 'contacts' => [], 'drops' => []], array_filter($this->state['players'], fn($p) => $p['team'] === $team)));
             if (!$this->advance($team, ['players' => $players])) return false;
         }
         if ($this->state['winner'] === null) $this->nextTurn();
         return true;
     }
     public function command(int $team, array $command): bool {
+        $accepted = $this->applyCommand($team, $command);
+        if ($accepted && in_array($command['kind'] ?? '', ['advance', 'finish_turn', 'grab', 'pass', 'touch', 'drop'], true)) $this->state['movementPause'] = null;
+        return $accepted;
+    }
+    private function applyCommand(int $team, array $command): bool {
         $kind = $command['kind'] ?? '';
         if ($kind === 'configure') {
             $config = $command['config'] ?? null;
             $invalid = fn() => new InvalidArgumentException('Invalid game settings.');
             if (!is_array($config) || !valid_integer($config['turnDuration'] ?? null, 1, 30) || !valid_integer($config['freezeRounds'] ?? null, 2, 6) || !is_bool($config['allowVoluntaryDrops'] ?? null)) throw $invalid();
-            foreach (['postThawTouches', 'trajectoryLock', 'fog', 'frozenFog'] as $name) if (array_key_exists($name, $config) && !is_bool($config[$name])) throw $invalid();
+            foreach (['postThawTouches', 'fog', 'frozenFog'] as $name) if (array_key_exists($name, $config) && !is_bool($config[$name])) throw $invalid();
             if (array_key_exists('sightRule', $config) && !in_array($config['sightRule'], ['area', 'centers'], true)) throw $invalid();
             $current = self::endzoneTarget($this->state['setup']);
             $target = $config['targetEndzone'] ?? null;
@@ -878,12 +920,24 @@ final class HexGame {
             $target ??= $current;
             $before = $this->state['setup']['config'];
             $rules = ['turnDuration' => (int)$config['turnDuration'], 'freezeRounds' => (int)$config['freezeRounds'], 'allowVoluntaryDrops' => $config['allowVoluntaryDrops'],
-                'postThawTouches' => $config['postThawTouches'] ?? false, 'trajectoryLock' => $config['trajectoryLock'] ?? false, 'fog' => $config['fog'] ?? true,
+                'postThawTouches' => $config['postThawTouches'] ?? false, 'fog' => $config['fog'] ?? true,
                 'sightRule' => $config['sightRule'] ?? 'centers', 'frozenFog' => $config['frozenFog'] ?? false];
             $now = ['turnDuration' => $before['turnDuration'], 'freezeRounds' => $before['freezeRounds'], 'allowVoluntaryDrops' => $before['allowVoluntaryDrops'] ?? false,
-                'postThawTouches' => $before['postThawTouches'] ?? false, 'trajectoryLock' => $before['trajectoryLock'] ?? false, 'fog' => $before['fog'] ?? true,
+                'postThawTouches' => $before['postThawTouches'] ?? false, 'fog' => $before['fog'] ?? true,
                 'sightRule' => $before['sightRule'] ?? 'centers', 'frozenFog' => $before['frozenFog'] ?? false];
-            if ($rules === $now && $target === $current) return false;
+            $roles = $command['roles'] ?? [];
+            if (!is_array($roles) || count($roles) > $before['playersPerTeam']) throw $invalid();
+            $roleChanges = []; $seen = [];
+            foreach ($roles as $entry) {
+                if (!is_array($entry) || ($entry['team'] ?? null) !== $team || !valid_integer($entry['index'] ?? null, 0, $before['playersPerTeam'] - 1) || !valid_role($entry['role'] ?? null)) throw $invalid();
+                $slot = $this->slot($team, (int)$entry['index']);
+                if (isset($seen[$slot])) throw $invalid();
+                $seen[$slot] = true;
+                $player = $this->state['players'][$slot];
+                if ($this->role($entry['role'])['carry'] < count($player['flags'])) return false;
+                if ($player['role'] != $entry['role']) $roleChanges[$slot] = $entry['role'];
+            }
+            if ($rules === $now && $target === $current && !$roleChanges) return false;
             // The flag target moves the scoring zones, which can hand the match to whoever is already standing in one.
             if ($target !== null && $target !== $current) {
                 $homes = self::deploymentEndzones($this->state['setup']);
@@ -891,6 +945,15 @@ final class HexGame {
                 $this->state['winner'] = null;
             }
             $this->state['setup']['config'] = array_merge($before, $rules);
+            foreach ($roleChanges as $slot => $role) {
+                $player = &$this->state['players'][$slot];
+                $previousRole = $this->role($player['role']); $nextRole = $this->role($role);
+                unset($previousRole['name'], $nextRole['name']);
+                $player['role'] = $role;
+                $this->state['setup']['roles'][$player['team']][$player['index']] = $role;
+                if ($previousRole != $nextRole) $player['touches'] = $player['frozen'] && !$rules['postThawTouches'] ? [] : $nextRole['touches'];
+                unset($player);
+            }
             // The grid holds the sight rule and caches every sight set it has computed, so a new rule needs a new grid.
             if ($rules['sightRule'] !== $now['sightRule']) {
                 $c = $this->state['setup']['config'];
@@ -1056,6 +1119,6 @@ final class HexGame {
             'enemyHistory' => (object)$known['history'], 'enemyHistoryUnit' => 'turn',
             'flags' => array_values(array_map(fn($flag) => $flag + ['visible' => isset($visible[hex_key($flag['cell'])]) || $this->ownCarrier($team, $flag['team'])], $known['flags'])),
             'scores' => array_map(fn($t) => count($this->scoredFlags($t)), [0, 1]),
-            'events' => $this->state['events'][$team], 'winner' => $this->state['winner']];
+            'events' => $this->state['events'][$team], 'winner' => $this->state['winner'], ...($team === $this->team() && !empty($this->state['movementPause']) ? ['movementPause' => $this->state['movementPause']] : [])];
     }
 }

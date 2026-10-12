@@ -1,5 +1,11 @@
 Options -Indexes
 DirectoryIndex freezeflag.html
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^[a-z0-9]{1,8}/?$ freezeflag.html [END,NC]
+</IfModule>
 <IfModule mod_headers.c>
     Header set Referrer-Policy "no-referrer"
     <FilesMatch "\.php$">

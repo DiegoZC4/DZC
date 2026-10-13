@@ -574,8 +574,7 @@
           <a class="button" href="https://pca.st/bgllq6uw" data-usage-app="pocket-casts"><span class="subscribe-logo" style="--brand:#F43E37" aria-hidden="true"><svg viewBox="0 0 24 24" role="presentation"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm3.564 12A3.564 3.564 0 0 0 12 8.436 3.564 3.564 0 0 0 8.436 12 3.564 3.564 0 0 0 12 15.564V17.6A5.6 5.6 0 0 1 6.4 12 5.6 5.6 0 0 1 12 6.4a5.6 5.6 0 0 1 5.6 5.6zm3.436 0a7 7 0 0 0-7-7 7 7 0 0 0-7 7 7 7 0 0 0 7 7v2.333A9.333 9.333 0 0 1 2.667 12 9.333 9.333 0 0 1 12 2.667 9.333 9.333 0 0 1 21.333 12z" /></svg></span><span>Pocket Casts</span></a>
           <a class="button" href="https://podcastaddict.com/podcast/lighthaven-sequences-reading-group-audio/7158630" data-usage-app="podcast-addict"><span class="subscribe-logo" style="--brand:#F4842D" aria-hidden="true"><svg viewBox="0 0 24 24" role="presentation"><path d="M5.36.037C2.41.037 0 2.447 0 5.397v13.207c0 2.95 2.41 5.36 5.36 5.36h13.28c2.945 0 5.36-2.41 5.36-5.36V5.396c0-2.95-2.415-5.36-5.36-5.36zm6.585 4.285a7.72 7.72 0 017.717 7.544l.005 7.896h-3.39v-1.326a7.68 7.68 0 01-4.327 1.326 7.777 7.777 0 01-2.384-.378v-4.63a3.647 3.647 0 002.416.91 3.666 3.666 0 003.599-2.97h-1.284a2.416 2.416 0 01-4.73-.66v-.031c0-1.095.728-2.023 1.728-2.316V8.403a3.67 3.67 0 00-2.975 3.6v6.852a7.72 7.72 0 013.625-14.533zm.031 1.87V7.43h.006a4.575 4.575 0 014.573 4.574v.01h1.237v-.01a5.81 5.81 0 00-5.81-5.81zm0 2.149v1.246h.006a2.413 2.413 0 012.415 2.416v.01h1.247v-.01a3.662 3.662 0 00-3.662-3.662zm0 2.252c-.78 0-1.409.629-1.409 1.41 0 .78.629 1.409 1.41 1.409.78 0 1.409-.629 1.409-1.41 0-.78-.629-1.409-1.41-1.409z" /></svg></span><span>Podcast Addict</span></a>
             <button type="button" id="copy-feed" data-feed="https://diegozc.com/sequences-audio.xml"><span class="subscribe-logo" style="--brand:#F26522" aria-hidden="true"><svg viewBox="0 0 24 24" role="presentation"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z" /></svg></span><span class="subscribe-label">Copy RSS</span></button>
-            <button type="button" id="copy-playback-diagnostics">Copy playback diagnostics</button>
-            <a class="button" id="report-bug" href="mailto:zamalloachion.diego@gmail.com?subject=%5BSequences%20bug%5D&amp;body=Page%3A%20https%3A%2F%2Fdiegozc.com%2Fsequences-audio.html%0D%0AWeek%20%2F%20reading%3A%0D%0ADevice%20and%20browser%3A%0D%0ASteps%20to%20reproduce%3A%0D%0AExpected%3A%0D%0AWhat%20happened%3A%0D%0A%0D%0AOptional%3A%20attach%20a%20screenshot%20or%20paste%20Copy%20playback%20diagnostics%20from%20the%20menu.%0D%0APlease%20omit%20passwords%20and%20other%20private%20information.">Report a bug</a>
+            <a class="button" id="report-bug" href="mailto:zamalloachion.diego@gmail.com?subject=%5BSequences%20bug%5D&amp;body=Page%3A%20https%3A%2F%2Fdiegozc.com%2Fsequences-audio.html%0D%0AWeek%20%2F%20reading%3A%0D%0ADevice%20and%20browser%3A%0D%0ASteps%20to%20reproduce%3A%0D%0AExpected%3A%0D%0AWhat%20happened%3A%0D%0A%0D%0APlease%20omit%20passwords%20and%20other%20private%20information.">Report a bug</a>
           </div>
         </details>
       </nav>
@@ -7063,6 +7062,107 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
     window.addEventListener('pageshow', resyncVisibleReaders);
     window.addEventListener('focus', resyncVisibleReaders);
 
+  </script>
+  <script id="bug-report-script">
+(() => {
+  'use strict';
+  const link = document.getElementById('report-bug');
+  if (!link) return;
+  const fallback = link.href;
+
+  const number = value => Number.isFinite(value) ? Math.round(value * 1000) / 1000 : null;
+  const clean = value => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/https?:\/\/[^\s<>"']+/g, value => {
+      try { const url = new URL(value); return url.origin + url.pathname; } catch { return '[URL]'; }
+    }).slice(0, 320);
+  const ranges = values => Array.from({length: Math.min(values?.length || 0, 4)}, (_, index) =>
+    [number(values.start(index)), number(values.end(index))]);
+
+  function snapshot() {
+    const audios = [...document.querySelectorAll('audio')];
+    const active = (typeof activeAudio !== 'undefined' && activeAudio)
+      || audios.find(audio => !audio.paused)
+      || document.querySelector('.current-week audio');
+    const players = audios.flatMap(audio => {
+      // Read existing telemetry only: do not start downloads or query the worker.
+      const copy = typeof offlineCopies !== 'undefined' ? offlineCopies.get(audio) : null;
+      if (audio !== active && !audio.currentTime && !audio.error && !copy?.received && !copy?.attempts) return [];
+      const track = audio.closest('.track');
+      const chapter = [...track.querySelectorAll('.chapter')].find(chapter =>
+        audio.currentTime >= Number(chapter.dataset.start) && audio.currentTime < Number(chapter.dataset.end));
+      return [{
+        week: track.id, active: audio === active, reading: clean(chapter?.dataset.title),
+        seconds: number(audio.currentTime), duration: number(audio.duration),
+        speed: number(audio.playbackRate), volume: number(audio.volume), paused: audio.paused,
+        ended: audio.ended, readyState: audio.readyState, networkState: audio.networkState,
+        buffered: ranges(audio.buffered), seekable: ranges(audio.seekable),
+        error: audio.error ? {code: audio.error.code, message: clean(audio.error.message)} : null,
+        download: copy ? {state: copy.state, wanted: Boolean(copy.wanted),
+          received: number(copy.received), total: number(copy.total), attempts: number(copy.attempts)} : null,
+      }];
+    });
+    const url = new URL(window.location.href);
+    // Preserve the useful episode/time, not arbitrary query strings or selections.
+    url.search = '';
+    url.hash = active ? `${active.closest('.track').id}@${number(active.currentTime) || 0}` : '';
+    const connection = navigator.connection;
+    const info = {
+      version: 2, generated: new Date().toISOString(), page: url.href,
+      userAgent: clean(navigator.userAgent), viewport: [window.innerWidth, window.innerHeight],
+      online: navigator.onLine, visibility: document.visibilityState,
+      serviceWorker: navigator.serviceWorker?.controller ? 'controlling' : 'not controlling',
+      connection: connection ? {type: connection.effectiveType, rtt: connection.rtt,
+        downlink: connection.downlink, saveData: connection.saveData} : null,
+      players,
+    };
+    const events = typeof playbackLog !== 'undefined' && Array.isArray(playbackLog)
+      ? playbackLog.slice(-200).filter(event => event && typeof event === 'object') : [];
+    const lines = events.map(event => [
+      clean(event.at), clean(event.week), clean(event.event), `t=${number(event.time)}`,
+      `ready=${number(event.ready)}`, `net=${number(event.network)}`,
+      `paused=${event.paused === true}`, `online=${event.online === true}`,
+      clean(event.visibility), `buffered=${JSON.stringify(Array.isArray(event.buffered)
+        ? event.buffered.slice(0, 4).filter(Array.isArray).map(pair => pair.slice(0, 2).map(number)) : [])}`,
+      clean(event.detail),
+    ].join(' '));
+    return {info, lines};
+  }
+
+  link.addEventListener('click', () => {
+    try {
+      const {info, lines} = snapshot();
+      const target = new URL(fallback);
+      const parameters = target.searchParams;
+      const total = lines.length;
+      const body = () => [
+        'What happened:', 'Steps to reproduce:', 'Expected:', '',
+        'Playback diagnostics (automatically included; review before sending):',
+        JSON.stringify(info, null, 2), '',
+        `Recent events, oldest first (${lines.length}/${total}; any older events omitted to fit the email link):`,
+        ...lines,
+      ].join('\r\n');
+      const update = () => {
+        parameters.set('body', body());
+        // mailto uses percent-encoded spaces, not form-encoded plus signs.
+        target.search = [...parameters].map(([key, value]) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      };
+      update();
+      // Mail links have client-dependent limits. Keep current state and the
+      // newest events; explicitly count omissions rather than silently truncate.
+      while (target.href.length > 24000 && lines.length) {
+        lines.shift();
+        update();
+      }
+      link.href = target.href;
+    } catch {
+      // A diagnostic failure must not prevent a visitor from reporting a bug.
+      link.href = fallback;
+    }
+    // Synchronous native mailto activation retains the user's click. No network,
+    // clipboard access, popup, auto-send, or changes to the audio player.
+  });
+})();
   </script>
 </body>
 </html>

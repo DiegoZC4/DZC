@@ -283,31 +283,42 @@
     .offline-copy {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      min-height: 22px;
-      padding: 0 5px;
-      border: 0;
-      border-radius: 3px;
+      justify-content: center;
+      gap: 4px;
+      min-width: 34px;
+      min-height: 34px;
+      padding: 4px 6px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
       color: var(--muted);
       background: transparent;
       font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
       font-size: 11px;
+      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    .offline-copy[hidden] { display: none; }
+    .offline-copy[hidden], .offline-copy-progress[hidden] { display: none; }
     .offline-copy:disabled { cursor: default; }
-    .offline-copy:not(:disabled) { color: var(--link); text-decoration: underline; cursor: pointer; }
+    .offline-copy:not(:disabled), .offline-copy[data-state="ready"] { color: var(--link); }
+    .offline-copy:not(:disabled) { cursor: pointer; }
     .offline-copy:not(:disabled):hover { background: var(--soft); }
-    .offline-copy[data-state="saving"]::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      border: 1.5px solid var(--line);
-      border-top-color: var(--link);
-      border-radius: 50%;
-      animation: player-spin 700ms linear infinite;
+    .offline-copy svg {
+      width: 20px;
+      height: 20px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
-    .offline-copy[data-state="ready"]::before { content: "¹3"; font-size: 10px; }
+    .offline-copy .offline-pause, .offline-copy .offline-ready,
+    .offline-copy:not([data-action="download"]) .offline-download { display: none; }
+    .offline-copy[data-action="pause"] .offline-pause,
+    .offline-copy[data-action="ready"] .offline-ready { display: initial; }
+    @media (pointer: coarse) {
+      .offline-copy { min-width: 44px; min-height: 44px; }
+    }
     .player-button { width: 52px; min-width: 52px; min-height: 52px; padding: 0; border-color: var(--line); color: var(--ink); background: var(--soft); }
     .player-button:hover { color: var(--paper); background: var(--button); }
     .play-toggle { width: 62px; min-width: 62px; min-height: 62px; border-radius: 50%; }
@@ -511,7 +522,6 @@
     @media (prefers-reduced-motion: reduce) {
       .narration-return, .narration-return svg, .reading-progress { transition: none; }
       .player-status.is-loading::before { animation: none; }
-      .offline-copy[data-state="saving"]::before { animation: none; }
     }
     @media (max-width: 660px) {
       .playback-controls {
@@ -624,7 +634,14 @@ https://www.buzzsprout.com/2034731/14292300</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-102" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-102" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-102" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-102" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1336,7 +1353,14 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-101" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-101" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-101" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-101" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1609,7 +1633,14 @@ https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds</
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-100" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-100" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-100" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-100" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1799,7 +1830,14 @@ https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-99" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-99" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-99" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-99" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2006,7 +2044,14 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-98" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-98" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-98" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-98" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2205,7 +2250,14 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-97" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-97" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-97" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-97" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2486,7 +2538,14 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-96" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-96" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-96" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-96" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -3016,7 +3075,14 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-95" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-95" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-95" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-95" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -3235,7 +3301,14 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-94" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-94" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-94" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-94" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -3577,7 +3650,14 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-93" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-93" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-93" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-93" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -3875,7 +3955,14 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-92" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-92" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-92" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-92" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -4170,7 +4257,14 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-90" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-90" hidden></button>
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-90" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -5119,7 +5213,8 @@ function offlineCopyUrl(source) {
 function offlineCopyState(audio) {
   if (!offlineCopies.has(audio)) offlineCopies.set(audio, {
     state: 'idle', url: '', received: 0, total: Number(audio.dataset.bytes) || 0,
-    attempts: 0, wanted: false, timer: null, storageError: '', lastProgress: 0
+    attempts: 0, wanted: false, timer: null, storageError: '', lastProgress: 0,
+    generation: 0, controller: null
   });
   return offlineCopies.get(audio);
 }
@@ -5134,16 +5229,22 @@ function renderOfflineCopy(audio) {
   if (!badge) return;
   const copy = offlineCopyState(audio);
   const percent = copy.total ? Math.min(100, Math.floor(copy.received / copy.total * 100)) : 0;
-  const labels = { queued: 'Saving offline', saving: `Saving offline ${percent}%`, ready: 'Offline ready',
-    partial: `${percent}% saved${copy.wanted ? ' - retrying' : ''}`, failed: 'Save offline', waiting: 'Save offline', unavailable: 'Offline unavailable' };
-  badge.textContent = labels[copy.state] || '';
-  badge.title = copy.storageError || (copy.state === 'unavailable' ? 'Offline saving requires HTTPS or localhost and browser storage. Online playback still works.' : copy.state === 'ready'
+  const labels = { idle: 'Download for offline listening', queued: 'Pause download', saving: `Pause download (${percent}%)`, ready: 'Offline ready',
+    partial: copy.wanted ? `Pause retry (${percent}%)` : `Resume download (${percent}%)`,
+    failed: copy.wanted ? 'Pause retry' : 'Save offline', unavailable: 'Offline unavailable' };
+  const label = labels[copy.state] || '';
+  const detail = copy.storageError || (copy.state === 'unavailable' ? 'Offline saving requires HTTPS or localhost and browser storage. Online playback still works.' : copy.state === 'ready'
     ? `Saved on this device (${formatMegabytes(copy.total)}). Older audio is removed when the 64 MB cache fills.`
-    : `${formatMegabytes(copy.received)} saved on this device. Saved sections work offline; missing sections need a connection.`);
-  badge.disabled = ['queued', 'saving', 'ready', 'unavailable'].includes(copy.state);
-  badge.hidden = !badge.textContent;
+    : `${formatMegabytes(copy.received)} of ${formatMegabytes(copy.total)} saved. ${copy.wanted ? 'Pause saving; keep downloaded sections.' : 'Save this episode for offline listening.'} Saved sections work offline; missing sections need a connection.`);
+  badge.disabled = ['ready', 'unavailable'].includes(copy.state);
+  badge.hidden = !label;
   badge.dataset.state = copy.state;
-  badge.setAttribute('aria-label', `${badge.textContent}. ${badge.title}`);
+  badge.dataset.action = copy.state === 'ready' ? 'ready' : copy.wanted && !badge.disabled ? 'pause' : 'download';
+  const progress = badge.querySelector('.offline-copy-progress');
+  progress.hidden = badge.disabled || !(copy.received || copy.wanted);
+  progress.textContent = progress.hidden ? '' : `${percent}%`;
+  badge.title = `${label}. ${detail}`;
+  badge.setAttribute('aria-label', badge.title);
 }
 
 function cacheWorker() {
@@ -5173,7 +5274,11 @@ async function refreshOfflineCopy(audio, touch = false) {
   const status = await cacheMessage(copy.url, touch);
   copy.received = status.received;
   copy.total = status.total;
-  if (copy.received === copy.total) copy.state = 'ready';
+  if (copy.received === copy.total) {
+    copy.state = 'ready';
+    copy.wanted = false;
+    clearTimeout(copy.timer);
+  }
   else if (copy.state === 'ready') copy.state = 'idle'; // Evicted by another week/tab.
   if (copy.state === 'idle' && copy.received) copy.state = 'partial';
   renderOfflineCopy(audio);
@@ -5247,21 +5352,79 @@ function restoreAfterAudioLoad(audio) {
 
 async function requestOfflineCopy(audio, manual = false) {
   const copy = offlineCopyState(audio);
-  if (!copy.url || ['queued', 'saving'].includes(copy.state)) return;
-  if (!await setupOfflineCache()) { copy.state = 'unavailable'; renderOfflineCopy(audio); return; }
-  if (['queued', 'saving'].includes(copy.state)) return;
-  if (!manual && (navigator.connection?.saveData || copy.storageError)) {
-    if (!copy.storageError) copy.state = 'waiting';
-    renderOfflineCopy(audio);
-    return;
-  }
+  // Playback, reconnect, and page visibility may resume an explicitly requested
+  // save, but must never opt a visitor into downloading the whole episode.
+  if (!copy.url || (!manual && !copy.wanted) || ['queued', 'saving', 'ready'].includes(copy.state)) return;
   clearTimeout(copy.timer);
-  if (manual) copy.storageError = '';
+  if (manual) { copy.storageError = ''; copy.generation += 1; }
+  const generation = copy.generation;
   copy.wanted = true;
   copy.state = 'queued';
   renderOfflineCopy(audio);
+  const available = await setupOfflineCache();
+  if (!copy.wanted || copy.generation !== generation) return;
+  if (!available) { copy.wanted = false; copy.state = 'unavailable'; renderOfflineCopy(audio); return; }
   if (!offlineCopyQueue.includes(audio)) offlineCopyQueue.push(audio);
   pumpOfflineCopies();
+}
+
+function pauseOfflineCopy(audio) {
+  const copy = offlineCopyState(audio);
+  copy.wanted = false;
+  copy.generation += 1;
+  clearTimeout(copy.timer);
+  copy.controller?.abort();
+  const queued = offlineCopyQueue.indexOf(audio);
+  if (queued !== -1) offlineCopyQueue.splice(queued, 1);
+  copy.state = copy.received ? 'partial' : 'idle';
+  renderOfflineCopy(audio);
+  logPlayback(audio, 'download-paused-by-user');
+}
+
+function toggleOfflineCopy(audio) {
+  if (offlineCopyState(audio).wanted) pauseOfflineCopy(audio);
+  else requestOfflineCopy(audio, true);
+}
+
+async function fetchOfflineRange(copy, start, end, signal) {
+  signal.throwIfAborted();
+  const response = await fetch(copy.url, { headers: { Range: `bytes=${start}-${end}` },
+    cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(50000)]) });
+  if (response.status !== 206) { await response.body?.cancel(); throw new Error(`Audio HTTP ${response.status}`); }
+  return response.arrayBuffer();
+}
+
+async function offlineChunkOrder(copy, chunkBytes, signal) {
+  const first = new Set([0]);
+  if (new URL(copy.url).pathname.endsWith('.m4a')) {
+    // M4A's moov box can follow all audio bytes. Save its complete range first,
+    // so an interrupted save can decode the cached prefix without a warm player.
+    let offset = 0, found = false;
+    for (let boxes = 0; boxes < 128 && offset + 8 <= copy.total; boxes += 1) {
+      const bytes = await fetchOfflineRange(copy, offset, Math.min(offset + 15, copy.total - 1), signal);
+      if (bytes.byteLength < 8) throw new Error('Incomplete M4A header');
+      const view = new DataView(bytes);
+      const type = String.fromCharCode(...new Uint8Array(bytes, 4, 4));
+      let size = view.getUint32(0), headerSize = 8;
+      if (size === 1) {
+        if (bytes.byteLength < 16) throw new Error('Incomplete M4A extended header');
+        size = view.getUint32(8) * 2 ** 32 + view.getUint32(12);
+        headerSize = 16;
+      } else if (size === 0) size = copy.total - offset;
+      if (!Number.isSafeInteger(size) || size < headerSize || size > copy.total - offset) {
+        throw new Error('Invalid M4A box size');
+      }
+      if (type === 'moov') {
+        for (let index = Math.floor(offset / chunkBytes); index <= Math.floor((offset + size - 1) / chunkBytes); index += 1) first.add(index);
+        found = true;
+        break;
+      }
+      offset += size;
+    }
+    if (!found) throw new Error('M4A playback metadata not found');
+  }
+  for (let index = 0; index < Math.ceil(copy.total / chunkBytes); index += 1) first.add(index);
+  return [...first];
 }
 
 async function pumpOfflineCopies() {
@@ -5274,26 +5437,30 @@ async function pumpOfflineCopies() {
 
 async function downloadOfflineCopy(audio) {
   const copy = offlineCopyState(audio);
+  if (!copy.wanted) return;
+  const generation = copy.generation;
+  const controller = copy.controller = new AbortController();
   copy.state = 'saving';
   copy.attempts += 1;
   try {
     let status = await refreshOfflineCopy(audio, true);
+    if (!copy.wanted || copy.generation !== generation) return;
     if (copy.total > status.budget) {
       copy.wanted = false;
       copy.storageError = 'Episode exceeds the 64 MB offline limit';
       throw new Error(copy.storageError);
     }
+    const order = await offlineChunkOrder(copy, status.chunkBytes, controller.signal);
+    status = await refreshOfflineCopy(audio);
     const present = new Set(status.chunks);
-    for (let i = 0; i < Math.ceil(copy.total / status.chunkBytes); i += 1) {
-      if (!copy.wanted) return;
+    for (const i of order) {
+      if (!copy.wanted || copy.generation !== generation) return;
       if (present.has(i)) continue;
       const start = i * status.chunkBytes;
       const end = Math.min(copy.total - 1, start + status.chunkBytes - 1);
       // Native playback and this request share the worker's in-flight chunk.
-      const response = await fetch(copy.url, { headers: { Range: `bytes=${start}-${end}` },
-        cache: 'no-store', signal: AbortSignal.timeout(50000) });
-      if (response.status !== 206) { await response.body?.cancel(); throw new Error(`Audio HTTP ${response.status}`); }
-      await response.arrayBuffer();
+      await fetchOfflineRange(copy, start, end, controller.signal);
+      if (copy.generation !== generation) return;
       status = await refreshOfflineCopy(audio);
       if (!status.chunks.includes(i)) {
         copy.wanted = false;
@@ -5304,12 +5471,15 @@ async function downloadOfflineCopy(audio) {
     copy.attempts = 0;
     logPlayback(audio, 'offline-complete', `${copy.received} bytes`);
   } catch (error) {
+    if (copy.generation !== generation) return;
     await refreshOfflineCopy(audio).catch(() => {});
+    if (copy.generation !== generation) return;
     copy.state = copy.received ? 'partial' : 'failed';
     if (!copy.wanted) copy.state = 'failed';
     logPlayback(audio, 'download-paused', error.message);
     if (copy.wanted) copy.timer = setTimeout(() => requestOfflineCopy(audio), Math.min(30000, 3000 * 2 ** Math.min(copy.attempts - 1, 4)));
   } finally {
+    if (copy.controller === controller) copy.controller = null;
     renderOfflineCopy(audio);
   }
 }
@@ -6839,7 +7009,7 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       offlineCopyState(audio).url = offlineCopyUrl(audio.getAttribute('src') || '');
       renderOfflineCopy(audio);
       player.querySelector('.offline-copy').addEventListener('click', () => {
-        requestOfflineCopy(audio, true);
+        toggleOfflineCopy(audio);
       });
       updatePlaybackTools(audio);
       updateCustomPlayer(audio);

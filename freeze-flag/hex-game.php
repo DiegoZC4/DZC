@@ -1107,6 +1107,20 @@ final class HexGame {
         }
         throw new InvalidArgumentException('Unknown command.');
     }
+    /** Live, omniscient projection for a spectator; never changes team knowledge. */
+    public function spectatorView(): array {
+        $view = $this->view($this->team());
+        $view['config']['fog'] = false;
+        $view['visible'] = array_map('hex_key', $this->grid->cells);
+        $view['enemies'] = array_values(array_map(fn($p) => $p + ['observedAt' => $this->state['time'], 'visible' => true],
+            array_filter($this->state['players'], fn($p) => $p['team'] !== $this->team())));
+        $view['enemyHistory'] = (object)[];
+        $view['flags'] = array_map(fn($flag) => $this->flagState($flag) + ['observedAt' => $this->state['time'], 'visible' => true], $this->state['flags']);
+        foreach ($this->state['players'] as $player) foreach ($player['flags'] as $flag) {
+            $view['flags'][] = $this->flagState($flag, $player) + ['observedAt' => $this->state['time'], 'visible' => true];
+        }
+        return $view;
+    }
     public function view(int $team): array {
         if ($this->state['setup']['version'] >= 9 && ($this->state['waitingView']['team'] ?? null) === $team && $this->team() !== $team && $this->state['winner'] === null) return $this->state['waitingView'];
         $known = $this->state['knowledge'][$team]; $visible = $this->state['visibility'][$team];

@@ -79,7 +79,7 @@ function renderSchedule() {
     words.textContent=w.words.toLocaleString()+' words';
     minutes.textContent=Math.round(w.readingMinutes)+' min read'+(Number.isFinite(w.duration)?' · '+Math.round(w.duration/60)+' min listen':'');
     right.append(words,minutes);
-    if(!w.available){const unlock=document.createElement('small');unlock.textContent=w.releaseAt?'Unlocks '+dateLabel(w.releaseAt):'Preview only';right.append(unlock);}
+    if(!w.available){const unlock=document.createElement('small');unlock.textContent=w.releaseAt?'Unlocks '+dateLabel(w.releaseAt):'Not released yet';right.append(unlock);}
     if(saved.weeks[w.id]?.done){const done=document.createElement('small');done.textContent='Finished';right.append(done);}
     button.append(left);if(right.childElementCount)button.append(right);button.addEventListener('click',()=>{$('schedule-dialog').close();loadWeek(w.id).catch(displayError);});list.append(button);
   });
@@ -120,7 +120,7 @@ async function loadWeek(id, explicitTime=null) {
   $('chapter-summary').textContent='Chapters';$('chapter-list').replaceChildren();
   week.chapters.forEach(c=>{const li=document.createElement('li'),button=document.createElement('button'),time=document.createElement('small');button.textContent=c.label;time.textContent=duration(c.start);button.append(time);button.addEventListener('click',()=>{seek(c.start);$('chapter-details').open=false;$('schedule-dialog').close();scrollToNode($(c.id));});li.append(button);$('chapter-list').append(li);});
   $('chapter-details').open=false;$('finish').hidden=false;$('finish-detail').textContent='The next assignment never starts automatically.';
-  const nextWeek=catalog.weeks[week.number];$('next-week').hidden=!nextWeek;$('next-week').disabled=!nextWeek?.available;$('next-week').textContent=nextWeek?.available?'Next assignment':nextWeek?(nextWeek.releaseAt?'Next unlocks '+dateLabel(nextWeek.releaseAt):'Next reading · preview only'):'';
+  const nextWeek=catalog.weeks[week.number];$('next-week').hidden=!nextWeek;$('next-week').disabled=!nextWeek?.available;$('next-week').textContent=nextWeek?.available?'Next assignment':nextWeek?(nextWeek.releaseAt?'Next unlocks '+dateLabel(nextWeek.releaseAt):'Next reading not released'):'';
   updateDone();$('alignment-detail').textContent='Word timing coverage: '+(100*week.alignmentCoverage).toFixed(1)+'%. '+(week.addedAlignedWords?week.addedAlignedWords.toLocaleString()+' verified gap fills included. ':'')+'Untimed words are readable but not highlighted or seekable. No interpolated timings.';
   const restoreBlock=explicitTime===null?progress().block:null;
   setAudio(explicitTime??progress().time??0);updateStats();renderSchedule();$('status').textContent=week.audio[codec]?'':'Audio is being prepared; all text is ready.';

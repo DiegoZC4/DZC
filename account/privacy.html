@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="DiegoZC uses Google sign-in only to identify annotation owners. No Google email, name, photo, birthday, Gmail or Drive access is requested.">
+  <title>Privacy Policy - DiegoZC</title>
+  <link rel="stylesheet" href="policy.css">
+</head>
+<body><main>
+  <nav aria-label="Policy navigation"><a href="about.html">DiegoZC</a><a href="terms.html">Terms of Service</a></nav>
+  <h1>Privacy Policy</h1>
+  <p class="muted">Google sign-in and annotations on diegozc.com. Updated October 16, 2026.</p>
+  <p><strong>Google sign-in has one purpose here: recognize the same account so your annotations stay associated with you and other users cannot edit them.</strong> We request only the <code>openid</code> authentication scope. We do not request your Google email address, name, profile picture, birthday, contacts, Gmail, Drive, or other profile or account content.</p>
+  <p>This policy covers the shared DiegoZC sign-in and annotation service, including private Sequences annotations and public Metropolitan Man comments. It does not replace separate notices for unrelated tools or third-party services. Reading and listening do not require signing in.</p>
+  <h2>The minimum we use</h2>
+  <dl>
+    <dt>An opaque account identifier</dt>
+    <dd>Google supplies an account identifier and a signed authentication response. The server verifies that response and stores a keyed hash of the identifier, not your raw Google account identifier. This lets the same account retrieve its annotations on another device. It is pseudonymous, account-linked data, not anonymous data.</dd>
+    <dt>Your annotations</dt>
+    <dd>We store the note or comment you choose to save, its selected quotation, short surrounding text and position hints needed to find the passage, the reading identifier, and creation/edit times. Please do not include sensitive information unnecessarily.</dd>
+    <dt>Essential authentication and security data</dt>
+    <dd>Random session and request-verification values keep you signed in, prevent forged sign-ins and edits, and enforce ownership and basic abuse limits. They are not advertising identifiers.</dd>
+  </dl>
+  <p>Google tokens and the raw account identifier are processed only to verify sign-in and are then discarded. We do not retain Google access or refresh tokens, call Google profile APIs, or keep incidental profile fields if supplied. No username or profile form is required.</p>
+  <h2>Private notes and public comments</h2>
+  <p><strong>Sequences annotations are private to their owner through the website.</strong> The server checks the signed-in account when returning, editing or deleting them. Another user cannot gain access by guessing a note identifier.</p>
+  <p><strong>Metropolitan Man comments, their quoted passages and their generated Reader labels are public.</strong> The same generated label may identify your comments across readings; it does not reveal your Google name or email. Only the owner can edit a comment through the website. The operator may remove abusive or unlawful material. Other people may copy public comments, so deleting one cannot recall copies or screenshots.</p>
+  <p>Annotations are stored on DiegoZC's hosting, not in your Google account. Private notes are access-controlled, <strong>not end-to-end encrypted</strong>. The site operator and hosting provider can access stored data when needed to operate, secure or maintain the service.</p>
+  <h2>What we do not do</h2>
+  <p>We do not sell annotation or Google authentication data, use it for advertising, train AI models on it, build personal profiles, or link the Google account identifier to reading-usage analytics. Google authentication data is used only for sign-in, annotation ownership, and the security necessary to provide those functions. We do not send your annotations to Google.</p>
+  <p>DiegoZC's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including its Limited Use requirements.</p>
+  <h2>Cookies, local storage and retention</h2>
+  <p>An essential secure, HTTP-only cookie keeps the shared sign-in session across participating pages on diegozc.com for up to 90 days, or until you sign out. The pending sign-in request expires after 10 minutes. These controls are separate from the readers' existing on-device playback preferences.</p>
+  <p>During sign-in, one unfinished annotation may be held in the current tab's session storage. It can be restored for 30 minutes and is cleared after saving, signing out, or detecting its expiry; closing the tab also clears normal session storage. Annotation text is not put in localStorage, public RSS feeds or offline audio downloads.</p>
+  <p>Saved annotations remain until you delete them or the service removes them. Deletion removes them from the active annotation database. Residual copies may persist in routine hosting backups until those backups expire; deletion must be respected if a backup is restored. Expired server sessions are subject to the hosting runtime's cleanup. We do not promise immediate erasure of every backup or log.</p>
+  <h2>Service providers and technical records</h2>
+  <p>Google handles the sign-in on its own site under <a href="https://policies.google.com/privacy">Google's privacy policy</a>. Hostinger provides the website hosting and storage under <a href="https://www.hostinger.com/legal/privacy-policy">its privacy policy</a>. Like ordinary websites, hosting and security systems may process IP addresses, request URLs, browser information and access/error logs to deliver pages, diagnose problems and prevent abuse. These records are separate from the annotation database; the annotation code does not deliberately log tokens, note bodies or Google profile fields.</p>
+  <p>Existing readers may separately keep on-device playback diagnostics and provide a bug-report email. Sending that email is your choice; review its contents before sending. If you contact us, we receive the address and information you voluntarily include. We do not use these communications to enrich an annotation profile. Data may also be disclosed when legally required or necessary to address a security incident.</p>
+  <h2>Your controls and contact</h2>
+  <p>When annotation sign-in is enabled, you can edit or delete your annotations individually, and use the reader's Manage notes controls to export or delete all your saved annotations. You can sign out or revoke DiegoZC access in your Google account. Revoking access alone does not delete existing annotations; use the deletion controls or contact us.</p>
+  <p>Operator: Diego Zamalloa-Chion. Questions, access or deletion requests: <a href="mailto:zamalloachion.diego@gmail.com?subject=DiegoZC%20privacy">zamalloachion.diego@gmail.com</a>. We may need to verify that a request concerns your annotations, without asking for unrelated profile information.</p>
+  <p>Changes will be dated on this page. Any new use of Google data must be disclosed before it begins; new permissions are not silently added.</p>
+  <footer><a href="about.html">About DiegoZC sign-in</a> &middot; <a href="terms.html">Terms of Service</a></footer>
+</main></body></html>

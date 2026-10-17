@@ -116,6 +116,7 @@ async function loadWeek(id, explicitTime=null) {
     }
     if(annotationSection)annotationSection.append(child);
   }
+
   // Use the existing source URL on the title itself, keeping packet text and
   // timing anchors intact while removing the separate "Original" row.
   for(const source of $('reader').querySelectorAll('a.source-link')){
@@ -174,26 +175,8 @@ async function copy(text){try{await navigator.clipboard.writeText(text);toast('L
 /* Reviewed references travel with each released packet, never with a global spoiler index. */
 let referenceNotes = new Map(), referenceFocusNodes = [], referenceOrigin = null;
 let referenceSection = null, referenceLimit = -1, selectedLookup = '', selectionTimer;
-const boundedScore=(value,fallback)=>Number.isInteger(value)&&value>=0&&value<=10?value:fallback;
-// Present the meaningful 6–10 source range as 1–5; group the rare lower scores
-// at 1 without changing the original, auditable reference records.
-const referenceImportance=note=>Math.max(1,Math.min(5,note.usefulness-5));
-const referenceDensityLevels=[
-  {label:'None',minimumImportance:null},
-  {label:'Few',minimumImportance:4},
-  {label:'More',minimumImportance:3},
-  {label:'All',minimumImportance:1}
-];
-const legacyUsefulness=boundedScore(saved.referenceUsefulness,8);
-let referenceDensity=referenceDensityLevels.findIndex(level=>level.label.toLowerCase()===saved.referenceDensity);
-if(referenceDensity<0)referenceDensity=saved.references===false?0:legacyUsefulness>=9?1:legacyUsefulness>=8?2:3;
-// One control owns reference density. Retire individual hiding without changing
-// reading progress or unrelated settings; old hidden markers reappear normally.
-delete saved.referenceConfidence;
-delete saved.referenceUsefulness;
-delete saved.references;
-delete saved.hiddenReferences;
-saved.referenceDensity=referenceDensityLevels[referenceDensity].label.toLowerCase();
+// Retired display preferences must not hide any reference markers.
+for(const key of ['referenceDensity','referenceConfidence','referenceUsefulness','references','hiddenReferences'])delete saved[key];
 const referenceKinds = {philosophy:'Philosophy',history:'History / real people',scripture:'Biblical text',tradition:'Religious tradition',literature:'Literature',science:'Science / mathematics',fiction:'Superman / comics'};
 const referenceStatuses = {canon:'Other Superman versions',real:'Real-world source',adapted:'Adapted in The Metropolitan Man',invented:'The Metropolitan Man invention',allusion:'Source allusion',uncertain:'Connection uncertain'};
 const referenceIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>';
@@ -221,35 +204,15 @@ function renderNearby(sectionId) {
   $('reference-nearby-label').textContent=chapter?'Earlier references · '+chapter.label:'References up to this passage';
   const list=$('reference-nearby-list');list.replaceChildren();
   const seen=new Set();
-  const ordered=[...(packet?.referenceOccurrences || [])].sort((a,b)=>{
-    const x=referenceNotes.get(a.referenceId),y=referenceNotes.get(b.referenceId);
-    return referenceImportance(y)-referenceImportance(x);
-  });
+  const ordered=[...(packet?.referenceOccurrences || [])].sort((a,b)=>a.firstWord-b.firstWord);
   for(const occurrence of ordered){
     if(occurrence.sectionId!==sectionId || occurrence.firstWord>referenceLimit || seen.has(occurrence.referenceId))continue;
-    const note=referenceNotes.get(occurrence.referenceId);if(!note||!referencePasses(note))continue;
+    const note=referenceNotes.get(occurrence.referenceId);if(!note)continue;
     seen.add(occurrence.referenceId);
     const button=referenceElement('button','',note.title);button.type='button';button.dataset.referenceId=note.id;
-    button.append(referenceElement('span','reference-list-score',' · Importance '+referenceImportance(note)+'/5'));
     button.addEventListener('click',()=>showReference(note.id,occurrence));list.append(button);
   }
-  if(!seen.size)list.append(referenceElement('p','muted small','No references at this level here. Drag Refs upward in the player to show more, or look up a selection.'));
-}
-function referencePasses(note) {
-  return referenceDensity>0 && referenceImportance(note)>=referenceDensityLevels[referenceDensity].minimumImportance;
-}
-function applyReferenceFilters() {
-  for(const marker of $('reader').querySelectorAll('.reference-mark'))marker.hidden=!referencePasses(referenceNotes.get(marker.dataset.referenceId));
-  const level=referenceDensityLevels[referenceDensity],control=$('notes-density');
-  $('notes-density-value').textContent=level.label;
-  control.dataset.value=referenceDensity;control.dataset.importance=level.minimumImportance??'none';
-  control.setAttribute('aria-valuenow',referenceDensity);control.setAttribute('aria-valuetext',referenceDensity===0?'No references':level.label+' references');
-  if(referenceSection)renderNearby(referenceSection);
-}
-function setReferenceDensity(value) {
-  referenceDensity=Math.max(0,Math.min(3,Math.round(value)));
-  saved.referenceDensity=referenceDensityLevels[referenceDensity].label.toLowerCase();
-  persist();applyReferenceFilters();
+  if(!seen.size)list.append(referenceElement('p','muted small','No earlier references in this chapter.'));
 }
 function setReferencePanel(open, origin=null) {
   const wasOpen=!$('reference-panel').hidden;
@@ -279,9 +242,6 @@ function showReference(id, occurrence=null, trigger=null) {
   }
   const detail=$('reference-detail');detail.replaceChildren();detail.dataset.referenceId=id;
   $('reference-heading').textContent=note.title;
-  $('reference-heading-scores').hidden=false;
-  const importance=referenceImportance(note),value=$('reference-note-importance');
-  value.textContent=importance+'/5';value.setAttribute('aria-label',importance+' out of 5');
   const badges=referenceElement('div','reference-badges');
   badges.append(referenceElement('span','reference-badge',referenceKinds[note.kind]));
   const status=referenceElement('span','reference-badge',referenceStatuses[note.status]);status.dataset.status=note.status;badges.append(status);
@@ -307,14 +267,11 @@ function mountReferences() {
     const target=occurrence.lastWord===null?$(occurrence.blockId):wordNodes.get(occurrence.lastWord);if(!target)return;
     const marker=sourceAnchor(note.sources[0]);if(!marker)return;
     marker.className='reference-mark';marker.innerHTML=referenceIcon;marker.dataset.referenceId=note.id;marker.dataset.occurrence=index;
-    const importance=referenceImportance(note);marker.dataset.importance=importance;
-    marker.dataset.tier=importance>=3?'high':importance===1?'low':'medium';
-    marker.setAttribute('aria-label','Reference: '+note.title);marker.title=note.title+' · Importance '+importance+'/5 — preview; Ctrl/Cmd-click opens source';
+    marker.setAttribute('aria-label','Reference: '+note.title);marker.title=note.title+' — preview; Ctrl/Cmd-click opens source';
     marker.setAttribute('aria-controls','reference-panel');
     if(occurrence.lastWord===null)target.append(marker);else target.after(marker);
   });
-  applyReferenceFilters();
-  $('reference-provenance').textContent=JSON.stringify(packet?.references || []);$('notes-density').hidden=!referenceNotes.size;
+  $('reference-provenance').textContent=JSON.stringify(packet?.references || []);
   selectedLookup='';$('lookup-selection').hidden=true;
 }
 
@@ -553,8 +510,6 @@ window.addEventListener('hashchange',()=>{const m=location.hash.match(/^#(week-\
 window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open)syncPill('codec-pill',codec,'codec');});
 if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>audio.play().catch(displayPlaybackError),pause:()=>audio.pause(),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
 bindDrag('speed',()=>rate,setRate,.05,6,.5,3);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
-// Keep all four stops reachable downward from the bottom toolbar on a phone.
-bindDrag('notes-density',()=>referenceDensity,setReferenceDensity,1,10,0,3);
 new ResizeObserver(entries=>{document.documentElement.style.setProperty('--player-height',entries[0].target.getBoundingClientRect().height+'px');}).observe(document.querySelector('.transport'));
 loadCatalog().then(()=>{
   const q=new URLSearchParams(location.search);

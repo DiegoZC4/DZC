@@ -17,19 +17,19 @@
   </script>
   <title>The Metropolitan Man</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css?v=metropolitan-seven-v1">
-  <link rel="stylesheet" href="player.css?v=metropolitan-seven-v1">
+  <link rel="stylesheet" href="styles.css?v=metropolitan-ui-20261017">
+  <link rel="stylesheet" href="player.css?v=metropolitan-ui-20261017">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · MP3" href="feed.xml">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · Opus" href="feed-opus.xml">
+  <meta name="dzc-annotations" content="metropolitan-man">
+  <link rel="stylesheet" href="/account/site-account.css?v=20261017-1">
+  <script type="module" src="/account/site-account.js?v=20261017-1"></script>
   <link rel="canonical" href="https://diegozc.com/metropolitan-man/">
   <meta name="description" content="The Metropolitan Man reading group: seven sessions, synchronized text and audio, and spoiler-conscious background references. Discussion dates to be agreed.">
   <meta property="og:title" content="The Metropolitan Man · Seven-session reading group">
   <meta property="og:description" content="Chapters 1–2 / 3–4 / 5–6 / 7–8 / 9–10 / 11–12 / 13. Read or listen in seven sessions; discussion dates to be agreed.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://diegozc.com/metropolitan-man/?schedule=1">
-  <meta name="dzc-annotations" content="metropolitan-man">
-  <link rel="stylesheet" href="/account/site-account.css?v=20261016-1">
-  <script type="module" src="/account/site-account.js?v=20261016-1"></script>
 </head>
 <body>
   <a href="#reader" class="skip-link">Skip to reading</a>
@@ -58,9 +58,6 @@
   <aside id="reference-panel" class="reference-panel" aria-labelledby="reference-heading" hidden>
     <div class="reference-heading">
       <h2 id="reference-heading" tabindex="-1">Reference</h2>
-      <dl id="reference-heading-scores" hidden>
-        <div><dt>Importance</dt><dd id="reference-note-importance"></dd></div>
-      </dl>
       <button id="references-close" type="button" aria-label="Close references"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <p class="reference-tip">Tap a reference icon to preview; ⌘/Ctrl-click opens its source in a new tab.</p>
@@ -77,7 +74,6 @@
       <div class="player-times"><span id="elapsed">0:00</span><span id="playing-chapter">Choose an assignment</span><button id="time" type="button" aria-label="Show remaining listening time">0:00</button></div>
       <div class="playback-controls" role="group" aria-label="Playback controls">
         <div class="playback-options">
-          <button hidden id="notes-density" class="drag-number" type="button" role="spinbutton" aria-label="References; drag up for more or use arrow keys" title="References: None; Few (Importance 4–5); More (3–5); All (1–5). Drag vertically or use arrow keys." aria-valuemin="0" aria-valuemax="3" aria-valuenow="2" aria-valuetext="More references" data-value="2" data-importance="3"><span id="notes-density-value">More</span><span class="notes-density-label">Refs</span></button>
           <button id="speed" class="drag-number" type="button" role="spinbutton" aria-label="Playback speed; drag vertically or use arrow keys" aria-valuemin="0.5" aria-valuemax="3" aria-valuenow="1" data-value="1">1×</button>
         </div>
         <div class="transport-buttons">
@@ -152,6 +148,6 @@
     </nav>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js?v=metropolitan-annotations-v1" defer></script>
+  <script src="app.js?v=metropolitan-ui-20261017" defer></script>
 </body>
 </html>

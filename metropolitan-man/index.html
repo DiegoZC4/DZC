@@ -27,6 +27,9 @@
   <meta property="og:description" content="Chapters 1–2 / 3–4 / 5–6 / 7–8 / 9–10 / 11–12 / 13. Read or listen in seven sessions; discussion dates to be agreed.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://diegozc.com/metropolitan-man/?schedule=1">
+  <meta name="dzc-annotations" content="metropolitan-man">
+  <link rel="stylesheet" href="/account/site-account.css?v=20261016-1">
+  <script type="module" src="/account/site-account.js?v=20261016-1"></script>
 </head>
 <body>
   <a href="#reader" class="skip-link">Skip to reading</a>
@@ -34,6 +37,7 @@
     <a class="brand" href="#week-01">Metropolitan Man</a>
     <nav aria-label="Reading tools">
       <button id="schedule-open" type="button">Readings</button>
+      <button type="button" data-dzc-account>Comments</button>
       <button id="subscribe-open" type="button">RSS</button>
       <button id="search-open" type="button" aria-label="Search text and references" title="Search text and references" aria-haspopup="dialog" aria-expanded="false" aria-controls="search-dialog" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
       <button id="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button>
@@ -49,7 +53,7 @@
       <p id="finish-detail" class="muted"></p>
       <div class="finish-actions"><button id="mark-done" type="button" aria-pressed="false">Mark finished</button><button id="next-week" type="button">Next assignment</button></div>
     </section>
-    <footer>Text by <a href="https://alexanderwales.com/the-metropolitan-man-1/" target="_blank" rel="noopener">Alexander Wales</a> · Narrated by <a href="https://hpmorpodcast.com/the-metropolitan-man/" target="_blank" rel="noopener">Eneasz Brodski</a><br><span>Progress stays on this device. No accounts or analytics.</span></footer>
+    <footer>Text by <a href="https://alexanderwales.com/the-metropolitan-man-1/" target="_blank" rel="noopener">Alexander Wales</a> · Narrated by <a href="https://hpmorpodcast.com/the-metropolitan-man/" target="_blank" rel="noopener">Eneasz Brodski</a><br><span>Reading progress stays on this device. Optional Google sign-in saves public comments.</span></footer>
   </main>
   <aside id="reference-panel" class="reference-panel" aria-labelledby="reference-heading" hidden>
     <div class="reference-heading">
@@ -148,6 +152,6 @@
     </nav>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js?v=metropolitan-releases-v2" defer></script>
+  <script src="app.js?v=metropolitan-annotations-v1" defer></script>
 </body>
 </html>

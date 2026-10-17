@@ -106,6 +106,16 @@ async function loadWeek(id, explicitTime=null) {
   const key=next.packet;let data=packetCache.get(key);if(!data){data=await safeFetch(resource(key));packetCache.set(key,data);}if(token!==loading)return;
   week=next;packet=data;readingBlock=null;activeWord=null;attached=true;wordNodes.clear();times=packet.timings;
   $('reader').innerHTML=packet.html;
+  let annotationSection;
+  for(const child of [...$('reader').children]){
+    if(child.matches('h2[id^="section-"]')){
+      annotationSection=document.createElement('section');
+      annotationSection.dataset.annotationDocument='metropolitan-man-'+child.id.slice(8);
+      annotationSection.dataset.annotationTitle=child.textContent;
+      child.before(annotationSection);
+    }
+    if(annotationSection)annotationSection.append(child);
+  }
   // Use the existing source URL on the title itself, keeping packet text and
   // timing anchors intact while removing the separate "Original" row.
   for(const source of $('reader').querySelectorAll('a.source-link')){
@@ -553,3 +563,5 @@ loadCatalog().then(()=>{
     q.delete('schedule');history.replaceState(null,'',location.pathname+(q.size?'?'+q:'')+location.hash);
   }
 }).catch(displayError);
+
+for(const name of ['dzc:annotations-open','dzc:annotation-jump'])document.addEventListener(name,()=>{attached=false;});

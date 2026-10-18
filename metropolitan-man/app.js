@@ -133,9 +133,9 @@ async function loadCatalog(preferred) {
   resetSearch();$('search-open').disabled=true;
   savePosition();audio.pause();const token=++loading;const data=await safeFetch(resource('data/catalog.json'));if(token!==loading)return;
   catalog=data;$('preview').hidden=!(local&&catalog.localOnly);$('clock-label').hidden=!catalog.scheduleConfigured||previewMode==='all';$('preview-date').value=asOf;syncPill('visibility-pill',previewMode,'mode');
-  const hash=location.hash.slice(1).match(/^(week-\d\d)(?:@([\d.]+))?$/);const requested=preferred||hash?.[1]||saved.lastWeek;
+  const hash=location.hash.slice(1).match(/^(week-\d\d)(?:@([\d.]+))?$/);const requested=preferred||hash?.[1];
   let target=catalog.weeks.find(w=>w.id===requested&&w.available);
-  target ||= (catalog.scheduleConfigured?[...catalog.weeks].reverse().find(w=>w.available&&new Date(w.releaseAt)<=new Date(catalog.clock)):null) || catalog.weeks.find(w=>w.available);
+  target ||= catalog.weeks.findLast(w=>w.available);
   renderSchedule();updateSearchScope();$('search-open').disabled=false;
   if(target){await loadWeek(target.id,hash?.[1]===target.id&&hash[2]!==undefined?Number(hash[2]):null);}
   else{

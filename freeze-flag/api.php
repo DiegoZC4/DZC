@@ -117,6 +117,16 @@ function expire_table_seats(array &$room): bool {
     }
     return $changed;
 }
+function managed_room(array $room, array $aliases): array {
+    $revision = $room['revision'];
+    expire_table_seats($room); // Derive occupancy without writing during a listing.
+    return ['id' => $aliases[$room['id']] ?? $room['id'], 'revision' => $revision,
+        'seats' => table_status($room, $aliases)['seats'],
+        'playersPerTeam' => $room['setup']['config']['playersPerTeam'],
+        'updatedAt' => $room['updatedAt'] ?? ($room['expiresAt'] - 7 * 86400),
+        'turn' => $room['state']['turn'] ?? null,
+        'deletedAt' => $room['deletedAt'] ?? null];
+}
 
 try {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -153,6 +163,49 @@ try {
     if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) throw new RuntimeException('Cannot initialize storage.');
     $action = $method === 'GET' ? 'read' : ($request['action'] ?? '');
     $aliases = room_aliases($directory);
+    // High-trust public-room cleanup: no admin account, but never remove occupied
+    // or reserved games. The complete save stays on disk for Undo/Restore.
+    if ($action === 'rooms_manage') {
+        $rooms = [];
+        foreach (glob($directory . '/room-*.json') ?: [] as $path) {
+            try {
+                $room = read_json($path);
+                if (public_room($room) || (isset($room['match'], $room['deletedAt']) && ($room['closed'] ?? false))) $rooms[] = managed_room($room, $aliases);
+            } catch (Throwable $error) { error_log('Freeze Flag skipped managed room: ' . basename($path)); }
+        }
+        usort($rooms, fn($a, $b) => ($b['deletedAt'] ?? $b['updatedAt']) <=> ($a['deletedAt'] ?? $a['updatedAt']) ?: strcmp($a['id'], $b['id']));
+        reply(['ok' => true, 'rooms' => $rooms]);
+    }
+    if (in_array($action, ['room_delete', 'room_restore'], true)) {
+        $id = room_id($request['room'] ?? null);
+        if ($id === null || !valid_integer($request['revision'] ?? null, 0, 1000000000)) reply(['ok' => false, 'error' => 'Choose a game from the current dashboard.'], 400);
+        $id = room_storage_id($id, $aliases);
+        $path = $directory . '/room-' . $id . '.json';
+        $lock = lock_file($directory . '/room-' . $id . '.lock');
+        if (!is_file($path)) reply(['ok' => false, 'error' => 'Game not found.'], 404);
+        $room = read_json($path);
+        $deleted = isset($room['match'], $room['deletedAt']) && ($room['closed'] ?? false);
+        if (!public_room($room) && !$deleted) reply(['ok' => false, 'error' => 'Only public games can be managed here.'], 404);
+        // An interrupted request can be retried without deleting a restored game.
+        if ($room['revision'] !== $request['revision']) reply(['ok' => false, 'error' => 'This game changed. Refresh and try again.'], 409);
+        if ($action === 'room_delete') {
+            if (!$deleted) {
+                expire_table_seats($room);
+                if (in_array(true, $room['joined'], true)) reply(['ok' => false, 'error' => 'A player is connected or their seat is reserved. Wait until both seats are empty.'], 409);
+                $room['closed'] = true;
+                $room['deletedAt'] = time();
+                // Retire old credentials; restoration always offers two open seats.
+                $room['keys'] = [null, null]; $room['joined'] = [false, false]; $room['seen'] = [0, 0];
+                $room['revision']++;
+                save_json($path, $room);
+            }
+        } elseif ($deleted) {
+            unset($room['deletedAt']);
+            $room['closed'] = false; $room['revision']++;
+            save_json($path, $room);
+        }
+        reply(['ok' => true, 'room' => managed_room($room, $aliases)]);
+    }
     if ($action === 'rooms_list') {
         $rooms = [];
         foreach (glob($directory . '/room-*.json') ?: [] as $path) {
@@ -248,6 +301,7 @@ try {
         }
         if ($public && is_file($directory . '/room-' . $id . '.json')) {
             $room = read_json($directory . '/room-' . $id . '.json');
+            if ($room['closed'] ?? false) reply(['ok' => false, 'error' => 'That game was deleted. Restore it from Manage games or create a new game.'], 410);
             if (($room['creationFingerprint'] ?? '') !== $creationFingerprint) reply(['ok' => false, 'error' => 'Creation request already used for another map.'], 409);
             if ($room['keys'][0] !== hash('sha256', $key)) reply(['ok' => false, 'error' => 'This game already exists. Open its room to choose a player.'], 409);
             reply(['ok' => true, 'table' => table_status($room, $aliases), 'snapshot' => room_snapshot($room, new HexGame($room['setup'], $room['state']), 0, $aliases)]);
@@ -264,6 +318,7 @@ try {
         foreach ($roomFiles as $path) {
             try { $old = read_json($path); }
             catch (Throwable $error) { $live++; continue; }
+            if (isset($old['match'], $old['deletedAt']) && ($old['closed'] ?? false)) continue;
             if (!isset($old['match']) && ($old['expiresAt'] ?? 0) < time()) {
                 $oldLockPath = substr($path, 0, -5) . '.lock';
                 $oldLock = fopen($oldLockPath, 'c+');

@@ -1,10 +1,10 @@
 {
-  "builtAt": "2026-10-18T17:43:53.552Z",
+  "builtAt": "2026-10-18T18:55:12.815Z",
   "hashes": {
-    "api.php": "c3ea39883d60395cddce623e23672f3850a41520a1df52ee9021ac187822e4b9",
-    "hex-game.php": "deaaf142806a3074ef31748ae39a9a63a019718655aa72b60b64d6ed17388a54",
+    "api.php": "202a421f1ac3b41f719b725d03aadc2311c3d3d65a8a7a1fe1f0204f4aa4ffbf",
+    "admin.php": "2bdc2b8c93853fc13a02f2f401a64cf9c3a918f7d91db9b1b85528d43f258e66",
+    "hex-game.php": "78afc16d5b8b8cd7decfcf6df28e86cc331dd339cf9fceef3edf87af56c3eb83",
     "table-setup.json": "11e29464a071ca5952b4db5b38eb3128b3bd97878f9e77c19003aac33a688f12",
-    "freezeflag.html": "8a8f3b92fcc79ee5dbb5069fd016a3cef6dced9d3eddab8e7e7e55fe7cf2db1e",
-    "admin.php": "2bdc2b8c93853fc13a02f2f401a64cf9c3a918f7d91db9b1b85528d43f258e66"
+    "freezeflag.html": "bc72ca611da924d20e0e6a1fe1e03404059529c7ebd89b60bdb7532bdf24b944"
   }
 }

@@ -25,14 +25,14 @@ final class HexGrid {
     private array $walls = [];
     private array $seams = [];
     private array $sight = [];
+    private array $geometricSight = [];
     private const DIRECTIONS = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
     private const SIDES = [[1, 0, 1], [1, 1, 2], [-1, 1, 2], [-1, 0, 1], [-1, -1, 2], [1, -1, 2]];
     private const SIGHT_CORNERS = [[0, -2], [1, -1], [1, 1], [0, 2], [-1, 1], [-1, -1]];
 
     public string $sightRule = 'centers';
     public function __construct(int $columns, int $rows, array $obstacles, array $outOfBounds = [], int $left = 0, int $top = 0, string $sightRule = 'centers') {
-        // Centres is the rule the game is played under; 'area' is kept for scripts that ask for it by name.
-        $this->sightRule = $sightRule === 'area' ? 'area' : 'centers';
+        $this->sightRule = $sightRule;
         for ($r = $top; $r < $top + $rows; $r++) for ($c = $left; $c < $left + $columns - (($r % 2 + 2) % 2); $c++) {
             $h = hex_offset($c, $r);
             $this->cells[] = $h;
@@ -88,6 +88,9 @@ final class HexGrid {
         return $neighbors;
     }
     private function blocksSight(array $a, array $b, array $wall, ?string $ignored): bool {
+        if ($this->sightRule === 'centers-strict') return $this->cutsThrough(
+            2 * ($b['q'] - $a['q']) + $b['r'] - $a['r'], 3 * ($b['r'] - $a['r']),
+            2 * ($wall['q'] - $a['q']) + $wall['r'] - $a['r'], 3 * ($wall['r'] - $a['r']), 0);
         $ax = 2 * ($a['q'] - $wall['q']) + $a['r'] - $wall['r']; $ay = 3 * ($a['r'] - $wall['r']);
         $bx = 2 * ($b['q'] - $wall['q']) + $b['r'] - $wall['r']; $by = 3 * ($b['r'] - $wall['r']);
         $enter = 0; $exit = 1;
@@ -160,21 +163,40 @@ final class HexGrid {
         }
         return false;
     }
-    public function visible(array $start): array {
+    public function geometricVisible(array $start): array {
         $key = hex_key($start);
-        if (isset($this->sight[$key])) return $this->sight[$key];
+        if (isset($this->geometricSight[$key])) return $this->geometricSight[$key];
         $visible = [];
         if ($this->open($start)) {
             $shadows = array_map(fn($wall) => $this->shadowFrom($start, $wall), $this->walls);
             foreach ($this->cells as $cell) {
                 $cellKey = hex_key($cell); $open = $this->open($cell);
                 // Center to center is already the same test from either end, so it needs no reciprocal retry.
-                $seen = $open && isset($this->sight[$cellKey]) ? isset($this->sight[$cellKey][$key])
-                    : ($this->sightRule === 'centers' ? $this->visibleCenter($start, $cell, $shadows)
+                $seen = $open && isset($this->geometricSight[$cellKey]) ? isset($this->geometricSight[$cellKey][$key])
+                    : ($this->sightRule !== 'area' ? $this->visibleCenter($start, $cell, $shadows)
                         : $this->visibleArea($start, $cell, $shadows) || $open && $this->visibleArea($cell, $start, array_map(fn($wall) => $this->shadowFrom($cell, $wall), $this->walls)));
                 if ($seen) $visible[$cellKey] = true;
             }
         }
+        return $this->geometricSight[$key] = $visible;
+    }
+    public function visible(array $start): array {
+        if ($this->sightRule === 'area') return $this->geometricVisible($start);
+        $key = hex_key($start);
+        if (isset($this->sight[$key])) return $this->sight[$key];
+        $candidates = $this->geometricVisible($start); $visible = [];
+        if ($this->open($start)) {
+            $queue = [$start]; $visible[$key] = true;
+            // Every candidate is tested from the pawn, not the previous tile in the flood.
+            // A visible wall is a boundary, never a bridge to another patch of field.
+            for ($i = 0; $i < count($queue); $i++) foreach (self::DIRECTIONS as [$dq, $dr]) {
+                $next = ['q' => $queue[$i]['q'] + $dq, 'r' => $queue[$i]['r'] + $dr]; $nextKey = hex_key($next);
+                if (isset($visible[$nextKey]) || !isset($candidates[$nextKey])) continue;
+                $visible[$nextKey] = true;
+                if (!isset($this->blocked[$nextKey])) $queue[] = $next;
+            }
+        }
+        // Unlike raw sight, connected visibility is not necessarily reciprocal.
         return $this->sight[$key] = $visible;
     }
     /** Clips the sight line against one obstacle in exact integer ratios. Blocked means the line reaches the inside of
@@ -191,6 +213,7 @@ final class HexGrid {
             elseif ($start > 0) { $down = $start - $end; if ($start * $enterDown > $enterUp * $down) { $enterUp = $start; $enterDown = $down; } }
             elseif ($end > 0) { $down = $end - $start; if (-$start * $exitDown < $exitUp * $down) { $exitUp = -$start; $exitDown = $down; } }
         }
+        if ($this->sightRule === 'centers-strict') return $enterUp * $exitDown <= $exitUp * $enterDown;
         if ($enterUp * $exitDown >= $exitUp * $enterDown) return false;
         return $along < 0 || ($joined & (1 << $along)) !== 0;
     }
@@ -251,12 +274,16 @@ final class HexGame {
             if (!is_bool($setup['config']['fog'])) throw new InvalidArgumentException('Invalid fog.');
             $config['fog'] = $setup['config']['fog'];
         }
+        if (array_key_exists('hideUnseenObstacles', $setup['config'])) {
+            if (!is_bool($setup['config']['hideUnseenObstacles'])) throw new InvalidArgumentException('Invalid hideUnseenObstacles.');
+            $config['hideUnseenObstacles'] = $setup['config']['hideUnseenObstacles'];
+        }
         if (array_key_exists('frozenFog', $setup['config'])) {
             if (!is_bool($setup['config']['frozenFog'])) throw new InvalidArgumentException('Invalid frozenFog.');
             $config['frozenFog'] = $setup['config']['frozenFog'];
         }
         if (array_key_exists('sightRule', $setup['config'])) {
-            if (!in_array($setup['config']['sightRule'], ['area', 'centers'], true)) throw new InvalidArgumentException('Invalid sightRule.');
+            if (!in_array($setup['config']['sightRule'], ['area', 'centers', 'centers-strict'], true)) throw new InvalidArgumentException('Invalid sightRule.');
             $config['sightRule'] = $setup['config']['sightRule'];
         }
         if ($setup['version'] < 5) {
@@ -271,8 +298,8 @@ final class HexGame {
         if ($explicit && (!is_array($setup['outOfBounds'] ?? null) || count($setup['outOfBounds']) > 2080 || ($setup['version'] < 6 && (!is_array($setup['positions'] ?? null) || count($setup['positions']) !== 2)))) throw new InvalidArgumentException('Invalid board terrain or player positions.');
         $grid = new HexGrid($config['columns'], $config['rows'], $setup['obstacles'], $explicit ? $setup['outOfBounds'] : [], $config['left'] ?? 0, $config['top'] ?? 0, $config['sightRule'] ?? 'centers');
         $obstacles = array_values(array_filter($grid->cells, fn($h) => isset($grid->blocked[hex_key($h)])));
-        $symmetry = null;
-        if (array_key_exists('symmetry', $setup)) {
+        $symmetry = ($setup['symmetry'] ?? null) === false ? false : null;
+        if (array_key_exists('symmetry', $setup) && $setup['symmetry'] !== false) {
             $s = $setup['symmetry'];
             if (!is_array($s) || !in_array($s['angle'] ?? null, [60, 30], true) || !is_array($s['center'] ?? null) || !valid_integer($s['center']['q'] ?? null, -2000, 2000) || !valid_integer($s['center']['r'] ?? null, -2000, 2000)) throw new InvalidArgumentException('Invalid board symmetry.');
             $symmetry = ['angle' => (int)$s['angle'], 'center' => ['q' => (int)$s['center']['q'], 'r' => (int)$s['center']['r']]];
@@ -283,10 +310,10 @@ final class HexGame {
             }
             if (!$grid->sectorSymmetric($symmetry['center'], $symmetry['angle'], $exempt)) throw new InvalidArgumentException('Board terrain must match its ' . sector_name($symmetry['angle']) . '.');
         }
-        if (!$symmetry && $setup['version'] >= 2) foreach ($obstacles as $cell) {
+        if ($symmetry === null && $setup['version'] >= 2) foreach ($obstacles as $cell) {
             if (!isset($grid->blocked[hex_key(hex_mirror($cell, $config['columns'] + 2 * ($config['left'] ?? 0)))])) throw new InvalidArgumentException('Board obstacles must mirror left to right.');
         }
-        if (!$symmetry && $explicit) foreach ($setup['outOfBounds'] as $cell) {
+        if ($symmetry === null && $explicit) foreach ($setup['outOfBounds'] as $cell) {
             if (!isset($grid->outOfBounds[hex_key(hex_mirror($cell, $config['columns'] + 2 * ($config['left'] ?? 0)))])) throw new InvalidArgumentException('Board terrain must mirror left to right.');
         }
         $endzones = [[], []];
@@ -323,7 +350,11 @@ final class HexGame {
             }
         }
         $result = ['version' => $setup['version'], 'config' => $config, 'obstacles' => $obstacles, 'roles' => $roles, 'carriers' => $carriers];
-        if ($symmetry) $result['symmetry'] = $symmetry;
+        if (array_key_exists('allowDisconnected', $setup)) {
+            if (!is_bool($setup['allowDisconnected'])) throw new InvalidArgumentException('Invalid disconnected-field option.');
+            $result['allowDisconnected'] = $setup['allowDisconnected'];
+        }
+        if ($symmetry !== null) $result['symmetry'] = $symmetry;
         if ($explicit) {
             $canvas = new HexGrid($config['columns'], $config['rows'], [], [], $config['left'] ?? 0, $config['top'] ?? 0);
             $result['outOfBounds'] = array_values(array_filter($canvas->cells, fn($h) => isset($grid->outOfBounds[hex_key($h)])));
@@ -331,7 +362,7 @@ final class HexGame {
         }
         if ($setup['version'] >= 5) {
             $result['endzones'] = $endzones;
-            $issues = self::mapIssues($result, $grid);
+            $issues = array_values(array_filter(self::mapIssues($result, $grid), fn($issue) => !(($result['allowDisconnected'] ?? false) && $issue['id'] === 'disconnected-field')));
             if ($issues) throw new InvalidArgumentException($issues[0]['message']);
         }
         return $result;
@@ -356,7 +387,7 @@ final class HexGame {
         $add = function(string $id, string $message, array $cells = []) use (&$issues) { $issues[] = ['id' => $id, 'message' => $message, 'cells' => array_values($cells)]; };
         $sectorAngle = (int)($setup['symmetry']['angle'] ?? 60);
         $covered = array_fill_keys(array_map('hex_key', array_merge(...$zones)), true);
-        if (isset($setup['symmetry']) && !$grid->sectorSymmetric($setup['symmetry']['center'], $sectorAngle, $covered)) $add('asymmetric-terrain', 'Field and obstacles must match the ' . sector_name($sectorAngle) . '.');
+        if (($setup['symmetry'] ?? false) && !$grid->sectorSymmetric($setup['symmetry']['center'], $sectorAngle, $covered)) $add('asymmetric-terrain', 'Field and obstacles must match the ' . sector_name($sectorAngle) . '.');
         foreach ([0, 1] as $team) {
             $name = ['Red', 'Blue'][$team]; $zone = $zones[$team]; $count = count($setup['roles'][$team]);
             if ($count && !array_filter($setup['roles'][$team], fn($role) => is_string($role) || ($role['carry'] ?? 0) > 0)) $add("no-carrier-$team", "$name needs a pawn with flag capacity.", $zone);
@@ -379,7 +410,7 @@ final class HexGame {
         if ($overlap) $add('overlapping-endzones', 'Endzones overlap. Keep them off the vertical symmetry line.', $overlap);
         $asymmetric = []; $width = $setup['config']['columns'] + 2 * $setup['config']['left'];
         foreach ([0, 1] as $team) foreach ($zones[$team] as $cell) if (!isset($keys[1 - $team][hex_key(hex_mirror($cell, $width))])) $asymmetric[] = $cell;
-        if ($asymmetric) $add('asymmetric-endzones', 'Endzones must mirror left to right.', $asymmetric);
+        if (($setup['symmetry'] ?? null) !== false && $asymmetric) $add('asymmetric-endzones', 'Endzones must mirror left to right.', $asymmetric);
         $occupied = []; $duplicates = [];
         foreach (array_merge(...($setup['positions'] ?? [[], []])) as $cell) { $key = hex_key($cell); if (isset($occupied[$key])) $duplicates[] = $cell; else $occupied[$key] = true; }
         if ($duplicates) $add('overlapping-starts', 'Starting players share a tile.', $duplicates);
@@ -389,7 +420,7 @@ final class HexGame {
         return $issues;
     }
     /** Which endzone each team scores in, or null when the two zones are not a clean self/other pair. */
-    private static function endzoneTarget(array $setup): ?string {
+    public static function endzoneTarget(array $setup): ?string {
         $homes = self::deploymentEndzones($setup);
         if (!$homes[0] || !$homes[1]) return null;
         $scoring = ($setup['version'] ?? 0) >= 7 ? $setup['endzones'] : [$setup['endzones'][1], $setup['endzones'][0]];
@@ -456,15 +487,15 @@ final class HexGame {
             }
             $atTurnStart = $this->state['observation'][$this->team()] === 'awake';
             $this->state['observation'] = array_map(fn($phase) => $phase === 'awake' ? 'active' : $phase, $this->state['observation']);
-            if (($this->state['visibilityVersion'] ?? null) !== 4) {
+            if (($this->state['visibilityVersion'] ?? null) !== 5) {
                 $this->observeTeam($this->team(), 'active', $atTurnStart && $this->state['turn'] > 0 ? $this->state['turn'] - 1 : null);
-                $this->state['visibilityVersion'] = 4;
+                $this->state['visibilityVersion'] = 5;
             }
             return;
         }
         $positions = $setup['version'] >= 6 ? self::startingPositions($setup) : ($setup['positions'] ?? null);
         $this->state = ['setup' => $setup, 'players' => [], 'flags' => [], 'turn' => 0, 'time' => 0, 'turnEndsAt' => $c['turnDuration'], 'winner' => null, 'ready' => $setup['version'] >= 6 && $setup['version'] < 10 ? [false, false] : null, 'knowledge' => [['players' => [], 'flags' => [], 'history' => [], 'historyUnit' => 'turn'], ['players' => [], 'flags' => [], 'history' => [], 'historyUnit' => 'turn']], 'visibility' => [[], []], 'observation' => ['active', 'sleep'], 'events' => [[], []]];
-        $this->state['visibilityVersion'] = 4;
+        $this->state['visibilityVersion'] = 5;
         $this->state['turnStartedAt'] = 0;
         foreach ([0, 1] as $team) for ($index = 0; $index < $c['playersPerTeam']; $index++) {
             $row = (int)round(($index + 1) * ($c['rows'] - 1) / ($c['playersPerTeam'] + 1));
@@ -912,8 +943,8 @@ final class HexGame {
             $config = $command['config'] ?? null;
             $invalid = fn() => new InvalidArgumentException('Invalid game settings.');
             if (!is_array($config) || !valid_integer($config['turnDuration'] ?? null, 1, 30) || !valid_integer($config['freezeRounds'] ?? null, 2, 6) || !is_bool($config['allowVoluntaryDrops'] ?? null)) throw $invalid();
-            foreach (['postThawTouches', 'fog', 'frozenFog'] as $name) if (array_key_exists($name, $config) && !is_bool($config[$name])) throw $invalid();
-            if (array_key_exists('sightRule', $config) && !in_array($config['sightRule'], ['area', 'centers'], true)) throw $invalid();
+            foreach (['postThawTouches', 'fog', 'frozenFog', 'hideUnseenObstacles'] as $name) if (array_key_exists($name, $config) && !is_bool($config[$name])) throw $invalid();
+            if (array_key_exists('sightRule', $config) && !in_array($config['sightRule'], ['area', 'centers', 'centers-strict'], true)) throw $invalid();
             $current = self::endzoneTarget($this->state['setup']);
             $target = $config['targetEndzone'] ?? null;
             if ($target !== null && (!in_array($target, ['self', 'other'], true) || $current === null)) throw $invalid();
@@ -921,10 +952,10 @@ final class HexGame {
             $before = $this->state['setup']['config'];
             $rules = ['turnDuration' => (int)$config['turnDuration'], 'freezeRounds' => (int)$config['freezeRounds'], 'allowVoluntaryDrops' => $config['allowVoluntaryDrops'],
                 'postThawTouches' => $config['postThawTouches'] ?? false, 'fog' => $config['fog'] ?? true,
-                'sightRule' => $config['sightRule'] ?? 'centers', 'frozenFog' => $config['frozenFog'] ?? false];
+                'sightRule' => $config['sightRule'] ?? 'centers', 'frozenFog' => $config['frozenFog'] ?? false, 'hideUnseenObstacles' => $config['hideUnseenObstacles'] ?? false];
             $now = ['turnDuration' => $before['turnDuration'], 'freezeRounds' => $before['freezeRounds'], 'allowVoluntaryDrops' => $before['allowVoluntaryDrops'] ?? false,
                 'postThawTouches' => $before['postThawTouches'] ?? false, 'fog' => $before['fog'] ?? true,
-                'sightRule' => $before['sightRule'] ?? 'centers', 'frozenFog' => $before['frozenFog'] ?? false];
+                'sightRule' => $before['sightRule'] ?? 'centers', 'frozenFog' => $before['frozenFog'] ?? false, 'hideUnseenObstacles' => $before['hideUnseenObstacles'] ?? false];
             $roles = $command['roles'] ?? [];
             if (!is_array($roles) || count($roles) > $before['playersPerTeam']) throw $invalid();
             $roleChanges = []; $seen = [];

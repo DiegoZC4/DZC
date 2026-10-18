@@ -26,7 +26,9 @@ function lock_file(string $path) {
     reply(['ok' => false, 'error' => 'Room is busy. Try again.'], 503);
 }
 function save_json(string $path, array $value): void {
-    $json = json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+    save_text($path, json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+}
+function save_text(string $path, string $json): void {
     $temporary = tempnam(dirname($path), '.write-');
     if ($temporary === false) throw new RuntimeException('Cannot save room.');
     try {
@@ -37,6 +39,19 @@ function read_json(string $path): array {
     $value = json_decode((string)file_get_contents($path), true, 64, JSON_THROW_ON_ERROR);
     if (!is_array($value)) throw new RuntimeException('Invalid stored room.');
     return $value;
+}
+function archive_room(string $directory, array $room): string {
+    $path = $directory . '/table-archive-' . $room['id'] . '-' . $room['match'] . '-' . $room['revision'] . '.json';
+    if (!is_file($path)) {
+        $original = file_get_contents($directory . '/room-' . $room['id'] . '.json');
+        if ($original === false) throw new RuntimeException('Cannot read the previous game for backup.');
+        save_text($path, $original);
+    }
+    return $path;
+}
+function archive_summary(array $room, string $path): array {
+    return ['match' => $room['match'], 'revision' => $room['revision'], 'savedAt' => filemtime($path),
+        'turn' => $room['state']['turn'], 'time' => $room['state']['time'], 'playersPerTeam' => $room['setup']['config']['playersPerTeam']];
 }
 function room_snapshot(array $room, HexGame $game, int $team, array $aliases): array {
     $snapshot = ['id' => $aliases[$room['id']] ?? $room['id'], 'revision' => $room['revision'], 'setup' => $room['setup'], 'joined' => $room['joined'],
@@ -161,8 +176,78 @@ try {
     }
     $directory = getenv('QUANTUM_TAG_DATA_DIR') ?: dirname(__DIR__, 2) . '/.quantum-tag-rooms';
     if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) throw new RuntimeException('Cannot initialize storage.');
-    $action = $method === 'GET' ? 'read' : ($request['action'] ?? '');
+    if ($method === 'GET' && ($_GET['action'] ?? '') === 'room_backup') $request = $_GET;
+    $action = $method === 'GET' ? (($request['action'] ?? '') === 'room_backup' ? 'room_backup' : 'read') : ($request['action'] ?? '');
     $aliases = room_aliases($directory);
+    // Public, high-trust map replacement. A revision check prevents racing a player's move;
+    // a request receipt makes a lost-response retry safe. Seats and rules stay with the room.
+    if (in_array($action, ['table_import_map', 'room_backups', 'room_backup'], true)) {
+        $publicId = room_id($request['room'] ?? null);
+        if ($publicId === null) reply(['ok' => false, 'error' => 'Choose an existing game.'], 400);
+        $id = room_storage_id($publicId, $aliases);
+        $path = $directory . '/room-' . $id . '.json';
+        $lock = lock_file($directory . '/room-' . $id . '.lock');
+        if (!is_file($path)) reply(['ok' => false, 'error' => 'Game not found.'], 404);
+        $room = read_json($path);
+        if (!isset($room['match'])) reply(['ok' => false, 'error' => 'Choose a public game.'], 404);
+        if ($action === 'room_backups') {
+            $backups = [];
+            foreach (glob($directory . '/table-archive-' . $id . '-*.json') ?: [] as $archivePath) {
+                $archive = read_json($archivePath);
+                $backups[] = archive_summary($archive, $archivePath);
+            }
+            usort($backups, fn($a, $b) => $b['match'] <=> $a['match'] ?: $b['revision'] <=> $a['revision']);
+            reply(['ok' => true, 'backups' => $backups]);
+        }
+        if ($action === 'room_backup') {
+            $match = $request['match'] ?? null; $revision = $request['revision'] ?? null;
+            if ($method === 'GET') {
+                $match = is_string($match) && ctype_digit($match) ? (int)$match : null;
+                $revision = is_string($revision) && ctype_digit($revision) ? (int)$revision : null;
+            }
+            if (!valid_integer($match, 1, 1000000000) || !valid_integer($revision, 0, 1000000000)) reply(['ok' => false, 'error' => 'Invalid backup.'], 400);
+            $archivePath = $directory . '/table-archive-' . $id . '-' . $match . '-' . $revision . '.json';
+            if (!is_file($archivePath)) reply(['ok' => false, 'error' => 'Backup not found.'], 404);
+            $archive = read_json($archivePath);
+            $exact = json_decode((string)file_get_contents($archivePath), false, 64, JSON_THROW_ON_ERROR);
+            $name = 'freeze-flag-game-' . ($aliases[$id] ?? $id) . '-match-' . $match . '-revision-' . $revision . '.json';
+            header('Content-Disposition: attachment; filename="' . $name . '"');
+            // Export the complete position and observations, never room credentials or request receipts.
+            reply(['format' => 'freeze-flag-online-backup', 'version' => 1, 'room' => $aliases[$id] ?? $id,
+                ...archive_summary($archive, $archivePath), 'setup' => $exact->setup, 'state' => $exact->state]);
+        }
+        if (!public_room($room)) reply(['ok' => false, 'error' => 'Restore this game before replacing its map.'], 410);
+        if (!valid_integer($request['revision'] ?? null, 0, 1000000000) || !is_string($request['requestId'] ?? null)
+            || !preg_match('/^[A-Za-z0-9_-]{16,80}$/D', $request['requestId']) || !is_array($request['setup'] ?? null)) reply(['ok' => false, 'error' => 'Invalid map import.'], 400);
+        $receipt = 'map:' . $request['requestId'];
+        $fingerprint = hash('sha256', json_encode($request['setup'], JSON_THROW_ON_ERROR));
+        if (isset($room['processed'][$receipt])) {
+            $previous = $room['processed'][$receipt];
+            if ($previous['fingerprint'] !== $fingerprint) reply(['ok' => false, 'error' => 'Import ID was already used for another map.'], 409);
+            reply(['ok' => true, 'table' => table_status($room, $aliases), 'backup' => $previous['backup']]);
+        }
+        if ($request['revision'] !== $room['revision']) reply(['ok' => false, 'error' => 'The game changed during import. Try again.'], 409);
+        $setup = $request['setup'];
+        if (($setup['version'] ?? null) !== 10) reply(['ok' => false, 'error' => 'Use the current map editor.'], 400);
+        if (!is_array($setup['config'] ?? null)) reply(['ok' => false, 'error' => 'Invalid map settings.'], 400);
+        foreach (['turnDuration', 'freezeRounds', 'allowVoluntaryDrops', 'postThawTouches', 'fog', 'sightRule', 'frozenFog', 'hideUnseenObstacles'] as $rule) {
+            if (array_key_exists($rule, $room['setup']['config'])) $setup['config'][$rule] = $room['setup']['config'][$rule];
+            else unset($setup['config'][$rule]);
+        }
+        $setup = HexGame::validateSetup($setup);
+        $target = HexGame::endzoneTarget($room['setup']);
+        if ($target !== null && HexGame::endzoneTarget($setup) !== $target) $setup['endzones'] = [$setup['endzones'][1], $setup['endzones'][0]];
+        $game = new HexGame($setup);
+        // Save the old match first. A backup failure must abort the replacement.
+        $archivePath = archive_room($directory, $room);
+        $backup = archive_summary($room, $archivePath);
+        $room['match']++; $room['revision']++; $room['updatedAt'] = time(); $room['expiresAt'] = time() + 7 * 86400;
+        $room['setup'] = $game->state['setup']; $room['state'] = $game->state;
+        $room['processed'][$receipt] = ['fingerprint' => $fingerprint, 'backup' => $backup];
+        $room['processed'] = array_slice($room['processed'], -128, null, true);
+        save_json($path, $room);
+        reply(['ok' => true, 'table' => table_status($room, $aliases), 'backup' => $backup]);
+    }
     // High-trust public-room cleanup: no admin account, but never remove occupied
     // or reserved games. The complete save stays on disk for Undo/Restore.
     if ($action === 'rooms_manage') {
@@ -383,7 +468,7 @@ try {
                 $setup = HexGame::validateSetup($request['command']['setup'] ?? $room['setup']);
                 if ($setup['version'] !== 10) reply(['ok' => false, 'error' => 'Use the current board editor for a new online game.'], 400);
                 $nextGame = new HexGame($setup);
-                save_json($directory . '/table-archive-' . $id . '-' . $room['match'] . '-' . $room['revision'] . '.json', $room);
+                archive_room($directory, $room);
                 $game = $nextGame;
                 $room['match']++;
                 $accepted = true;

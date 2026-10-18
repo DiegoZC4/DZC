@@ -15,6 +15,50 @@ let rate = Number(saved.rate) || 1, fontSize = Number(saved.fontSize) || 19, fol
 let previewMode = new URLSearchParams(location.search).get('preview') === 'released' ? 'released' : 'all';
 let asOf = new URLSearchParams(location.search).get('asOf') || new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const packetCache = new Map();
+// Inlined by the Metropolitan adapter; the shared Unsong template is unchanged.
+let audioControls = saved.audioControls !== false;
+let deferredAudioTime = null;
+
+function syncAudioControls() {
+  document.documentElement.dataset.audioControls = audioControls ? 'on' : 'off';
+  const transport = document.querySelector('.transport');
+  transport.hidden = !audioControls;
+  $('audio-settings').hidden = !audioControls;
+  syncPill('audio-controls-pill', audioControls ? 'on' : 'off', 'controls');
+  document.documentElement.style.setProperty('--player-height',
+    (audioControls ? transport.getBoundingClientRect().height : 0) + 'px');
+  if (!audioControls) $('return-audio').hidden = true;
+}
+
+function chooseAudioControls(visible) {
+  if (visible === audioControls) return;
+  audio.pause();
+  savePosition();
+  const position = deferredAudioTime ?? (week && audio.dataset.week === week.id ? audio.currentTime : 0);
+  audioControls = visible;
+  saved.audioControls = visible;
+  syncAudioControls();
+  if (week) setAudio(position);
+  updatePlayback();
+  persist();
+}
+
+// The entire two-option capsule toggles once, including its selected half.
+$('audio-controls-pill').addEventListener('click', () => chooseAudioControls(!audioControls));
+$('audio-controls-pill').addEventListener('keydown', event => {
+  if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    event.preventDefault();
+    chooseAudioControls(event.key === 'ArrowLeft');
+  }
+});
+$('settings-open').addEventListener('click', () => {
+  requestAnimationFrame(syncAudioControls);
+});
+window.addEventListener('resize', () => {
+  if ($('settings-dialog').open) syncAudioControls();
+});
+syncAudioControls();
+
 // Reuse the Sequences player's glyphs; the legacy storage key preserves saved progress.
 const playIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg>';
 const pauseIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>';
@@ -50,7 +94,7 @@ function discussionDateLabel(value, number) { if(!value)return number?'Reading '
 function syncPill(id, value, attr) { const parent = $(id), buttons = [...parent.querySelectorAll('button')]; for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset[attr] === value)); const selected=buttons.find(b=>b.dataset[attr]===value); if(!selected) return; const thumb=parent.querySelector('.thumb'); thumb.style.width=selected.offsetWidth+'px'; thumb.style.height=selected.offsetHeight+'px'; thumb.style.transform='translateX('+(selected.offsetLeft-3)+'px)'; }
 function safeFetch(path,options) { return fetch(path,options).then(r=>{if(!r.ok) throw Error('Could not load '+path.split('?')[0]+' ('+r.status+').'); return r.json();}); }
 function progress() { return saved.weeks[week.id] ||= {}; }
-function savePosition() { if (!week||audio.dataset.week!==week.id) return; const p=progress(); if (audio.src && Number.isFinite(audio.currentTime)) p.time=audio.currentTime; if(readingBlock) p.block=readingBlock; saved.lastWeek=week.id; persist(); }
+function savePosition() { if (!week) return; const p=progress(); if (audio.dataset.week===week.id && audio.src && Number.isFinite(audio.currentTime)) p.time=deferredAudioTime??audio.currentTime; if(readingBlock) p.block=readingBlock; saved.lastWeek=week.id; persist(); }
 function displayError(error) { $('status').textContent = error.message || String(error); }
 // Pausing, scrubbing or switching files may cancel a queued play request normally.
 function displayPlaybackError(error) { if(error?.name !== 'AbortError') displayError(error); }
@@ -134,27 +178,32 @@ async function loadWeek(id, explicitTime=null) {
   const nextWeek=catalog.weeks[week.number];$('next-week').hidden=!nextWeek;$('next-week').disabled=!nextWeek?.available;$('next-week').textContent=nextWeek?.available?'Next assignment':nextWeek?(nextWeek.releaseAt?'Next unlocks '+dateLabel(nextWeek.releaseAt):'Next reading not released'):'';
   updateDone();$('alignment-detail').textContent='Word timing coverage: '+(100*week.alignmentCoverage).toFixed(1)+'%. '+(week.addedAlignedWords?week.addedAlignedWords.toLocaleString()+' verified gap fills included. ':'')+'Untimed words are readable but not highlighted or seekable. No interpolated timings.';
   const restoreBlock=explicitTime===null?progress().block:null;
-  setAudio(explicitTime??progress().time??0);updateStats();renderSchedule();$('status').textContent=week.audio[codec]?'':'Audio is being prepared; all text is ready.';
+  setAudio(explicitTime??progress().time??0);updateStats();renderSchedule();$('status').textContent=!audioControls||week.audio[codec]?'':'Audio is being prepared; all text is ready.';
   history.replaceState(null,'',location.pathname+location.search+'#'+week.id+(explicitTime!==null?'@'+explicitTime.toFixed(2):''));
   requestAnimationFrame(()=>{if(restoreBlock&&$(restoreBlock))scrollToNode($(restoreBlock),'instant');else window.scrollTo({top:0,behavior:'instant'});});
 }
 function setAudio(time=0) {
+  if(!audioControls){
+    deferredAudioTime=time;++mediaToken;audio.pause();audio.removeAttribute('src');
+    delete audio.dataset.week;audio.load();return;
+  }
+  deferredAudioTime=time;
   const media=week.audio[codec];const token=++mediaToken;audio.pause();$('play').disabled=!media;
   if(!media){audio.removeAttribute('src');audio.load();return;}
   const desired=Math.max(0,Math.min(time,media.duration)), url=new URL(resource(media.path),location.href).href;
   audio.dataset.week=week.id;audio.src=url;audio.playbackRate=rate;
-  const once=()=>{if(token===mediaToken&&audio.src===url){audio.currentTime=desired;audio.playbackRate=rate;updatePlayback();}audio.removeEventListener('loadedmetadata',once);};
+  const once=()=>{if(token===mediaToken&&audio.src===url){audio.currentTime=desired;deferredAudioTime=null;audio.playbackRate=rate;updatePlayback();}audio.removeEventListener('loadedmetadata',once);};
   audio.addEventListener('loadedmetadata',once);audio.load();$('seek').max=media.duration;$('seek').value=desired;$('chapter-ticks').replaceChildren();
   for(const c of week.chapters.slice(1)){const tick=document.createElement('i');tick.style.left=(100*c.start/media.duration)+'%';$('chapter-ticks').append(tick);}
   updateStats();updatePlayback();
   if('mediaSession'in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:week.label,artist:'Eneasz Brodski · Alexander Wales',album:'The Metropolitan Man'});}
 }
-function seek(value) { if(!week||!week.audio[codec])return;audio.currentTime=Math.max(0,Math.min(value,Number.isFinite(audio.duration)?audio.duration:week.duration));updatePlayback();savePosition(); }
-async function togglePlay() { if(!week||$('play').disabled)return;if(audio.paused){try{await audio.play();}catch(e){displayPlaybackError(e);}}else audio.pause(); }
+function seek(value) { if(!audioControls||!week||!week.audio[codec])return;audio.currentTime=Math.max(0,Math.min(value,Number.isFinite(audio.duration)?audio.duration:week.duration));updatePlayback();savePosition(); }
+async function togglePlay() { if(!audioControls||!week||$('play').disabled)return;if(audio.paused){try{await audio.play();}catch(e){displayPlaybackError(e);}}else audio.pause(); }
 function scrollToNode(node, behavior='smooth') { if(!node)return;programmaticUntil=performance.now()+900;node.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':behavior}); }
 function findWord(t) { let lo=0,hi=times.length;while(lo<hi){const mid=(lo+hi)>>>1;if(times[mid][1]<=t*1000)lo=mid+1;else hi=mid;}const row=times[lo-1];return row&&t*1000-row[1]<1800?wordNodes.get(row[0]):null; }
-function readingBottom() { return document.querySelector('.transport').getBoundingClientRect().top-16; }
-function returnControl() { if(!activeWord||!follow){$('return-audio').hidden=true;return;}const rect=activeWord.getBoundingClientRect();const outside=rect.top<65||rect.bottom>readingBottom();$('return-audio').hidden=!outside||attached;$('return-audio').setAttribute('aria-label',rect.top<65?'Return up to narration':'Return down to narration');$('return-audio').querySelector('svg').style.transform=rect.top<65?'':'rotate(180deg)'; }
+function readingBottom() { return audioControls?document.querySelector('.transport').getBoundingClientRect().top-16:innerHeight-16; }
+function returnControl() { if(!audioControls||!activeWord||!follow){$('return-audio').hidden=true;return;}const rect=activeWord.getBoundingClientRect();const outside=rect.top<65||rect.bottom>readingBottom();$('return-audio').hidden=!outside||attached;$('return-audio').setAttribute('aria-label',rect.top<65?'Return up to narration':'Return down to narration');$('return-audio').querySelector('svg').style.transform=rect.top<65?'':'rotate(180deg)'; }
 function updatePlayback() {
   if(!week)return;const t=audio.currentTime||0,d=week.audio[codec]?.duration||week.duration;
   $('seek').value=t;$('elapsed').textContent=duration(t);
@@ -164,12 +213,12 @@ function updatePlayback() {
   $('seek').setAttribute('aria-valuetext',duration(t)+' of '+duration(d));
   $('seek-progress').style.width=(d>0?100*Math.min(t,d)/d:0)+'%';
   const chapter=currentChapter(t);$('playing-chapter').textContent=chapter?.label||week.label;
-  const current=findWord(t);if(current!==activeWord){activeWord?.classList.remove('active');activeWord=current;activeWord?.classList.add('active');if(activeWord&&!audio.paused&&follow&&attached&&!document.hidden){const rect=activeWord.getBoundingClientRect();if(rect.top<70||rect.bottom>readingBottom())scrollToNode(activeWord);}}
+  const current=audioControls?findWord(t):null;if(current!==activeWord){activeWord?.classList.remove('active');activeWord=current;activeWord?.classList.add('active');if(activeWord&&!audio.paused&&follow&&attached&&!document.hidden){const rect=activeWord.getBoundingClientRect();if(rect.top<70||rect.bottom>readingBottom())scrollToNode(activeWord);}}
   returnControl();if(!audio.paused&&Math.abs(t-lastSave)>5){lastSave=t;savePosition();}
   if('mediaSession'in navigator&&navigator.mediaSession.setPositionState&&d>0){try{navigator.mediaSession.setPositionState({duration:d,position:Math.min(t,d),playbackRate:rate});}catch{}}
 }
 function updateDone(){if(!week)return;const done=!!progress().done;$('mark-done').textContent=done?'Finished':'Mark finished';$('mark-done').setAttribute('aria-pressed',String(done));}
-function syncPlay(){const playing=!audio.paused;$('play').innerHTML=playing?pauseIcon:playIcon;$('play').setAttribute('aria-label',playing?'Pause':'Play');if('mediaSession'in navigator)navigator.mediaSession.playbackState=playing?'playing':'paused';}
+function syncPlay(){if(!audioControls&&!audio.paused){audio.pause();return;}const playing=!audio.paused;$('play').innerHTML=playing?pauseIcon:playIcon;$('play').setAttribute('aria-label',playing?'Pause':'Play');if('mediaSession'in navigator)navigator.mediaSession.playbackState=playing?'playing':'paused';}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('Link copied.');}catch{window.prompt('Copy this link:',text);}}
 
 /* Reviewed references travel with each released packet, never with a global spoiler index. */
@@ -483,7 +532,7 @@ function chooseVisibility(mode){if(mode===previewMode)return;previewMode=mode;co
 $('visibility-pill').addEventListener('click',()=>chooseVisibility(previewMode==='all'?'released':'all'));
 $('visibility-pill').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();chooseVisibility(e.key==='ArrowLeft'?'all':'released');}});
 $('preview-date').addEventListener('change',()=>{if(!$('preview-date').value)return;asOf=$('preview-date').value;history.replaceState(null,'','?'+new URLSearchParams({preview:'released',asOf})+location.hash);loadCatalog().catch(displayError);});
-function chooseCodec(value){if(codec===value)return;const time=audio.currentTime,playing=!audio.paused;codec=value;saved.codec=codec;persist();syncPill('codec-pill',codec,'codec');if(week){setAudio(time);if(playing)audio.play().catch(displayPlaybackError);}}
+function chooseCodec(value){if(codec===value)return;const time=deferredAudioTime??audio.currentTime,playing=audioControls&&!audio.paused;codec=value;saved.codec=codec;persist();syncPill('codec-pill',codec,'codec');if(week){setAudio(time);if(playing)audio.play().catch(displayPlaybackError);}}
 $('codec-pill').addEventListener('click',()=>chooseCodec(codec==='opus'?'mp3':'opus'));
 $('codec-pill').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();chooseCodec(e.key==='ArrowLeft'?'opus':'mp3');}});
 $('follow').addEventListener('click',()=>{follow=!follow;saved.follow=follow;persist();$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));attached=follow;returnControl();});
@@ -496,10 +545,10 @@ $('share').addEventListener('click',()=>{if(week)copy(new URL(location.pathname+
 $('copy-feed').addEventListener('click',()=>copy(new URL(resource('feed.xml'),location.href).href));
 let textDown=null;
 $('reader').addEventListener('pointerdown',e=>{textDown={x:e.clientX,y:e.clientY};});
-$('reader').addEventListener('click',e=>{const word=e.target.closest('.timed');if(!word||!textDown||Math.hypot(e.clientX-textDown.x,e.clientY-textDown.y)>8||window.getSelection()?.toString())return;const timing=times.find(row=>row[0]===Number(word.dataset.w));if(timing){attached=true;seek(timing[1]/1000);}});
+$('reader').addEventListener('click',e=>{const word=e.target.closest('.timed');if(!audioControls||!word||!textDown||Math.hypot(e.clientX-textDown.x,e.clientY-textDown.y)>8||window.getSelection()?.toString())return;const timing=times.find(row=>row[0]===Number(word.dataset.w));if(timing){attached=true;seek(timing[1]/1000);}});
 for(const event of ['wheel','touchmove'])window.addEventListener(event,()=>{userScrollIntent=performance.now()+600;if(follow)attached=false;},{passive:true});
 window.addEventListener('scroll',()=>{if(performance.now()>programmaticUntil&&performance.now()<userScrollIntent)attached=false;returnControl();clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{const el=document.elementFromPoint(Math.min(innerWidth-20,Math.max(20,innerWidth/2)),Math.min(innerHeight/2,200));const block=el?.closest('#reader [id]');if(block){readingBlock=block.id;savePosition();}},300);},{passive:true});
-window.addEventListener('keydown',e=>{const editing=e.target.closest('textarea,[contenteditable=true],input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])');if(editing||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();e.stopPropagation();if(!e.repeat)togglePlay();}else if(e.target===document.body&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();seek(audio.currentTime+(e.key==='ArrowLeft'?-15:15));}},{capture:true});
+window.addEventListener('keydown',e=>{const editing=e.target.closest('textarea,[contenteditable=true],input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])');if(!audioControls||editing||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();e.stopPropagation();if(!e.repeat)togglePlay();}else if(e.target===document.body&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();seek(audio.currentTime+(e.key==='ArrowLeft'?-15:15));}},{capture:true});
 document.addEventListener('pointerup',e=>{const b=e.target.closest('button');if(b)queueMicrotask(()=>b.blur());});
 audio.addEventListener('timeupdate',()=>{if(!document.hidden)updatePlayback();});
 audio.addEventListener('play',syncPlay);audio.addEventListener('pause',()=>{syncPlay();savePosition();});
@@ -508,7 +557,7 @@ audio.addEventListener('error',()=>{if(audio.getAttribute('src')){$('status').te
 document.addEventListener('visibilitychange',()=>{savePosition();if(!document.hidden)updatePlayback();});window.addEventListener('pagehide',savePosition);
 window.addEventListener('hashchange',()=>{const m=location.hash.match(/^#(week-\d\d)(?:@([\d.]+))?$/);if(m&&catalog)loadWeek(m[1],m[2]===undefined?null:Number(m[2])).catch(displayError);});
 window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open)syncPill('codec-pill',codec,'codec');});
-if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>audio.play().catch(displayPlaybackError),pause:()=>audio.pause(),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
+if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{if(audioControls)audio.play().catch(displayPlaybackError);},pause:()=>audio.pause(),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
 bindDrag('speed',()=>rate,setRate,.05,6,.5,3);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
 new ResizeObserver(entries=>{document.documentElement.style.setProperty('--player-height',entries[0].target.getBoundingClientRect().height+'px');}).observe(document.querySelector('.transport'));
 loadCatalog().then(()=>{

@@ -9,7 +9,11 @@
     // Apply a saved override before the stylesheet paints; otherwise follow the device.
     (() => {
       let theme;
-      try { theme = JSON.parse(localStorage.getItem('readalong-metropolitan-man-seven-v1') || '{}').theme; } catch {}
+      try {
+        const preferences = JSON.parse(localStorage.getItem('readalong-metropolitan-man-seven-v1') || '{}');
+        theme = preferences.theme;
+        document.documentElement.dataset.audioControls = preferences.audioControls === false ? 'off' : 'on';
+      } catch {}
       const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       document.querySelector('meta[name="theme-color"]').content = dark ? '#181c1b' : '#f7f5ef';
@@ -17,8 +21,8 @@
   </script>
   <title>The Metropolitan Man</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css?v=metropolitan-ui-20261017">
-  <link rel="stylesheet" href="player.css?v=metropolitan-ui-20261017">
+  <link rel="stylesheet" href="styles.css?v=metropolitan-ui-20261018">
+  <link rel="stylesheet" href="player.css?v=metropolitan-ui-20261018">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · MP3" href="feed.xml">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · Opus" href="feed-opus.xml">
   <meta name="dzc-annotations" content="metropolitan-man">
@@ -128,11 +132,14 @@
   <dialog id="settings-dialog"><div class="dialog-heading"><h2>Reader</h2><button type="button" data-close>Close</button></div>
     <div class="setting"><label for="theme-mode">Theme</label><select id="theme-mode"><option value="system">Device</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
     <div class="setting"><span>Text size</span><button id="font-size" class="drag-number" type="button" role="spinbutton" aria-label="Text size; drag vertically or use arrow keys" aria-valuemin="14" aria-valuemax="28" aria-valuenow="19" data-value="19">19</button></div>
+    <div class="setting"><span>Audio controls</span><div id="audio-controls-pill" class="pill" role="group" aria-label="Audio controls" title="Off hides the player and return arrow, pauses audio, and turns off word seeking."><span class="thumb" aria-hidden="true"></span><button type="button" data-controls="on" aria-pressed="true">On</button><button type="button" data-controls="off" aria-pressed="false">Off</button></div></div>
+    <div id="audio-settings">
     <div class="setting"><span>Follow narration</span><button id="follow" type="button" aria-pressed="true">On</button></div>
     <div class="setting"><span>Audio format</span><div id="codec-pill" class="pill" role="group" aria-label="Audio format"><span class="thumb" aria-hidden="true"></span><button type="button" data-codec="opus" aria-pressed="true">Opus</button><button type="button" data-codec="mp3" aria-pressed="false">MP3</button></div></div>
     <p id="codec-detail" class="muted small"></p><a id="download" download>Download this assignment</a>
     <p class="muted small">Drag numbers up/down, or focus them and use arrow keys. Click a timed word to seek. Space plays/pauses; ←/→ skip 15 seconds.</p>
     <p id="alignment-detail" class="muted small"></p>
+    </div>
   </dialog>
   <dialog id="subscribe-dialog" aria-labelledby="subscribe-title">
     <div class="dialog-heading"><h2 id="subscribe-title">Listen</h2><button type="button" data-close aria-label="Close podcast apps">Close</button></div>
@@ -148,6 +155,6 @@
     </nav>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js?v=metropolitan-ui-20261017" defer></script>
+  <script src="app.js?v=metropolitan-ui-20261018" defer></script>
 </body>
 </html>

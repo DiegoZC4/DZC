@@ -103,7 +103,17 @@ body { padding-bottom: calc(var(--player-height) + 30px); }
 
 /* Only book-specific adjustments; the reader/player remains the Unsong UI. */
 #search-biblehub[hidden], #clock-label[hidden] { display: none !important; }
-.topbar .brand { min-width: 0; max-width: 180px; line-height: 1.15; letter-spacing: 0; }
+/* Apply before first paint too, so restoring text-only mode never flashes a dock. */
+html[data-audio-controls="off"] { --player-height: 0px !important; }
+html[data-audio-controls="off"] .transport,
+html[data-audio-controls="off"] #return-audio,
+html[data-audio-controls="off"] #audio-settings { display: none !important; }
+html[data-audio-controls="off"] body { padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
+html[data-audio-controls="off"] #reader .reader-word.timed { cursor: text; }
+html[data-audio-controls="off"] #reader .reader-word.active { outline: none; background: none; box-shadow: none; }
+#audio-controls-pill { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#audio-controls-pill button { min-height: 38px; min-width: 44px; }
+.topbar .brand { min-width: 0; max-width: 180px; line-height: 1.15; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
 .topbar nav { flex-shrink: 0; }
 .podcast-app[aria-disabled="true"] { opacity: .5; cursor: default; }
 #reader .scene-break { border: 0; text-align: center; margin: 1.3em 0; color: var(--muted); }

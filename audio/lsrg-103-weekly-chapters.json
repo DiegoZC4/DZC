@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#103 - Anthropomorphic Optimism",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for October 20, 2026.",
+  "fileName": "lsrg-103-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0,
+      "endTime": 527.7,
+      "title": "Anthropomorphic Optimism",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/RcZeZt8cPk48xxiQ8"
+    },
+    {
+      "startTime": 527.7,
+      "endTime": 1292.8265310000002,
+      "title": "Lost Purposes",
+      "url": "https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/sP2Hg6uPwpfp3jZJN"
+    },
+    {
+      "startTime": 1292.8265310000002,
+      "endTime": 1452.626531,
+      "title": "The Parable of the Dagger",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/hQxYBfu2LPc9Ydo6w"
+    },
+    {
+      "startTime": 1452.626531,
+      "endTime": 1910.0306130000001,
+      "title": "The Parable of Hemlock",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/bcM5ft8jvsffsZZ4Y"
+    },
+    {
+      "startTime": 1910.0306130000001,
+      "endTime": 4087.23,
+      "title": "(Optional) The Categories Were Made For Man, Not Man For The Categories",
+      "url": "https://slatestarcodex.com/2014/11/21/the-categories-were-made-for-man-not-man-for-the-categories/"
+    }
+  ]
+}

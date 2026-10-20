@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 13 Oct 2026 16:56:08 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 20 Oct 2026 01:15:34 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,41 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#103 - Anthropomorphic Optimism</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-103</link>
+      <guid isPermaLink="false">urn:lsrg:103:weekly</guid>
+      <pubDate>Tue, 20 Oct 2026 01:15:34 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Anthropomorphic Optimism by Eliezer Yudkowsky
+https://www.lesswrong.com/s/3HyeNiEpvbQQaqeoH/p/RcZeZt8cPk48xxiQ8
+
+8:48 - Lost Purposes by Eliezer Yudkowsky
+
+21:33 - The Parable of the Dagger by Eliezer Yudkowsky
+
+24:13 - The Parable of Hemlock by Eliezer Yudkowsky
+
+31:50 - (Optional) The Categories Were Made For Man, Not Man For The Categories by Scott Alexander
+https://slatestarcodex.com/2014/11/21/the-categories-were-made-for-man-not-man-for-the-categories/
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-103
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+Astral Codex Ten Podcast
+https://sscpodcast.libsyn.com/the-categories-were-made-for-man-not-man-for-the-categories
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>103</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>4087</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-103-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-103-weekly.m4a" length="25541635" type="audio/mp4" />
+    </item>
     <item>
       <title>#102 - Values and Wishes</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-102</link>

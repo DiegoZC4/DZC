@@ -15,6 +15,145 @@ let rate = Number(saved.rate) || 1, fontSize = Number(saved.fontSize) || 19, fol
 let previewMode = new URLSearchParams(location.search).get('preview') === 'released' ? 'released' : 'all';
 let asOf = new URLSearchParams(location.search).get('asOf') || new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const packetCache = new Map();
+// The catalog describes the verified full recording. A partial Ogg response
+// can look like a shorter, successfully ended file to the browser demuxer.
+let lastGoodAudioTime = 0, requestedAudioTime = null, resumeRequested = false;
+let recoveryAttempts = 0, recoveryPending = false, playbackFailed = false;
+let playbackIntent = false;
+
+function expectedAudioDuration() { return week?.audio[codec]?.duration || week?.duration || 0; }
+function boundedAudioTime(value) {
+  return Math.max(0, Math.min(Number(value) || 0, expectedAudioDuration()));
+}
+function audioDurationMatches() {
+  return Number.isFinite(audio.duration) && Math.abs(audio.duration - expectedAudioDuration()) <= 1;
+}
+function playbackPosition() {
+  if (deferredAudioTime !== null) return boundedAudioTime(deferredAudioTime);
+  if (requestedAudioTime !== null) return boundedAudioTime(requestedAudioTime);
+  if (playbackFailed || recoveryPending || !audioDurationMatches()) return lastGoodAudioTime;
+  // An erroneous ended event must not replace a useful bookmark with EOF.
+  if (audio.ended && lastGoodAudioTime < expectedAudioDuration() - 2) return lastGoodAudioTime;
+  return boundedAudioTime(audio.currentTime);
+}
+function pausePlayback() { resumeRequested = false;playbackIntent = false;audio.pause();syncPlay(); }
+
+function recoverAudio(reason, resume = resumeRequested || playbackIntent || !audio.paused) {
+  if (!audioControls || !week?.audio[codec] || recoveryPending || playbackFailed) return;
+  const position = playbackPosition(), token = mediaToken;
+  deferredAudioTime = position;
+  requestedAudioTime = position;
+  audio.pause();
+  resumeRequested = resume;
+  if (recoveryAttempts >= 2) {
+    playbackFailed = true;
+    resumeRequested = false;playbackIntent = false;
+    $('status').textContent = 'Audio download interrupted. Press Play to retry from your position.';
+    syncPlay();savePosition();return;
+  }
+  recoveryAttempts++;
+  recoveryPending = true;
+  $('status').textContent = 'Reconnecting audio at your position…';
+  console.warn('Recovering incomplete audio stream:', reason);
+  queueMicrotask(() => {
+    if (token !== mediaToken || !audioControls) return;
+    // First bypass a damaged cached response, then use the independent codec.
+    if (recoveryAttempts === 2) {
+      const other = codec === 'opus' ? 'mp3' : 'opus';
+      if (week.audio[other]) { codec = other;syncPill('codec-pill',codec,'codec'); }
+    }
+    setAudio(position, {resume:resumeRequested});
+  });
+}
+
+function setAudio(time = 0, recovery = null) {
+  const token = ++mediaToken;
+  audio.pause();
+  recoveryPending = false;playbackFailed = false;
+  resumeRequested = !!recovery?.resume;
+  playbackIntent = resumeRequested;
+  if (!recovery) recoveryAttempts = 0;
+  const desired = boundedAudioTime(time);
+  deferredAudioTime = desired;requestedAudioTime = desired;lastGoodAudioTime = desired;
+  if (!audioControls) {
+    resumeRequested = false;audio.removeAttribute('src');delete audio.dataset.week;audio.load();return;
+  }
+  const media = week.audio[codec];
+  $('play').disabled = !media;
+  if (!media) { audio.removeAttribute('src');audio.load();return; }
+  const url = new URL(resource(media.path),location.href);
+  if (recovery) url.searchParams.set('audio-retry',Date.now()+'-'+token);
+  audio.dataset.week = week.id;audio.src = url.href;audio.playbackRate = rate;
+  audio.addEventListener('loadedmetadata', () => {
+    if (token !== mediaToken || audio.src !== url.href) return;
+    if (!audioDurationMatches()) { recoverAudio('duration differs from verified recording');return; }
+    audio.currentTime = requestedAudioTime ?? desired;
+    deferredAudioTime = null;audio.playbackRate = rate;updatePlayback();
+    $('status').textContent = '';
+    if (resumeRequested) audio.play().catch(error => {
+      if (token !== mediaToken) return;
+      resumeRequested = false;displayPlaybackError(error);syncPlay();
+    });
+  }, {once:true});
+  audio.load();$('seek').max = media.duration;$('seek').value = desired;$('chapter-ticks').replaceChildren();
+  for (const chapter of week.chapters.slice(1)) {
+    const tick = document.createElement('i');tick.style.left = (100*chapter.start/media.duration)+'%';$('chapter-ticks').append(tick);
+  }
+  updateStats();updatePlayback();syncPlay();
+  if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({title:week.label,artist:'Eneasz Brodski · Alexander Wales',album:'The Metropolitan Man'});
+}
+
+function seek(value) {
+  if (!audioControls || !week?.audio[codec]) return;
+  const desired = boundedAudioTime(value);
+  requestedAudioTime = desired;lastGoodAudioTime = desired;
+  if (deferredAudioTime !== null) deferredAudioTime = desired;
+  if (playbackFailed || audio.error) {
+    const resume = resumeRequested || !audio.paused;
+    recoveryAttempts = 0;setAudio(desired,{resume});
+  } else if (audio.readyState >= 1 && !audioDurationMatches()) {
+    recoverAudio('seek against an incomplete recording');
+  } else if (audio.readyState >= 1) audio.currentTime = desired;
+  updatePlayback();savePosition();
+}
+
+async function togglePlay() {
+  if (!audioControls || !week || $('play').disabled) return;
+  if (resumeRequested || !audio.paused) { pausePlayback();return; }
+  resumeRequested = true;
+  if (playbackFailed || audio.error) {
+    recoveryAttempts = 0;setAudio(playbackPosition(),{resume:true});return;
+  }
+  if (audio.readyState < 1) { syncPlay();return; }
+  if (!audioDurationMatches()) { recoverAudio('play against an incomplete recording',true);return; }
+  try { await audio.play(); } catch (error) { resumeRequested = false;displayPlaybackError(error);syncPlay(); }
+}
+function startPlayback() {
+  if (audioControls && audio.paused && !resumeRequested) return togglePlay();
+}
+
+audio.addEventListener('timeupdate', () => {
+  if (!audioControls || recoveryPending || playbackFailed || audio.seeking || audio.ended || !audioDurationMatches()) return;
+  if (requestedAudioTime !== null && Math.abs(audio.currentTime-requestedAudioTime)>1) return;
+  requestedAudioTime = null;lastGoodAudioTime = audio.currentTime;
+});
+audio.addEventListener('seeked', () => {
+  if (recoveryPending || playbackFailed || requestedAudioTime === null || !audioDurationMatches()) return;
+  if (Math.abs(audio.currentTime-requestedAudioTime)>1) { recoverAudio('seek did not reach its target');return; }
+  lastGoodAudioTime = audio.currentTime;requestedAudioTime = null;
+});
+audio.addEventListener('playing', () => { resumeRequested = false;playbackIntent = true; });
+audio.addEventListener('durationchange', () => {
+  if (audio.readyState >= 1 && Number.isFinite(audio.duration) && !audioDurationMatches()) recoverAudio('recording duration changed');
+});
+audio.addEventListener('ended', () => {
+  if (lastGoodAudioTime < expectedAudioDuration()-2 || !audioDurationMatches()) { recoverAudio('premature end of recording');return; }
+  resumeRequested = false;playbackIntent = false;syncPlay();savePosition();toast('Assignment finished. Audio stopped here.');
+});
+audio.addEventListener('error', () => {
+  if (audio.getAttribute('src')) recoverAudio(audio.error?.message || 'media download error');
+});
+
 // Inlined by the Metropolitan adapter; the shared Unsong template is unchanged.
 let audioControls = saved.audioControls !== false;
 let deferredAudioTime = null;
@@ -32,7 +171,7 @@ function syncAudioControls() {
 
 function chooseAudioControls(visible) {
   if (visible === audioControls) return;
-  audio.pause();
+  pausePlayback();
   savePosition();
   const position = deferredAudioTime ?? (week && audio.dataset.week === week.id ? audio.currentTime : 0);
   audioControls = visible;
@@ -94,7 +233,7 @@ function discussionDateLabel(value, number) { if(!value)return number?'Reading '
 function syncPill(id, value, attr) { const parent = $(id), buttons = [...parent.querySelectorAll('button')]; for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset[attr] === value)); const selected=buttons.find(b=>b.dataset[attr]===value); if(!selected) return; const thumb=parent.querySelector('.thumb'); thumb.style.width=selected.offsetWidth+'px'; thumb.style.height=selected.offsetHeight+'px'; thumb.style.transform='translateX('+(selected.offsetLeft-3)+'px)'; }
 function safeFetch(path,options) { return fetch(path,options).then(r=>{if(!r.ok) throw Error('Could not load '+path.split('?')[0]+' ('+r.status+').'); return r.json();}); }
 function progress() { return saved.weeks[week.id] ||= {}; }
-function savePosition() { if (!week) return; const p=progress(); if (audio.dataset.week===week.id && audio.src && Number.isFinite(audio.currentTime)) p.time=deferredAudioTime??audio.currentTime; if(readingBlock) p.block=readingBlock; saved.lastWeek=week.id; persist(); }
+function savePosition() { if (!week) return; const p=progress(); if (audio.dataset.week===week.id && audio.src && Number.isFinite(audio.currentTime)) p.time=playbackPosition(); if(readingBlock) p.block=readingBlock; saved.lastWeek=week.id; persist(); }
 function displayError(error) { $('status').textContent = error.message || String(error); }
 // Pausing, scrubbing or switching files may cancel a queued play request normally.
 function displayPlaybackError(error) { if(error?.name !== 'AbortError') displayError(error); }
@@ -131,7 +270,7 @@ function renderSchedule() {
 }
 async function loadCatalog(preferred) {
   resetSearch();$('search-open').disabled=true;
-  savePosition();audio.pause();const token=++loading;const data=await safeFetch(resource('data/catalog.json'));if(token!==loading)return;
+  savePosition();pausePlayback();const token=++loading;const data=await safeFetch(resource('data/catalog.json'));if(token!==loading)return;
   catalog=data;$('preview').hidden=!(local&&catalog.localOnly);$('clock-label').hidden=!catalog.scheduleConfigured||previewMode==='all';$('preview-date').value=asOf;syncPill('visibility-pill',previewMode,'mode');
   const hash=location.hash.slice(1).match(/^(week-\d\d)(?:@([\d.]+))?$/);const requested=preferred||hash?.[1];
   let target=catalog.weeks.find(w=>w.id===requested&&w.available);
@@ -146,7 +285,7 @@ async function loadCatalog(preferred) {
 async function loadWeek(id, explicitTime=null) {
   const next=catalog.weeks.find(w=>w.id===id&&w.available);if(!next)throw Error('This reading is not yet available.');
   clearTimeout(toastTimer);$('toast').hidden=true;
-  savePosition();audio.pause();const token=++loading;$('status').textContent='Loading reading…';$('play').disabled=true;$('share').disabled=true;
+  savePosition();pausePlayback();const token=++loading;$('status').textContent='Loading reading…';$('play').disabled=true;$('share').disabled=true;
   const key=next.packet;let data=packetCache.get(key);if(!data){data=await safeFetch(resource(key));packetCache.set(key,data);}if(token!==loading)return;
   week=next;packet=data;readingBlock=null;activeWord=null;attached=true;wordNodes.clear();times=packet.timings;
   $('reader').innerHTML=packet.html;
@@ -182,30 +321,12 @@ async function loadWeek(id, explicitTime=null) {
   history.replaceState(null,'',location.pathname+location.search+'#'+week.id+(explicitTime!==null?'@'+explicitTime.toFixed(2):''));
   requestAnimationFrame(()=>{if(restoreBlock&&$(restoreBlock))scrollToNode($(restoreBlock),'instant');else window.scrollTo({top:0,behavior:'instant'});});
 }
-function setAudio(time=0) {
-  if(!audioControls){
-    deferredAudioTime=time;++mediaToken;audio.pause();audio.removeAttribute('src');
-    delete audio.dataset.week;audio.load();return;
-  }
-  deferredAudioTime=time;
-  const media=week.audio[codec];const token=++mediaToken;audio.pause();$('play').disabled=!media;
-  if(!media){audio.removeAttribute('src');audio.load();return;}
-  const desired=Math.max(0,Math.min(time,media.duration)), url=new URL(resource(media.path),location.href).href;
-  audio.dataset.week=week.id;audio.src=url;audio.playbackRate=rate;
-  const once=()=>{if(token===mediaToken&&audio.src===url){audio.currentTime=desired;deferredAudioTime=null;audio.playbackRate=rate;updatePlayback();}audio.removeEventListener('loadedmetadata',once);};
-  audio.addEventListener('loadedmetadata',once);audio.load();$('seek').max=media.duration;$('seek').value=desired;$('chapter-ticks').replaceChildren();
-  for(const c of week.chapters.slice(1)){const tick=document.createElement('i');tick.style.left=(100*c.start/media.duration)+'%';$('chapter-ticks').append(tick);}
-  updateStats();updatePlayback();
-  if('mediaSession'in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:week.label,artist:'Eneasz Brodski · Alexander Wales',album:'The Metropolitan Man'});}
-}
-function seek(value) { if(!audioControls||!week||!week.audio[codec])return;audio.currentTime=Math.max(0,Math.min(value,Number.isFinite(audio.duration)?audio.duration:week.duration));updatePlayback();savePosition(); }
-async function togglePlay() { if(!audioControls||!week||$('play').disabled)return;if(audio.paused){try{await audio.play();}catch(e){displayPlaybackError(e);}}else audio.pause(); }
 function scrollToNode(node, behavior='smooth') { if(!node)return;programmaticUntil=performance.now()+900;node.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':behavior}); }
 function findWord(t) { let lo=0,hi=times.length;while(lo<hi){const mid=(lo+hi)>>>1;if(times[mid][1]<=t*1000)lo=mid+1;else hi=mid;}const row=times[lo-1];return row&&t*1000-row[1]<1800?wordNodes.get(row[0]):null; }
 function readingBottom() { return audioControls?document.querySelector('.transport').getBoundingClientRect().top-16:innerHeight-16; }
 function returnControl() { if(!audioControls||!activeWord||!follow){$('return-audio').hidden=true;return;}const rect=activeWord.getBoundingClientRect();const outside=rect.top<65||rect.bottom>readingBottom();$('return-audio').hidden=!outside||attached;$('return-audio').setAttribute('aria-label',rect.top<65?'Return up to narration':'Return down to narration');$('return-audio').querySelector('svg').style.transform=rect.top<65?'':'rotate(180deg)'; }
 function updatePlayback() {
-  if(!week)return;const t=audio.currentTime||0,d=week.audio[codec]?.duration||week.duration;
+  if(!week)return;const t=playbackPosition(),d=week.audio[codec]?.duration||week.duration;
   $('seek').value=t;$('elapsed').textContent=duration(t);
   $('time').textContent=showRemaining?'−'+duration((d-t)/rate):duration(d);
   $('time').setAttribute('aria-label',showRemaining?'Show total audio duration':'Show remaining listening time at '+rate+'×');
@@ -218,7 +339,7 @@ function updatePlayback() {
   if('mediaSession'in navigator&&navigator.mediaSession.setPositionState&&d>0){try{navigator.mediaSession.setPositionState({duration:d,position:Math.min(t,d),playbackRate:rate});}catch{}}
 }
 function updateDone(){if(!week)return;const done=!!progress().done;$('mark-done').textContent=done?'Finished':'Mark finished';$('mark-done').setAttribute('aria-pressed',String(done));}
-function syncPlay(){if(!audioControls&&!audio.paused){audio.pause();return;}const playing=!audio.paused;$('play').innerHTML=playing?pauseIcon:playIcon;$('play').setAttribute('aria-label',playing?'Pause':'Play');if('mediaSession'in navigator)navigator.mediaSession.playbackState=playing?'playing':'paused';}
+function syncPlay(){if(!audioControls&&!audio.paused){pausePlayback();return;}const playing=resumeRequested||!audio.paused;$('play').innerHTML=playing?pauseIcon:playIcon;$('play').setAttribute('aria-label',playing?'Pause':'Play');if('mediaSession'in navigator)navigator.mediaSession.playbackState=playing?'playing':'paused';}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('Link copied.');}catch{window.prompt('Copy this link:',text);}}
 
 /* Reviewed references travel with each released packet, never with a global spoiler index. */
@@ -532,12 +653,12 @@ function chooseVisibility(mode){if(mode===previewMode)return;previewMode=mode;co
 $('visibility-pill').addEventListener('click',()=>chooseVisibility(previewMode==='all'?'released':'all'));
 $('visibility-pill').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();chooseVisibility(e.key==='ArrowLeft'?'all':'released');}});
 $('preview-date').addEventListener('change',()=>{if(!$('preview-date').value)return;asOf=$('preview-date').value;history.replaceState(null,'','?'+new URLSearchParams({preview:'released',asOf})+location.hash);loadCatalog().catch(displayError);});
-function chooseCodec(value){if(codec===value)return;const time=deferredAudioTime??audio.currentTime,playing=audioControls&&!audio.paused;codec=value;saved.codec=codec;persist();syncPill('codec-pill',codec,'codec');if(week){setAudio(time);if(playing)audio.play().catch(displayPlaybackError);}}
+function chooseCodec(value){if(codec===value)return;const time=playbackPosition(),playing=audioControls&&!audio.paused;codec=value;saved.codec=codec;persist();syncPill('codec-pill',codec,'codec');if(week){setAudio(time);if(playing)startPlayback();}}
 $('codec-pill').addEventListener('click',()=>chooseCodec(codec==='opus'?'mp3':'opus'));
 $('codec-pill').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();chooseCodec(e.key==='ArrowLeft'?'opus':'mp3');}});
 $('follow').addEventListener('click',()=>{follow=!follow;saved.follow=follow;persist();$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));attached=follow;returnControl();});
-$('play').addEventListener('click',togglePlay);$('back').addEventListener('click',()=>seek(audio.currentTime-15));$('forward').addEventListener('click',()=>seek(audio.currentTime+15));$('time').addEventListener('click',()=>{showRemaining=!showRemaining;updatePlayback();});
-let wasPlaying=false;$('seek').addEventListener('pointerdown',()=>{wasPlaying=!audio.paused;audio.pause();});$('seek').addEventListener('input',()=>seek(Number($('seek').value)));$('seek').addEventListener('change',()=>{if(wasPlaying)audio.play().catch(displayPlaybackError);wasPlaying=false;});$('seek').addEventListener('pointercancel',()=>{wasPlaying=false;});
+$('play').addEventListener('click',togglePlay);$('back').addEventListener('click',()=>seek(playbackPosition()-15));$('forward').addEventListener('click',()=>seek(playbackPosition()+15));$('time').addEventListener('click',()=>{showRemaining=!showRemaining;updatePlayback();});
+let wasPlaying=false;$('seek').addEventListener('pointerdown',()=>{wasPlaying=!audio.paused;pausePlayback();});$('seek').addEventListener('input',()=>seek(Number($('seek').value)));$('seek').addEventListener('change',()=>{if(wasPlaying)startPlayback();wasPlaying=false;});$('seek').addEventListener('pointercancel',()=>{wasPlaying=false;});
 $('return-audio').addEventListener('click',()=>{attached=true;scrollToNode(activeWord);$('return-audio').hidden=true;});
 $('mark-done').addEventListener('click',()=>{progress().done=!progress().done;persist();updateDone();renderSchedule();});
 $('next-week').addEventListener('click',()=>{const next=catalog.weeks[week.number];if(next?.available)loadWeek(next.id).catch(displayError);});
@@ -552,12 +673,10 @@ window.addEventListener('keydown',e=>{const editing=e.target.closest('textarea,[
 document.addEventListener('pointerup',e=>{const b=e.target.closest('button');if(b)queueMicrotask(()=>b.blur());});
 audio.addEventListener('timeupdate',()=>{if(!document.hidden)updatePlayback();});
 audio.addEventListener('play',syncPlay);audio.addEventListener('pause',()=>{syncPlay();savePosition();});
-audio.addEventListener('ended',()=>{syncPlay();savePosition();toast('Assignment finished. Audio stopped here.');});
-audio.addEventListener('error',()=>{if(audio.getAttribute('src')){$('status').textContent='Audio could not load. Try the other format in Reader settings, or reload after encoding finishes.';syncPlay();}});
 document.addEventListener('visibilitychange',()=>{savePosition();if(!document.hidden)updatePlayback();});window.addEventListener('pagehide',savePosition);
 window.addEventListener('hashchange',()=>{const m=location.hash.match(/^#(week-\d\d)(?:@([\d.]+))?$/);if(m&&catalog)loadWeek(m[1],m[2]===undefined?null:Number(m[2])).catch(displayError);});
 window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open)syncPill('codec-pill',codec,'codec');});
-if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{if(audioControls)audio.play().catch(displayPlaybackError);},pause:()=>audio.pause(),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
+if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{if(audioControls)startPlayback();},pause:()=>pausePlayback(),seekbackward:d=>seek(playbackPosition()-(d.seekOffset||15)),seekforward:d=>seek(playbackPosition()+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
 bindDrag('speed',()=>rate,setRate,.05,6,.5,3);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
 new ResizeObserver(entries=>{document.documentElement.style.setProperty('--player-height',entries[0].target.getBoundingClientRect().height+'px');}).observe(document.querySelector('.transport'));
 loadCatalog().then(()=>{

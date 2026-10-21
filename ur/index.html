@@ -72,6 +72,13 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
  .player-name{font-size:11px}.players{gap:4px;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr)}.color-pair{width:34px;height:24px}.controller-pill{font-size:8px}
 }
 @media(prefers-reduced-motion:reduce){.controller-pill::before{transition:none}.stone{animation:none!important}}
+.settings-toggle{width:40px;min-height:38px;padding:8px;display:grid;place-items:center;flex:none}.settings-toggle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#settings-dialog{width:350px;padding:20px;max-height:calc(100dvh - 24px);overscroll-behavior:contain}#settings-dialog h2{font-size:21px;margin-bottom:16px}#settings-dialog .settings{display:grid;gap:16px;border:0;padding:0;grid-column:auto;grid-row:auto}#settings-dialog .close{min-width:36px;min-height:36px;margin:-6px -6px 0 8px}
+.rules-setting{display:grid;gap:7px}.rules-setting>label{font-size:13px;color:var(--muted)}.rule-description,.rule-apply{font-size:13px;line-height:1.5;margin:0}.rule-apply{font-size:12px;color:var(--muted)}.rule-source{font-size:12px;width:fit-content}
+.infinite-pager{position:relative;height:42px;overflow:hidden;border:1px solid #bbb;border-radius:7px;background:#fafafa;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}.infinite-pager.dragging{cursor:grabbing}.infinite-pager:focus-visible{outline:2px solid #555;outline-offset:3px}.infinite-pager[aria-disabled="true"]{opacity:.5;cursor:default}.infinite-pager-layer{position:absolute;inset:0;display:grid;place-items:center;font-size:15px;font-weight:550;pointer-events:none}
+#settings-dialog .check{font-size:13px;min-height:36px;gap:7px}#settings-dialog .check input{width:18px;height:18px}#settings-dialog .setting-toggles{grid-template-columns:1fr 1fr;gap:7px}#settings-dialog .pace-controls{gap:5px}#settings-dialog .pace-controls>span{font-size:13px}#settings-dialog .pace-controls button{font-size:12px;min-height:36px;padding:7px 3px}
+@media(max-width:600px){.top-actions{gap:8px}.settings-toggle{width:36px;min-height:34px;padding:6px}}
+@media(max-width:950px) and (orientation:landscape) and (max-height:600px){.control-panel .tools{grid-column:2;grid-row:1/3;align-self:center}.control-panel .notice{grid-row:3}}
 </style>
 </head>
 <body>
@@ -80,7 +87,7 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
  <div class="game-main" id="game-main">
   <header class="top">
     <div class="brand"><h1>Ur</h1></div>
-    <div class="top-actions"><button id="new-game" class="primary new-game" aria-label="Hold to start a new game"><span>New game <small>hold</small></span></button><button id="mobile-moves-toggle" class="mobile-moves-toggle" aria-expanded="false" aria-controls="move-sidebar">Moves</button></div>
+    <div class="top-actions"><button id="new-game" class="primary new-game" aria-label="Hold to start a new game"><span>New game <small>hold</small></span></button><button id="mobile-moves-toggle" class="mobile-moves-toggle" aria-expanded="false" aria-controls="move-sidebar">Moves</button><button id="settings-toggle" class="settings-toggle" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-dialog" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.2-1.7 1-2.2-.6-2.5 4.3 1.6 1.6v2l-1.6 1.6L5 19.4l2.2-.6 1.7 1 .6 2.2h5l.6-2.2 1.7-1 2.2.6 2.5-4.3-1.6-1.6v-2l1.6-1.6L19 5.6l-2.2.6-1.7-1-.6-2.2z" transform="translate(0 -1)"/><circle cx="12" cy="11.5" r="3.1"/></svg></button></div>
   </header>
   <div class="game-stage">
   <div class="board-column">
@@ -110,11 +117,6 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
   </div>
   <p class="notice" id="notice" role="status"></p>
   <p class="sr-only" id="move-review" role="status"></p>
-  <section class="settings" aria-label="Play settings">
-    <div class="rule-controls" role="group" aria-label="Rules for next game" title="Choose rules, then hold New game. Your current game is kept until then."><span>Next game</span><button data-rule="finkel" aria-pressed="true">Finkel</button><button data-rule="masters" aria-pressed="false">Masters</button><button data-rule="blitz" aria-pressed="false">Blitz</button><button data-rule="tournament" aria-pressed="false">Tournament</button></div>
-    <div class="setting-toggles"><label class="check"><input id="animate" type="checkbox">Animate</label><label class="check"><input id="eval-toggle" type="checkbox" checked>Evaluation</label><span id="eval-unavailable" class="eval-unavailable" hidden>Finkel only</span></div>
-    <div class="pace-controls" role="group" aria-label="Bot pace"><span>Bot pace</span><button data-pace="instant" aria-pressed="false">Instant</button><button data-pace="quick" aria-pressed="true">Quick</button><button data-pace="watch" aria-pressed="false">Leisurely</button></div>
-  </section>
   <p class="shortcut"><kbd>Space</kbd> roll · <kbd>1–7</kbd> piece<br><kbd>U</kbd> undo · <kbd>P</kbd> path · <kbd>?</kbd> help</p>
   </div>
   </div>
@@ -147,6 +149,20 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
   <p class="dialog-note">Oracle: 29,057 learned parameters distilled from RoyalUr’s solved Finkel table. The model, inference code, and legal-move engine are embedded; no server, GPU, or download is needed. Hints and ✓/✗ reviews compare moves using this model, not an exact table. Masters, Blitz, and Tournament are not supported by these weights.</p>
   <p class="dialog-note"><a href="https://github.com/tre-systems/rgou-cloudflare/blob/8f6d54916591bbb1590d260d41858b13e3a7b01f/docs/ORACLE-AI.md" target="_blank" rel="noopener noreferrer">Oracle model and methodology</a> · <a href="https://huggingface.co/sothatsit/RoyalUrModels" target="_blank" rel="noopener noreferrer">RoyalUr solved tables</a>. Oracle weights © 2025 Robert Gilks, MIT license (full notice embedded in this file).</p>
   <div class="source-list">Rule references, checked 25 September 2026:<br><a href="https://royalur.net/rules" target="_blank" rel="noopener noreferrer">RoyalUr — Finkel, Masters, Blitz &amp; Tournament</a><br><a href="https://www.tradgames.org.uk/games/Royal-Game-Ur.htm" target="_blank" rel="noopener noreferrer">James Masters — route and dice</a><br><a href="https://playur.org/" target="_blank" rel="noopener noreferrer">Société internationale d’Ur — Tournament Engine</a><br><a href="https://github.com/RosetteGames/royalur-java/blob/main/src/main/java/net/royalur/model/path/MastersPathPair.java" target="_blank" rel="noopener noreferrer">RoyalUr — reference route coordinates</a></div>
+</dialog>
+<dialog id="settings-dialog" aria-labelledby="settings-title">
+  <button class="close" data-close="settings-dialog" aria-label="Close settings" autofocus>×</button><h2 id="settings-title">Settings</h2>
+  <section class="settings" aria-label="Play settings">
+    <div class="rules-setting">
+      <label id="rule-label">Rules for next game</label>
+      <div id="rule-pager" class="infinite-pager" role="spinbutton" tabindex="0" aria-labelledby="rule-label" aria-describedby="rule-description rule-apply" title="Tap to advance; drag to browse."></div>
+      <p id="rule-description" class="rule-description"></p>
+      <a id="rule-source" class="rule-source" href="https://royalur.net/rules" target="_blank" rel="noopener noreferrer">RoyalUr’s rule comparison ↗</a>
+      <p id="rule-apply" class="rule-apply" aria-live="polite"></p>
+    </div>
+    <div class="setting-toggles"><label class="check"><input id="animate" type="checkbox">Animate</label><label class="check"><input id="eval-toggle" type="checkbox" checked>Evaluation</label><span id="eval-unavailable" class="eval-unavailable" hidden>Finkel only</span></div>
+    <div class="pace-controls" role="group" aria-label="Bot pace"><span>Bot pace</span><button data-pace="instant" aria-pressed="false">Instant</button><button data-pace="quick" aria-pressed="true">Quick</button><button data-pace="watch" aria-pressed="false">Leisurely</button></div>
+  </section>
 </dialog>
 <script id="ur-engine">
 /* Original compact engine. Published game rules/route references are in Rules.
@@ -346,6 +362,52 @@ const UrOracle = (() => {
     return {matches:loss<=1e-7,best:result.move,forced:result.ranked.length===1,loss,exact:false};
   }
   return {features,predict,value,analyze,choose:analyze,review};
+})();
+</script>
+<script id="ur-pager">
+/* Three recycled faces; visual movement never changes a setting until release. */
+const UrPager=(()=>{
+  const wrap=(i,n)=>((i%n)+n)%n;
+  function release(index,offset,height){return Math.abs(offset)>height/2?{index:index+(offset<0?1:-1),offset:offset<0?-height:height}:{index,offset:0};}
+  function bind(element,options,value){
+    let index=Math.max(0,options.findIndex(o=>o.value===value)),drag=null,pending=null,timer=null,ignoreClickUntil=0,lastWheel=-Infinity;
+    const layers=Array.from({length:3},()=>{const e=document.createElement('div');e.className='infinite-pager-layer';e.setAttribute('aria-hidden','true');element.appendChild(e);return e;});
+    const height=()=>element.clientHeight||40,disabled=()=>element.getAttribute('aria-disabled')==='true';
+    const transition=value=>layers.forEach(e=>e.style.transition=value);
+    function layout(center=index,offset=0){layers.forEach((e,i)=>{e.textContent=options[wrap(center+i-1,options.length)].label;e.style.transform=`translate3d(0,${offset+(i-1)*height()}px,0)`;});}
+    function sync(){element.dataset.value=options[index].value;element.setAttribute('aria-valuemin','0');element.setAttribute('aria-valuemax',String(options.length-1));element.setAttribute('aria-valuenow',String(index));element.setAttribute('aria-valuetext',options[index].label);}
+    function commit(next,emit=true){const changed=wrap(next,options.length)!==index;index=wrap(next,options.length);pending=null;transition('none');layout();sync();if(changed&&emit)element.dispatchEvent(new Event('input',{bubbles:true}));}
+    function finish(){clearTimeout(timer);timer=null;if(pending!==null)commit(pending);}
+    function snap(center,offset,next){pending=wrap(next,options.length);const ms=matchMedia('(prefers-reduced-motion: reduce)').matches?0:100;transition(`transform ${ms}ms ease-out`);layout(center,offset);if(!ms)commit(pending);else timer=setTimeout(()=>{timer=null;commit(pending);},ms);}
+    function step(direction){if(disabled()||drag)return;finish();snap(index,-direction*height(),index+direction);}
+    function cancel(){const previous=drag;drag=null;clearTimeout(timer);timer=null;pending=null;transition('none');layout();element.classList.remove('dragging');if(previous&&element.hasPointerCapture(previous.id))element.releasePointerCapture(previous.id);}
+    function dragAt(event){
+      const h=height(),dy=event.clientY-drag.y,whole=Math.trunc(dy/h);
+      drag.traveled=Math.max(drag.traveled,Math.hypot(event.clientX-drag.x,dy));
+      drag.center=wrap(drag.index-whole,options.length);drag.offset=dy-whole*h;layout(drag.center,drag.offset);
+    }
+    element.addEventListener('pointerdown',event=>{
+      if(drag){if(event.pointerId!==drag.id)cancel();return;}
+      if(disabled()||event.button!==0)return;finish();transition('none');
+      drag={id:event.pointerId,index,x:event.clientX,y:event.clientY,center:index,offset:0,traveled:0};element.classList.add('dragging');element.setPointerCapture(event.pointerId);element.focus();event.preventDefault();
+    });
+    element.addEventListener('pointermove',event=>{if(!drag||event.pointerId!==drag.id)return;dragAt(event);event.preventDefault();});
+    element.addEventListener('pointerup',event=>{
+      if(!drag||event.pointerId!==drag.id)return;dragAt(event);const d=drag,result=d.traveled<=4?{index:index+1,offset:-height()}:release(d.center,d.offset,height());
+      drag=null;ignoreClickUntil=performance.now()+300;element.classList.remove('dragging');if(element.hasPointerCapture(d.id))element.releasePointerCapture(d.id);
+      snap(d.traveled<=4?index:d.center,result.offset,result.index);event.preventDefault();
+    });
+    for(const name of ['pointercancel','lostpointercapture'])element.addEventListener(name,event=>{if(drag&&event.pointerId===drag.id){ignoreClickUntil=performance.now()+300;cancel();}});
+    document.addEventListener('pointerdown',event=>{if(drag&&event.pointerId!==drag.id)cancel();});
+    element.addEventListener('click',event=>{event.preventDefault();if(event.detail===0&&performance.now()>ignoreClickUntil)step(1);});
+    element.addEventListener('contextmenu',event=>event.preventDefault());
+    element.addEventListener('wheel',event=>{if(!event.deltaY||event.ctrlKey||event.metaKey||disabled())return;event.preventDefault();if(performance.now()-lastWheel<100)return;lastWheel=performance.now();step(event.deltaY>0?1:-1);},{passive:false});
+    element.addEventListener('keydown',event=>{if(!['ArrowUp','ArrowDown','Enter',' '].includes(event.key))return;event.preventDefault();event.stopPropagation();if(!event.repeat)step(event.key==='ArrowUp'?-1:1);});
+    window.addEventListener('blur',cancel);window.addEventListener('resize',cancel);document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel();});
+    transition('none');layout();sync();
+    return {cancel,finish,setValue(value){const next=options.findIndex(o=>o.value===value);if(next>=0&&next!==index){cancel();commit(next,false);}},setDisabled(value){element.setAttribute('aria-disabled',String(value));element.tabIndex=value?-1:0;if(value)cancel();}};
+  }
+  return {wrap,release,bind};
 })();
 </script>
 <script id="ur-ui">
@@ -675,7 +737,9 @@ const UrOracle = (() => {
       const controller=$('player-'+q),target=players[q]==='human'?(game.rule==='finkel'?'Oracle':'Lookahead'):'Human';
       controller.classList.toggle('active',game.winner===null?q===p:q===game.winner);controller.disabled=!!replay;controller.setAttribute('aria-pressed',String(players[q]!=='human'));controller.setAttribute('aria-label',`${NAMES[q]} controller: ${LEVELS[players[q]]}. Click for ${target}.`);controller.title='Click anywhere to switch to '+target+' without restarting';$('name-'+q).textContent=NAMES[q];$('detail-'+q).textContent='Human';$('bot-label-'+q).textContent=game.rule==='finkel'?'Oracle':'Bot';
     }
-    document.querySelectorAll('[data-rule]').forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.rule===(nextRule||game.rule)));button.disabled=!!replay;});
+    rulesPager.setValue(nextRule||game.rule);rulesPager.setDisabled(!!replay);
+    $('rule-description').textContent=DESCRIPTIONS[nextRule||game.rule];
+    $('rule-apply').textContent=nextRule?'Playing '+E.RULES[game.rule].name+'. Close settings, then hold New game to start '+E.RULES[nextRule].name+'.':'Playing '+E.RULES[game.rule].name+'. Choosing rules here never changes your current game.';
     $('new-game').title='Hold 0.6s to start a new '+E.RULES[nextRule||game.rule].name+' game. Keyboard: hold Space / Enter, or Shift+Enter.';$('undo').disabled=!!replay||!history.length;$('paths').setAttribute('aria-pressed',String(prefs.paths));$('hint').disabled=!interactive||thinking||moves.length<2;$('pause').hidden=!players.every(p=>p!=='human');$('pause').textContent=paused?'Resume bots':'Pause bots';
     for(const id of ['new-game','expedited','pause'])$(id).disabled=!!replay;
     $('expedited').setAttribute('aria-pressed',String(prefs.expedited));$('expedited').setAttribute('aria-label',(prefs.expedited?'Disable':'Enable')+' automatic turns');$('animate').checked=prefs.animate;
@@ -805,8 +869,11 @@ const UrOracle = (() => {
     window.addEventListener('blur',cancel);document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel();});
     return cancel;
   }
-  function setupRule(){if(replay)return;const rule=this.dataset.rule;if(!Object.hasOwn(E.RULES,rule))return;nextRule=rule===game.rule?null:rule;notice=nextRule?'Hold New game to use '+E.RULES[rule].name+'.':'';render();}
-  document.querySelectorAll('[data-rule]').forEach(button=>button.addEventListener('click',setupRule));
+  function setupRule(){if(replay)return;const rule=$('rule-pager').dataset.value;if(!Object.hasOwn(E.RULES,rule))return;nextRule=rule===game.rule?null:rule;notice=nextRule?'Hold New game to use '+E.RULES[rule].name+'.':'';render();}
+  const rulesPager=UrPager.bind($('rule-pager'),Object.entries(E.RULES).map(([value,r])=>({value,label:r.name==='Tournament Engine'?'Tournament':r.name})),'finkel');
+  $('rule-pager').addEventListener('input',setupRule);
+  $('settings-toggle').addEventListener('click',()=>{cancelWork();$('settings-toggle').setAttribute('aria-expanded','true');$('settings-dialog').showModal();});
+  $('settings-dialog').addEventListener('close',()=>{rulesPager.cancel();$('settings-toggle').setAttribute('aria-expanded','false');});
   bindHoldReset($('new-game'),()=>{if(!replay)newGame(nextRule||game.rule,players);},()=>{notice='Hold New game for 0.6s to restart.';$('notice').textContent=notice;});
   for(let player=0;player<2;player++)$('player-'+player).addEventListener('click',()=>togglePlayer(player));
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));
@@ -828,7 +895,7 @@ const UrOracle = (() => {
   for(let p=0;p<2;p++)$('color-'+p).addEventListener('input',e=>{const color=e.target.value;if(!/^#[0-9a-f]{6}$/i.test(color))return;prefs.colors[p]=color.toLowerCase();applyColors();save();});
   $('download').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([fileSource],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='ur.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
   document.addEventListener('keydown',e=>{
-    if(e.repeat||busyDialog()||e.target.matches('input,select,textarea'))return;
+    if(e.repeat||busyDialog()||e.target.matches('input,select,textarea,[role="spinbutton"]'))return;
     if(movesViewport?.matches&&movesVisible()){
       if(e.key==='Escape'){e.preventDefault();toggleMoves();return;}
       if(e.key==='Tab'){

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="description" content="A small, offline Royal Game of Ur. Four rulesets, local bots, two-player mode. Everything is in this file.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
@@ -18,19 +18,69 @@
 .control-panel{display:flex;flex-direction:column;justify-content:center;gap:14px;min-width:0;min-height:0}.turn-panel{display:flex;flex-direction:column;gap:14px;border-bottom:1px solid var(--line);padding-bottom:14px}.turn-copy h2{font-size:21px;font-weight:600;letter-spacing:-.03em;margin:0 0 5px}.turn-copy p{font-size:14px;color:var(--muted);margin:0;line-height:1.45}.dice-area{display:flex;gap:8px;align-items:center;justify-content:space-between}.dice{display:flex;align-items:center;gap:3px}.die{width:27px;height:31px}.die path{fill:none;stroke:#999;stroke-width:1}.die.on path{stroke:#111}.die circle{fill:#111}.roll-value{font-size:29px;font-weight:600;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}.roll-action{min-width:76px}.evaluation{display:grid;gap:6px}.eval-labels{display:flex;justify-content:space-between;gap:4px;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}.eval-labels small{font-size:11px}.eval-meter{height:12px;border:1px solid #777;border-radius:2px;overflow:hidden;background:var(--stone-1)}.eval-white{height:100%;width:50%;background:var(--stone-0);border-right:1px solid #777}.eval-unavailable{font-size:11px;color:var(--muted)}.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.tools-left,.tools-right{display:contents}.tools button{font-size:13px;padding:8px 4px;min-height:36px;white-space:nowrap}.move-choices{display:flex;flex-wrap:wrap;gap:6px}.move-choices button{font-size:12px}.notice{margin:0;font-size:12px;color:var(--muted);line-height:1.4}.notice:empty{display:none}.settings{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px}.rule-controls,.pace-controls{display:grid;gap:5px}.rule-controls{grid-template-columns:repeat(4,minmax(0,1fr))}.pace-controls{grid-template-columns:repeat(3,minmax(0,1fr))}.rule-controls>span,.pace-controls>span{grid-column:1/-1;font-size:12px;color:var(--muted)}.rule-controls button,.pace-controls button{font-size:12px;padding:7px 3px;min-height:32px}.setting-toggles{display:grid;grid-template-columns:1fr 1fr;gap:7px}.check{display:flex;align-items:center;gap:7px;font-size:13px;min-height:32px;cursor:pointer}.check input{accent-color:#111;width:18px;height:18px;margin:0}.shortcut{margin:0;font-size:11px;line-height:1.7;color:var(--muted)}.shortcut kbd{font:inherit;background:#eee;border-radius:3px;padding:1px 3px}.footer{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.footer button{font-size:11px;border:0;padding:6px 0;text-decoration:underline;text-underline-offset:3px;color:var(--muted)}.offline{width:5px;height:5px;display:inline-block;background:#777;border-radius:50%;margin-right:5px}
 .move-sidebar{display:flex;flex-direction:column;border-left:1px solid var(--line);padding-left:18px;min-width:0;min-height:0}.history-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex:none}.history-toolbar h2{margin:0}.moves-toggle{font-size:16px;font-weight:650;padding:7px 9px}.review-return{font-size:12px;padding:7px 8px;max-width:130px}.history-content{display:flex;flex-direction:column;flex:1;min-height:0}.history-note{font-size:11px;color:var(--muted);line-height:1.5;margin:0 0 10px}.history-columns,.history-row{display:grid;grid-template-columns:3ch 12px 3ch minmax(0,1fr) 2ch;align-items:center;gap:6px}.history-columns{padding:3px 6px 6px;font-size:10px;color:#777}.history-columns span:first-child{text-align:right}.history-columns span:nth-child(3){text-align:center}.history{flex:1;min-height:0;max-height:none;margin:0;padding:0;list-style:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;line-height:1.4}.history li{padding:0;margin:0 0 3px;border:0}.history-row{width:100%;min-height:36px;padding:6px;border:0;border-radius:4px;white-space:nowrap;text-align:left;font-size:14px}.history-row:disabled{opacity:1;cursor:default}.history-row[data-grade="best"]{background:#e2f2e5}.history-row[data-grade="alternative"]{background:#fbe5e3}.history-row:hover:not(:disabled){box-shadow:inset 0 0 0 1px #999;background:#f0f0f0}.history-row[data-grade="best"]:hover{background:#d5ebda}.history-row[data-grade="alternative"]:hover{background:#f5d5d2}.history-row[aria-current="step"]{box-shadow:inset 0 0 0 2px #555}.history-stone{width:12px;height:12px;border:1px solid #111;border-radius:50%;background:var(--stone-0)}.history-stone.dark{background:var(--stone-1)}.history-number{font-size:11px;color:#737373;font-variant-numeric:tabular-nums;text-align:right}.history-roll{font:12px ui-monospace,monospace;text-align:center;border:1px solid #bbb;border-radius:3px;padding:1px 0;color:#444}.history-action{color:var(--ink);font:14px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:hidden;text-overflow:ellipsis}.history-flag{font-size:13px;color:#555;text-align:right}.history-legacy{font-size:11px;padding:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.game-layout[data-moves-hidden="true"] .move-sidebar{border-left-color:transparent}
 dialog{border:1px solid #bbb;border-radius:10px;padding:24px;max-width:min(560px,calc(100vw - 24px));max-height:calc(100svh - 24px);overflow:auto;width:560px;background:#fff;color:#111}dialog::backdrop{background:#0005}dialog h2{font-size:24px;margin:0 0 20px}dialog .close{float:right;padding:4px 9px;font-size:18px}.rules-body{font-size:14px;line-height:1.6}.rules-body p{margin:8px 0}.rules-body ul{padding-left:20px}.rule-table{font-size:12px;border-collapse:collapse;width:100%;margin:15px 0}.rule-table th,.rule-table td{text-align:left;border-bottom:1px solid var(--line);padding:8px 5px}.rule-table caption{text-align:left;font-weight:600;margin-bottom:6px}.dialog-note,.source-list{font-size:12px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}
-@media(max-width:950px){.app{height:auto;min-height:100svh;max-width:760px;padding:16px}.game-layout{grid-template-columns:minmax(0,1fr);gap:18px}.game-main{gap:14px}.game-stage{grid-template-columns:minmax(260px,340px) minmax(240px,300px);min-height:560px}.board-wrap{container-type:normal}.board{width:min(100%,calc((100svh - 210px) * .375),245px);min-width:180px}.move-sidebar{border-left:0;border-top:1px solid var(--line);padding:12px 0 0}.history-toolbar{margin-bottom:7px;justify-content:flex-start}.history{max-height:180px;min-height:75px}.history-row{grid-template-columns:3ch 12px 3ch minmax(0,1fr) 2ch}.game-layout[data-moves-hidden="true"] .move-sidebar{border-color:var(--line)}}
+/* The game is a viewport, not a document. Only the move list / help can scroll. */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+.app{height:100svh;height:100dvh;min-height:0}
+.mobile-moves-toggle{display:none}.moves-backdrop{display:none}
+@media(max-width:950px),(pointer:coarse){
+ .app{max-width:760px;padding: max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+ .game-layout{grid-template-columns:minmax(0,1fr);gap:0}.game-main{gap:12px}.game-stage{grid-template-columns:minmax(0,340px) minmax(0,300px);min-height:0}
+ .mobile-moves-toggle{display:block;font-size:14px;min-height:36px}.top-actions{gap:14px}
+ .moves-backdrop{display:block;position:fixed;inset:0;z-index:19;border:0;border-radius:0;background:#0000000a!important;touch-action:none}
+ .move-sidebar{position:fixed;z-index:20;inset:0 0 0 auto;width:clamp(180px,58vw,320px);height:100svh;height:100dvh;background:var(--paper);padding:max(14px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) 10px;border:0;border-left:1px solid var(--line);box-shadow:-8px 0 25px #0002}
+ .game-layout[data-moves-hidden="true"] .move-sidebar{display:none}
+ .history-toolbar{margin-bottom:12px;gap:6px}.moves-toggle{min-height:40px;padding:7px 6px;font-size:14px}.moves-toggle::after{content:' ×';font-weight:400;margin-left:2px}.review-return{min-height:40px;font-size:11px;width:84px;padding:6px 4px}
+ .history{max-height:none;min-height:0}.history-row{min-height:40px}
+}
 @media(max-width:600px){.app{padding:10px 12px 12px}.game-main{gap:10px}.top{min-height:34px}.brand h1{font-size:26px}.new-game{padding:7px 9px;font-size:12px;min-height:34px}.new-game small{font-size:10px}.game-layout{gap:12px}.game-stage{grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);gap:14px 12px;min-height:0;align-items:stretch}.board-column{display:contents}.players{grid-column:1/-1;grid-row:1;width:min(100%,340px);grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr);gap:10px}.player-name{font-size:13px;margin-bottom:5px}.controller-pill{font-size:12px;line-height:24px}.color-pair{width:60px;height:34px}.board-wrap{grid-column:1;grid-row:2;align-items:center;padding:4px 0 20px 15px}.board{width:100%;min-width:0;max-width:190px}.board-coordinate{font-size:10px}.board-coordinate.rank{left:-14px}.finish-marker{width:11px;height:13px;left:1px;top:1px}.control-panel{grid-column:2;grid-row:2;gap:9px;justify-content:center}.turn-panel{gap:8px;padding-bottom:8px}.turn-copy h2{font-size:17px}.turn-copy p{font-size:12px;line-height:1.35}.dice-area{gap:4px;flex-wrap:wrap}.dice{gap:1px}.die{width:20px;height:23px}.roll-value{font-size:24px;min-width:18px}.roll-action{font-size:12px;padding:7px 6px;min-width:58px;min-height:32px}.evaluation{gap:4px}.eval-labels{font-size:10px}.eval-labels small{font-size:9px}.eval-meter{height:10px}.tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.tools button{font-size:12px;min-height:32px;padding:7px 3px}.settings{gap:8px;padding-top:8px}.rule-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.rule-controls>span,.pace-controls>span{font-size:11px}.rule-controls button,.pace-controls button{font-size:11px;min-height:29px;padding:5px 2px}.pace-controls{gap:3px}.setting-toggles{gap:5px}.check{font-size:11px;gap:4px;min-height:26px}.check input{width:16px;height:16px}.shortcut{font-size:10px;line-height:1.55}.notice{font-size:11px}.footer{font-size:10px}.footer button{font-size:10px;padding:4px 0}.move-sidebar{padding-top:9px}.moves-toggle{font-size:14px;min-height:34px}.review-return{min-height:34px}.history-note{font-size:10px;margin-bottom:6px}.history{max-height:144px}.history-columns{padding-bottom:4px}.history-row{min-height:34px}.history-action{font-size:14px}.key-badge,.ghost-label,.tile-step{font-size:8px}.move-choices button{font-size:11px}.rule-table{font-size:11px}.rule-table th,.rule-table td{padding:7px 3px}}
 @media(max-width:350px){.app{padding:8px}.game-stage{gap:12px 8px;grid-template-columns:minmax(0,.76fr) minmax(0,1.24fr)}.players{gap:7px}.eval-labels small{font-size:8px}.controller-pill{font-size:11px}.shortcut{font-size:9px}.board-wrap{padding-left:13px}}
+@media(max-width:600px){
+ .app{--phone-edge:12px;--phone-top:10px;padding:max(var(--phone-top),env(safe-area-inset-top)) max(var(--phone-edge),env(safe-area-inset-right)) max(var(--phone-edge),env(safe-area-inset-bottom)) max(var(--phone-edge),env(safe-area-inset-left))}
+ .game-stage{grid-template-rows:auto minmax(0,1fr);row-gap:8px}
+ .board{width:min(100cqw,calc(100cqh * .375),190px)}
+ .history{max-height:none}.move-sidebar{padding-top:max(14px,env(safe-area-inset-top))}
+ .history-columns,.history-row{gap:4px;grid-template-columns:2.5ch 10px 2.7ch minmax(0,1fr) 1.4ch}.history-row{padding:6px 3px;font-size:12px}.history-action{font-size:14px}.history-stone{width:10px;height:10px}
+}
+@media(max-width:600px) and (max-height:740px){
+ .game-main{gap:6px}.player-name{margin-bottom:2px}.controller-pill{line-height:22px}
+ .control-panel{gap:6px}.turn-panel{gap:5px;padding-bottom:5px}.turn-copy h2{margin-bottom:3px}
+ .tools{gap:4px}.tools button{min-height:30px;padding:5px 3px}.settings{gap:5px;padding-top:5px}
+ .rule-controls button,.pace-controls button{min-height:27px;padding:4px 2px}.check{min-height:24px}
+ .shortcut{display:none}
+}
+@media(max-width:350px){.app{--phone-edge:8px;--phone-top:8px}}
+@media(max-width:600px) and (max-height:640px) and (orientation:portrait){
+ .tools{grid-template-columns:repeat(3,minmax(0,1fr))}.tools button{font-size:11px;padding:5px 1px}
+ #rules{grid-column:2/4}#pause:not([hidden])+#rules{grid-column:auto;white-space:normal}
+}
+@media(max-width:950px) and (orientation:landscape) and (max-height:600px){
+ .game-main{gap:6px}.top{min-height:32px}.brand h1{font-size:25px}.new-game,.mobile-moves-toggle{min-height:32px;padding:5px 10px}
+ .game-stage{grid-template-columns:minmax(160px,.8fr) minmax(0,1.8fr);grid-template-rows:minmax(0,1fr);gap:20px}
+ .board-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:4px}.players{grid-column:auto;grid-row:auto;gap:6px;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr)}
+ .player-name{font-size:12px;margin-bottom:2px;padding-bottom:1px}.controller-pill{font-size:10px;line-height:18px;padding:2px}.color-pair{width:44px;height:28px}
+ .board-wrap{grid-column:auto;grid-row:auto;padding:3px 18px 18px}.control-panel{grid-column:auto;grid-row:auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto minmax(0,1fr);gap:6px 12px;align-content:center}
+ .turn-panel{grid-column:1;grid-row:1;gap:5px;padding-bottom:6px}.turn-copy h2{font-size:16px}.turn-copy p{font-size:11px}.dice-area{gap:4px}.die{width:18px;height:22px}.roll-value{font-size:22px}.roll-action{font-size:12px;min-width:50px;padding:5px}
+ .evaluation{grid-column:1;grid-row:2;gap:3px}.eval-labels{font-size:10px}.eval-labels small{font-size:9px}.eval-meter{height:9px}
+ .tools{grid-column:1;grid-row:3;grid-template-columns:1fr 1fr;gap:4px;align-content:start}.tools button{font-size:11px;min-height:28px;padding:4px}
+ .settings{grid-column:2;grid-row:1/4;border-top:0;border-left:1px solid var(--line);padding:0 0 0 12px;gap:6px;align-content:start}.rule-controls{grid-template-columns:1fr 1fr}.rule-controls button,.pace-controls button{font-size:10px;min-height:27px;padding:4px 2px}.rule-controls>span,.pace-controls>span{font-size:10px}.setting-toggles{grid-template-columns:1fr;gap:3px}.check{font-size:11px;min-height:23px}.check input{width:16px;height:16px}
+ .shortcut{display:none}.notice{grid-column:1/-1;font-size:10px}.footer{font-size:10px}.footer button{font-size:10px;padding:2px 0}
+ .move-choices{grid-column:1/-1;grid-row:4}.move-choices button{padding:3px 6px;font-size:10px}
+}
+@media(max-width:950px) and (orientation:landscape) and (max-height:350px){
+ .turn-copy h2{font-size:15px;margin-bottom:3px}.turn-copy p{font-size:10px;line-height:1.3}.roll-action{min-height:27px;padding:4px}
+ .tools button{min-height:26px}.notice{font-size:9px;line-height:1.25}.control-panel{gap:5px 10px}.settings{padding-left:10px}
+ .player-name{font-size:11px}.players{gap:4px;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr)}.color-pair{width:34px;height:24px}.controller-pill{font-size:8px}
+}
 @media(prefers-reduced-motion:reduce){.controller-pill::before{transition:none}.stone{animation:none!important}}
 </style>
 </head>
 <body>
 <main class="app">
  <div class="game-layout" id="game-layout">
- <div class="game-main">
+ <div class="game-main" id="game-main">
   <header class="top">
     <div class="brand"><h1>Ur</h1></div>
-    <div class="top-actions"><button id="new-game" class="primary new-game" aria-label="Hold to start a new game"><span>New game <small>hold</small></span></button></div>
+    <div class="top-actions"><button id="new-game" class="primary new-game" aria-label="Hold to start a new game"><span>New game <small>hold</small></span></button><button id="mobile-moves-toggle" class="mobile-moves-toggle" aria-expanded="false" aria-controls="move-sidebar">Moves</button></div>
   </header>
   <div class="game-stage">
   <div class="board-column">
@@ -70,7 +120,8 @@ dialog{border:1px solid #bbb;border-radius:10px;padding:24px;max-width:min(560px
   </div>
  <footer class="footer"><span id="save-status"><span class="offline"></span>Saved locally · offline</span><button id="download">Download HTML</button></footer>
  </div>
- <aside class="move-sidebar" aria-label="Move history">
+ <button id="moves-backdrop" class="moves-backdrop" aria-label="Close move history" tabindex="-1" hidden></button>
+ <aside class="move-sidebar" id="move-sidebar" aria-label="Move history">
    <div class="history-toolbar"><h2><button type="button" class="moves-toggle" id="moves-toggle" aria-expanded="true" aria-controls="history-content" title="Hide move history">Moves</button></h2><button id="return-present" class="primary review-return" disabled>Return to present</button></div>
    <div class="history-content" id="history-content">
    <p class="history-note" id="history-note" title="RGN: @ enter · + finish · x capture · * rosette. Green/red: Oracle agrees/disagrees, not proof of optimality. ↯ automatic forced move. Hover to preview; move off to return. Click to keep a review open.">Newest first · hover to preview</p>
@@ -301,10 +352,11 @@ const UrOracle = (() => {
 (() => {
   'use strict';
   const E=UrEngine,O=UrOracle,$=id=>document.getElementById(id),KEY='ur.single-file.v1';
+  const movesViewport=typeof matchMedia==='function'?matchMedia('(max-width:950px), (pointer:coarse)'):null;
   const fileSource='<!doctype html>\n'+document.documentElement.outerHTML;
   const NAMES=['White','Black'],LEVELS={human:'Human',easy:'Easy bot',tactical:'Tactical bot',strong:'Lookahead',oracle:'Oracle'};
   const DESCRIPTIONS={finkel:'Seven pieces, four binary dice, the short route. Rosettes protect your pieces and give another roll.',masters:'Seven pieces, three binary dice. A zero counts as four. Take the longer route; rosettes give another roll but no protection.',blitz:'Five pieces and four binary dice on the longer route. Both captures and rosettes give another roll. No safe rosettes.',tournament:'Five pieces and four binary dice. Rosettes are safe and allow stacks, but never give another roll. Move whole stacks; choose forward or backward.'};
-  let game,rolled=null,bits=[],players=['human','strong'],prefs={expedited:false,animate:true,evaluation:true,showMoves:true,pace:'quick',paths:false,colors:['#ffffff','#000000']};
+  let game,rolled=null,bits=[],players=['human','strong'],prefs={expedited:false,animate:true,evaluation:true,showMoves:true,showMovesMobile:false,pace:'quick',paths:false,colors:['#ffffff','#000000']};
   let history=[],events=[],selected=null,hovered=null,hintMove=null,paused=false,autoPaused=false,thinking=false,timer=null,epoch=0,worker=null,requestId=0,pendingAI=null,lastMove=null,lastRollPlayer=null;
   let notice='',reviewText='',storageOK=true,renderedEvents=null,replay=null,indexedEvents=null,replayIndex=new Map(),nextRule=null,evaluationCache=null;
   let pinnedReplay=null,hoverReviewEvent=null,liveReviewUI=null;
@@ -368,7 +420,7 @@ const UrOracle = (() => {
     enterReview(next);pinnedReplay=next;hoverReviewEvent=null;render();
   }
   function previewHistory(event){
-    if(!prefs.showMoves||busyDialog())return;
+    if(!movesVisible()||busyDialog())return;
     const next=historyReview(event);if(!next)return;
     hoverReviewEvent=event;
     if(replay===next)return;
@@ -385,14 +437,26 @@ const UrOracle = (() => {
     replay=null;pinnedReplay=null;hoverReviewEvent=null;restoreReviewUI();render();schedule();
   }
   function toggleMoves(){
-    prefs.showMoves=!prefs.showMoves;
-    if(!prefs.showMoves)endHistoryPreview();
+    const mobile=!!movesViewport?.matches,key=mobile?'showMovesMobile':'showMoves';
+    prefs[key]=!prefs[key];
+    if(!prefs[key]){
+      if(mobile)returnPresent();else endHistoryPreview();
+    }
     save();render();
+    if(mobile)$(prefs[key]?'moves-toggle':'mobile-moves-toggle').focus?.();
   }
+  function movesVisible(){return !!prefs[movesViewport?.matches?'showMovesMobile':'showMoves'];}
   function renderMovesPanel(){
-    $('game-layout').dataset.movesHidden=String(!prefs.showMoves);
-    $('moves-toggle').setAttribute('aria-expanded',String(prefs.showMoves));$('moves-toggle').title=(prefs.showMoves?'Hide':'Show')+' move history';
-    $('history-content').hidden=!prefs.showMoves;
+    const visible=movesVisible(),mobile=!!movesViewport?.matches;
+    $('game-layout').dataset.movesHidden=String(!visible);
+    for(const id of ['moves-toggle','mobile-moves-toggle']){
+      $(id).setAttribute('aria-expanded',String(visible));$(id).title=(visible?'Hide':'Show')+' move history';
+    }
+    $('history-content').hidden=!visible;
+    $('moves-backdrop').hidden=!(mobile&&visible);
+    $('game-main').inert=mobile&&visible;
+    $('move-sidebar').setAttribute('role',mobile&&visible?'dialog':'complementary');
+    $('move-sidebar').setAttribute('aria-modal',String(mobile&&visible));
     $('return-present').disabled=!replay;
   }
   function togglePlayer(player){
@@ -466,7 +530,7 @@ const UrOracle = (() => {
       }
       reviewText=typeof data.reviewText==='string'?data.reviewText.slice(0,240):'';
       history=Array.isArray(data.history)?data.history.filter(x=>x&&E.validate(x.game)&&Array.isArray(x.bits)&&(Array.isArray(x.events)||(Number.isInteger(x.eventCount)&&x.eventCount>=0&&x.eventCount<=events.length))&&[0,1].includes(x.actor)).slice(-80):[];
-      for(const k of ['expedited','animate','paths','evaluation','showMoves'])if(typeof data.prefs?.[k]==='boolean')prefs[k]=data.prefs[k];
+      for(const k of ['expedited','animate','paths','evaluation','showMoves','showMovesMobile'])if(typeof data.prefs?.[k]==='boolean')prefs[k]=data.prefs[k];
       // Fold the old pair of automation controls into the one explicit mode.
       if(typeof data.prefs?.expedited!=='boolean')prefs.expedited=data.prefs?.autoRoll===true&&data.prefs?.autoMove===true;
       autoPaused=data.autoPaused===true;
@@ -617,7 +681,7 @@ const UrOracle = (() => {
     $('expedited').setAttribute('aria-pressed',String(prefs.expedited));$('expedited').setAttribute('aria-label',(prefs.expedited?'Disable':'Enable')+' automatic turns');$('animate').checked=prefs.animate;
     document.querySelectorAll('[data-pace]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.pace===prefs.pace)));
     $('turn-panel').classList.toggle('win',game.winner!==null);$('notice').textContent=replay?'':notice;$('save-status').innerHTML='<span class="offline"></span>'+(storageOK?'Saved locally · offline':'Storage unavailable; keep open');
-    $('move-review').textContent=replay||!prefs.showMoves?'':reviewText;renderMovesPanel();renderHistory();
+    $('move-review').textContent=replay||!movesVisible()?'':reviewText;renderMovesPanel();renderHistory();
     const options=selected===null?[]:moves.filter(m=>m.from===selected);$('move-choices').hidden=options.length<2;$('move-choices').replaceChildren(...options.map(m=>{const b=document.createElement('button');b.textContent=(m.dir<0?'← Back ':'Forward → ')+rolled+(m.to===-2?' · finish':m.capture?' · capture':m.rosette?' · rosette':'');b.addEventListener('click',()=>commit(m));return b;}));
     if(interactive&&moves.length&&!moves.some(m=>m.dir===1)){const b=document.createElement('button');b.textContent='Pass instead';b.addEventListener('click',()=>commit(E.choices(game,rolled).find(m=>m.pass)));$('move-choices').append(b);$('move-choices').hidden=false;}
     renderStatus();renderEvaluation();requestAnimationFrame(drawRoute);
@@ -629,7 +693,7 @@ const UrOracle = (() => {
     return event.actor!=='human'?'Bot move':'Choice · not evaluated for this ruleset';
   }
   function renderHistory(){
-    if(!prefs.showMoves)return;
+    if(!movesVisible())return;
     $('history-note').textContent=game.rule==='finkel'?'Oracle estimates · hover to preview · click to keep':'Hover to preview · click to keep';
     // Keep the hovered button in the DOM: replacing it would fire a leave and
     // immediately undo its own preview (or interrupt the subsequent click).
@@ -749,8 +813,11 @@ const UrOracle = (() => {
   document.querySelectorAll('dialog').forEach(d=>d.addEventListener('close',()=>{render();schedule();}));
   $('rules').addEventListener('click',()=>{cancelWork();$('rules-dialog').showModal();});
   $('roll').addEventListener('click',()=>{if(replay)return;if(game.winner!==null){newGame(game.rule,players);return;}if(!isHuman()&&paused){paused=false;render();schedule();return;}if(!canAct())return;if(rolled===null)rollNow();else{const c=E.choices(game,rolled);if(c.length===1)commit(c[0]);}});
-  $('return-present').addEventListener('click',returnPresent);
+  $('return-present').addEventListener('click',()=>{returnPresent();if(movesViewport?.matches&&movesVisible())toggleMoves();});
   $('moves-toggle').addEventListener('click',toggleMoves);
+  $('mobile-moves-toggle').addEventListener('click',toggleMoves);
+  $('moves-backdrop').addEventListener('click',()=>{if(movesVisible())toggleMoves();});
+  movesViewport?.addEventListener('change',()=>{if(!movesVisible())returnPresent();render();});
   $('undo').addEventListener('click',undo);$('paths').addEventListener('click',()=>{prefs.paths=!prefs.paths;save();render();});
   $('pause').addEventListener('click',()=>{if(replay)return;paused=!paused;cancelWork();render();schedule();});
   $('hint').addEventListener('click',async()=>{if(!canAct()||rolled===null||thinking)return;clearTimeout(timer);const token=epoch,oracle=game.rule==='finkel';thinking=true;$('hint').disabled=true;notice=oracle?'Oracle is comparing moves…':'Looking one or two rolls ahead…';$('notice').textContent=notice;const result=await getAI(oracle?'oracle':'strong');if(token!==epoch)return;thinking=false;if(result){hintMove=result.move;selected=hintMove.pass?null:hintMove.from;notice=(oracle?'Oracle suggests ':'Suggestion: ')+briefMove(game,hintMove)+(oracle?' · estimate':'.');}render();});
@@ -762,6 +829,16 @@ const UrOracle = (() => {
   $('download').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([fileSource],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='ur.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
   document.addEventListener('keydown',e=>{
     if(e.repeat||busyDialog()||e.target.matches('input,select,textarea'))return;
+    if(movesViewport?.matches&&movesVisible()){
+      if(e.key==='Escape'){e.preventDefault();toggleMoves();return;}
+      if(e.key==='Tab'){
+        const buttons=[...$('move-sidebar').querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+        return;
+      }
+      if(!replay)return;
+    }
     if(replay){
       if(e.key==='Escape'){e.preventDefault();returnPresent();}
       else if(['ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].includes(e.key)){

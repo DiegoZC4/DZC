@@ -7,7 +7,9 @@ header('X-LiteSpeed-Cache-Control: no-cache');
 header('X-Robots-Tag: noindex, nofollow, noarchive');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
-header('Referrer-Policy: no-referrer');
+// no-referrer makes native form POSTs send Origin:null, failing our CSRF check.
+// Preserve same-site form origins without sending referrers to other sites.
+header('Referrer-Policy: same-origin');
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 require_once __DIR__ . '/sequences-audio-stats-auth.php';
 require_once __DIR__ . '/sequences-audio-report.php';

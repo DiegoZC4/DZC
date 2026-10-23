@@ -16,8 +16,11 @@ function audioMetricsDb(): PDO {
     $db->exec('CREATE TABLE IF NOT EXISTS seen (period TEXT, week TEXT, kind TEXT, visitor TEXT, n INTEGER DEFAULT 0,
         PRIMARY KEY(period,week,kind,visitor))');
     $db->exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
+    $db->exec('CREATE TABLE IF NOT EXISTS audience_weekly (period TEXT PRIMARY KEY,
+        visitors INTEGER NOT NULL DEFAULT 0, listeners INTEGER NOT NULL DEFAULT 0)');
     $s=$db->prepare('INSERT OR IGNORE INTO settings VALUES (?,?)');
     $s->execute(['secret',bin2hex(random_bytes(32))]); $s->execute(['started',gmdate('c')]);
+    $s->execute(['audience_started',gmdate('c')]);
     return $db;
 }
 function audioMetricsDevice(string $ua): string {
@@ -31,11 +34,44 @@ function audioMetricsClient(string $ua): string {
         if (stripos($ua,$token)!==false) return $name;
     return 'other';
 }
+function audioMetricsAddress(): string {
+    // Hostinger CDN convention retained from the existing visitor counter.
+    return trim(explode(',',(string)($_SERVER['HTTP_X_FORWARDED_FOR']??$_SERVER['HTTP_X_REAL_IP']??$_SERVER['HTTP_CF_CONNECTING_IP']??$_SERVER['REMOTE_ADDR']??''))[0]);
+}
 function audioMetricsVisitor(PDO $db,string $period): string {
     $secret=$db->query("SELECT value FROM settings WHERE key='secret'")->fetchColumn();
-    // Hostinger CDN convention retained from the existing visitor counter.
-    $ip=trim(explode(',',(string)($_SERVER['HTTP_X_FORWARDED_FOR']??$_SERVER['HTTP_X_REAL_IP']??$_SERVER['HTTP_CF_CONNECTING_IP']??$_SERVER['REMOTE_ADDR']??''))[0]);
-    return hash_hmac('sha256',$period.'|'.$ip.'|'.substr((string)($_SERVER['HTTP_USER_AGENT']??''),0,512),$secret);
+    return hash_hmac('sha256',$period.'|'.audioMetricsAddress().'|'.substr((string)($_SERVER['HTTP_USER_AGENT']??''),0,512),$secret);
+}
+function audioMetricsAudienceAdd(PDO $db,string $period,string $kind,string $address): void {
+    if ($address==='' || !in_array($kind,['page','play'],true)) return;
+    $secret=$db->query("SELECT value FROM settings WHERE key='secret'")->fetchColumn();
+    $hash=hash_hmac('sha256','address|'.$period.'|'.$address,$secret);
+    $s=$db->prepare("INSERT OR IGNORE INTO seen(period,week,kind,visitor) VALUES (?,'all',?,?)");
+    $s->execute([$period,'address-'.$kind,$hash]);
+    if ($s->rowCount()===1) {
+        $column=$kind==='page'?'visitors':'listeners';
+        $db->prepare("UPDATE audience_weekly SET $column=$column+1 WHERE period=?")->execute([$period]);
+    }
+}
+function audioMetricsAudienceInit(PDO $db,string $period): void {
+    // Called under a transaction. Seed the transition week's old addresses once,
+    // so a returning reader counts once across both collectors and all episodes.
+    $s=$db->prepare('INSERT OR IGNORE INTO audience_weekly(period) VALUES (?)');
+    $s->execute([$period]);
+    if ($s->rowCount()!==1) return;
+    $iso=(new DateTimeImmutable($period,new DateTimeZone('UTC')))->format('o-\WW');
+    $root=dirname(rtrim((string)$_SERVER['DOCUMENT_ROOT'],'/')).'/sequences-audio-stats/weeks';
+    if (!is_dir($root)) return;
+    foreach (scandir($root) ?: [] as $name) {
+        if (!preg_match('/^'.preg_quote($iso,'/').'__(?:lsrg-\d+|none)\.(page|play)$/D',$name,$match)) continue;
+        $file=fopen($root.'/'.$name,'rb');
+        if ($file===false) throw new RuntimeException('Legacy audience unavailable');
+        try {
+            while (($line=fgets($file))!==false) {
+                audioMetricsAudienceAdd($db,$period,$match[1],trim(explode("\t",$line,2)[0]));
+            }
+        } finally {fclose($file);}
+    }
 }
 function audioMetricsUnique(PDO $db,string $period,string $week,string $kind): bool {
     $s=$db->prepare('INSERT OR IGNORE INTO seen(period,week,kind,visitor) VALUES (?,?,?,?)');
@@ -84,11 +120,26 @@ function audioMetricsRecord(string $event,array $input): bool {
         if (in_array($event,['page','play'],true)&&audioMetricsUnique($db,gmdate('Y-m-d',strtotime('monday this week UTC')),$week,$event)) {
             $row[2]='unique-'.$event; $insert->execute([...$row,0,0]);
         }
+        if (in_array($event,['page','play'],true)) {
+            $period=gmdate('Y-m-d',strtotime('monday this week UTC'));
+            audioMetricsAudienceInit($db,$period);
+            audioMetricsAudienceAdd($db,$period,$event,audioMetricsAddress());
+        }
         $db->commit();return true;
     } catch(Throwable $e) {if($db->inTransaction())$db->rollBack();throw $e;}
 }
 function audioMetricsReport(): array {
     $db=audioMetricsDb();
+    $db->beginTransaction();
+    try {
+        audioMetricsAudienceInit($db,gmdate('Y-m-d',strtotime('monday this week UTC')));
+        $db->commit();
+    } catch(Throwable $error) {if($db->inTransaction())$db->rollBack();throw $error;}
+    $audience=[];
+    foreach ($db->query('SELECT * FROM audience_weekly')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $iso=(new DateTimeImmutable($row['period'],new DateTimeZone('UTC')))->format('o-\WW');
+        $audience[$iso]=['visitors'=>(int)$row['visitors'],'listeners'=>(int)$row['listeners']];
+    }
     $daily=$db->query('SELECT * FROM totals ORDER BY day,week,event')->fetchAll(PDO::FETCH_ASSOC);
     $weekly=[];
     foreach($daily as $row) {
@@ -98,8 +149,11 @@ function audioMetricsReport(): array {
         $weekly[$iso][$week][$event]['total']=($weekly[$iso][$week][$event]['total']??0)+(float)$row['total'];
     }
     return ['started'=>$db->query("SELECT value FROM settings WHERE key='started'")->fetchColumn(),
+        'audience_started'=>$db->query("SELECT value FROM settings WHERE key='audience_started'")->fetchColumn(),
+        'audience'=>$audience,
         'definitions'=>['podcast'=>'GET download requests deduplicated per UTC day / episode / address+agent hash; not completed downloads or listens',
             'listen'=>'Observed progressing playback wall seconds, excluding stalls/seeks; timer throttling can undercount',
+            'audience'=>'Weekly unique network addresses across all webpage episodes; same definition as legacy visitor/listener counts, not people',
             'unique-page'=>'Estimated weekly devices, not people; no account identity'],
         'weekly'=>$weekly,'daily'=>$daily];
 }

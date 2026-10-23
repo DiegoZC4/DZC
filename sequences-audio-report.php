@@ -75,6 +75,11 @@ function audioDashboardTotals(array $rows): array {
 
 function audioDashboardData(array $report, array $episodes, string $selected): array {
     $metrics = $report['metrics'] ?? []; $rows = $metrics['daily'] ?? []; $byWeek = [];
+    $legacy = [];
+    foreach ((array)($report['weeks'] ?? []) as $iso => $week) {
+        $legacy[$iso] = ['visitors' => (int)($week['all_readings']['visitors_unique_ips'] ?? 0),
+            'listeners' => (int)($week['all_readings']['listeners_unique_ips'] ?? 0)];
+    }
     foreach ($rows as $row) {
         $iso = (new DateTimeImmutable($row['day'], new DateTimeZone('UTC')))->format('o-\WW');
         $byWeek[$iso][] = $row;
@@ -89,10 +94,35 @@ function audioDashboardData(array $report, array $episodes, string $selected): a
         }
     }
     krsort($byWeek);
-    if ($selected !== 'all' && !isset($byWeek[$selected])) $selected = array_key_first($byWeek) ?? 'all';
-    $selectedRows = $selected === 'all' ? $rows : ($byWeek[$selected] ?? []);
+    $audience = $metrics['audience'] ?? [];
+    $audienceStarted = !empty($metrics['audience_started']) ? new DateTimeImmutable($metrics['audience_started']) : null;
+    $audienceWeek = $audienceStarted?->setTimezone(new DateTimeZone('UTC'))->format('o-\WW');
+    $detailsWeek = $started?->setTimezone(new DateTimeZone('UTC'))->format('o-\WW');
+    $available = !isset($metrics['error']);
     $weekly = [];
-    foreach ($byWeek as $iso => $values) $weekly[$iso] = audioDashboardTotals($values);
+    foreach (array_unique([...array_keys($legacy), ...array_keys($byWeek), ...array_keys($audience)]) as $iso) {
+        $hasDetails = $available && array_key_exists($iso, $byWeek);
+        // The seeded address counter is already the union of old/new addresses.
+        // Never sum per-episode uniques or old/new aggregate counts.
+        $counts = $available ? ($audience[$iso] ?? null) : null;
+        $counts ??= $legacy[$iso] ?? null;
+        if ($counts === null && $available && $audienceWeek !== null && $iso >= $audienceWeek) {
+            $counts = ['visitors' => 0, 'listeners' => 0];
+        }
+        $totals = audioDashboardTotals($byWeek[$iso] ?? []);
+        $weekly[$iso] = [
+            'visitors' => $counts['visitors'] ?? null, 'listeners' => $counts['listeners'] ?? null,
+            'podcast' => $hasDetails ? $totals['podcast'] : null,
+            'listen' => $hasDetails ? $totals['listen'] : null,
+            'mediaerror' => $hasDetails ? $totals['mediaerror'] : null,
+            'details_available' => $hasDetails,
+            'audience_partial' => $iso === $audienceWeek,
+            'details_partial' => $iso === $detailsWeek,
+        ];
+    }
+    krsort($weekly);
+    if ($selected !== 'all' && !isset($weekly[$selected])) $selected = array_key_first($weekly) ?? 'all';
+    $selectedRows = $selected === 'all' ? $rows : ($byWeek[$selected] ?? []);
     $episodeRows = []; $errors = []; $clients = []; $actions = []; $latency = [];
     $errorNames = ['0' => 'Unknown media error', '1' => 'Playback aborted', '2' => 'Network error', '3' => 'Decode error', '4' => 'Unsupported source'];
     foreach ($selectedRows as $r) {
@@ -121,14 +151,11 @@ function audioDashboardData(array $report, array $episodes, string $selected): a
     }
     uksort($perEpisode, fn($a, $b) => strnatcmp($b, $a));
     usort($errors, fn($a, $b) => $b['count'] <=> $a['count']); arsort($clients); arsort($actions);
-    $legacy = [];
-    foreach ((array)($report['weeks'] ?? []) as $iso => $week) {
-        $legacy[$iso] = ['visitors' => (int)($week['all_readings']['visitors_unique_ips'] ?? 0),
-            'listeners' => (int)($week['all_readings']['listeners_unique_ips'] ?? 0)];
-    }
     krsort($legacy);
     return ['selected' => $selected, 'weekly' => $weekly, 'totals' => audioDashboardTotals($selectedRows),
         'episodes' => $perEpisode, 'titles' => $episodes, 'errors' => $errors, 'clients' => $clients, 'actions' => $actions,
         'latency' => $latency, 'legacy' => $legacy, 'started' => $metrics['started'] ?? null,
+        'audience_started' => $metrics['audience_started'] ?? null,
+        'details_available' => $selected === 'all' ? ($available && $byWeek !== []) : ($weekly[$selected]['details_available'] ?? false),
         'unavailable' => isset($metrics['error']), 'generated' => $report['generated'], 'current_week' => $report['this_week']];
 }

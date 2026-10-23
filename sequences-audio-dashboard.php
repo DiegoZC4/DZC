@@ -107,15 +107,21 @@ function durationMean(array $t, string $e): string { return $t[$e] > 0 ? number(
 <?php elseif ($status === 'error'): ?>
 <section class="gate" role="alert"><h2>Cannot load dashboard</h2><p><?=esc($message)?></p><a href="sequences-audio-dashboard.php">Try again</a></section>
 <?php else: $t = $data['totals']; ?>
+<?php if ($data['legacy']): ?><section><h2>Earlier webpage usage</h2><p class="note">These are the previously reported weekly counts. They estimate distinct visitor and listener network addresses, not people or page loads. All available historical weeks are shown; they are not included in the new counters below.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Historical webpage usage"><table><thead><tr><th>Week of</th><th>Visitor addresses</th><th>Listener addresses</th><th>Podcast requests</th></tr></thead><tbody>
+<?php foreach ($data['legacy'] as $iso=>$w): ?><tr><th scope="row"><?=weekLabel($iso)?></th><td><?=number($w['visitors'])?></td><td><?=number($w['listeners'])?></td><td class="muted">Not collected</td></tr><?php endforeach; ?>
+</tbody></table></div></section><?php endif; ?>
+<h2>Detailed tracking</h2>
+<p class="note">These new counters began <?= $data['started'] ? esc(dashboardTime($data['started'])) : 'collecting only after setup' ?>. They do not include earlier visits or downloads. A zero means no matching events were recorded in the selected period since tracking began, not that the site has never been used.</p>
 <div class="toolbar"><form method="get"><label for="week">Details for</label> <select id="week" name="week">
-<option value="all" <?=$data['selected']==='all'?'selected':''?>>All measured weeks</option>
+<option value="all" <?=$data['selected']==='all'?'selected':''?>>All weeks since tracking began</option>
 <?php foreach ($data['weekly'] as $iso => $_): ?><option value="<?=esc($iso)?>" <?=$iso===$data['selected']?'selected':''?>>Week of <?=weekLabel($iso)?><?=$iso===$data['current_week']?' (in progress)':''?></option><?php endforeach; ?>
 </select><button type="submit">Show / refresh</button></form><small>Updated <?=esc(dashboardTime($data['generated']))?></small></div>
-<?php if ($data['unavailable']): ?><p class="warning" role="alert">Current counters could not be loaded. Missing data is not zero usage. Historical counts remain below.</p><?php else: ?>
+<?php if ($data['unavailable']): ?><p class="warning" role="alert">Current counters could not be loaded. Missing data is not zero usage. Any available historical counts remain above.</p><?php else: ?>
 <dl class="totals" aria-label="Selected period totals">
 <?php foreach ([['Page loads',number($t['page'])],['Play starts',number($t['play'])],['Listening minutes',number($t['listen']/60,1)],['Podcast requests',number($t['podcast'])],['Playback errors',number($t['mediaerror'])]] as [$name,$value]): ?>
 <div><dt><?=esc($name)?></dt><dd><?=esc($value)?></dd></div><?php endforeach; ?></dl>
-<p class="note">Podcast requests are daily-deduplicated estimates, not completed downloads or listens. Listening time is observed webpage playback only.</p>
+<p class="note">Podcast requests are daily-deduplicated estimates, not completed downloads or listens. Previously downloaded episodes and apps retaining older audio URLs will not appear here. Listening time is observed webpage playback only.</p>
 <section><h2>Weekly usage</h2><p class="note">Calendar weeks start Monday at 00:00 UTC. Click a week to inspect its episodes and errors.</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Weekly usage table"><table><thead><tr><th>Week of</th><th>Page loads</th><th>Play starts</th><th>Listening min</th><th>Podcast requests</th><th>Playback errors</th></tr></thead><tbody>
 <?php foreach ($data['weekly'] as $iso => $w): ?><tr <?=$data['selected']===$iso?'class="selected"':''?>><th scope="row"><a href="?week=<?=esc($iso)?>"><?=weekLabel($iso)?></a><?=$iso===$data['current_week']?' <span class="badge">Partial</span>':''?></th>
@@ -141,10 +147,6 @@ function durationMean(array $t, string $e): string { return $t[$e] > 0 ? number(
 <section><h2>Reader actions</h2><p class="note">No note contents, selected quotations, or search terms are collected.</p>
 <?php if (!$data['actions']): ?><p class="empty">No actions recorded for this period.</p><?php else: ?><dl class="breakdown"><?php foreach ($data['actions'] as $name=>$n): ?><div><dt><?=esc($name)?></dt><dd><?=number($n)?></dd></div><?php endforeach; ?></dl><?php endif; ?></section></div>
 <?php endif; ?>
-<?php if ($data['legacy']): ?><section><h2>Earlier webpage usage</h2><p class="note">Legacy estimates count distinct network addresses, not page loads or people. These are a different measure from the new counters; migration-week estimates are not combined. Podcast counts and detailed errors were not collected.</p>
-<div class="table-wrap" tabindex="0" role="region" aria-label="Historical webpage usage"><table><thead><tr><th>Week of</th><th>Visitor addresses</th><th>Listener addresses</th><th>Podcast requests</th></tr></thead><tbody>
-<?php foreach ($data['legacy'] as $iso=>$w): ?><tr><th scope="row"><?=weekLabel($iso)?></th><td><?=number($w['visitors'])?></td><td><?=number($w['listeners'])?></td><td class="muted">Not collected</td></tr><?php endforeach; ?>
-</tbody></table></div></section><?php endif; ?>
 <footer>Private aggregate report. Refresh to fetch current counts; no background polling, tracking script, or offline copy of this dashboard.</footer>
 <?php endif; ?>
 </main></body></html>

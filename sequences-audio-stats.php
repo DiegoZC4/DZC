@@ -10,7 +10,8 @@ header('X-Robots-Tag: noindex, nofollow');
 
 const TOKEN_SHA256 = 'be79b50c12d2b00c4c8d0c31cf8e8bc877aed58dfb27b13821e5631d91cd09b4';
 
-if (!hash_equals(TOKEN_SHA256, hash('sha256', (string) ($_GET['k'] ?? '')))) {
+$token = preg_replace('/^Bearer /i','',(string)($_SERVER['HTTP_AUTHORIZATION']??'')) ?: (string)($_GET['k']??'');
+if (!hash_equals(TOKEN_SHA256, hash('sha256', $token))) {
     http_response_code(404);
     exit;
 }
@@ -20,16 +21,10 @@ $docroot = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
 $root = $docroot === '' ? '' : dirname($docroot) . '/sequences-audio-stats';
 $weeksDir = $root . '/weeks';
 
-// Remove artifacts of the earlier hashed counter (format 1).
-foreach (['secret', 'history.json'] as $legacy) {
-    @unlink($root . '/' . $legacy);
-}
-
 $weeks = [];
 if (is_dir($weeksDir)) {
     foreach (scandir($weeksDir) ?: [] as $name) {
         if (preg_match('/^\d{4}-W\d{2}\.(page|play)$/', $name)) {
-            @unlink($weeksDir . '/' . $name);
             continue;
         }
         if (!preg_match('/^(\d{4}-W\d{2})__(lsrg-\d+|none)\.(page|play)$/', $name, $m)) {
@@ -65,8 +60,12 @@ foreach ($weeks as $week => &$entry) {
 }
 unset($entry);
 
+$metrics = null;
+try {require_once __DIR__.'/sequences-audio-metrics.php';$metrics=audioMetricsReport();}
+catch(Throwable $e) {$metrics=['error'=>'Metrics storage unavailable'];}
 echo json_encode([
-    'format' => 2,
+    'format' => 3,
+    'metrics' => $metrics,
     'generated' => gmdate('c'),
     'this_week' => gmdate('o-\WW'),
     'weeks' => (object) $weeks,

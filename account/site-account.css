@@ -42,6 +42,13 @@
 .dzc-menu-status:empty{display:none}
 .dzc-annotations [hidden],.dzc-selection[hidden],.dzc-selection-menu[hidden]{display:none!important}
 ::highlight(dzc-notes){background-color:var(--dzc-mark);color:inherit;text-decoration:underline;text-decoration-color:var(--dzc-accent)}
+::highlight(dzc-saved-notes){text-decoration:underline;text-decoration-color:var(--dzc-accent);text-decoration-style:dotted}
+.dzc-marked-text{position:relative;padding-inline-start:26px!important}
+.dzc-note-markers{display:contents}
+.dzc-note-marker{position:absolute;left:0;width:24px;height:24px;padding:4px;border:0;border-radius:4px;background:transparent;color:var(--dzc-accent);cursor:pointer;z-index:2}
+.dzc-note-marker svg{width:100%;height:100%;fill:var(--dzc-paper);stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dzc-note-marker:hover{background:var(--dzc-mark)}
+.dzc-note-marker:focus-visible{outline:2px solid var(--dzc-accent)}
 .dzc-account-page{margin:0;background:var(--dzc-paper);padding:24px;min-height:100dvh;box-sizing:border-box}
 .dzc-account-page main{max-width:42rem;margin:0 auto}
 .dzc-account-page a{color:var(--dzc-accent)}

@@ -63,7 +63,7 @@ https://sscpodcast.libsyn.com/the-categories-were-made-for-man-not-man-for-the-c
       <itunes:duration>4087</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-103-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-103-weekly.m4a" length="25541635" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-103-weekly.m4a" length="25541635" type="audio/mp4" />
     </item>
     <item>
       <title>#102 - Values and Wishes</title>
@@ -97,7 +97,7 @@ https://www.buzzsprout.com/2034731/14292300
       <itunes:duration>3206</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-102-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-102-weekly.m4a" length="20056717" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-102-weekly.m4a" length="20056717" type="audio/mp4" />
     </item>
     <item>
       <title>#101 - Ghosts in the Machine</title>
@@ -129,7 +129,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2322</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-101-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-101-weekly.m4a" length="14357998" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-101-weekly.m4a" length="14357998" type="audio/mp4" />
     </item>
     <item>
       <title>#100 - Intelligence</title>
@@ -162,7 +162,7 @@ https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds
       <itunes:duration>5597</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-100-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-100-weekly.m4a" length="32428231" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-100-weekly.m4a" length="32428231" type="audio/mp4" />
     </item>
     <item>
       <title>#99 - Godshatter</title>
@@ -195,7 +195,7 @@ https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else
       <itunes:duration>2446</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-99-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-99-weekly.m4a" length="15245972" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-99-weekly.m4a" length="15245972" type="audio/mp4" />
     </item>
     <item>
       <title>#98 - Group Selection</title>
@@ -227,7 +227,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2646</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-98-weekly-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-98-weekly.m4a" length="16262655" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-98-weekly.m4a" length="16262655" type="audio/mp4" />
     </item>
     <item>
       <title>#97 - Selection and Slack</title>
@@ -260,7 +260,7 @@ https://sscpodcast.libsyn.com/studies-on-slack
       <itunes:duration>4930</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-97-l2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-97-l2.m4a" length="30444273" type="audio/mp4" />
     </item>
     <item>
       <title>#96 - Evolution</title>
@@ -291,7 +291,7 @@ https://sscpodcast.libsyn.com/meditations-on-moloch
       <itunes:duration>7964</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-96-l1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-96-l1.m4a" length="49649440" type="audio/mp4" />
     </item>
     <item>
       <title>#95 - Minds and Intelligence</title>
@@ -319,7 +319,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>3386</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-95-book3-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-95-book3.m4a" length="21275549" type="audio/mp4" />
     </item>
     <item>
       <title>#94 - Letting Go</title>
@@ -352,7 +352,7 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html
       <itunes:duration>4227</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-94-k2-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-94-k2.m4a" length="26425158" type="audio/mp4" />
     </item>
     <item>
       <title>#93 - Oops</title>
@@ -390,7 +390,7 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
       <itunes:duration>2363</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-93-k1-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-93-k1.m4a" length="14813695" type="audio/mp4" />
     </item>
     <item>
       <title>#92 - Conformity</title>
@@ -425,7 +425,7 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/
       <itunes:duration>3700</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-92-j5-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-92-j5.mp3" length="59208092" type="audio/mpeg" />
     </item>
     <item>
       <title>#91 - Guardians</title>
@@ -460,7 +460,7 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/
       <itunes:duration>2946</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
       <podcast:chapters url="https://diegozc.com/audio/lsrg-90-j4-chapters.json" type="application/json+chapters" />
-      <enclosure url="https://op3.dev/e/https://diegozc.com/audio/lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-90-j4.mp3" length="47136733" type="audio/mpeg" />
     </item>
   </channel>
 </rss>

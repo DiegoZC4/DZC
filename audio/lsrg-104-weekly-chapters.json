@@ -1,0 +1,46 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#104 - Words and Categories",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for October 27, 2026.",
+  "fileName": "lsrg-104-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 383.244603,
+      "title": "Words as Hidden Inferences",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/3nxs2WYDGzJbzcLMp"
+    },
+    {
+      "startTime": 383.244603,
+      "endTime": 892.7107249999999,
+      "title": "Extensions and Intensions",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/HsznWM9A7NiuGsp28"
+    },
+    {
+      "startTime": 892.7107249999999,
+      "endTime": 1115.4013369999998,
+      "title": "Similarity Clusters",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/jMTbQj9XB5ah2maup"
+    },
+    {
+      "startTime": 1115.4013369999998,
+      "endTime": 1405.5148969999998,
+      "title": "Typicality and Asymmetrical Similarity",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/4mEsPHqcbRWxnaE5b"
+    },
+    {
+      "startTime": 1405.5148969999998,
+      "endTime": 1916.8124249999998,
+      "title": "The Cluster Structure of Thingspace",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/WBw8dDkAWohFjWQSk"
+    },
+    {
+      "startTime": 1916.8124249999998,
+      "endTime": 3159.812426,
+      "title": "(Optional) Diseased thinking: dissolving questions about disease",
+      "url": "https://www.lesswrong.com/s/NHXY86jBahi968uW4/p/895quRDaK6gR2rM82"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Compact, corner-guided jellychip molds. Search in your browser and export millimetre-scale, kerf-compensated laser outlines.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=1">
+<title>Jellychips · mold designer</title>
+</head>
+<body>
+<header><h1>Jellychips</h1>
+  <div class="pill" id="shape-pill" role="group" aria-label="Chip shape">
+    <span class="pill-thumb" aria-hidden="true"></span>
+    <button type="button" data-grid="square" aria-pressed="true">Squares</button><button type="button" data-grid="triangle" aria-pressed="false">Triangles</button>
+  </div>
+  <button type="button" id="theme" class="quiet" aria-label="Toggle light and dark theme">Dark</button>
+</header>
+<main>
+<section class="controls" aria-label="Mold settings">
+  <div id="primary-controls"></div>
+  <div class="actions"><button id="search" type="button">Search again</button><button id="stop" type="button" hidden>Stop</button></div>
+  <div id="search-status" class="small" role="status" aria-live="polite">100-chip examples ready.</div>
+  <label class="candidate-row" id="candidate-row" hidden>Layout <select id="candidate" aria-label="Choose verified layout"></select></label>
+  <div class="subsection" id="material-controls"></div>
+  <div class="small">Density is an editable planning assumption, not a measured agar recipe. Drag numbers vertically; click to type.</div>
+  <details id="search-options"><summary>Search options</summary><div id="advanced-controls"></div>
+    <p class="small">1–500 cells. Bounded, randomized search; not a global optimum. Some counts are impossible. A timeout only means “not found.” A filled central core speeds the search; set it to 0% to remove that heuristic.</p>
+  </details>
+</section>
+<section class="preview" aria-label="Mold preview">
+  <div class="metrics">
+    <div><span>Jelly height · estimated</span><strong id="height">—</strong></div>
+    <div><span>Master layers</span><strong id="layers">—</strong></div>
+    <div><span>Finished mixture</span><strong id="batch">—</strong></div>
+  </div>
+  <div id="preview-wrap"><svg id="preview" role="img" aria-label="Mold layout preview"></svg><p id="empty" hidden></p></div>
+  <div class="plot-bottom"><span id="dimensions" class="small"></span><label class="check"><input id="show-grid" type="checkbox" checked> Grid preview</label></div>
+  <div id="error" class="warning" role="alert" hidden></div>
+  <div class="export-row"><button id="download" class="primary" type="button">Download outline SVG</button><span id="copy-count" class="small"></span></div>
+  <p class="small" id="kerf-note">SVG: one closed outer cut only. No grid, text, or holes.</p>
+  <p class="small" id="depth-note"></p>
+</section>
+<details class="notes"><summary>Cutting, accuracy &amp; sources</summary>
+  <div class="notes-grid">
+  <section><h2>Laser settings</h2>
+    <p>Import the SVG at <b>1:1 in millimetres</b>. The red hairline is the only cut geometry. Kerf is the full measured cut width; the exported centerline is offset outward by half that value. Keep kerf at zero here if your laser software will compensate instead.</p>
+    <p>Kerf starts at zero because your machine has not been calibrated. Test a coupon in the actual sheet. Stock thickness, taper, corner rounding, sealing, silicone and cooling all affect the final result. This is not a dimensional-accuracy guarantee.</p>
+    <p>⅛ inch is 3.175 mm, but nominal sheets can differ: enter the measured thickness. Thinner stock is generally easier to cut; your machine and plywood must still be approved for laser use.</p>
+  </section>
+  <section><h2>Casting &amp; cutting</h2>
+    <p>Cut the indicated number of identical outlines, align and stack them into a positive master. The stack provides cavity depth, not the final jelly thickness. Pour the weighed batch into a level mold; do not fill to the rim unless that is your calibrated volume.</p>
+    <p>After demolding onto a normal food cutting board, score every grid direction before separating pieces. Squares use two directions; triangles use three. Use food-contact silicone following its maker’s instructions; this is not a food-contact specification for plywood or its sealer. Wood can inhibit silicone curing: test your finished, sealed master before making the full mold.</p>
+    <p>The idealized height uses mass ÷ density ÷ cell area. Equal mass also requires uniform thickness/density and negligible cutting or moisture losses. Triangle side length means the length of each of its three edges.</p>
+    <p>The default 1.080 g/mL is a rough planning proxy: the cited 20% sugar-in-water reference is 1.08093 g/mL at 20 °C. It is not a measured agar-gel density. Enter your own measured value for your recipe if precise height matters.</p>
+  </section>
+  <section><h2>Search &amp; privacy</h2><p>Search runs in a single Web Worker on this computer. No designs are uploaded. It checks exact cell count, one connected body, no holes, no point contacts, and a corner at every boundary grid point. Results are ranked by their actual smallest enclosing circle; compactness does not guarantee symmetry or a minimum neck width. Stop preserves completed candidates.</p><p>Settings and layouts are saved in this browser when storage is available. Side length, mass and kerf do not require a new layout search.</p></section>
+  <section><h2>References</h2><ul>
+    <li><a href="https://wiki.anton-paar.com/kr-kr/density-and-density-measurement/sucrose-density/#:~:text=1.08093" target="_blank" rel="noopener">Anton Paar: sucrose density, 20% row</a> — sugar-water reference only, not an agar-gel calibration.</li>
+    <li><a href="https://support.brmlasers.com/en/materials-and-parameters/materials/kerf-and-kerf-compensation#how-wide-is-it" target="_blank" rel="noopener">BRM Lasers: kerf and thickness</a></li>
+    <li><a href="https://www.smooth-on.com/support/faq/199/#:~:text=Platinum%20Cure%20Silicones" target="_blank" rel="noopener">Smooth-On: testing wood masters for silicone compatibility</a></li>
+    <li><a href="https://github.com/lovasoa/highs-js" target="_blank" rel="noopener">HiGHS browser solver</a> · <a href="./vendor/HIGHS-LICENSE.txt">MIT license</a></li>
+  </ul><p class="small">Source contents were checked, but browser passage highlights remain unverified: the vendor sites blocked or failed the automated browser check. The links retain the intended passage locators for manual use.</p></section>
+  </div>
+</details>
+</main>
+<script id="source-ledger" type="application/json">[
+{"title":"Anton Paar: Sucrose density","canonicalUrl":"https://wiki.anton-paar.com/kr-kr/density-and-density-measurement/sucrose-density/","passageLocator":"20% w/w row: 1.08093 g/cm3; table reference at 20 °C","locatorUrl":"https://wiki.anton-paar.com/kr-kr/density-and-density-measurement/sucrose-density/#:~:text=1.08093","browserLocatorCheck":"Blocked by vendor; source text independently read"},
+{"title":"BRM Lasers: Kerf and kerf compensation","canonicalUrl":"https://support.brmlasers.com/en/materials-and-parameters/materials/kerf-and-kerf-compensation","passageLocator":"How wide is it? section, including thickness and taper","locatorUrl":"https://support.brmlasers.com/en/materials-and-parameters/materials/kerf-and-kerf-compensation#how-wide-is-it","browserLocatorCheck":"Initial browser failed; native h2 ID verified in source HTML"},
+{"title":"Smooth-On: Will wood surfaces cause silicone cure inhibition?","canonicalUrl":"https://www.smooth-on.com/support/faq/199/","passageLocator":"Wood incompatibility tests and small-scale suitability test recommendation","locatorUrl":"https://www.smooth-on.com/support/faq/199/#:~:text=Platinum%20Cure%20Silicones","browserLocatorCheck":"Blocked by vendor; source text independently read"}
+]</script>
+<script type="module" src="./app.mjs?v=1"></script>
+</body></html>

@@ -1,0 +1,10 @@
+<IfModule mod_mime.c>
+  AddType text/javascript .mjs
+  AddType application/wasm .wasm
+  AddType image/svg+xml .svg
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|mjs|css|json|svg)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

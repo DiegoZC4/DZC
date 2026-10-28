@@ -29,7 +29,8 @@ const UrTheme=(()=>{
   const fields={background:'--gray-900',board:'--gray-700',green:'--approval-green',red:'--quality-red'};
   const valid=value=>value==='light'||value==='dark'?value:null;
   const hex=value=>typeof value==='string'&&/^#?[0-9a-f]{6}$/i.test(value.trim())?'#'+value.trim().replace(/^#/,'').toLowerCase():null;
-  let preference=null,palette={},button=null,controls=[];
+  let preference=null,palette={},button=null;
+  // Preserve colors already chosen before the temporary editor was removed.
   function loadPalette(){
     const next={};
     try{const saved=JSON.parse(localStorage.getItem(paletteKey));for(const name of Object.keys(fields)){const color=hex(saved?.[name]);if(color)next[name]=color;}}catch{}
@@ -38,35 +39,16 @@ const UrTheme=(()=>{
   try{preference=valid(localStorage.getItem(key));}catch{}
   palette=loadPalette();
   const current=()=>preference||(system.matches?'dark':'light');
-  function syncPalette(){
-    if(!controls.length)return;
-    const style=getComputedStyle(root);
-    for(const {name,picker,text}of controls){const color=hex(style.getPropertyValue(fields[name]));if(color){picker.value=color;text.value=color;}}
-  }
   function apply(){
     // The allowlist deliberately excludes black, white and both player colors.
     for(const [name,token]of Object.entries(fields)){if(palette[name])root.style.setProperty(token,palette[name]);else root.style.removeProperty(token);}
     const theme=current(),dark=theme==='dark';root.dataset.theme=theme;
     document.getElementById('theme-color').content=dark?(palette.background||'#181818'):'#ffffff';
     if(button){button.setAttribute('aria-pressed',String(dark));button.title=(dark?'Dark':'Light')+' theme · switch to '+(dark?'light':'dark')+' theme';}
-    syncPalette();document.dispatchEvent(new Event('ur-theme-change'));
-  }
-  function setColor(name,value){
-    const color=hex(value);if(!Object.hasOwn(fields,name)||!color)return;
-    palette[name]=color;try{localStorage.setItem(paletteKey,JSON.stringify(palette));}catch{}
-    apply();
+    document.dispatchEvent(new Event('ur-theme-change'));
   }
   function bind(control){
     button=control;button.addEventListener('click',()=>{preference=current()==='dark'?'light':'dark';try{localStorage.setItem(key,preference);}catch{}apply();});
-    controls=Object.keys(fields).map(name=>{
-      const picker=document.getElementById('palette-'+name),text=document.getElementById('palette-'+name+'-hex');
-      picker.addEventListener('input',()=>setColor(name,picker.value));
-      picker.addEventListener('change',()=>setColor(name,picker.value));
-      text.addEventListener('input',()=>setColor(name,text.value));
-      text.addEventListener('change',()=>{setColor(name,text.value);syncPalette();});
-      text.addEventListener('blur',syncPalette);
-      return {name,picker,text};
-    });
     apply();
   }
   system.addEventListener('change',()=>{if(preference===null)apply();});
@@ -136,15 +118,6 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 .rule-fields{display:grid;gap:10px}.rule-fields fieldset{min-width:0;margin:0;padding:8px 10px 10px;border:1px solid var(--line);border-radius:7px}.rule-fields legend{font-size:12px;color:var(--muted);padding:0 5px}.rule-buttons,.rule-counts{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}.rule-buttons button{font-size:12px;min-height:36px;padding:6px}.rule-buttons button[aria-pressed="true"]{background:var(--rule-selected);border-color:var(--rule-selected-border)}.rule-counts label{font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:6px}.drag-number{font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;min-width:44px;min-height:38px;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none}.drag-number:focus-visible{outline:2px solid var(--focus);outline-offset:3px}.route-pill{display:grid;grid-template-columns:1fr 1fr;position:relative;isolation:isolate;width:100%;padding:3px;border-radius:999px;font-size:12px;min-height:36px}.route-pill::before{content:'';position:absolute;inset:3px auto 3px 3px;width:calc((100% - 6px)/2);background:var(--selected);border-radius:999px;z-index:-1;transition:transform .15s ease}.route-pill[data-value="long"]::before{transform:translateX(100%)}.route-pill span{padding:4px}.route-pill[data-value="short"] span:first-child,.route-pill[data-value="long"] span:last-child{font-weight:650}
 #settings-dialog{width:360px}#settings-dialog .settings{gap:12px}#settings-dialog .gameplay-settings{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.gameplay-settings h3{font-size:15px;font-weight:600;margin:0}.gameplay-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}.auto-buttons{min-width:154px;gap:8px}.rule-helper{font-size:11px;color:var(--muted);margin:0}
 
-/* Temporary live palette tuning; player swatches remain in the game header. */
-#settings-dialog .palette-settings{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
-.palette-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.palette-heading h3{font-size:15px;font-weight:600;margin:0}.palette-heading small{font-size:11px}
-.palette-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
-.palette-field{display:grid;grid-template-columns:44px minmax(0,1fr);gap:5px 8px;align-items:center;min-width:0}.palette-label{grid-column:1/-1;font-size:13px}
-.palette-swatch{position:relative;width:44px;height:40px;border:1px solid var(--selected-border);border-radius:7px;background:var(--palette-swatch);overflow:hidden}.palette-swatch:focus-within{outline:2px solid var(--focus);outline-offset:3px}
-.palette-swatch input[type="color"]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
-.palette-hex{width:100%;min-width:0;height:40px;padding:5px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font:12px ui-monospace,SFMono-Regular,Consolas,monospace;user-select:text;-webkit-user-select:text}
-.palette-note{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
 /* One transparent stage over the game; the board keeps its existing dimensions. */
 #dice-layer{position:fixed;inset:0;width:100%;height:100dvh;z-index:40;pointer-events:none;color:var(--ink)}
 #dice-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:none;cursor:grab;outline:none}
@@ -166,7 +139,7 @@ button.dice:disabled{opacity:1;cursor:default}button.dice:hover:not(:disabled){b
 .players{align-items:end}.player{display:flex;flex-direction:column;align-items:center;justify-content:end;gap:4px}.player-editor{position:relative;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;width:100%;min-height:36px;font-size:16px;font-weight:500;line-height:1.3}.player.active .player-editor{font-weight:750}.player .player-name{max-width:100%;min-height:36px}.player-name strong{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;font:inherit}.player-portrait{position:absolute;top:calc(-1 * var(--portrait-raise));width:var(--board-tile);height:calc(40px + var(--toolbar-gap) + var(--portrait-raise));display:block;pointer-events:none;overflow:hidden}.player-portrait[data-p="0"]{right:calc(100% + 6px)}.player-portrait[data-p="1"]{left:calc(100% + 6px)}.player-portrait[data-p="0"][data-portrait="finkel"],.player-portrait[data-p="1"][data-portrait="tom-scott"]{transform:scaleX(-1)}.players .color-pair{align-self:end;margin-bottom:1px}.player-name-input{position:absolute;inset:0;min-width:0;caret-color:var(--ink);user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}.player-name-input:focus{outline:none}.eval-labels>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.eval-labels>small{flex:none}.turn-copy{overflow-wrap:anywhere}
 /* Four independent targets, not a capsule-wide binary toggle. */
 .players{grid-template-columns:var(--board-tile) var(--board-width) var(--board-tile);gap:6px;width:max-content;justify-self:center}.player-controls .player-editor .player-name{height:auto;min-height:44px;white-space:normal}.player-name strong{overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}.players .color-pair{grid-template-columns:minmax(0,1fr) repeat(2,calc(var(--board-width)/6)) minmax(0,1fr);width:var(--board-width);height:46px;margin-bottom:0;align-self:end}.color-pair .color-swatch:last-child{border-left-color:var(--line)}.color-pair .color-swatch input:focus-visible{outline:none}
-.think-slot{height:18px;min-height:18px;text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.think-time{margin:0;color:var(--muted);font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}.settings-actions{display:flex;flex:none;gap:6px}.settings-actions button{display:grid;place-items:center;width:36px;height:36px;padding:8px}.settings-actions svg{width:18px;height:18px;pointer-events:none}
+.settings-actions{display:flex;flex:none;gap:6px}.settings-actions button{display:grid;place-items:center;width:36px;height:36px;padding:8px}.settings-actions svg{width:18px;height:18px;pointer-events:none}
 /* SVG lessons share the board's monochrome pieces, dice and inset rosettes. */
 #rules-dialog{--guide-padding:20px;width:680px;max-width:calc(100vw - 24px);padding:20px;overscroll-behavior:contain}#rules-dialog .guide-heading{display:flex;align-items:center;gap:12px;position:sticky;top:calc(-1 * var(--guide-padding));z-index:2;background:var(--paper);margin:calc(-1 * var(--guide-padding)) calc(-1 * var(--guide-padding)) 0;padding:var(--guide-padding);padding-bottom:10px}#rules-dialog h2{margin:0 auto 0 0;font-size:22px}#rules-dialog .close{float:none;min-width:36px;min-height:36px;margin:0}.guide-cue{font-size:12px;color:var(--muted);white-space:nowrap}.guide-rule{font-size:12px;color:var(--muted);margin:9px 0 18px}.rule-lessons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}.guide-lesson{margin:0;min-width:0;border-top:1px solid var(--line);padding-top:10px}.guide-play{display:block;width:100%;min-height:0;padding:0;border:0;border-radius:0;text-align:left;background:transparent;color:inherit}.guide-play:hover:not(:disabled){background:transparent}.guide-play:focus-visible{outline:2px solid var(--focus);outline-offset:5px}.guide-lesson[data-motion="playing"]{border-top-color:var(--outline)}.guide-title{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:550;line-height:1.35}.guide-title>span{color:var(--subtle);font-size:11px;font-variant-numeric:tabular-nums}.guide-scene{display:block;width:100%;height:auto;margin-top:5px;overflow:visible}.guide-scene text{fill:var(--focus);font-size:11px;text-anchor:middle;font-family:inherit;stroke:none}.guide-scene .guide-roll-count{fill:var(--ink);font-size:13px;font-weight:550;text-anchor:start}.guide-scene .guide-count{fill:var(--subtle);font-size:10px}.guide-square{fill:var(--board-surface);stroke:var(--outline);stroke-width:1}.guide-piece{fill:var(--guide-light);stroke:var(--outline);stroke-width:1.6}.guide-piece.dark{fill:var(--guide-dark)}.guide-home{fill:none;stroke:var(--selected-border);stroke-width:1;stroke-dasharray:3 3}.guide-trace{fill:none;stroke:var(--trace);stroke-width:1;stroke-dasharray:3 3}.guide-block-clear{fill:none;stroke:var(--board-surface);stroke-width:5;stroke-linecap:round}.guide-block{fill:none;stroke:var(--outline);stroke-width:2;stroke-linecap:round}.guide-die path{fill:var(--guide-light);stroke:var(--outline);stroke-width:1}.guide-die circle{fill:var(--guide-dark)}.guide-die.dark path{fill:var(--guide-dark);stroke:var(--outline)}.guide-die.dark circle{fill:var(--guide-light)}.guide-die [data-motion]{transform-box:fill-box;transform-origin:center}#rules-dialog .dialog-note{margin:18px 0 0}@media(max-width:520px){#rules-dialog{--guide-padding:16px;padding:16px}.rule-lessons{grid-template-columns:minmax(0,1fr);gap:14px}.guide-scene{max-width:330px;margin:5px auto 0}.guide-rule{line-height:1.5}}
 
@@ -233,7 +206,6 @@ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFT
   <div class="tools">
     <div class="tools-left"><button id="undo" type="button" aria-label="Undo" title="Undo (U)" aria-keyshortcuts="U" disabled><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button><button id="hint" type="button" aria-label="Hint" title="Suggest a move"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></button><button id="paths" aria-pressed="false" title="Show the current player’s complete route (P)">Route</button></div>
   </div>
-  <div class="think-slot"><p class="think-time" id="think-time" role="status" aria-live="polite" hidden></p></div>
   <p class="sr-only" id="notice" role="status"></p>
   <p class="sr-only" id="move-review" role="status"></p>
   </div>
@@ -257,16 +229,6 @@ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFT
 </dialog>
 <dialog id="settings-dialog" aria-labelledby="settings-title">
   <header class="settings-heading"><h2 id="settings-title">Settings</h2><div class="settings-actions"><button id="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Switch to dark theme"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M 20 8.69 V 4 h -4.69 L 12 0.69 L 8.69 4 H 4 v 4.69 L 0.69 12 L 4 15.31 V 20 h 4.69 L 12 23.31 L 15.31 20 H 20 v -4.69 L 23.31 12 L 20 8.69 Z M 12 18 c -0.89 0 -1.74 -0.2 -2.5 -0.55 C 11.56 16.5 13 14.42 13 12 s -1.44 -4.5 -3.5 -5.45 C 10.26 6.2 11.11 6 12 6 c 3.31 0 6 2.69 6 6 s -2.69 6 -6 6 Z"/></svg></button><button id="rules" type="button" aria-label="How to play" title="How to play" aria-haspopup="dialog" aria-controls="rules-dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button><button id="download" type="button" aria-label="Download game" title="Download game (HTML)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></button><button class="close" data-close="settings-dialog" aria-label="Close settings" title="Close settings" autofocus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></header>
-  <section class="settings palette-settings" aria-labelledby="palette-title">
-    <div class="palette-heading"><h3 id="palette-title">Palette</h3><small>Temporary</small></div>
-    <div class="palette-grid">
-      <div class="palette-field"><label class="palette-label" for="palette-background">Background</label><span class="palette-swatch" style="--palette-swatch:var(--gray-900)"><input type="color" id="palette-background" value="#181818" aria-label="Background color"></span><input class="palette-hex" id="palette-background-hex" type="text" value="#181818" maxlength="7" aria-label="Background hex color" spellcheck="false" autocomplete="off" autocapitalize="off" title="Six-digit hex color"></div>
-      <div class="palette-field"><label class="palette-label" for="palette-board">Board</label><span class="palette-swatch" style="--palette-swatch:var(--gray-700)"><input type="color" id="palette-board" value="#484848" aria-label="Board color"></span><input class="palette-hex" id="palette-board-hex" type="text" value="#484848" maxlength="7" aria-label="Board hex color" spellcheck="false" autocomplete="off" autocapitalize="off" title="Six-digit hex color"></div>
-      <div class="palette-field"><label class="palette-label" for="palette-green">Green</label><span class="palette-swatch" style="--palette-swatch:var(--approval-green)"><input type="color" id="palette-green" value="#23743b" aria-label="Green color"></span><input class="palette-hex" id="palette-green-hex" type="text" value="#23743b" maxlength="7" aria-label="Green hex color" spellcheck="false" autocomplete="off" autocapitalize="off" title="Six-digit hex color"></div>
-      <div class="palette-field"><label class="palette-label" for="palette-red">Red</label><span class="palette-swatch" style="--palette-swatch:var(--quality-red)"><input type="color" id="palette-red" value="#ad3b32" aria-label="Red color"></span><input class="palette-hex" id="palette-red-hex" type="text" value="#ad3b32" maxlength="7" aria-label="Red hex color" spellcheck="false" autocomplete="off" autocapitalize="off" title="Six-digit hex color"></div>
-    </div>
-    <p class="palette-note">Background and board tune dark mode; the lighter shades follow.</p>
-  </section>
   <section class="settings" aria-label="Game rules">
     <div class="rules-setting">
       <div class="rules-label"><span id="rule-label">Rules for next game</span><span id="rule-custom" hidden>Custom</span></div>
@@ -1595,17 +1557,6 @@ const UrGuide = (() => {
   const cleanMoveDuration=value=>Number.isFinite(value)?Math.max(0,Math.min(3,Math.round(value*10)/10)):0.5;
   const moveDurationLabel=value=>value.toFixed(1)+' s';
   const cleanSearchBudget=value=>Number.isFinite(value)?Math.max(0,Math.min(5000,Math.round(value/100)*100)):400;
-  function renderThinkTime(){
-    const el=$('think-time');if(!el)return;
-    const r=lastThink;
-    el.hidden=thinking||!!replay||!r||r.forced||r.hint;
-    if(el.hidden){el.textContent='';return;}
-    const elapsed=r.elapsedMs<100?'less than 0.1':(r.elapsedMs/1000).toFixed(1);
-    const who=players.every(p=>p!=='human')?NAMES[r.player]:'Bot';
-    el.textContent=`${who} thought for ${elapsed} seconds`+(r.fallback?' · main-thread fallback':'');
-    el.dataset.evaluations=String(r.evaluations??0);el.dataset.budget=String(r.budget??0);el.dataset.elapsedMs=String(r.elapsedMs);el.dataset.depth=String(r.completedDepth??0);
-    el.dataset.engine=r.engine||'';el.title=`${NAMES[r.player]}. ${r.engine==='value-q8-features-original'?'Single value model':'Local evaluator'}; elapsed includes startup, inference ${Math.round(r.ms||0)} ms.`+(r.fallback?' Same value model on main thread: '+r.fallback:'');
-  }
   const historyRows=new Map(),historyReviews=new WeakMap(),nodes=new Map(),ports=[{},{}];
   const viewGame=()=>replay?replay.game:game;
   const coordinate=cell=>'ABC'[Math.floor(cell/8)]+(cell%8+1);
@@ -2231,7 +2182,7 @@ const UrGuide = (() => {
     button.title=finished?'Start a new '+name+' game.':'Hold 0.6s to start a new '+name+' game. Keyboard: hold Space / Enter, or Shift+Enter.';
   }
   function renderStatus(){
-    renderThinkTime();renderNewGameControl();
+    renderNewGameControl();
     const finished=game.winner!==null;
     $('turn-copy').classList.toggle('sr-only',!!replay||!finished);$('turn-message').classList.toggle('sr-only',true);
     for(const id of ['dice-area','roll','roll-value'])$(id).hidden=finished&&!replay;
@@ -2399,7 +2350,7 @@ const UrGuide = (() => {
   $('moves-backdrop').addEventListener('click',()=>{if(movesVisible())toggleMoves();});
   movesViewport?.addEventListener('change',()=>{if(!movesVisible())returnPresent();render();});
   $('undo').addEventListener('click',undo);$('paths').addEventListener('click',()=>{prefs.paths=!prefs.paths;save();render();});
-  $('hint').addEventListener('click',async()=>{if(!canAct()||rolled===null||thinking)return;clearTimeout(timer);const token=epoch,oracle=game.rule==='finkel';thinking=true;renderThinkTime();$('hint').disabled=true;notice=oracle?'Choosing a move…':'Looking one or two rolls ahead…';$('notice').textContent=notice;const result=await getAI(oracle?'oracle':'strong');if(token!==epoch)return;thinking=false;if(result){hintMove=result.move;selected=hintMove.pass?null:hintMove.from;notice='Suggestion: '+briefMove(game,hintMove)+'.'+(result.fallback?' · main-thread fallback':'');}render();});
+  $('hint').addEventListener('click',async()=>{if(!canAct()||rolled===null||thinking)return;clearTimeout(timer);const token=epoch,oracle=game.rule==='finkel';thinking=true;$('hint').disabled=true;notice=oracle?'Choosing a move…':'Looking one or two rolls ahead…';$('notice').textContent=notice;const result=await getAI(oracle?'oracle':'strong');if(token!==epoch)return;thinking=false;if(result){hintMove=result.move;selected=hintMove.pass?null:hintMove.from;notice='Suggestion: '+briefMove(game,hintMove)+'.'+(result.fallback?' · main-thread fallback':'');}render();});
   $('auto-turn').addEventListener('click',()=>{if(replay)return;prefs.expedited=!prefs.expedited;cancelWork();autoPaused=false;notice='';save();render();schedule();});
   $('move-duration').addEventListener('input',e=>{prefs.moveDuration=cleanMoveDuration(Number(e.target.dataset.value));save();});
   $('auto-roll').addEventListener('click',()=>{prefs.instantRolls=!prefs.instantRolls;cancelWork();save();render();schedule();});

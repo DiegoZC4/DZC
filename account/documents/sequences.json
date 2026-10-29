@@ -376,5 +376,29 @@
     "published": true,
     "title": "Diseased thinking: dissolving questions about disease",
     "url": "https://www.lesswrong.com/s/NHXY86jBahi968uW4/p/895quRDaK6gR2rM82"
+  },
+  "sequences-f80ccf0ea7cee3deb9ef2415": {
+    "app": "sequences",
+    "published": true,
+    "title": "Disguised Queries",
+    "url": "https://www.lesswrong.com/posts/4FcxgdvdQP45D6Skg/disguised-queries"
+  },
+  "sequences-c6935aea8223d3b5f8761418": {
+    "app": "sequences",
+    "published": true,
+    "title": "Neural Categories",
+    "url": "https://www.lesswrong.com/posts/yFDKvfN6D87Tf5J9f/neural-categories"
+  },
+  "sequences-fc3789d6b7b1d63fd6eb1324": {
+    "app": "sequences",
+    "published": true,
+    "title": "How An Algorithm Feels From Inside",
+    "url": "https://www.lesswrong.com/posts/yA4gF5KrboK2m2Xu7/how-an-algorithm-feels-from-inside"
+  },
+  "sequences-52083fc7f208fad76100b63a": {
+    "app": "sequences",
+    "published": true,
+    "title": "Testing the Natural Abstraction Hypothesis: Project Intro",
+    "url": "https://www.lesswrong.com/posts/cy3BhHrGinZCp3LXE/testing-the-natural-abstraction-hypothesis-project-intro"
   }
 }

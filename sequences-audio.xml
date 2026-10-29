@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 27 Oct 2026 00:55:30 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 29 Oct 2026 02:39:41 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,36 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/sequences-audio.html</link>
     </image>
+    <item>
+      <title>#105 - Categories</title>
+      <link>https://diegozc.com/sequences-audio.html#lsrg-105</link>
+      <guid isPermaLink="false">urn:lsrg:105:weekly</guid>
+      <pubDate>Thu, 29 Oct 2026 02:39:41 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Disguised Queries by Eliezer Yudkowsky
+https://www.lesswrong.com/posts/4FcxgdvdQP45D6Skg/disguised-queries
+
+8:57 - Neural Categories by Eliezer Yudkowsky
+
+20:31 - How An Algorithm Feels From Inside by Eliezer Yudkowsky
+
+30:53 - (Optional) Testing the Natural Abstraction Hypothesis: Project Intro by John Wentworth
+https://www.lesswrong.com/posts/cy3BhHrGinZCp3LXE/testing-the-natural-abstraction-hypothesis-project-intro
+
+Read along: https://diegozc.com/sequences-audio.html#lsrg-105
+
+Sources
+Rationality: From AI to Zombies audiobook
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and John Wentworth</itunes:author>
+      <itunes:episode>105</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2644</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-105-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-105-weekly.m4a" length="16055172" type="audio/mp4" />
+    </item>
     <item>
       <title>#104 - Words and Categories</title>
       <link>https://diegozc.com/sequences-audio.html#lsrg-104</link>

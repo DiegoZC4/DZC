@@ -140,7 +140,7 @@
   }
   function updateReferenceControls(){
     const entry=referenceAudio.entry, tracks=entry?.tracks||[];
-    const ready=tracks.some(t=>t.id==="original")&&tracks.some(t=>t.id==="vocal")&&tracks.some(t=>["backing","instrumental"].includes(t.id));
+    const ready=tracks.some(t=>t.id==="vocal")&&tracks.some(t=>["backing","instrumental"].includes(t.id));
     for(const [id,enabled,label] of [["referenceVocal",referenceAudio.vocal,"vocal"],["referenceBacking",referenceAudio.backing,"backing"]]){
       const button=$(id);button.disabled=busy||!ready||!usingReference();
       button.setAttribute("aria-pressed",String(enabled));button.title=`${enabled?"Mute":"Unmute"} ${label}; hold to solo or restore all tracks`;
@@ -149,7 +149,7 @@
       button.querySelector("svg, i")?.replaceWith(icon);
     }
     $("backingStatus").textContent=busy?"Preparing":!tracks.length?"Unavailable":"";
-    if(usingReference()&&tracks.length&&!ready)$("backingStatus").textContent="Original / stems pending";
+    if(usingReference()&&tracks.length&&!ready)$("backingStatus").textContent="Stems pending";
     $("backingNote").textContent="";
     $("record").title=$("auditionGuidance").textContent;
     $("metronome").setAttribute("aria-pressed",String(metronome));
@@ -284,7 +284,8 @@
       const [data,source]=await Promise.all([asset(song.playback,true),asset(song.score)]);if(token!==loading)return;
       if(alignment?.score){referenceXml=await asset(alignment.score);if(token!==loading)return;}
       sequence=data;xml=source;sourceReady=true;
-      if(alignment && referenceAudio.entry?.tracks?.find(t=>t.id==='original')?.file!==alignment.originalFile)alignment=null;
+      const prepared=clipCatalog.songs.find(s=>s.id===song.id&&s.scoreVersion===song.version);
+      if(alignment && prepared?.originalSha256!==alignment.originalSha256)alignment=null;
       if(alignment)referenceAudio.setTimeline(new MeleteReferenceAudio.Timeline(alignment.anchors));
       beatEditor?.attach(alignment,alignment&&beatGrid());
       renderNotation();renderPitch();await loadTakes();updateControls();releaseLayout("takes");

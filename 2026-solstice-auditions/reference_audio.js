@@ -56,7 +56,7 @@
       if (timeline) this.seek(timeline.playStart);
     }
     setEntry(entry) {
-      const original = e => e?.tracks?.find(t => t.id === "original")?.file;
+      const original = e => e?.originalSha256 || e?.tracks?.find(t => t.id === "original")?.file;
       const changed = this.entry?.id !== entry?.id || original(this.entry) !== original(entry);
       this.entry = entry;
       if (changed) { this.pause(); this.pending = null; this.timeline = null; }

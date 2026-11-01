@@ -94,9 +94,7 @@
   function mixGains(vocal, backing, levels = [1, 1], gains = [1, 1]) {
     const v = vocal ? Math.max(0, Math.min(2, levels[0])) * gains[0] : 0;
     const b = backing ? Math.max(0, Math.min(2, levels[1])) * gains[1] : 0;
-    // Keep the original at the shared level; add only the louder stem's excess,
-    // so as little as possible comes from the lossy separation.
-    return {original:Math.min(v,b), vocal:Math.max(0,v-b), backing:Math.max(0,b-v)};
+    return {vocal:v, backing:b};
   }
   function clickBeats(sequence,ref){
     const anchors=ref.timing.beatAnchors||ref.timing.anchors,map=new reference.Timeline(anchors);
@@ -142,8 +140,7 @@
       return this.fetching.get(src);
     }
     async prefetch(entry,rate=1){
-      const assets=entry.rates[String(entry.runtimeRate?1:rate)];
-      if(!assets)throw new Error('Prepared recording speed is unavailable.');
+      const assets=stemAssets(entry,rate);
       await Promise.all(Object.values(assets).map(asset=>this.audio(asset.src)));
     }
     async buffers(context,assets){
@@ -159,13 +156,18 @@
       return this.decoding.get(id);
     }
   }
+  function stemAssets(entry,rate){
+    const assets=entry.rates[String(entry.runtimeRate?1:rate)];
+    if(!assets?.vocal||!assets?.backing)throw new Error('Prepared recording speed is unavailable.');
+    // Ignore an old catalog's full-mix entry rather than downloading a third file.
+    return {vocal:assets.vocal,backing:assets.backing};
+  }
   class Deck {
     constructor(context, output=context.destination, clips=new ClipCache()){this.context=context;this.output=output;this.cache=null;this.clips=clips;this.nodes=[];this.gains={};this.abort=null;this.worklets={};this.loops={};this.level=1;this.levels=[1,1];this.stemGains=[1,1];}
     async load(entry, rate, shift=0){
       if(!Number.isInteger(shift)||shift < -12||shift > 12)throw new Error('Invalid transposition.');
       const bufferRate=entry.runtimeRate?1:rate;
-      const assets=entry.rates[String(bufferRate)]||{};
-      if(Object.keys(assets).length!==3)throw new Error('Prepared recording speed is unavailable.');
+      const assets=stemAssets(entry,rate);
       const id=JSON.stringify([entry.id,entry.scoreVersion,entry.correctionCents||0,bufferRate,assets]);
       this.abort?.abort();const controller=new AbortController();this.abort=controller;
       if(this.cache?.id!==id){
@@ -173,7 +175,7 @@
         if(controller.signal.aborted)throw new DOMException('Canceled','AbortError');
         this.cache={id,buffers,entry,rate};this.loops={};
       }
-      this.cache.rate=rate;this.bufferRate=bufferRate;this.stemGains=[entry.gains?.vocal??1,entry.gains?.backing??1];
+      this.cache.entry=entry;this.cache.rate=rate;this.bufferRate=bufferRate;this.stemGains=[entry.gains?.vocal??1,entry.gains?.backing??1];
       this.stop();this.shift=shift;this.stretched=!!shift||rate!==bufferRate;
       if(this.stretched){
         const {default:createStretch}=await import('./vendor/SignalsmithStretch.js');
@@ -199,6 +201,7 @@
           // Buffered Signalsmith accounts for its look-ahead internally. The
           // output timestamp is the same AudioContext clock as the cursor/click.
           void node.start({active:true,output:when,input:(sourceStart-entry.start)/this.bufferRate,rate:rate/this.bufferRate,semitones:this.shift,
+            formantSemitones:0,formantCompensation:this.shift!==0&&(name==='vocal'||entry.preserveFormants?.backing===true),formantBaseHz:0,
             loopStart:loopStart===null?0:(loopStart-entry.start)/this.bufferRate,loopEnd:loopStart===null?0:(end-entry.start)/this.bufferRate});
         }else{
           if(loopStart!==null){const loop=this.loopBuffer(name,buffer,loopStart,end,sourceStart);

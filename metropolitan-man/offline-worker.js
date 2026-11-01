@@ -242,7 +242,16 @@ const persistentStoredChunk = storedChunk;
 storedChunk = async (asset, index) => {
   const saved = await persistentStoredChunk(asset, index);
   if (saved) return saved;
-  if (warmOpening?.url === asset.url && warmOpening.expires > Date.now()) return warmOpening.chunks.get(index);
+  if (warmOpening?.url === asset.url && warmOpening.expires > Date.now()) {
+    const data = warmOpening.chunks.get(index);
+    if (data) {
+      // Preloading can precede an explicit download. The shared writer checks
+      // current opt-in eligibility, so this never creates a hidden download.
+      try { await storeChunk(asset, index, data, ''); }
+      catch (error) { await notify(asset, 'storage-error', error.name === 'QuotaExceededError' ? 'Device storage is full' : error.message); }
+      return data;
+    }
+  }
   return null;
 };
 

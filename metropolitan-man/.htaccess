@@ -8,10 +8,11 @@ RewriteRule ^(?:data/.*|media/.*|feed(?:-opus)?\.xml)$ release.php [END]
     Header set X-Content-Type-Options "nosniff"
 </Files>
 SetEnv no-gzip 1
-# A stale worker can disagree with the content-hashed reader JS after a release.
-# This rule affects only the update script, never audio or the offline stores.
-<Files "offline-worker.js">
+# Keep unversioned entry points out of intermediary/native HTTP caches. Offline
+# reopening uses the explicitly saved, coherent Cache Storage bundle instead.
+# Content-hashed scripts/styles and all media retain their usual cache policy.
+<FilesMatch "^(index\.html|offline-worker\.js)$">
     Header always set Cache-Control "no-store, max-age=0"
     Header always set CDN-Cache-Control "no-store"
     Header always set LiteSpeed-Cache-Control "no-cache"
-</Files>
+</FilesMatch>

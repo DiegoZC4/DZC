@@ -106,6 +106,13 @@
       .filter(b=>b.seconds>=0&&b.seconds<ref.seconds);
   }
   const LOOP_FADE = .025, START_FADE = .25;
+  // Complete the entrance ramp before the consonant, not just the pitched vowel.
+  // Seeking into a phrase needs only a short de-click, never another long fade.
+  function entranceFade(entry, sourceTime=entry.start, rate=1) {
+    const start=Math.max(entry.start,sourceTime),nominal=(start>entry.start+.001?.005:START_FADE)*rate;
+    const available=Number.isFinite(entry.vocalOnset)?Math.max(.005*rate,entry.vocalOnset-start-.04):nominal;
+    return {start,end:start+Math.min(nominal,available)};
+  }
   class ByteCache {
     constructor(limit){this.limit=limit;this.bytes=0;this.items=new Map();}
     get(key){const item=this.items.get(key);if(!item)return;
@@ -200,6 +207,8 @@
           node.onended=()=>{node.disconnect();gain.disconnect();};this.nodes.push(node);
         }
       }
+      const fade=entranceFade(entry,sourceTime,rate);
+      this.fadeSeconds=(fade.end-fade.start)/rate;
       this.endTime=loopStart===null?when+(end-sourceStart)/rate:Infinity;this.startTime=when;
       this.mix(vocal,backing,true);
     }
@@ -226,7 +235,7 @@
       for(const [name,node] of Object.entries(this.gains)){
         node.gain.cancelScheduledValues(this.context.currentTime);
         if(immediate){node.gain.setValueAtTime(0,this.context.currentTime);node.gain.setValueAtTime(0,this.startTime);
-          node.gain.linearRampToValueAtTime(levels[name]*this.level,this.startTime+START_FADE);}
+          node.gain.linearRampToValueAtTime(levels[name]*this.level,this.startTime+this.fadeSeconds);}
         else node.gain.setTargetAtTime(levels[name]*this.level,this.context.currentTime,.005);
         if(Number.isFinite(this.endTime)&&this.endTime>this.context.currentTime)node.gain.setValueAtTime(0,this.endTime);
       }
@@ -239,6 +248,6 @@
     }
     cancel(){this.abort?.abort();this.stop();}
   }
-  const api={plan,repeatPlan,loopRegion,passAt,tickAt,staffTick,secondsAt,mixGains,measuresTo,measureBeats,clickBeats,START_FADE,ByteCache,ClipCache,Deck};
+  const api={plan,repeatPlan,loopRegion,passAt,tickAt,staffTick,secondsAt,mixGains,measuresTo,measureBeats,clickBeats,entranceFade,START_FADE,ByteCache,ClipCache,Deck};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.MeleteRecordingTiming=api;
 })(globalThis);

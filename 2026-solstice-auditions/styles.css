@@ -22,6 +22,7 @@ aside{padding:14px 8px}.aside-heading{padding:0 8px 10px}
 .source-pill{display:flex;position:relative;isolation:isolate;padding:2px;background:#eaf0ed;border:1px solid #cbd8d0;border-radius:18px;flex-shrink:0}
 .source-pill button{position:relative;z-index:1;border:0;background:transparent;min-height:27px;padding:3px 9px;font-size:12px}
 .source-pill button[aria-selected=true]{font-weight:650;color:#185a46}
+#takeScope{margin-left:0}#takeScope button{width:44px}#takeScope .pill-thumb{background:var(--surface)}
 .pill-thumb{position:absolute;top:2px;left:0;height:27px;border-radius:15px;background:white;box-shadow:0 1px 3px #23423020;transition:transform .16s,width .16s;pointer-events:none}
 .source-pill[aria-disabled=true]{opacity:.55}
 .playback-position{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-height:36px;font-size:11px;color:var(--muted)}
@@ -139,3 +140,24 @@ main{padding:6px 18px 18px}
 @media(prefers-color-scheme:dark){.season-heading{color:color-mix(in srgb,var(--season) 65%,white)}}
 @media(max-width:1000px){.take-panel{grid-template-columns:minmax(0,1fr)}.take-actions{padding-top:0}.take-actions .submission{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}}
 @media(max-width:800px){aside{position:static;max-height:none;padding:6px 14px}#songList{gap:10px}.season-group{display:flex;flex:0 0 auto;align-items:center;gap:5px;margin:0}.season-heading{margin:0;padding:0 2px;border:0;font-size:10px}main{padding:6px 14px 30px}}
+
+/* One transport row; the waveforms own seeking and each take owns its actions. */
+.workspace{min-height:100dvh}
+.sidebar-title{font-size:16px;line-height:1.3;padding:3px 8px 12px;letter-spacing:0}
+.toolbar #display{margin-left:0}
+.toolbar .account{margin-left:auto;flex:0 0 auto;gap:8px}
+.toolbar #accountName{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#backingStatus:empty,#backingNote:empty{display:none}
+.settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:6px 0;border-bottom:1px solid var(--line)}
+.settings-row #micSettings,.settings-row .display-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:0;margin:0;border:0;font-size:12px}
+.settings-row label{display:flex;align-items:center;gap:7px}
+.settings-row #micDevice{width:230px;max-width:100%;height:30px}
+.settings-row #latency{width:55px;height:30px}
+.display-settings .scale-number{width:56px;height:30px;min-height:30px;justify-content:center;padding:3px 6px;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums}
+.take-panel{display:block;max-width:740px}
+.takes{width:100%;min-width:620px}
+.takes td:last-child,.takes th:last-child{width:100px;white-space:nowrap}
+.takes td:last-child button{width:30px;height:28px;min-height:28px}
+.takes [data-submit-take]{color:var(--accent)}
+.season-heading{letter-spacing:0}
+@media(max-width:800px){.sidebar-title{font-size:14px;padding:2px 0 8px}.settings-row{gap:8px 16px}.settings-row #micDevice{width:190px}.toolbar .account{margin-left:auto}.takes{width:660px}.takes td:first-child,.takes th:first-child{width:160px}}

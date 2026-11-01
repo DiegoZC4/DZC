@@ -37,6 +37,10 @@
   }
   function within(take){const s=take.pitchScore;return Number.isFinite(s?.within50Percent)?s.within50Percent:
     s?.trackedSeconds>0?s.within50CentsSeconds/s.trackedSeconds*100:null;}
+  function visible(takes,user,all,song){
+    if(!user)return [];
+    return takes.filter(t=>t.remote?.song===song&&((user.admin&&all)||t.remote.owner===user.id));
+  }
   function compare(a,b,order){
     const value=t=>({number:t.remote?t.name:t.number,tracked:t.pitchScore?.coverage,
       mean:t.pitchScore?.meanAbsCents,median:t.pitchScore?.medianAbsCents,within:within(t)})[order.column];
@@ -45,6 +49,6 @@
     const result=missing(x)?0:typeof x==='string'||typeof y==='string'?String(x).localeCompare(String(y),undefined,{numeric:true}):x-y;
     return result*(order.direction==='descending'?-1:1)||(a.createdAt||0)-(b.createdAt||0);
   }
-  const api={photo,wire,take,attach,within,compare};
+  const api={photo,wire,take,attach,within,visible,compare};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.MeleteAuditionReviews=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

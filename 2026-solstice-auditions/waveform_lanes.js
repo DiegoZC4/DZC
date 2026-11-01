@@ -130,10 +130,6 @@
             if(amplitude<=0)continue;
             const h=amplitude*27;ctx.fillRect(x,mid-h/2,1.5,h);
           }}else{ctx.fillStyle=muted;ctx.font='11px system-ui';ctx.fillText('Waveform pending',8,mid);}
-          ctx.globalAlpha=.85;ctx.strokeStyle=colours[row];
-          for(const [fade,rising] of [[d.cut?.fadeIn,true],[d.cut?.fadeOut,false]])if(fade&&fade.start<d.cut.end){
-            ctx.beginPath();ctx.moveTo(xAt(fade.start),mid-(rising?0:14));ctx.lineTo(xAt(fade.end),mid-(rising?14:0));ctx.stroke();
-          }
         }else if(row===2)for(const b of [...count.map(b=>({x:xAt(b.seconds),label:b.label})),...d.beats.filter(b=>!d.map||d.beatMap.seconds(b.tick)<d.end-1e-7).map(b=>({x:xTick(b.tick),label:b.label}))]){
           const h=b.label===1?24:13;ctx.fillRect(b.x,mid-h/2,b.label===1?2:1.5,h);
         }else{
@@ -151,17 +147,12 @@
         const end=Math.min(width-1,xAt(d.cut.end));
         ctx.strokeStyle=muted;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(end,16);ctx.lineTo(end,height);ctx.stroke();
         ctx.fillStyle=muted;ctx.font='10px system-ui';ctx.textAlign='right';ctx.fillText('End',end-4,8);
-        const fade=d.cut.fadeOut;
-        if(fade&&fade.start<d.cut.end){
-          const x=xAt(fade.start);ctx.textAlign='right';ctx.fillText('Fade',Math.min(x-4,end-29),8);
-          ctx.setLineDash([2,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,88);ctx.stroke();ctx.setLineDash([]);
-        }
         if(Number.isFinite(d.cut.loopStart)){
           const x=xAt(d.cut.loopStart);ctx.fillStyle=css.getPropertyValue('--accent').trim();
           ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x+6,16);ctx.lineTo(x,22);ctx.closePath();ctx.fill();
         }
         ctx.textAlign='left';ctx.lineWidth=1;
-        this.element.title=`Audio ends at ${d.cut.end.toFixed(3)} s${fade?`; fades ${fade.start.toFixed(3)}-${fade.end.toFixed(3)} s`:''}`;
+        this.element.title=`Audio ends at ${d.cut.end.toFixed(3)} s`;
       }
     }
   }

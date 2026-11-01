@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow"><title>Solstice Auditions - Melete</title>
+  <meta name="robots" content="noindex,nofollow"><title>2026 Solstice Auditions - Melete</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%8E%A4%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=1076cd9fe943">
+  <link rel="stylesheet" href="styles.css?v=9ef22566925f">
   <script defer src="vendor/lucide.min.js?v=ab85225ecc1d"></script>
   <script defer src="vendor/alphaTab.min.js?v=2d0335501b87"></script>
   <script defer src="shared/loop_recorder.js?v=de022c012258"></script>
@@ -13,22 +13,18 @@
   <script defer src="shared/live_pitch.js?v=22db73490ab4"></script>
   <script defer src="shared/microphone_check.js?v=dee282cbd531"></script>
   <script defer src="reference_audio.js?v=81302ea3765c"></script>
-  <script defer src="recording_timing.js?v=d21de19f5994"></script>
+  <script defer src="recording_timing.js?v=f5b2c9b38450"></script>
   <script defer src="vendor/melete-synth.js?v=5be3d7c95598"></script>
   <script defer src="melody.js?v=384657d42894"></script>
-  <script defer src="waveform_lanes.js?v=489e80de9310"></script>
+  <script defer src="waveform_lanes.js?v=14c5ecb48451"></script>
   
-  <script defer src="vendor/infinite-pager.js?v=b8455dce7b87"></script>
-  <script defer src="reviews.js?v=fb5ca490e5b7"></script>
-  <script defer src="app.js?v=4ebcd1e9185b"></script>
+  <script defer src="vendor/infinite-pager.js?v=bf1d3c4ee53c"></script>
+  <script defer src="reviews.js?v=8a35b9f5fa7a"></script>
+  <script defer src="app.js?v=5f3f9c309621"></script>
 </head>
 <body>
-  <header class="topbar">
-    <h1>Solstice <span>Auditions</span></h1>
-    <div class="account"><span id="accountName"></span><div id="googleButton" title="Sign in with Google"></div><button id="signIn" class="icon" hidden title="Retry Google sign-in" aria-label="Retry Google sign-in"><i data-lucide="refresh-cw"></i></button><button id="signOut" hidden title="Sign out" aria-label="Sign out"><i data-lucide="log-out"></i></button></div>
-  </header>
   <div class="workspace" id="practiceView">
-    <aside aria-label="Program songs"><div class="aside-heading">2026 program</div><div id="songList"></div></aside>
+    <aside aria-label="Program songs"><h1 class="sidebar-title">2026 Solstice Auditions</h1><div id="songList"></div></aside>
     <main>
       <p id="cutLabel" class="cut-label" hidden></p>
       <div id="pending" hidden></div>
@@ -42,11 +38,12 @@
           <div class="transpose-control"><span id="transposeLabel">Transpose</span><div id="transpose" class="transpose-pager" role="spinbutton" tabindex="0" aria-labelledby="transposeLabel"></div></div>
           <!-- YouTube: unchanged Simple Icons path, CC0; Google LLC trademark. -->
           <a id="source" class="icon source-link" target="_blank" rel="noopener noreferrer" hidden><svg class="youtube-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="7" width="9" height="10" fill="white"></rect><path fill="#ff0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg><i data-lucide="external-link"></i></a>
-          <div class="playback-position"><input id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Excerpt position"><output id="backingStatus" role="status"></output><span id="backingNote"></span></div>
-          <button id="display" class="icon" title="Display settings" aria-label="Display settings" aria-expanded="false" aria-controls="displaySettings"><i data-lucide="scan-eye"></i></button>
+          <output id="backingStatus" role="status"></output><span id="backingNote"></span>
+          <button id="display" class="icon" title="Display settings" aria-label="Display settings" aria-expanded="true" aria-controls="displaySettings"><i data-lucide="scan-eye"></i></button>
           <button id="fullscreen" class="icon" title="Full screen (F)" aria-label="Enter full screen"><i data-lucide="maximize"></i></button>
           <button id="checkMicrophone" class="icon" title="Check microphone level" aria-label="Check microphone"><i data-lucide="mic"></i></button>
-          <button id="mic" class="icon" title="Microphone settings" aria-label="Microphone settings"><i data-lucide="settings-2"></i></button>
+          <button id="mic" class="icon" title="Microphone settings" aria-label="Microphone settings" aria-expanded="true" aria-controls="micSettings"><i data-lucide="settings-2"></i></button>
+          <div class="account"><span id="accountName"></span><div id="googleButton" title="Sign in with Google"></div><button id="signIn" class="icon" hidden title="Retry Google sign-in" aria-label="Retry Google sign-in"><i data-lucide="refresh-cw"></i></button><button id="signOut" hidden title="Sign out" aria-label="Sign out"><i data-lucide="log-out"></i></button></div>
         </div>
         <div id="referenceMix" class="waveform-mixer" role="group" aria-label="Reference tracks">
           <div class="track-labels backing-controls">
@@ -61,15 +58,17 @@
             <span id="waveformPlayhead" class="waveform-playhead" aria-hidden="true"></span>
           </div>
         </div>
-        <div id="micSettings" hidden><label>Microphone <select id="micDevice"><option value="">System default</option></select></label><label title="Added to the browser's reported input and output latency">Extra delay <input id="latency" type="number" min="0" max="500" step="10" value="0"> ms</label></div>
-        <div id="displaySettings" class="display-settings" hidden>
-          <label for="scale">Scale <input id="scale" type="range" min="80" max="160" step="10" value="100"><output id="scaleValue" for="scale">100%</output></label>
-          <label for="stretch">Stretch <input id="stretch" type="range" min="100" max="250" step="10" value="100"><output id="stretchValue" for="stretch">100%</output></label>
+        <div class="settings-row">
+          <div id="micSettings"><label>Microphone <select id="micDevice"><option value="">System default</option></select></label><label title="Added to the browser's reported input and output latency">Extra delay <input id="latency" type="number" min="0" max="500" step="10" value="0"> ms</label></div>
+          <div id="displaySettings" class="display-settings">
+            <label for="scale">Scale <button id="scale" type="button" class="scale-number" data-value="100" title="Vertical scale; drag or click to increase by 10%"></button></label>
+            <label for="stretch">Stretch <button id="stretch" type="button" class="scale-number" data-value="100" title="Horizontal scale; drag or click to increase by 10%"></button></label>
+          </div>
         </div>
         <div class="notation-wrap"><div class="notation" id="notation" aria-label="Conventional melody notation"></div><div id="scorePlayhead" class="score-playhead" hidden></div></div>
         <div class="pitch-scroll" id="pitchScroll"><div id="pitchbar" aria-label="Melody and microphone pitch contour"></div></div>
         <div class="take-panel"><div class="take-list">
-        <div class="take-heading"><h3>Takes <span id="takeCount"></span></h3><button id="refreshReview" class="icon" hidden title="Refresh submitted auditions" aria-label="Refresh submitted auditions"><i data-lucide="refresh-cw"></i></button><button id="undoDelete" hidden><i data-lucide="undo-2"></i>Undo delete</button><span id="localStorageSize"></span></div>
+        <div class="take-heading"><h3>Takes <span id="takeCount"></span></h3><div id="takeScope" class="source-pill" role="tablist" aria-label="Whose takes" hidden><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-scope="mine" aria-selected="true">Mine</button><button type="button" role="tab" data-scope="all" aria-selected="false" tabindex="-1">All</button></div><button id="refreshReview" class="icon" hidden title="Refresh submitted auditions" aria-label="Refresh submitted auditions"><i data-lucide="refresh-cw"></i></button><button id="undoDelete" hidden><i data-lucide="undo-2"></i>Undo delete</button><span id="localStorageSize"></span></div>
         <div class="takes-scroll"><table class="takes"><thead><tr>
           <th scope="col"><button data-sort="number">Singer / Take</button></th>
           <th scope="col"><button data-sort="tracked">Tracked (%)</button></th>
@@ -80,8 +79,6 @@
         </tr></thead><tbody id="takes"></tbody></table></div>
         <div id="takeEmpty">No takes for this excerpt.</div>
         <div id="recovery" hidden><span>Unsaved recording</span><button id="downloadRecovery"><i data-lucide="download"></i>Download recovery</button><button id="retryRecovery"><i data-lucide="refresh-cw"></i>Retry save</button></div>
-        </div><div class="take-actions">
-        <div class="submission"><div><button id="submit" class="primary" disabled><i data-lucide="send"></i><span>Submit selected take</span></button><button id="withdraw" hidden>Withdraw submission</button></div><p>Practice takes stay on this device. Submitting shares one recording with Diego and Leila only.</p></div>
         </div></div>
       </div>
     </main>

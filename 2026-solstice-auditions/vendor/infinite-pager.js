@@ -309,6 +309,7 @@
     let dragValues = values;
     let startValue = value;
     let startX = 0;
+    let moved = false;
     let pointerType = "mouse";
     let holdTimer = 0;
     let held = false;
@@ -355,6 +356,7 @@
       startY = event.clientY;
       startValue = value;
       held = false;
+      moved = false;
       dragValues = interactionValues();
       startIndex = dragValues.indexOf(value);
       button.setPointerCapture(pointerId);
@@ -370,6 +372,7 @@
       if (event.pointerId !== pointerId || !button.hasPointerCapture(pointerId) || held) return;
       const delta = startY - event.clientY;
       const indexDelta = Math.round(delta / (options.pixelsPerStep || 8));
+      if (indexDelta !== 0 || Math.hypot(event.clientX - startX, delta) > 4) moved = true;
       if (indexDelta !== 0 || Math.hypot(event.clientX - startX, delta) > 8) clearHold();
       // Horizontal displacement is deliberately ignored so a finger can move
       // aside to reveal the value without editing it. Zero vertical
@@ -380,6 +383,9 @@
     const endPointer = (event) => {
       if (event.pointerId !== pointerId) return;
       cancelPointer();
+      if (options.stepOnClick && !held && !moved && event.type === "pointerup") {
+        update(dragValues[Math.min(dragValues.length - 1, startIndex + 1)]);
+      }
       if (!held && event.type === "pointerup" && startValue !== value) options.onManualChange?.(startValue, value, event.pointerType);
     };
     button.addEventListener("pointerup", endPointer);
@@ -395,6 +401,11 @@
       cancelPointer();
     });
     button.addEventListener("dblclick", () => update(defaultValue()));
+    button.addEventListener("click", event => {
+      if (!options.stepOnClick || event.detail !== 0) return;
+      const stops = interactionValues();
+      update(stops[Math.min(stops.length - 1, stops.indexOf(value) + 1)]);
+    });
     button.addEventListener("keydown", (event) => {
       if (options.onHold && event.shiftKey && event.key === "Enter") {
         cancelPointer();

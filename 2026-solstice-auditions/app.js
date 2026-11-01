@@ -8,6 +8,7 @@
   const store = new R.TakeStore(undefined, "melete-audition-takes-v1");
   let catalog, song, sequence, xml, api, session, takes = [], submissions = [], reviews = [];
   let selected = null, audio = null, playing = null, recording = null, busy = false, generation = 0, loading = 0;
+  let showAllTakes = false;
   let live = [], liveChannel = null, analysisQueue = Promise.resolve(), timer = 0, statusTimer = 0;
   let pitchySource = null, context = null, guide = null, nodes = [], playbackBuffer = null;
   let geometry = null, current = 0, sourceReady = false, recovery = null, preferredDevice = "";
@@ -63,6 +64,10 @@
     $(id).oninput=()=>{trackLevels[index]=control.value();applyTrackLevels();settings();};
     return control;
   });
+  const scaleControls=Object.fromEntries([['scale',80,160],['stretch',100,250]].map(([id,min,max])=>[
+    id,MeleteDragNumber($(id),{values:Array.from({length:(max-min)/10+1},(_,i)=>min+i*10),defaultValue:100,
+      pixelsPerStep:8,stepOnClick:true,format:v=>`${v}%`,aria:v=>`${v}%`})
+  ]));
   function applyTrackLevels(){
     deck?.trackLevels(trackLevels[0]/100,trackLevels[1]/100);
     if(metroGain)metroGain.gain.setTargetAtTime(metronome?trackLevels[2]/100*CLICK_LEVEL:0,context.currentTime,.005);
@@ -138,7 +143,7 @@
     const clip=clipCatalog.songs.find(s=>s.id===song.id),take=currentTake(),saved=take?.pitchReference,region=saved?.timing?.loop||alignment?.loop;
     const playbackEnd=saved?.timing?.kind==='recording'?saved.timing.origin+saved.seconds*saved.rate:clip?.end;
     const cut=map&&clip?{start:clip.start,end:Math.min(clip.end,playbackEnd),fadeOut:clip.fadeOut||alignment?.loop?.fadeOut,
-      fadeIn:{start:Math.max(count.start,clip.start),end:Math.max(count.start,clip.start)+T.START_FADE*(take?.rate||rate())},loopStart:region?.start}:null;
+      fadeIn:T.entranceFade(clip,count.start,take?.rate||rate()),loopStart:region?.start}:null;
     // A loop that runs past the music clicks on to its seam.
     const clicks=map?Math.max(map.endTick,alignment?.loop?.endTick??0):undefined;
     waveforms.set({map,beatMap,start:count.start,count:count.beats,endTick:sequence.endTick,measures:map?grid.measures:sequence.measures,beats:T.measureBeats(sequence,clicks),grid,
@@ -171,7 +176,7 @@
     clearTimeout(statusTimer); $("status").textContent = message; $("status").classList.toggle("error",error);
     if (message && !error) statusTimer = setTimeout(() => {$("status").textContent="";},6500);
   }
-  function settings() { try { localStorage.setItem("melete-audition-settings",JSON.stringify({speed:rate(),transposeBySong,device:preferredDevice,latency:$("latency").value,vocal:referenceAudio.vocal,backing:referenceAudio.backing,metronome,melody,trackLevels,loopEnabled,takeOrder,scale:$("scale").value,stretch:$("stretch").value})); } catch {} }
+  function settings() { try { localStorage.setItem("melete-audition-settings",JSON.stringify({speed:rate(),transposeBySong,device:preferredDevice,latency:$("latency").value,vocal:referenceAudio.vocal,backing:referenceAudio.backing,metronome,melody,trackLevels,loopEnabled,takeOrder,showAllTakes,scale:scaleControls.scale.value(),stretch:scaleControls.stretch.value(),micExpanded:!$("micSettings").hidden,displayExpanded:!$("displaySettings").hidden})); } catch {} }
   async function request(action, body, binary = false) {
     const response = await fetch(`api.php?action=${action}`, {method:body === undefined?"GET":"POST",credentials:"same-origin",cache:"no-store",
       headers:body === undefined?{}:{"Content-Type":binary?"application/octet-stream":"application/json","X-Melete-CSRF":session.csrf},
@@ -227,7 +232,9 @@
     alignment=alignmentCatalog.songs.find(s=>s.id===song.id&&s.scoreVersion===song.version)||null;
     document.title=`${song.title} - Solstice Auditions`;
     $("cutLabel").hidden=!song.cutLabel;$("cutLabel").textContent=song.cutLabel||"";
-    const original=backingCatalog.songs.find(s=>s.id===song.id),start=alignment?.anchors?.[0]?.[1],sourceLink=MeleteReferenceAudio.sourceLink(original?.url||song.sourceUrl,start);
+    const original=backingCatalog.songs.find(s=>s.id===song.id),video=alignment?.referenceVideo;
+    const start=(alignment?.vocalOnset??alignment?.anchors?.[0]?.[1])+(video?.offsetSeconds||0);
+    const sourceLink=MeleteReferenceAudio.sourceLink(video?.url||original?.url||song.sourceUrl,start);
     const link=$("source");link.hidden=!sourceLink;
     if(sourceLink){const youtube=sourceLink.label.startsWith("YouTube");link.href=sourceLink.url;link.classList.toggle("youtube",youtube);
       link.title=`${youtube?`Original on YouTube${Number.isFinite(start)?`, from ${clock(start)}`:""}`:sourceLink.label}${song.sourceLabel?` (${song.sourceLabel})`:""}`;
@@ -260,10 +267,10 @@
     const settings=new alphaTab.Settings(); settings.core.useWorkers=false;settings.core.enableLazyLoading=false;
     settings.core.smuflFontSources=new Map([[alphaTab.FontFileFormat.Woff2,"vendor/Bravura.woff2"]]);
     compactNotation=window.innerWidth<600;
-    settings.display.layoutMode=compactNotation?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;settings.display.scale=.85*Number($("scale").value)/100;settings.display.barsPerRow=-1;
-    settings.display.stretchForce=1.4*Number($("stretch").value)/100;
+    settings.display.layoutMode=compactNotation?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;settings.display.scale=.85*scaleControls.scale.value()/100;settings.display.barsPerRow=-1;
+    settings.display.stretchForce=1.4*scaleControls.stretch.value()/100;
     settings.display.padding=[12,0,12,0];settings.importer.mergePartGroupsInMusicXml=false;
-    for (const name of ["ScoreTitle","ScoreSubTitle","ScoreArtist","ScoreAlbum","ScoreMusic","ScoreWords","ScoreWordsAndMusic"]) {
+    for (const name of ["ScoreTitle","ScoreSubTitle","ScoreArtist","ScoreAlbum","ScoreMusic","ScoreWords","ScoreWordsAndMusic","TrackNames"]) {
       settings.notation.elements.set(alphaTab.NotationElement[name],false);
     }
     if(usingReference())settings.notation.elements.set(alphaTab.NotationElement.EffectTempo,false);
@@ -275,8 +282,14 @@
       settings.display.resources.barNumberColor=new alphaTab.model.Color(239,165,188);
     }
     api=new alphaTab.AlphaTabApi($("notation"),settings);
+    api.scoreLoaded.on(score=>{
+      for(const bar of score.masterBars)if(bar.section&&[bar.section.marker,bar.section.text].includes(song.title))bar.section=null;
+    });
     api.error.on(e=>{releaseLayout();status(`Notation: ${e.message || e}`,true);});
-    api.renderFinished.on(()=>{if(revision!==notationRevision)return;buildScoreGeometry();moveCursor(current);notation.style.minHeight='130px';releaseLayout("notation");});
+    api.renderFinished.on(()=>{if(revision!==notationRevision)return;
+      // Keep the bundled licenses/notices; omit the renderer's visual footer.
+      for(const text of notation.querySelectorAll('svg text'))if(text.textContent.trim()==='rendered by alphaTab')text.remove();
+      buildScoreGeometry();moveCursor(current);notation.style.minHeight='130px';releaseLayout("notation");});
     api.load(new TextEncoder().encode(source));
   }
   function buildScoreGeometry(){
@@ -351,8 +364,8 @@
       const delta=sequence.lyrics[i+1][1]-sequence.lyrics[i][1];
       if(delta>0)width=Math.max(width,55+(measure.measureText(sequence.lyrics[i][3]).width+9)*sequence.endTick/delta);
     }
-    width*=Number($("stretch").value)/100;
-    const height=200*Number($("scale").value)/100;
+    width*=scaleControls.stretch.value()/100;
+    const height=200*scaleControls.scale.value()/100;
     $("pitchbar").style.width=`${width}px`;
     $("pitchbar").style.height=`${height}px`;
     const pitches=sequence.notes.map(n=>n[3]);
@@ -392,7 +405,6 @@
   function moveCursor(seconds,media){
     if(!geometry)return;const tick=seconds/song.duration*sequence.endTick,x=geometry.x(tick);
     $("playhead")?.setAttribute("x1",x);$("playhead")?.setAttribute("x2",x);
-    $("seek").value=String(Math.min(1000,seconds/maxPosition()*1000));
     const map=activeMap();
     const elapsed=usingReference()?(Number.isFinite(media)?media:map.seconds(tick))-map.start:seconds;
     const cutoff=currentTake()?.pitchReference?.timing?.loop?.end??(currentTake()?map?.end:alignment?.loop?.end)??map?.end;
@@ -563,7 +575,8 @@
     for(const t of takes)if(t.complete && (!P.currentScore(t.pitchScore)||!takeContour(t)))queueAnalysis(t);
   }
   function renderTakes(){
-    const remote=reviews.filter(t=>t.remote.song===song?.id),count=takes.length+remote.length;
+    syncTakeScope();
+    const remote=V.visible(reviews,session?.user,showAllTakes,song?.id),count=takes.length+remote.length;
     $("takes").replaceChildren();$("takeCount").textContent=count?`(${count})`:"";$("takeEmpty").hidden=!!count;
     $("localStorageSize").textContent=takes.length?`${(takes.reduce((sum,t)=>sum+t.frames*2,0)/1048576).toFixed(1)} MB local`:"";
     $("undoDelete").hidden=!pendingDeletes.length;$("undoDelete").disabled=!!recording||busy;
@@ -593,9 +606,22 @@
       download.onclick=async e=>{e.stopPropagation();try{const url=URL.createObjectURL(await takeWav(t)),a=document.createElement("a");a.href=url;a.download=`${song.id}-${t.remote?'audition':'take-'+t.number}.wav`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}catch(e){status(e.message,true);}};
       del.innerHTML='<i data-lucide="trash-2"></i>';del.title="Delete local take; undo for 10 seconds";del.setAttribute("aria-label",`Delete take ${t.number}`);del.disabled=!!recording||busy;
       del.onclick=async e=>{e.stopPropagation();if(recording || busy)return;try{await store.stageDelete(t.song,t.id,Date.now(),{includeFavorites:true});if(t.id===selected){selected=null;stopPlayback();}await loadTakes();renderNotation();renderPitch();updateControls();}catch(err){status(err.message,true);}};
-      actions.append(download);if(!t.remote)actions.append(del);row.append(actions);
+      if(!t.remote){
+        const upload=document.createElement('button');upload.dataset.submitTake=t.id;
+        upload.innerHTML='<i data-lucide="upload"></i>';
+        upload.onclick=e=>{e.stopPropagation();void submit(t.id);};
+        actions.append(upload,download,del);
+      }else{
+        actions.append(download);
+        if(t.remote.owner===session?.user?.id){
+          const withdraw=document.createElement('button');withdraw.dataset.withdrawTake=t.id;
+          withdraw.innerHTML='<i data-lucide="trash-2"></i>';withdraw.title='Withdraw submitted audition';withdraw.setAttribute('aria-label','Withdraw submitted audition');
+          withdraw.onclick=e=>{e.stopPropagation();void withdrawSubmission(t);};actions.append(withdraw);
+        }
+      }
+      row.append(actions);
       const choose=()=>void chooseTake(t);row.onclick=choose;row.onkeydown=e=>{if(e.target===row&&(e.key==="Enter"||e.key===" ")){e.preventDefault();choose();}};$("takes").append(row);
-    }icons();
+    }updateTakeActions();icons();
   }
   const submissionQuery=t=>`owner=${encodeURIComponent(t.remote.owner)}&song=${encodeURIComponent(t.remote.song)}&revision=${t.remote.revision}`;
   async function takeWav(take){
@@ -770,7 +796,6 @@
     const active=!!recording,locked=busy||active,valid=!!sourceReady&&!!song?.ready;
     document.querySelectorAll(".song-choice").forEach(button=>{button.disabled=locked||!!recovery;});
     $("play").disabled=locked||!valid;$("rewind").disabled=locked||!valid;$("record").disabled=busy||!valid||!!recovery;
-    $("seek").disabled=locked||!valid;
     $("checkMicrophone").disabled=busy;
     $("undoDelete").disabled=locked;
     $("loop").disabled=locked;$("loop").setAttribute('aria-pressed',String(loopEnabled));
@@ -778,16 +803,48 @@
     $("play").setAttribute("aria-label",playing?"Pause":"Play");$("play").innerHTML=`<i data-lucide="${playing?"pause":"play"}"></i>`;
     for(const id of ["latency","micDevice"])$(id).disabled=locked;
     updateReferenceControls();
-    const sub=submissions.find(s=>s.song===song?.id),take=currentTake();
-    $("submit").disabled=locked||!!take?.remote||!take?.complete||!P.currentScore(take?.pitchScore)||!takeContour(take);
-    $("submit").querySelector("span").textContent=sub?"Replace submitted take":"Submit selected take";
-    $("withdraw").hidden=!sub;$("withdraw").disabled=locked;
+    updateTakeActions();
     $("refreshReview").disabled=locked;
     $("signOut").disabled=locked;icons();
   }
+  function updateTakeActions(){
+    syncTakeScope();
+    const locked=busy||!!recording,replace=submissions.some(s=>s.song===song?.id);
+    document.querySelectorAll('[data-submit-take]').forEach(button=>{
+      const t=takes.find(t=>t.id===button.dataset.submitTake);
+      button.disabled=locked||!t?.complete||!P.currentScore(t.pitchScore)||!takeContour(t);
+      button.title=replace?`Replace audition with take ${t?.number}`:`Submit take ${t?.number}`;
+      button.setAttribute('aria-label',button.title);
+    });
+    document.querySelectorAll('[data-withdraw-take]').forEach(button=>{button.disabled=locked;});
+  }
+  function syncTakeScope(){
+    const pill=$("takeScope"),locked=busy||!!recording;
+    pill.hidden=!session?.user?.admin;pill.setAttribute('aria-disabled',String(locked));
+    for(const button of pill.querySelectorAll('button')){
+      const active=(button.dataset.scope==='all')===showAllTakes;
+      button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;button.disabled=locked;
+      if(active&&!pill.hidden){const thumb=pill.querySelector('.pill-thumb');thumb.style.width=`${button.offsetWidth}px`;thumb.style.transform=`translateX(${button.offsetLeft}px)`;}
+    }
+  }
+  function clearHiddenReview(){
+    if(selected?.startsWith('submitted:')&&!V.visible(reviews,session?.user,showAllTakes,song?.id).some(t=>t.id===selected)){
+      stopPlayback();selected=null;if(sourceReady){renderNotation();renderPitch();}
+    }
+  }
+  function setTakeScope(all){
+    if(!session?.user?.admin||busy||recording||showAllTakes===all)return;
+    showAllTakes=all;settings();clearHiddenReview();renderTakes();updateControls();
+  }
+  $("takeScope").onclick=()=>setTakeScope(!showAllTakes);
+  $("takeScope").onkeydown=e=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+    e.preventDefault();setTakeScope(e.key==='ArrowRight'||e.key==='End');
+    $("takeScope").querySelector('[aria-selected="true"]').focus({preventScroll:true});
+  };
   function confirmAction(title,text){$("confirmTitle").textContent=title;$("confirmText").textContent=text;$("confirmDialog").showModal();return new Promise(resolve=>{const finish=v=>{$("confirmDialog").close();resolve(v);};$("cancelConfirm").onclick=()=>finish(false);$("acceptConfirm").onclick=()=>finish(true);$("confirmDialog").oncancel=()=>resolve(false);});}
-  async function submit(){
-    const take=currentTake();if(!take?.complete||take.remote||busy)return;if(!session?.user){status("Sign in with Google at the top right to submit.",true);document.querySelector(".account").animate([{boxShadow:"0 0 0 3px var(--accent)"},{boxShadow:"0 0 0 3px transparent"}],{duration:1600,easing:"ease-in"});return;}
+  async function submit(id){
+    const take=takes.find(t=>t.id===id);if(!take?.complete||take.remote||busy||recording||!P.currentScore(take.pitchScore)||!takeContour(take))return;if(!session?.user){status("Sign in with Google beside the playback controls to submit.",true);document.querySelector(".account").animate([{boxShadow:"0 0 0 3px var(--accent)"},{boxShadow:"0 0 0 3px transparent"}],{duration:1600,easing:"ease-in"});return;}
     const old=submissions.find(s=>s.song===song.id);
     if(!await confirmAction(old?"Replace this audition?":"Submit this audition?",`Share take ${take.number} for ${song.title} with Diego and Leila. ${old?"It replaces your previous submission only after upload succeeds.":"Other singers cannot hear it."}`))return;
     busy=true;updateControls();stopPlayback();
@@ -797,14 +854,22 @@
       await refreshSession();status("Audition submitted. Your local takes are kept.");
     }catch(e){status(e.message,true);}finally{busy=false;updateControls();}
   }
-  // Google's own button sits in the top right, so one click signs in (no dialog). It is
+  async function withdrawSubmission(take){
+    if(busy||recording||take.remote?.owner!==session?.user?.id)return;
+    const old=submissions.find(s=>s.song===take.remote.song);
+    if(!old||!await confirmAction('Withdraw audition?','Remove your submitted recording. Your local takes stay on this device.'))return;
+    busy=true;updateControls();
+    try{await request('withdraw',{song:take.remote.song,revision:old.revision});await refreshSession();}
+    catch(e){status(e.message,true);}finally{busy=false;updateControls();}
+  }
+  // Google's own button sits beside playback, so one click signs in (no dialog). It is
   // initialized again whenever the server issues a new nonce: first load and after sign-out.
   let googleScript=null,googleNonce=null;
   async function showGoogleButton(report=false){
     try{if(!session.clientId)throw new Error("Google sign-in needs server configuration");
       googleScript??=window.google?.accounts?.id?Promise.resolve():new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.onload=resolve;s.onerror=()=>{s.remove();reject(new Error("Google sign-in could not load"));};document.head.append(s);});
       await googleScript;if(session.user||googleNonce===session.nonce)return;googleNonce=session.nonce;
-      google.accounts.id.initialize({client_id:session.clientId,nonce:session.nonce,auto_select:false,callback:async response=>{try{await request("login",{credential:response.credential});await refreshSession();status("Signed in. Select a take and submit when ready.");}catch(e){status(e.message,true);}}});
+      google.accounts.id.initialize({client_id:session.clientId,nonce:session.nonce,auto_select:false,callback:async response=>{try{await request("login",{credential:response.credential});await refreshSession();status("Signed in.");}catch(e){status(e.message,true);}}});
       $("googleButton").replaceChildren();google.accounts.id.renderButton($("googleButton"),{type:"icon",theme:"outline",size:"medium",shape:"circle"});
       $("signIn").hidden=true;
     }catch(e){googleScript=googleNonce=null;$("signIn").hidden=!!session.user;$("signIn").title=e.message;if(report)status(e.message,true);}
@@ -813,7 +878,7 @@
     try{const rows=session?.user?(await request(session.user.admin?'review':'list')).submissions:[];
       const previous=new Map(reviews.map(t=>[t.id,t]));
       reviews=rows.map(row=>{const t=V.take(row);return previous.get(t.id)||t;});
-      if(selected?.startsWith('submitted:')&&!reviews.some(t=>t.id===selected)){stopPlayback();selected=null;if(sourceReady){renderNotation();renderPitch();}}
+      clearHiddenReview();
       renderTakes();updateControls();
     }catch(e){status(e.message,true);}
   }
@@ -833,7 +898,6 @@
     beatEditing=beatEditor.enabled=!beatEditing;const label=beatEditing?"Stop editing downbeats":"Edit downbeats";
     $("beatEdit").setAttribute("aria-pressed",String(beatEditing));$("beatEdit").setAttribute("aria-label",label);$("beatEdit").title=label;renderWaveforms();
   };
-  $("seek").oninput=()=>seekPosition(Number($("seek").value)/1000*maxPosition());
   $("notation").onscroll=()=>moveCursor(current);
   function staffPosition(e){
     const rect=$("notation").getBoundingClientRect(),x=e.clientX-rect.left+$("notation").scrollLeft,y=e.clientY-rect.top;
@@ -852,14 +916,15 @@
   $("transpose").oninput=()=>{if(recording||busy||selected){transposePager.setValue(displayShift());return;}
     const next=transposePager.value(),resume=!!playing;stopPlayback();holdCancel?.();transposeBySong[song.id]=next;settings();renderNotation();renderPitch();updateControls();if(resume)void play();};
   $("latency").onchange=settings;$("micDevice").onchange=()=>{preferredDevice=$("micDevice").value;settings();};
-  $("mic").onclick=async()=>{$("micSettings").hidden=!$("micSettings").hidden;try{await refreshMicrophones();}catch(e){status(e.message,true);}};
+  $("mic").onclick=async()=>{$("micSettings").hidden=!$("micSettings").hidden;$("mic").setAttribute('aria-expanded',String(!$("micSettings").hidden));settings();try{await refreshMicrophones();}catch(e){status(e.message,true);}};
   const micCheck=new MeleteMicrophoneCheck.Check({dialog:$("microphoneCheck"),trigger:$("checkMicrophone"),
     acquire:acquireCheckInput,release:releaseCheckInput,refresh:refreshMicrophones,busy:()=>!!recording||busy,
     choose:device=>{preferredDevice=device;$("micDevice").value=device;settings();},failureMessage:microphoneFailure});
-  $("display").onclick=()=>{$("displaySettings").hidden=!$("displaySettings").hidden;$("display").setAttribute('aria-expanded',String(!$("displaySettings").hidden));};
+  $("display").onclick=()=>{$("displaySettings").hidden=!$("displaySettings").hidden;$("display").setAttribute('aria-expanded',String(!$("displaySettings").hidden));settings();};
+  let scaleTimer=0;
   for(const id of ['scale','stretch'])$(id).oninput=()=>{
-    $(id+'Value').value=$(id).value+'%';settings();holdCancel?.();
-    if(sourceReady){renderNotation();renderPitch();followPosition();}
+    settings();holdCancel?.();clearTimeout(scaleTimer);
+    scaleTimer=setTimeout(()=>{if(sourceReady){renderNotation();renderPitch();followPosition();}},60);
   };
   async function toggleFullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){status('Full screen is unavailable in this browser.',true);}}
   $("fullscreen").onclick=()=>void toggleFullscreen();$("fullscreen").hidden=!document.fullscreenEnabled;
@@ -870,8 +935,7 @@
   colourScheme.addEventListener('change',()=>{if(sourceReady){renderNotation();renderWaveforms();}});
   document.querySelectorAll('[data-sort]').forEach(button=>button.onclick=()=>{takeOrder=P.nextTakeSort(takeOrder,button.dataset.sort);settings();renderTakes();});
   $("undoDelete").onclick=async()=>{if(recording||busy)return;try{await store.undoDeletes(key());await loadTakes();updateControls();}catch(e){status(e.message,true);}};
-  $("signIn").onclick=()=>void showGoogleButton(true);$("signOut").onclick=async()=>{try{stopPlayback();await request("logout",{});reviewAudio.items.clear();reviewAudio.bytes=0;await refreshSession();}catch(e){status(e.message,true);}};$("submit").onclick=()=>void submit();
-  $("withdraw").onclick=async()=>{const old=submissions.find(s=>s.song===song.id);if(!old||!await confirmAction("Withdraw audition?","Remove your submitted recording. Your local takes stay on this device."))return;try{await request("withdraw",{song:song.id,revision:old.revision});await refreshSession();}catch(e){status(e.message,true);}};
+  $("signIn").onclick=()=>void showGoogleButton(true);$("signOut").onclick=async()=>{try{stopPlayback();await request("logout",{});reviewAudio.items.clear();reviewAudio.bytes=0;await refreshSession();}catch(e){status(e.message,true);}};
   $("refreshReview").onclick=()=>void loadReview();
   function setMix(vocal,backing){
     if(playing?.kind==="timed"&&usingReference()){
@@ -912,7 +976,7 @@
   document.addEventListener("keydown",e=>{
     if(e.target.isContentEditable||e.target.tagName==="TEXTAREA"||e.target.tagName==="SELECT"||
       (e.target.tagName==="INPUT"&&e.target.type!=="range")||document.querySelector("dialog[open]"))return;
-    if(e.target.closest("#transpose, #speed, .track-level")&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End','Enter','0'].includes(e.key))return;
+    if(e.target.closest("#transpose, #speed, .track-level, .scale-number, #takeScope")&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End','Enter','0'].includes(e.key))return;
     if(e.key==='Enter'&&e.target.closest('button, #takes tr'))return;
     const el=$("backingAudio");
     if(e.code==="Space"||e.key.toLowerCase()==="k"){e.preventDefault();e.stopPropagation();if(e.repeat)return;
@@ -935,13 +999,18 @@
   window.addEventListener("resize",()=>{revealCurrentSong();updateReferenceControls();if(sourceReady){if(compactNotation!==(window.innerWidth<600))renderNotation();renderPitch();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){holdCancel?.();micCheck.close();if(recording)void finishRecord(false,"Recording interrupted; this partial take cannot be submitted.");}});
   navigator.mediaDevices?.addEventListener('devicechange',()=>void refreshMicrophones().catch(()=>{}));
-  async function init(){try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");transposeBySong=Object.fromEntries(Object.entries(saved.transposeBySong||{}).filter(([_,v])=>Number.isInteger(v)&&v>=-12&&v<=12));takeOrder=P.takeSort(saved.takeOrder);metronome=saved.metronome===true;preferredDevice=typeof saved.device==="string"?saved.device:"";if([.5,.75,1,1.25,1.5,1.75,2].includes(saved.speed))speedPager.setValue(saved.speed);for(const id of ["latency","scale","stretch"])if(saved[id]!==undefined)$(id).value=saved[id];referenceAudio.vocal=saved.vocal!==false;referenceAudio.backing=saved.backing!==false;}catch{}
+  async function init(){try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");transposeBySong=Object.fromEntries(Object.entries(saved.transposeBySong||{}).filter(([_,v])=>Number.isInteger(v)&&v>=-12&&v<=12));takeOrder=P.takeSort(saved.takeOrder);metronome=saved.metronome===true;preferredDevice=typeof saved.device==="string"?saved.device:"";if([.5,.75,1,1.25,1.5,1.75,2].includes(saved.speed))speedPager.setValue(saved.speed);if(saved.latency!==undefined)$("latency").value=saved.latency;referenceAudio.vocal=saved.vocal!==false;referenceAudio.backing=saved.backing!==false;
+      for(const id of ['scale','stretch'])if(Number.isFinite(Number(saved[id])))scaleControls[id].setValue(Number(saved[id]),false);
+      $("micSettings").hidden=saved.micExpanded===false;$("displaySettings").hidden=saved.displayExpanded===false;
+      $("mic").setAttribute('aria-expanded',String(!$("micSettings").hidden));$("display").setAttribute('aria-expanded',String(!$("displaySettings").hidden));
+    }catch{}
     try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");
       loopEnabled=saved.loopEnabled===true;
+      showAllTakes=saved.showAllTakes===true;
       melody=saved.melody===true;
       trackLevels=M.savedLevels(saved.trackLevels);
       levelControls.forEach((c,i)=>c.setValue(trackLevels[i],false));}catch{}
-    for(const id of ['scale','stretch'])$(id+'Value').value=$(id).value+'%';
+    void refreshMicrophones().catch(()=>{});
     try{
       [catalog,alignmentCatalog,clipCatalog,waveformCatalog]=await Promise.all(
         ['catalog.json','reference-alignment.json','recording-clips.json','waveforms.json'].map(path=>asset(path,true)));

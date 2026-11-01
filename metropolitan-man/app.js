@@ -15,8 +15,68 @@ let rate = Number(saved.rate) || 1, fontSize = Number(saved.fontSize) || 19, fol
 let previewMode = new URLSearchParams(location.search).get('preview') === 'released' ? 'released' : 'all';
 let asOf = new URLSearchParams(location.search).get('asOf') || new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const packetCache = new Map();
+// Advance the existing player, not a second player or a merged recording.
+let continuousPlayback = saved.continuousPlayback !== false;
+let continuationSerial = 0, transitioning = false, warmedNext = '';
+
+function nextReleasedReading() {
+  const index = catalog?.weeks.findIndex(item => item.id === week?.id) ?? -1;
+  const next = index >= 0 ? catalog.weeks[index + 1] : null;
+  return next?.available && next.audio?.[codec] ? next : null;
+}
+function cancelContinuation() { ++continuationSerial; }
+function syncContinuousPlayback() {
+  syncPill('continuous-pill', continuousPlayback ? 'on' : 'off', 'continuous');
+  if (!week) return;
+  $('finish-detail').textContent = continuousPlayback
+    ? nextReleasedReading() ? 'The next released reading plays automatically.' : 'Playback stops at the end of the published chapters.'
+    : 'Playback stops at the end of this reading.';
+}
+function chooseContinuousPlayback(value) {
+  continuousPlayback = value;saved.continuousPlayback = value;persist();
+  if (!value) { cancelContinuation();if (transitioning) pausePlayback(); }
+  syncContinuousPlayback();
+}
+async function advanceReleasedReading() {
+  const next = nextReleasedReading();
+  if (!continuousPlayback || !audioControls || !next) return;
+  transitioning = true;
+  try { await loadWeek(next.id, 0, {autoplay: true}); }
+  catch (error) {
+    pausePlayback();
+    $('status').textContent = 'Next reading could not load. Reconnect and choose it from Readings.';
+    console.warn('Continuous playback stopped:', error.message);
+  } finally { transitioning = false; }
+}
+function preloadNextReading() {
+  if (!continuousPlayback || !audioControls || !playbackIntent || audio.paused || navigator.onLine === false) return;
+  if (expectedAudioDuration() - audio.currentTime > 45) return;
+  const next = nextReleasedReading();
+  if (!next) return;
+  const key = resource(next.packet), audioKey = offlineAudioUrl(next.audio[codec]).href;
+  if (warmedNext === audioKey) return;
+  warmedNext = audioKey;
+  if (!packetCache.has(next.packet)) {
+    safeFetch(key, {signal: AbortSignal.timeout(15000)}).then(data => {
+      if (data.id === next.id) packetCache.set(next.packet, data);
+    }).catch(() => {});
+  }
+  if (offlineCopy.worker) offlineMessage('metro-preload', {week: next.id, codec}).catch(() => {});
+}
+$('continuous-pill').addEventListener('click', () => chooseContinuousPlayback(!continuousPlayback));
+$('continuous-pill').addEventListener('keydown', event => {
+  if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    event.preventDefault();chooseContinuousPlayback(event.key === 'ArrowLeft');
+  }
+});
+$('settings-open').addEventListener('click', () => requestAnimationFrame(syncContinuousPlayback));
+window.addEventListener('resize', () => { if ($('settings-dialog').open) syncContinuousPlayback(); });
+audio.addEventListener('timeupdate', preloadNextReading);
+audio.addEventListener('playing', preloadNextReading);
+syncContinuousPlayback();
+
 // Explicit, resumable offline save. Percentages count committed IndexedDB bytes.
-const offlineCopy = {status: null, running: false, job: 0, error: '', worker: null, targetUrl: ''};
+const offlineCopy = {status: null, running: false, job: 0, error: '', worker: null, targetUrl: '', mode: 'single', targetCodec: ''};
 const downloadPaths = {
   save: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
@@ -43,19 +103,23 @@ function offlineMessage(type, data = {}, timeout = 60000) {
     channel.port1.onmessage = event => {
       finish();
       if (event.data.error) reject(new Error(event.data.error));
-      else if (event.data.protocol !== 1) reject(new Error('Offline reader updated; reload before downloading'));
+      else if (event.data.protocol !== 2) reject(new Error('Offline reader updated; reload before downloading'));
       else resolve(event.data);
     };
-    worker.postMessage({type, page: new URL(resource(''), location.href).href, ...data}, [channel.port2]);
+    worker.postMessage({type, protocol: 2, page: new URL(resource(''), location.href).href, ...data}, [channel.port2]);
   });
 }
 function paintOffline() {
   const button = $('offline-download'), media = week?.audio[codec], status = offlineCopy.status;
   const current = media && status?.url === offlineAudioUrl(media).href && status.eligible;
-  const bytes = current ? status.received : 0;
-  const complete = current && status.shellReady && bytes === status.total && status.chunks.length === Math.ceil(status.total/status.chunkBytes);
-  const percent = complete ? 100 : media ? Math.min(99, Math.floor(100 * bytes/media.bytes)) : 0;
-  const action = offlineCopy.running ? 'Pause download' : complete ? 'Downloaded for offline listening' : bytes ? 'Resume offline download' : 'Download for offline listening';
+  const queue = status?.queue;
+  const all = current && queue?.mode === 'all' && queue.codec === codec;
+  const bytes = all ? queue.received : current ? status.received : 0;
+  const total = all ? queue.total : media?.bytes || 0;
+  const complete = all ? queue.complete : current && status.shellReady && bytes === status.total && status.chunks.length === Math.ceil(status.total/status.chunkBytes);
+  const percent = complete ? 100 : total ? Math.min(99, Math.floor(100 * bytes/total)) : 0;
+  const subject = all ? 'published chapters' : 'this reading';
+  const action = offlineCopy.running ? 'Pause download' : complete ? 'Downloaded ' + subject : bytes ? 'Resume offline download' : 'Download for offline listening';
   button.disabled = !media || !offlineCopy.worker;
   button.dataset.state = complete ? 'complete' : offlineCopy.running ? 'saving' : bytes ? 'partial' : 'empty';
   button.querySelector('svg').innerHTML = downloadPaths[complete ? 'done' : offlineCopy.running ? 'pause' : 'save'];
@@ -63,17 +127,28 @@ function paintOffline() {
   button.title = offlineCopy.error || action + ' (' + percent + '% saved)';
   button.setAttribute('aria-label', action + ', ' + percent + '% saved');
   $('offline-remove').hidden = !status?.policy?.url;
-  const old = status?.policy && status.policy.week !== week?.id;
-  $('offline-detail').textContent = offlineCopy.error || (old
-    ? 'Reading ' + Number(status.policy.week.slice(5)) + ' is saved. Downloading this reading replaces it.'
-    : complete ? 'Available offline. ' + (bytes/1e6).toFixed(1) + ' MB saved.'
-    : bytes ? (bytes/1e6).toFixed(1) + ' / ' + (media.bytes/1e6).toFixed(1) + ' MB saved. ' + (offlineCopy.running ? 'Downloading...' : 'Partial download; tap the arrow to resume.')
-    : 'Download only when you need offline listening. One reading and audio format are kept.');
+  $('offline-detail').textContent = offlineCopy.error || (status?.policy && !current
+    ? 'Other audio is saved. A new download replaces it; reading progress is kept.'
+    : complete ? 'Available offline: ' + subject + '. ' + (bytes/1e6).toFixed(1) + ' MB saved.'
+    : bytes ? (bytes/1e6).toFixed(1) + ' / ' + (total/1e6).toFixed(1) + ' MB saved. ' + (offlineCopy.running ? 'Downloading...' : 'Partial download; tap the arrow to resume.')
+    : 'Downloads start only when you choose. Pause or resume with the download arrow.');
+  const published = catalog?.weeks.filter(item => item.available && item.audio[codec]) || [];
+  const allDone = all && queue.complete && published.every(item => queue.entries.some(entry => entry.url === offlineAudioUrl(item.audio[codec]).href));
+  const allButton = $('offline-all');
+  allButton.disabled = !media || !offlineCopy.worker;
+  allButton.textContent = offlineCopy.running && offlineCopy.mode === 'all' ? 'Pause published-chapter download'
+    : allDone ? 'All published chapters downloaded' : 'Download all published chapters (' + (published.reduce((sum, item) => sum + item.audio[codec].bytes, 0)/1e6).toFixed(1) + ' MB)';
+}
+
+function selectOfflineStatus(status) {
+  const url = week?.audio[codec] && offlineAudioUrl(week.audio[codec]).href;
+  const entry = status.queue?.entries.find(item => item.url === url);
+  return entry ? {...status, ...entry} : {...status, url, received: 0, eligible: false};
 }
 async function refreshOffline() {
   if (!week?.audio[codec]) return;
   const url = offlineAudioUrl(week.audio[codec]).href;
-  if (offlineCopy.running && offlineCopy.targetUrl !== url) stopOffline();
+  if (offlineCopy.running && (offlineCopy.targetCodec !== codec || (offlineCopy.mode !== 'all' && offlineCopy.targetUrl !== url))) stopOffline();
   if (!offlineCopy.worker) { paintOffline(); return; }
   try {
     const status = await offlineMessage('metro-status', {url});
@@ -86,33 +161,42 @@ function stopOffline() {
   offlineCopy.running = false;
   paintOffline();
 }
-async function toggleOffline() {
+async function toggleOffline(mode = null) {
   if (offlineCopy.running) { stopOffline(); return; }
   if (!week?.audio[codec]) return;
-  if (hasOfflineCopy() && offlineCopy.status.shellReady && offlineCopy.status.received === offlineCopy.status.total) {
+  mode ||= offlineCopy.status?.queue?.mode === 'all' && offlineCopy.status.queue.codec === codec ? 'all' : 'single';
+  const queue = offlineCopy.status?.queue;
+  const allDone = queue?.mode === 'all' && queue.codec === codec && queue.complete
+    && catalog.weeks.filter(item => item.available).every(item => item.audio?.[codec] && queue.entries.some(entry => entry.url === offlineAudioUrl(item.audio[codec]).href));
+  if (mode === 'all' ? allDone : hasOfflineCopy() && offlineCopy.status.shellReady && offlineCopy.status.received === offlineCopy.status.total) {
     toast('This reading is available offline. Manage it in Settings.');return;
   }
   const id = week.id, format = codec, job = ++offlineCopy.job;
+  offlineCopy.mode = mode;offlineCopy.targetCodec = format;
   offlineCopy.targetUrl = offlineAudioUrl(week.audio[codec]).href;
   offlineCopy.running = true;offlineCopy.error = '';paintOffline();
   try {
     await offlineReady;
     if (job !== offlineCopy.job) return;
-    const status = await offlineMessage('metro-prepare', {week: id, codec: format});
+    // Negotiate before any mutation if an older worker still controls this tab.
+    await offlineMessage('metro-status');
+    const status = await offlineMessage('metro-prepare', {week: id, codec: format, mode});
     if (job !== offlineCopy.job) return;
-    offlineCopy.status = status;
-    const total = Math.ceil(status.total/status.chunkBytes);
-    // Ogg needs the final granule to determine duration after a cold start.
-    // Save both ends before the main sequential body, including both tail chunks.
-    const order = [...new Set([0, Math.max(0,total-1), Math.max(0,total-2), ...Array.from({length:total},(_,i)=>i)])];
-    const have = new Set(status.chunks);
-    for (const index of order) {
-      if (job !== offlineCopy.job || week.id !== id || codec !== format) break;
-      if (have.has(index)) continue;
-      const updated = await offlineMessage('metro-chunk', {url: status.url, index});
-      if (job !== offlineCopy.job) break;
-      offlineCopy.status = updated;
-      paintOffline();
+    offlineCopy.status = selectOfflineStatus(status);paintOffline();
+    // Fully save sessions in reading order; each gets both Ogg tail chunks first.
+    for (const entry of status.queue.entries) {
+      const total = Math.ceil(entry.total/entry.chunkBytes);
+      const order = [...new Set([0, Math.max(0,total-1), Math.max(0,total-2), ...Array.from({length:total},(_,i)=>i)])];
+      const have = new Set(entry.chunks);
+      for (const index of order) {
+        if (job !== offlineCopy.job || (mode === 'single' && week.id !== id) || codec !== format) break;
+        if (have.has(index)) continue;
+        const updated = await offlineMessage('metro-chunk', {url: entry.url, index});
+        if (job !== offlineCopy.job) break;
+        offlineCopy.status = selectOfflineStatus(updated);
+        paintOffline();
+      }
+      if (job !== offlineCopy.job || codec !== format) break;
     }
     // The initial native stream may predate service-worker control. Rebind only
     // after its metadata has been saved, without changing play/pause intent.
@@ -152,10 +236,11 @@ const offlineReady = initializeOffline();
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', () => {
   const controller = navigator.serviceWorker.controller;
   if (controller?.scriptURL === new URL('offline-worker.js', location.href).href) {
-    offlineCopy.worker = controller;refreshOffline();
+    offlineCopy.worker = controller;offlineCopy.error = '';refreshOffline();
   }
 });
-$('offline-download').addEventListener('click', toggleOffline);
+$('offline-download').addEventListener('click', () => toggleOffline());
+$('offline-all').addEventListener('click', () => toggleOffline('all'));
 $('offline-remove').addEventListener('click', async () => {
   stopOffline();
   try { offlineCopy.status = await offlineMessage('metro-clear');offlineCopy.error = ''; }
@@ -200,7 +285,7 @@ function playbackPosition() {
   if (audio.ended && lastGoodAudioTime < expectedAudioDuration() - 2) return lastGoodAudioTime;
   return boundedAudioTime(audio.currentTime);
 }
-function pausePlayback() { resumeRequested = false;playbackIntent = false;audio.pause();syncPlay(); }
+function pausePlayback() { cancelContinuation();resumeRequested = false;playbackIntent = false;audio.pause();syncPlay(); }
 
 function recoverAudio(reason, resume = resumeRequested || playbackIntent || !audio.paused) {
   if (!audioControls || !week?.audio[codec] || recoveryPending || playbackFailed) return;
@@ -236,11 +321,11 @@ function recoverAudio(reason, resume = resumeRequested || playbackIntent || !aud
   });
 }
 
-function setAudio(time = 0, recovery = null) {
+function setAudio(time = 0, recovery = null, autoplay = false) {
   const token = ++mediaToken;
   audio.pause();
   recoveryPending = false;playbackFailed = false;
-  resumeRequested = !!recovery?.resume;
+  resumeRequested = autoplay || !!recovery?.resume;
   playbackIntent = resumeRequested;
   if (!recovery) recoveryAttempts = 0;
   const desired = boundedAudioTime(time);
@@ -318,7 +403,10 @@ audio.addEventListener('durationchange', () => {
 });
 audio.addEventListener('ended', () => {
   if (lastGoodAudioTime < expectedAudioDuration()-2 || !audioDurationMatches()) { recoverAudio('premature end of recording');return; }
-  resumeRequested = false;playbackIntent = false;syncPlay();savePosition();toast('Assignment finished. Audio stopped here.');
+  const continuePlaying = playbackIntent && continuousPlayback && audioControls && nextReleasedReading();
+  resumeRequested = false;playbackIntent = false;syncPlay();savePosition();
+  if (continuePlaying) { advanceReleasedReading();return; }
+  toast(continuousPlayback ? 'End of the published chapters.' : 'Reading finished. Audio stopped here.');
 });
 audio.addEventListener('error', () => {
   if (audio.getAttribute('src')) recoverAudio(audio.error?.message || 'media download error');
@@ -414,7 +502,7 @@ deviceTheme.addEventListener('change',applyTheme);
 applyTheme();
 function persist() { try { localStorage.setItem(storageKey, JSON.stringify(saved)); } catch { toast('Device storage unavailable; progress cannot be saved.'); } }
 function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').hidden = true, 3500); }
-function scope() { return !local ? '' : '?' + new URLSearchParams(previewMode === 'all' ? {preview:'all'} : {asOf:asOf}); }
+function scope() { const through=new URLSearchParams(location.search).get('through'); if(local&&through)return '?'+new URLSearchParams({through}); return !local ? '' : '?' + new URLSearchParams(previewMode === 'all' ? {preview:'all'} : {asOf:asOf}); }
 function resource(path) { return path + scope(); }
 function duration(s) { s = Math.max(0, Math.round(s || 0)); return s >= 3600 ? Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0') : Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function dateLabel(value, time=false) { return new Intl.DateTimeFormat(undefined, {timeZone:catalog.timeZone,month:'short',day:'numeric', ...(time?{weekday:'short',hour:'numeric',minute:'2-digit',timeZoneName:'short'}:{})}).format(new Date(value)); }
@@ -541,10 +629,10 @@ async function loadCatalog(preferred) {
     week=null;$('reader').replaceChildren();$('week-title').textContent='First packet has not been released';$('week-number').textContent='Metropolitan Man';$('week-number').removeAttribute('datetime');$('finish').hidden=true;$('play').disabled=true;$('share').disabled=true;audio.removeAttribute('src');audio.load();$('chapter-list').replaceChildren();$('status').textContent='Opens '+dateLabel(catalog.weeks[0].releaseAt,true)+'.';
   }
 }
-async function loadWeek(id, explicitTime=null) {
+async function loadWeek(id, explicitTime=null, options={}) {
   const next=catalog.weeks.find(w=>w.id===id&&w.available);if(!next)throw Error('This reading is not yet available.');
   clearTimeout(toastTimer);$('toast').hidden=true;
-  savePosition();pausePlayback();const token=++loading;$('status').textContent='Loading reading…';$('play').disabled=true;$('share').disabled=true;
+  savePosition();pausePlayback();const token=++loading, continuation=continuationSerial;if(options.autoplay){resumeRequested=true;playbackIntent=true;syncPlay();}$('status').textContent='Loading reading…';$('play').disabled=!options.autoplay;$('share').disabled=true;
   const key=next.packet;let data=packetCache.get(key);if(!data){data=await safeFetch(resource(key));packetCache.set(key,data);}if(token!==loading)return;
   week=next;packet=data;readingBlock=null;activeWord=null;attached=true;wordNodes.clear();times=packet.timings;
   $('reader').innerHTML=packet.html;
@@ -572,11 +660,11 @@ async function loadWeek(id, explicitTime=null) {
   $('week-number').textContent=discussionDateLabel(week.discussionAt,week.number);if(week.discussionAt)$('week-number').dateTime=week.discussionAt;else $('week-number').removeAttribute('datetime');$('week-title').textContent=week.label;$('share').disabled=false;
   $('chapter-summary').textContent='Chapters';$('chapter-list').replaceChildren();
   week.chapters.forEach(c=>{const li=document.createElement('li'),button=document.createElement('button'),time=document.createElement('small');button.textContent=c.label;time.textContent=duration(c.start);button.append(time);button.addEventListener('click',()=>{seek(c.start);$('chapter-details').open=false;$('schedule-dialog').close();scrollToNode($(c.id));});li.append(button);$('chapter-list').append(li);});
-  $('chapter-details').open=false;$('finish').hidden=false;$('finish-detail').textContent='The next assignment never starts automatically.';
+  $('chapter-details').open=false;$('finish').hidden=false;syncContinuousPlayback();
   const nextWeek=catalog.weeks[week.number];$('next-week').hidden=!nextWeek;$('next-week').disabled=!nextWeek?.available;$('next-week').textContent=nextWeek?.available?'Next assignment':nextWeek?(nextWeek.releaseAt?'Next unlocks '+dateLabel(nextWeek.releaseAt):'Next reading not released'):'';
   updateDone();$('alignment-detail').textContent='Word timing coverage: '+(100*week.alignmentCoverage).toFixed(1)+'%. '+(week.addedAlignedWords?week.addedAlignedWords.toLocaleString()+' verified gap fills included. ':'')+'Untimed words are readable but not highlighted or seekable. No interpolated timings.';
   const restoreBlock=explicitTime===null?progress().block:null;
-  setAudio(explicitTime??progress().time??0);updateStats();renderSchedule();$('status').textContent=!audioControls||week.audio[codec]?'':'Audio is being prepared; all text is ready.';
+  setAudio(explicitTime??progress().time??0,null,!!options.autoplay&&continuation===continuationSerial&&continuousPlayback&&audioControls);updateStats();renderSchedule();$('status').textContent=!audioControls||week.audio[codec]?'':'Audio is being prepared; all text is ready.';
   history.replaceState(null,'',location.pathname+location.search+'#'+week.id+(explicitTime!==null?'@'+explicitTime.toFixed(2):''));
   requestAnimationFrame(()=>{if(restoreBlock&&$(restoreBlock))scrollToNode($(restoreBlock),'instant');else window.scrollTo({top:0,behavior:'instant'});});
 }

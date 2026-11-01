@@ -2,9 +2,10 @@
 // Shared range engine SHA256: 25f15331b771d90c3d466b9cf17a183c73ffc1113171bc6bb44a4357b886248c
 /* Metropolitan adapter; byte-range storage/streaming is shared with Sequences. */
 'use strict';
-const CACHE_PROTOCOL = 1;
+const CACHE_PROTOCOL = 2;
 const CHUNK_BYTES = 256 * 1024;
 const CACHE_BUDGET = 128 * 1024 * 1024;
+const QUEUE_BUDGET = 256 * 1024 * 1024;
 const DB_NAME = 'metropolitan-audio-chunks-v1';
 const SHELL_PREFIX = 'metropolitan-offline-v1-';
 const BASE = new URL('./', self.location.href);
@@ -37,7 +38,9 @@ function assetFor(value) {
   const canonical = scoped(url.pathname, page);
   canonical.searchParams.set('mc', url.searchParams.get('mc'));
   canonical.searchParams.set('bytes', String(size));
-  return {url: canonical.href, page, size, type: url.pathname.endsWith('.ogg') ? 'audio/ogg' : 'audio/mpeg'};
+  // The unchanged range engine keeps one eligibility record per asset. The
+  // separate scope record owns the atomic reader bundle and selected playlist.
+  return {url: canonical.href, page: canonical.href, scope: page, size, type: url.pathname.endsWith('.ogg') ? 'audio/ogg' : 'audio/mpeg'};
 }
 
 function parseRange(header, size) {
@@ -234,6 +237,55 @@ async function audioResponse(request, asset) {
   return new Response(stream, { status: range.partial ? 206 : 200, headers });
 }
 
+let warmOpening = null;
+const persistentStoredChunk = storedChunk;
+storedChunk = async (asset, index) => {
+  const saved = await persistentStoredChunk(asset, index);
+  if (saved) return saved;
+  if (warmOpening?.url === asset.url && warmOpening.expires > Date.now()) return warmOpening.chunks.get(index);
+  return null;
+};
+
+async function migratePolicies() {
+  await transaction('readwrite', async (assets, chunks, settings) => {
+    for (const policy of await result(settings.getAll())) {
+      if (!policy.shell || policy.tracks || !policy.url) continue;
+      const asset = assetFor(policy.url);
+      if (!asset) continue;
+      policy.mode = 'single';
+      policy.tracks = [{url: asset.url, week: policy.week, codec: policy.codec, total: asset.size}];
+      settings.put(policy);
+      settings.put({id: asset.page, url: asset.url, disabled: !!policy.disabled});
+    }
+  });
+}
+
+function catalogTrack(week, codec, page) {
+  const media = week?.available === true && week.audio?.[codec];
+  if (!media || !/^data\/week-\d{2}\.json$/.test(week.packet || '')) throw new Error('Reading is not released');
+  const url = scoped(media.path, page);
+  url.searchParams.set('mc', media.sha256);
+  url.searchParams.set('bytes', String(media.bytes));
+  const asset = assetFor(url);
+  if (!asset) throw new Error('Invalid catalog audio');
+  return {url: asset.url, week: week.id, codec, total: asset.size};
+}
+
+async function preloadOpening(page, id, codec) {
+  const catalog = await (await boundedResponse(scoped('data/catalog.json', page), /application\/json/)).json();
+  const track = catalogTrack(catalog.weeks?.find(w => w.id === id), codec, page);
+  const asset = assetFor(track.url), last = Math.ceil(asset.size / CHUNK_BYTES) - 1;
+  const warm = {url: asset.url, expires: Date.now() + 120000, chunks: new Map()};
+  warmOpening = warm;
+  // At most 768 KiB in transient memory, not a hidden persistent download.
+  for (const index of new Set([0, Math.max(0, last - 1), last])) {
+    const data = await getChunk(asset, index);
+    if (warmOpening !== warm) break;
+    warm.chunks.set(index, data);
+  }
+  return {warmed: true};
+}
+
 async function boundedResponse(url, kind, limit = 16 * 1024 * 1024) {
   const response = await fetch(url, {cache: 'no-store', signal: AbortSignal.timeout(15000)});
   if (response.status !== 200 || response.redirected || !kind.test(response.headers.get('Content-Type') || '')) {
@@ -258,26 +310,26 @@ async function boundedResponse(url, kind, limit = 16 * 1024 * 1024) {
   return new Response(body, {headers: {'Content-Type': response.headers.get('Content-Type')}});
 }
 
-async function prepareDownload(page, id, codec) {
-  if (!/^week-\d{2}$/.test(id) || !['opus', 'mp3'].includes(codec)) throw new Error('Invalid reading');
+async function prepareDownload(page, id, codec, mode = 'single') {
+  if (!/^week-\d{2}$/.test(id) || !['opus', 'mp3'].includes(codec) || !['single', 'all'].includes(mode)) throw new Error('Invalid reading');
   const old = await currentPolicy(page);
   // A paused partial download can resume offline without discarding its bytes.
   let response;
   try { response = await boundedResponse(scoped('data/catalog.json', page), /application\/json/); }
   catch (error) {
     if (!error.serverResponse && ['TypeError', 'AbortError', 'TimeoutError'].includes(error.name)
-        && old?.week === id && old.codec === codec && !old.disabled && old.shell) return statusFor(page, old.url);
+        && (old?.week === id || mode === 'all' && old?.tracks?.some(track => track.week === id))
+        && old.codec === codec && (old.mode || 'single') === mode && !old.disabled && old.shell) return statusFor(page, old.url);
     throw error;
   }
   const catalog = await response.clone().json();
   const week = catalog.weeks?.find(item => item.id === id && item.available === true);
-  const media = week?.audio?.[codec];
-  if (!media || !/^data\/week-\d{2}\.json$/.test(week.packet || '')) throw new Error('Reading is not released');
-  const url = scoped(media.path, page);
-  url.searchParams.set('mc', media.sha256);
-  url.searchParams.set('bytes', String(media.bytes));
-  const asset = assetFor(url);
-  if (!asset) throw new Error('Invalid catalog audio');
+  const current = catalogTrack(week, codec, page);
+  const selected = mode === 'all' ? catalog.weeks.filter(item => item.available === true) : [week];
+  const tracks = selected.map(item => catalogTrack(item, codec, page));
+  if (tracks.reduce((sum, item) => sum + item.total, 0) > QUEUE_BUDGET) throw new Error('Published audio exceeds 256 MiB; choose Opus or download one reading');
+  const allowed = new Set(tracks.map(item => item.url));
+  if (allowed.size !== tracks.length) throw new Error('Duplicate catalog audio');
 
   const shell = SHELL_PREFIX + crypto.randomUUID();
   const cache = await caches.open(shell);
@@ -298,49 +350,66 @@ async function prepareDownload(page, id, codec) {
       const key = new URL(path, BASE).href;
       await cache.put(key, await boundedResponse(key, /javascript|text\/css|image\/svg\+xml/));
     }
-    const packetUrl = scoped(week.packet, page).href;
-    const packet = await boundedResponse(packetUrl, /application\/json/);
-    const data = await packet.clone().json();
-    if (data.id !== id || typeof data.html !== 'string' || !Array.isArray(data.timings)) throw new Error('Invalid reading text');
-    await cache.put(packetUrl, packet);
-    // Offline catalog truthfully identifies the sole locally available session.
+    for (const item of selected) {
+      const packetUrl = scoped(item.packet, page).href;
+      const packet = await boundedResponse(packetUrl, /application\/json/);
+      const data = await packet.clone().json();
+      if (data.id !== item.id || typeof data.html !== 'string' || !Array.isArray(data.timings)) throw new Error('Invalid reading text');
+      await cache.put(packetUrl, packet);
+    }
+    // Offline availability means selected text/audio assets, not 100% downloaded.
     // Online requests always use the fresh release-gated catalog instead.
     catalog.offlineReading = id;
-    for (const item of catalog.weeks) item.available = item.id === id;
+    catalog.offlineReadings = selected.map(item => item.id);
+    for (const item of catalog.weeks) item.available = catalog.offlineReadings.includes(item.id);
     await cache.put(scoped('data/catalog.json', page).href, new Response(JSON.stringify(catalog), {headers: {'Content-Type': 'application/json'}}));
     const shellKeys = (await cache.keys()).map(request => request.url);
-    const policy = {id: page, url: asset.url, week: id, codec, shell, shellKeys, disabled: false};
+    const policy = {id: page, url: current.url, week: id, codec, mode, tracks, shell, shellKeys, disabled: false};
     await transaction('readwrite', async (metadata, chunks, settings) => {
       for (const item of await result(metadata.getAll())) {
-        if (item.url !== asset.url) { chunks.delete(chunkKeys(item.url)); metadata.delete(item.url); }
+        if (!allowed.has(item.url)) { chunks.delete(chunkKeys(item.url)); metadata.delete(item.url); }
       }
       settings.clear();
       settings.put(policy);
+      for (const track of tracks) settings.put({id: track.url, url: track.url, disabled: false});
     });
     await notifyPolicy(policy);
   } catch (error) { await caches.delete(shell); throw error; }
   for (const key of await caches.keys()) if (key.startsWith(SHELL_PREFIX) && key !== shell) await caches.delete(key);
-  return statusFor(page, asset.url);
+  return statusFor(page, current.url);
 }
 
 async function statusFor(page, value) {
   const policy = await currentPolicy(page), asset = assetFor(value || policy?.url || '');
-  if (!asset || asset.page !== page) return {policy, received: 0};
-  const status = await cacheStatus(asset);
+  const status = asset?.scope === page ? await cacheStatus(asset) : {received: 0, eligible: false};
+  status.policy = policy;
   status.shellReady = false;
   if (policy?.shell && policy.shellKeys?.length) {
     const cache = await caches.open(policy.shell);
     const keys = new Set((await cache.keys()).map(request => request.url));
     status.shellReady = policy.shellKeys.every(key => keys.has(key));
   }
+  const entries = [];
+  for (const track of policy?.tracks || []) {
+    const item = await cacheStatus(assetFor(track.url));
+    entries.push({...track, received: item.received, chunks: item.chunks, chunkBytes: item.chunkBytes, eligible: item.eligible});
+  }
+  status.queue = {mode: policy?.mode || 'single', codec: policy?.codec, entries,
+    received: entries.reduce((sum, item) => sum + item.received, 0),
+    total: entries.reduce((sum, item) => sum + item.total, 0), budget: QUEUE_BUDGET,
+    complete: status.shellReady && entries.length > 0 && entries.every(item => item.eligible && item.received === item.total && item.chunks.length === Math.ceil(item.total/item.chunkBytes))};
   return status;
 }
 
 async function clearDownload(page) {
   const policy = await currentPolicy(page);
   await transaction('readwrite', (assets, chunks, settings) => {
-    if (policy) { chunks.delete(chunkKeys(policy.url)); assets.delete(policy.url); settings.delete(page); }
+    for (const track of policy?.tracks || (policy?.url ? [{url: policy.url}] : [])) {
+      chunks.delete(chunkKeys(track.url)); assets.delete(track.url); settings.delete(track.url);
+    }
+    settings.delete(page);
   });
+  warmOpening = null;
   if (policy?.shell) await caches.delete(policy.shell);
   await notifyPolicy({id: page, disabled: true});
   return {received: 0};
@@ -353,7 +422,7 @@ async function shellResponse(request) {
     const page = pageFor(url) || pageFor(new URL(BASE.pathname + url.search, BASE));
     let policy = await currentPolicy(page);
     // Versioned JS/CSS lack the preview query; locate the committed shell only.
-    if (!policy) policy = await transaction('readonly', async (a, c, s) => (await result(s.getAll()))[0]);
+    if (!policy) policy = await transaction('readonly', async (a, c, s) => (await result(s.getAll())).find(item => item.shell));
     if (policy?.shell) {
       const cache = await caches.open(policy.shell);
       const saved = await cache.match(pageFor(url) || url.href);
@@ -364,7 +433,7 @@ async function shellResponse(request) {
 }
 
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', event => event.waitUntil(migratePolicies().then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
@@ -373,14 +442,15 @@ self.addEventListener('fetch', event => {
   if (asset) {
     event.respondWith((async () => {
       const policy = await currentPolicy(asset.page).catch(() => null);
-      return policy?.url === asset.url && !policy.disabled ? audioResponse(event.request, asset) : fetch(event.request);
+      const warmed = warmOpening?.url === asset.url && warmOpening.expires > Date.now();
+      return policy?.url === asset.url && !policy.disabled || warmed ? audioResponse(event.request, asset) : fetch(event.request);
     })());
   } else if (pageFor(url) || /^(app\.js|styles\.css|player\.css|favicon\.svg|data\/(catalog|week-\d{2})\.json)$/.test(url.pathname.slice(BASE.pathname.length))) {
     event.respondWith(shellResponse(event.request));
   }
 });
 self.addEventListener('message', event => {
-  if (!['metro-status', 'metro-prepare', 'metro-chunk', 'metro-clear'].includes(event.data?.type)) return;
+  if (!['metro-status', 'metro-prepare', 'metro-chunk', 'metro-clear', 'metro-preload'].includes(event.data?.type)) return;
   event.waitUntil((async () => {
     try {
       const sourcePage = pageFor(event.source?.url || '');
@@ -389,19 +459,22 @@ self.addEventListener('message', event => {
       let value;
       if (['metro-prepare', 'metro-clear'].includes(event.data.type)) {
         const job = mutations.then(() => event.data.type === 'metro-clear' ? clearDownload(page)
-          : prepareDownload(page, event.data.week, event.data.codec));
+          : prepareDownload(page, event.data.week, event.data.codec, event.data.mode || 'single'));
         mutations = job.catch(() => {});
         value = await job;
       } else if (event.data.type === 'metro-chunk') {
         const asset = assetFor(event.data.url), index = event.data.index;
         const policy = await currentPolicy(page);
-        if (!asset || asset.page !== page || policy?.url !== asset.url || policy.disabled
+        if (!asset || asset.scope !== page || !policy?.tracks?.some(track => track.url === asset.url) || policy.disabled
             || !Number.isInteger(index) || index < 0 || index >= Math.ceil(asset.size / CHUNK_BYTES)) throw new Error('Download changed');
         await getChunk(asset, index);
         value = await statusFor(page, asset.url);
         if (!value.eligible || !value.chunks.includes(index)) throw new Error('Could not save audio on this device');
-      } else value = await statusFor(page, event.data.url);
-      event.ports[0]?.postMessage({protocol: CACHE_PROTOCOL, ...value});
+      } else if (event.data.type === 'metro-preload') value = await preloadOpening(page, event.data.week, event.data.codec);
+      else value = await statusFor(page, event.data.url);
+      // Existing offline reader bundles still speak protocol 1. Their single-
+      // reading operations keep working until the user refreshes/saves new UI.
+      event.ports[0]?.postMessage({protocol: event.data.protocol === 2 ? CACHE_PROTOCOL : 1, ...value});
     } catch (error) { event.ports[0]?.postMessage({error: error.message}); }
   })());
 });

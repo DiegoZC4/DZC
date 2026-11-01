@@ -111,6 +111,8 @@ html[data-audio-controls="off"] #reader .reader-word.timed { cursor: text; }
 html[data-audio-controls="off"] #reader .reader-word.active { outline: none; background: none; box-shadow: none; }
 #audio-controls-pill { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 #audio-controls-pill button { min-height: 38px; min-width: 44px; }
+#continuous-pill { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#continuous-pill button { min-height: 38px; min-width: 44px; }
 .topbar .brand { min-width: 0; max-width: 180px; line-height: 1.15; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
 .topbar nav { flex-shrink: 0; }
 .podcast-app[aria-disabled="true"] { opacity: .5; cursor: default; }

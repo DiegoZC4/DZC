@@ -76,7 +76,7 @@ audio.addEventListener('playing', preloadNextReading);
 syncContinuousPlayback();
 
 // Explicit, resumable offline save. Percentages count committed IndexedDB bytes.
-const offlineCopy = {status: null, running: false, job: 0, error: '', worker: null, targetUrl: '', mode: 'single', targetCodec: ''};
+const offlineCopy = {status: null, running: false, clearing: false, refresh: 0, job: 0, error: '', worker: null, targetUrl: '', mode: 'single', targetCodec: ''};
 const downloadPaths = {
   save: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
@@ -92,6 +92,10 @@ function offlineAudioUrl(media) {
 function hasOfflineCopy() {
   return week?.audio[codec] && offlineCopy.status?.eligible && offlineCopy.status?.received > 0
     && offlineCopy.status.url === offlineAudioUrl(week.audio[codec]).href;
+}
+function hasSelectedOfflineAudio() {
+  const url = week?.audio[codec] && offlineAudioUrl(week.audio[codec]).href;
+  return hasOfflineCopy() || !!offlineCopy.status?.queue?.entries.some(item => item.url === url && item.eligible);
 }
 function offlineMessage(type, data = {}, timeout = 60000) {
   return new Promise((resolve, reject) => {
@@ -120,7 +124,7 @@ function paintOffline() {
   const percent = complete ? 100 : total ? Math.min(99, Math.floor(100 * bytes/total)) : 0;
   const subject = all ? 'published chapters' : 'this reading';
   const action = offlineCopy.running ? 'Pause download' : complete ? 'Downloaded ' + subject : bytes ? 'Resume offline download' : 'Download for offline listening';
-  button.disabled = !media || !offlineCopy.worker;
+  button.disabled = !media || !offlineCopy.worker || offlineCopy.clearing;
   button.dataset.state = complete ? 'complete' : offlineCopy.running ? 'saving' : bytes ? 'partial' : 'empty';
   button.querySelector('svg').innerHTML = downloadPaths[complete ? 'done' : offlineCopy.running ? 'pause' : 'save'];
   $('offline-percent').textContent = percent + '%';
@@ -135,7 +139,7 @@ function paintOffline() {
   const published = catalog?.weeks.filter(item => item.available && item.audio[codec]) || [];
   const allDone = all && queue.complete && published.every(item => queue.entries.some(entry => entry.url === offlineAudioUrl(item.audio[codec]).href));
   const allButton = $('offline-all');
-  allButton.disabled = !media || !offlineCopy.worker;
+  allButton.disabled = !media || !offlineCopy.worker || offlineCopy.clearing;
   allButton.textContent = offlineCopy.running && offlineCopy.mode === 'all' ? 'Pause published-chapter download'
     : allDone ? 'All published chapters downloaded' : 'Download all published chapters (' + (published.reduce((sum, item) => sum + item.audio[codec].bytes, 0)/1e6).toFixed(1) + ' MB)';
 }
@@ -146,14 +150,15 @@ function selectOfflineStatus(status) {
   return entry ? {...status, ...entry} : {...status, url, received: 0, eligible: false};
 }
 async function refreshOffline() {
-  if (!week?.audio[codec]) return;
+  if (!week?.audio[codec] || offlineCopy.clearing) return;
+  const refresh = ++offlineCopy.refresh;
   const url = offlineAudioUrl(week.audio[codec]).href;
   if (offlineCopy.running && (offlineCopy.targetCodec !== codec || (offlineCopy.mode !== 'all' && offlineCopy.targetUrl !== url))) stopOffline();
   if (!offlineCopy.worker) { paintOffline(); return; }
   try {
     const status = await offlineMessage('metro-status', {url});
-    if (week?.audio[codec] && url === offlineAudioUrl(week.audio[codec]).href) offlineCopy.status = status;
-  } catch (error) { offlineCopy.error = error.message; }
+    if (refresh === offlineCopy.refresh && week?.audio[codec] && url === offlineAudioUrl(week.audio[codec]).href) offlineCopy.status = status;
+  } catch (error) { if (refresh === offlineCopy.refresh) offlineCopy.error = error.message; }
   paintOffline();
 }
 function stopOffline() {
@@ -162,6 +167,7 @@ function stopOffline() {
   paintOffline();
 }
 async function toggleOffline(mode = null) {
+  if (offlineCopy.clearing) return;
   if (offlineCopy.running) { stopOffline(); return; }
   if (!week?.audio[codec]) return;
   mode ||= offlineCopy.status?.queue?.mode === 'all' && offlineCopy.status.queue.codec === codec ? 'all' : 'single';
@@ -182,7 +188,7 @@ async function toggleOffline(mode = null) {
     await offlineMessage('metro-status');
     const status = await offlineMessage('metro-prepare', {week: id, codec: format, mode});
     if (job !== offlineCopy.job) return;
-    offlineCopy.status = selectOfflineStatus(status);paintOffline();
+    ++offlineCopy.refresh;offlineCopy.status = selectOfflineStatus(status);paintOffline();
     // Fully save sessions in reading order; each gets both Ogg tail chunks first.
     for (const entry of status.queue.entries) {
       const total = Math.ceil(entry.total/entry.chunkBytes);
@@ -193,7 +199,7 @@ async function toggleOffline(mode = null) {
         if (have.has(index)) continue;
         const updated = await offlineMessage('metro-chunk', {url: entry.url, index});
         if (job !== offlineCopy.job) break;
-        offlineCopy.status = selectOfflineStatus(updated);
+        ++offlineCopy.refresh;offlineCopy.status = selectOfflineStatus(updated);
         paintOffline();
       }
       if (job !== offlineCopy.job || codec !== format) break;
@@ -242,10 +248,14 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('cont
 $('offline-download').addEventListener('click', () => toggleOffline());
 $('offline-all').addEventListener('click', () => toggleOffline('all'));
 $('offline-remove').addEventListener('click', async () => {
+  if (offlineCopy.clearing) return;
   stopOffline();
+  // Invalidate earlier status reads before mutation; never resurrect a removed
+  // queue when an old worker response arrives after the clear response.
+  ++offlineCopy.refresh;offlineCopy.clearing = true;paintOffline();
   try { offlineCopy.status = await offlineMessage('metro-clear');offlineCopy.error = ''; }
   catch (error) { offlineCopy.error = error.message; }
-  paintOffline();
+  finally { offlineCopy.clearing = false;await refreshOffline();paintOffline(); }
 });
 let offlineRefreshTimer;
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', event => {
@@ -294,7 +304,7 @@ function recoverAudio(reason, resume = resumeRequested || playbackIntent || !aud
   requestedAudioTime = position;
   audio.pause();
   resumeRequested = resume;
-  if (hasOfflineCopy() && navigator.onLine === false) {
+  if (hasSelectedOfflineAudio() && navigator.onLine === false) {
     playbackFailed = true;
     resumeRequested = false;playbackIntent = false;
     $('status').textContent = 'This part is not downloaded yet. Saved audio is still available; reconnect to finish downloading.';
@@ -313,7 +323,7 @@ function recoverAudio(reason, resume = resumeRequested || playbackIntent || !aud
   queueMicrotask(() => {
     if (token !== mediaToken || !audioControls) return;
     // First bypass a damaged cached response, then use the independent codec.
-    if (recoveryAttempts === 2 && !hasOfflineCopy()) {
+    if (recoveryAttempts === 2 && !hasSelectedOfflineAudio()) {
       const other = codec === 'opus' ? 'mp3' : 'opus';
       if (week.audio[other]) { codec = other;syncPill('codec-pill',codec,'codec'); }
     }

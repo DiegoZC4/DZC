@@ -1,0 +1,22 @@
+/* Generated from template/styles.css; do not edit. */
+.settings-tooltip {
+  max-width: min(280px, calc(100vw - 20px));
+  position: fixed;
+  z-index: 900;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(26, 31, 28, 0.97);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  font-size: 0.7rem;
+  font-weight: 560;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity 100ms ease, transform 100ms ease;
+}
+
+.settings-tooltip[hidden] { display: none; }
+.settings-tooltip.is-visible { opacity: 1; transform: translateY(0); }

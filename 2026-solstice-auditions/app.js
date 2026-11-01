@@ -35,7 +35,9 @@
   let transposeBySong={},notationRevision=0;
   // Highest first, so higher keys are on the pages above (Arrow Up / drag down raise; a tap steps down).
   const transposePager=new MeleteInfinitePager($("transpose"),{options:Array.from({length:25},(_,i)=>({value:12-i,label:i===12?"0":`${i<12?"+":""}${12-i}`})),value:0});
-  const speedPager=new MeleteInfinitePager($("speed"),{options:Array.from({length:7},(_,i)=>({value:.5+i*.25,label:`${50+i*25}%`})),value:1});
+  const speedControl=MeleteDragNumber($("speed"),{values:Array.from({length:31},(_,i)=>(50+i*5)/100),
+    defaultValue:1,clickStep:.05,wrapOnClick:true,resetOnDoubleClick:false,
+    pixelsPerStep:8,format:v=>`${Math.round(v*100)}%`,aria:v=>`${Math.round(v*100)}%`});
   const assetCache=new Map();
   const clipCache=new T.ClipCache();
   const reviewAudio=new T.ByteCache(32*1048576);
@@ -73,14 +75,14 @@
   });
   let trackLevels=[100,100,100,100],loopEnabled=true;
   const levelControls=['vocalLevel','backingLevel','clickLevel','melodyLevel'].map((id,index)=>{
-    const control=MeleteDragNumber($(id),{values:Array.from({length:41},(_,i)=>i*5),defaultValue:100,pixelsPerStep:5,
+    const control=MeleteDragNumber($(id),{values:Array.from({length:41},(_,i)=>i*5),defaultValue:100,pixelsPerStep:5,clickStep:10,
       format:v=>`${v}%`,aria:v=>`${v}%`,onHold:()=>emphasizeTrack(index)});
     $(id).oninput=()=>{trackLevels[index]=control.value();applyTrackLevels();settings();};
     return control;
   });
   const scaleControls=Object.fromEntries([['scale',80,160],['stretch',50,250]].map(([id,min,max])=>[
     id,MeleteDragNumber($(id),{values:Array.from({length:(max-min)/10+1},(_,i)=>min+i*10),defaultValue:100,
-      pixelsPerStep:8,stepOnClick:true,format:v=>`${v}%`,aria:v=>`${v}%`})
+      pixelsPerStep:8,clickStep:10,format:v=>`${v}%`,aria:v=>`${v}%`})
   ]));
   function applyTrackLevels(){
     deck?.trackLevels(trackLevels[0]/100,trackLevels[1]/100);
@@ -93,6 +95,25 @@
     metronome=true;melody=melody||index===3;setMix(true,true);applyTrackLevels();settings();
   }
   const icons = () => window.lucide?.createIcons();
+  const help={
+    play:"Play or pause all enabled tracks.",rewind:"Return to the start, including the count-in.",
+    record:"Record microphone only. Sing plainly; use wired headphones.",loop:"Repeat the excerpt and record a take each pass.",
+    transpose:"Transpose by semitone; tap down, drag to browse.",speed:"Click +5%; drag vertically. Wraps 200% to 50%.",
+    scale:"Resize notation and pitch height; lyrics keep their proportions.",stretch:"Change horizontal spacing without changing pitch height.",
+    micDevice:"Choose your recording input.",checkMicrophone:"Check microphone levels without recording a take.",
+    referenceVocal:"Original singing. Hold to solo; hold again to restore.",referenceBacking:"Instrumental accompaniment. Hold to solo or restore all tracks.",
+    metronome:"Metronome follows the recording. Hold to solo.",melody:"Synthesized melody. Hold to solo or restore all tracks.",
+    source:"Original recording at this audition's starting point.",fullscreen:"Enter or leave full screen.",
+    waveformTimeline:"Click a waveform to move the shared playhead.",notation:"Hold near any note to hear its pitch.",
+    pitchbar:"Expected melody and sung pitch. Hold notes to preview.",takeScope:"Switch between your takes and all submitted auditions.",
+    beatEdit:"Drag downbeats to align the click. Local editor only.",beatExport:"Export your reviewed beat alignment.",refreshReview:"Reload submitted auditions.",
+  };
+  for(const id of ['vocalLevel','backingLevel','clickLevel','melodyLevel'])help[id]="Click +10%; drag; hold cycles emphasis, reduction, then reset.";
+  for(const [id,text] of Object.entries(help))if($(id)){$(id).dataset.help=text;$(id).removeAttribute('title');}
+  const metricHelp={number:"Sort by singer or take number.",tracked:"Expected singing time with a confidently detected pitch.",
+    mean:"Average absolute pitch error; lower is steadier.",median:"Typical pitch error; less sensitive to outliers.",within:"Tracked singing within half a semitone of the melody."};
+  for(const button of document.querySelectorAll('[data-sort]'))button.dataset.help=metricHelp[button.dataset.sort];
+  MeleteSettingsHelp($("player"),$("settingsHelp"),$("settingsTooltip"));
   // Levels match Melete at 100% (solstice-auditions/review/2026-10-31/loudness): the
   // stems through their clip gains, the click CountIn at 1.438x. Melete's limiter
   // keeps 200% from clipping; LIMITER_TRIM cancels its +0.57 dB makeup and
@@ -101,7 +122,7 @@
   const format = x => Number.isFinite(x) ? x.toFixed(1) : "\u2014";
   const clock = x => `${Math.floor(Math.max(0,x)/60)}:${String(Math.floor(Math.max(0,x)%60)).padStart(2,"0")}`;
   const currentTake = () => [...takes,...reviews].find(t => t.id === selected);
-  const rate = () => speedPager.value();
+  const rate = () => speedControl.value();
   const transposition = () => Number(transposeBySong[song?.id]) || 0;
   const key = () => `solstice-auditions:${song.id}:${song.version}`;
   const usingReference = () => currentTake() ? currentTake().pitchReference?.timing?.kind==="recording" : playbackMode === "recording" && !!referenceAudio.timeline;
@@ -137,12 +158,15 @@
     $("melody").title=`${melody?'Mute':'Unmute'} MIDI melody; hold to solo or restore all tracks`;
     $("melody").setAttribute("aria-label",$("melody").title);
     for(const [i,id] of ['vocalLevel','backingLevel','clickLevel','melodyLevel'].entries()){
-      $(id).disabled=busy;$(id).title=`${['Vocal','Backing','Click','MIDI'][i]} volume; drag to adjust, hold to emphasize / reduce / restore`;
+      $(id).disabled=busy;$(id).title=`${['Vocal','Backing','Click','MIDI'][i]} volume; click +10%, drag to adjust, hold to emphasize / reduce / restore`;
     }
     const transposeLocked=!!recording||busy||!!selected;
     $("transpose").inert=transposeLocked;$("transpose").setAttribute("aria-disabled",String(transposeLocked));$("transpose").tabIndex=transposeLocked?-1:0;
     if(!transposePager.drag&&transposePager.pendingIndex===null)transposePager.setValue(displayShift());
     $("speed").inert=transposeLocked;$("speed").setAttribute("aria-disabled",String(transposeLocked));$("speed").tabIndex=transposeLocked?-1:0;
+    const micFailed=$("microphoneCheck").dataset.state==='error';
+    $("checkMicrophone").dataset.help=micFailed?"Choose another input, then click to retry.":help.checkMicrophone;
+    for(const node of $("player").querySelectorAll('[data-help]'))if(node.id!=='checkMicrophone'||!micFailed)node.removeAttribute('title');
     icons();
     renderWaveforms();
   }
@@ -329,6 +353,17 @@
       const staff=master.bars?.[0]?.visualBounds||box;
       return [{start,end:start+duration,anchors,box,top:staff.y-8,height:staff.h+16}];
     });
+    const system=scoreNotes[0]?.system;
+    if(system){
+      const rect=$("notation").getBoundingClientRect();
+      for(const node of $("notation").querySelectorAll('.melete-range-low, .melete-range-high')){
+        // The padded hit rectangle is centered on the engraved head, unlike the SMuFL text box.
+        const head=node.querySelector('.range-hit').getBoundingClientRect();
+        scoreNotes.push({system,rangeNode:node,
+          box:{x:head.left-rect.left+$("notation").scrollLeft,y:head.top-rect.top,w:head.width,h:head.height},
+          note:[0,0,0,Number(node.dataset.pitch)-displayShift()]});
+      }
+    }
   }
   function bindRangeNotes(){
     const pitches=sequence.notes.map(n=>n[3]),ends=[Math.min(...pitches),Math.max(...pitches)];
@@ -338,9 +373,8 @@
       const label=`${index?'Highest':'Lowest'} excerpt note: ${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][pitch%12]}${Math.floor(pitch/12)-1}. Hold to listen.`;
       node.setAttribute('role','button');node.setAttribute('tabindex','0');node.setAttribute('aria-label',label);
       node.dataset.pitch=pitch;
-      node.append(svg('title',{},label));
+      node.dataset.help=`Hold to hear this excerpt's ${index?'highest':'lowest'} note.`;
       const highlight=held=>highlightPreview(held,node);
-      node.onpointerdown=e=>{e.stopPropagation();beginHold(e,()=>note,undefined,highlight);};
       node.onkeydown=e=>{if(![' ','Enter'].includes(e.key)||e.repeat)return;e.preventDefault();
         beginHold({button:0,currentTarget:node,clientX:0,clientY:0,timeStamp:performance.now()},()=>note,undefined,highlight);};
       node.onkeyup=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();holdCancel?.();}};
@@ -351,6 +385,7 @@
     for(const node of document.querySelectorAll('.'+className))node.classList.remove(className);
     if(!note)return;
     const point=scoreNotes.find(p=>p.note===note)||scoreNotes.find(p=>p.note[1]===note[1]&&p.note[3]===note[3]);
+    rangeNode ||= point?.rangeNode;
     const group=rangeNode||$("notation").querySelector(`g.b${point?.beatId}`);
     for(const text of group?.querySelectorAll('text')||[])
       if([...text.textContent].some(c=>c.codePointAt(0)>=0xe0a0&&c.codePointAt(0)<=0xe0ff))text.classList.add(className);
@@ -405,7 +440,8 @@
   function renderPitch(){
     if(!sequence || !sourceReady)return;
     const ref=currentTake()?.pitchReference || reference(),shift=displayShift();
-    const measure=document.createElement("canvas").getContext("2d");measure.font="11px system-ui";
+    const typographyScale=scaleControls.scale.value()/100,lyricFontSize=11*typographyScale,measureFontSize=10*typographyScale;
+    const measure=document.createElement("canvas").getContext("2d");measure.font=`${lyricFontSize}px system-ui`;
     const viewportWidth=$("pitchScroll").clientWidth;
     let lyricWidth=55;
     for(let i=0;i<sequence.lyrics.length-1;i++){
@@ -415,24 +451,28 @@
     const naturalWidth=Math.max(viewportWidth,sequence.endTick/sequence.division*32+64,lyricWidth);
     // Compaction removes spare timeline space, not the minimum gap between lyrics.
     const width=Math.max(viewportWidth,lyricWidth,naturalWidth*scaleControls.stretch.value()/100);
-    const height=200*scaleControls.scale.value()/100;
+    // Resize pitch geometry and type separately, as in Melete; never stretch the SVG's letters.
+    const plotHeight=130*typographyScale,plotBottom=30+plotHeight,noteHeight=7*typographyScale;
+    const lyricBaseline=plotBottom+14+lyricFontSize,height=lyricBaseline+15;
     $("pitchbar").style.width=`${width}px`;
     $("pitchbar").style.height=`${height}px`;
     const pitches=sequence.notes.map(n=>n[3]);
     let low=Math.min(...pitches)-2,high=Math.max(...pitches)+2;
     // A wrong note can sit up to a tritone off its bar; widen the range rather than clip it.
     for(const p of foldedTrace(traceFrames(),traceRef(),shift))if(p){low=Math.min(low,Math.floor(p.pitch)-2);high=Math.max(high,Math.ceil(p.pitch)+2);}
-    const x=t=>36+t/sequence.endTick*(width-55),y=p=>160-(p-low)/(high-low)*130;
-    const root=svg("svg",{viewBox:`0 0 ${width} 200`,preserveAspectRatio:"none",role:"img","aria-label":"Expected notes and recorded pitch contour"});
+    const x=t=>36+t/sequence.endTick*(width-55),y=p=>plotBottom-(p-low)/(high-low)*plotHeight;
+    const root=svg("svg",{viewBox:`0 0 ${width} ${height}`,role:"img","aria-label":"Expected notes and recorded pitch contour"});
+    root.style.setProperty("--pitch-lyric-size",`${lyricFontSize}px`);
+    root.style.setProperty("--pitch-label-size",`${measureFontSize}px`);
     for(let p=low;p<=high;p++)root.append(svg("line",{x1:36,x2:width-19,y1:y(p),y2:y(p),class:"pitch-grid"}));
-    sequence.measures.forEach((m,i)=>{root.append(svg("line",{x1:x(m[0]),x2:x(m[0]),y1:20,y2:165,class:"barline"}),svg("text",{x:x(m[0])+3,y:12,class:"pitch-label"},String(i+1)));});
-    sequence.notes.forEach((n,i)=>root.append(svg("rect",{x:x(n[1]),y:y(n[3])-3.5,width:Math.max(1,x(n[2])-x(n[1])-1),height:7,class:"target-note","data-note":i})));
-    sequence.lyrics.forEach(l=>root.append(svg("text",{x:x(l[1]),y:185,class:"note-lyric"},l[3])));
+    sequence.measures.forEach((m,i)=>{root.append(svg("line",{x1:x(m[0]),x2:x(m[0]),y1:20,y2:plotBottom+5,class:"barline"}),svg("text",{x:x(m[0])+3,y:measureFontSize+2,class:"pitch-label"},String(i+1)));});
+    sequence.notes.forEach((n,i)=>root.append(svg("rect",{x:x(n[1]),y:y(n[3])-noteHeight/2,width:Math.max(1,x(n[2])-x(n[1])-1),height:noteHeight,class:"target-note","data-note":i})));
+    sequence.lyrics.forEach(l=>root.append(svg("text",{x:x(l[1]),y:lyricBaseline,class:"note-lyric"},l[3])));
     const trace=svg("g",{class:"trace",id:"trace"});trace.append(...["halo","rest","off","on"].map(grade=>svg("path",{class:`trace-${grade}`,"data-grade":grade})));
-    root.append(trace,svg("line",{x1:36,x2:36,y1:18,y2:168,class:"playhead",id:"playhead"}));
-    $("pitchbar").replaceChildren(root);geometry={x,y,ref,width,low,high,shift};drawTrace();moveCursor(current);
-    const noteAt=ev=>{const rect=root.getBoundingClientRect(),px=(ev.clientX-rect.left)*width/rect.width,py=(ev.clientY-rect.top)*200/rect.height;
-      return sequence.notes.find(n=>px>=x(n[1])-2&&px<x(n[2])+2&&Math.abs(py-y(n[3]))<10);};
+    root.append(trace,svg("line",{x1:36,x2:36,y1:18,y2:plotBottom+8,class:"playhead",id:"playhead"}));
+    $("pitchbar").replaceChildren(root);geometry={x,y,ref,width,height,plotBottom,low,high,shift};drawTrace();moveCursor(current);
+    const noteAt=ev=>{const rect=root.getBoundingClientRect(),px=(ev.clientX-rect.left)*width/rect.width,py=(ev.clientY-rect.top)*height/rect.height;
+      return sequence.notes.find(n=>px>=x(n[1])-2&&px<x(n[2])+2&&Math.abs(py-y(n[3]))<Math.max(10,noteHeight/2+6));};
     root.onpointerdown=e=>beginHold(e,noteAt,ev=>{const rect=root.getBoundingClientRect();return ((ev.clientX-rect.left)*width/rect.width-36)/(width-55)*song.duration;},highlightPreview);
     root.onpointermove=e=>{if(e.pointerType!=='touch')highlightHover(noteAt(e));};
     root.onpointerleave=()=>highlightHover(null);
@@ -446,7 +486,7 @@
     for(const p of points){if(!p){last=-Infinity;continue;}
       const seconds=p.stamp-ref.leadInSeconds;if(seconds<0 || p.stamp>ref.seconds)continue;
       const x=geometry.x(ref.timing?T.tickAt(ref,p.stamp):seconds*ref.rate*song.tempo/60*sequence.division),y=geometry.y(p.pitch);
-      if(y<18 || y>168){last=-Infinity;continue;}
+      if(y<18 || y>geometry.plotBottom+8){last=-Infinity;continue;}
       // A pause breaks the line, and so does a fold that flips octave where the target changes.
       const at=`${x.toFixed(2)},${y.toFixed(2)} `,joined=p.start-last<=.18&&Math.abs(p.pitch-previous.pitch)<=6;
       if(!joined){d.halo+="M"+at;d[p.grade]+="M"+at;}
@@ -656,12 +696,15 @@
         row.append(td);}
       const actions=document.createElement("td");const download=document.createElement("button"),del=document.createElement("button");
       download.innerHTML='<i data-lucide="download"></i>';download.title="Download original microphone recording";download.setAttribute("aria-label",`Download take ${t.number}`);
+      download.dataset.help="Download the original microphone recording.";
       download.onclick=async e=>{e.stopPropagation();try{const url=URL.createObjectURL(await takeWav(t)),a=document.createElement("a");a.href=url;a.download=`${song.id}-${t.remote?'audition':'take-'+t.number}.wav`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}catch(e){status(e.message,true);}};
       del.innerHTML='<i data-lucide="trash-2"></i>';del.title="Delete local take; undo for 10 seconds";del.setAttribute("aria-label",`Delete take ${t.number}`);del.disabled=!!recording||busy;
+      del.dataset.help="Delete this local take; undo within ten seconds.";
       del.onclick=async e=>{e.stopPropagation();if(recording || busy)return;try{await store.stageDelete(t.song,t.id,Date.now(),{includeFavorites:true});if(t.id===selected){selected=null;stopPlayback();}await loadTakes();renderNotation();renderPitch();updateControls();}catch(err){status(err.message,true);}};
       if(!t.remote){
         const upload=document.createElement('button');upload.dataset.submitTake=t.id;
         upload.innerHTML='<i data-lucide="upload"></i>';
+        upload.dataset.help="Submit this take, replacing your previous submission after confirmation.";
         upload.onclick=e=>{e.stopPropagation();void submit(t.id);};
         actions.append(upload,download,del);
       }else{
@@ -963,11 +1006,13 @@
     const rect=$("notation").getBoundingClientRect(),x=ev.clientX-rect.left+$("notation").scrollLeft,y=ev.clientY-rect.top;
     return MeleteNotationRange.nearestNote(scoreNotes,x,y);
   }
-  $("notation").onpointerdown=e=>beginHold(e,staffNoteAt,staffPosition,highlightPreview);
+  $("notation").onpointerdown=e=>{
+    const note=staffNoteAt(e),range=scoreNotes.some(p=>p.note===note&&p.rangeNode);
+    beginHold(e,staffNoteAt,range?undefined:staffPosition,highlightPreview);
+  };
   $("notation").onpointermove=e=>{
     if(e.pointerType==='touch')return;
-    const range=e.target.closest?.('.melete-range-low, .melete-range-high');
-    highlightHover(range?[0,0,0,Number(range.dataset.pitch)-displayShift()]:staffNoteAt(e),range);
+    highlightHover(staffNoteAt(e));
   };
   $("notation").onpointerleave=()=>highlightHover(null);
   window.addEventListener('blur',()=>highlightHover(null));
@@ -1042,7 +1087,7 @@
     if(recording||busy||!sourceReady)return;
     const jump={j:-10,l:10,ArrowLeft:-5,ArrowRight:5}[e.key];
     if(jump!==undefined){e.preventDefault();const map=referenceAudio.timeline;seekPosition(usingReference()?map.tick(map.seconds(current/song.duration*sequence.endTick)+jump)/sequence.endTick*song.duration:current+jump);}
-    else if((e.key==="<"||e.key===">")&&!selected){e.preventDefault();speedPager.setValue(Math.max(.5,Math.min(2,rate()+(e.key==="<"?-.25:.25))));$("speed").oninput();}
+    else if((e.key==="<"||e.key===">")&&!selected){e.preventDefault();speedControl.setValue(Math.max(.5,Math.min(2,rate()+(e.key==="<"?-.25:.25))),false);$("speed").oninput();}
     else if(e.key==='f'){e.preventDefault();void toggleFullscreen();}
     else if(e.key==="m"){e.preventDefault();setMix(!referenceAudio.vocal&&!referenceAudio.backing,!referenceAudio.vocal&&!referenceAudio.backing);}
     else if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();deck?.volume(Math.max(0,Math.min(1,(deck.level??1)+(e.key==="ArrowUp"?.05:-.05))));}
@@ -1056,7 +1101,7 @@
   window.addEventListener("resize",()=>{revealCurrentSong();updateReferenceControls();if(sourceReady){if(compactNotation!==(window.innerWidth<600))renderNotation();renderPitch();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){holdCancel?.();micCheck.close();if(recording)void finishRecord(false,"Recording interrupted; this partial take cannot be submitted.");}});
   navigator.mediaDevices?.addEventListener('devicechange',()=>void refreshMicrophones().catch(()=>{}));
-  async function init(){try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");transposeBySong=Object.fromEntries(Object.entries(saved.transposeBySong||{}).filter(([_,v])=>Number.isInteger(v)&&v>=-12&&v<=12));takeOrder=P.takeSort(saved.takeOrder);metronome=saved.metronome===true;preferredDevice=typeof saved.device==="string"?saved.device:"";if([.5,.75,1,1.25,1.5,1.75,2].includes(saved.speed))speedPager.setValue(saved.speed);referenceAudio.vocal=saved.vocal!==false;referenceAudio.backing=saved.backing!==false;
+  async function init(){try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");transposeBySong=Object.fromEntries(Object.entries(saved.transposeBySong||{}).filter(([_,v])=>Number.isInteger(v)&&v>=-12&&v<=12));takeOrder=P.takeSort(saved.takeOrder);metronome=saved.metronome===true;preferredDevice=typeof saved.device==="string"?saved.device:"";if(Number.isFinite(saved.speed)&&saved.speed>=.5&&saved.speed<=2)speedControl.setValue(saved.speed,false);referenceAudio.vocal=saved.vocal!==false;referenceAudio.backing=saved.backing!==false;
       for(const id of ['scale','stretch'])if(Number.isFinite(Number(saved[id])))scaleControls[id].setValue(Number(saved[id]),false);
     }catch{}
     try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");

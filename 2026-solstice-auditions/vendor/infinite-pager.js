@@ -346,6 +346,14 @@
       return value;
     }
 
+    function advanceClick() {
+      const stops = interactionValues();
+      const step = typeof options.clickStep === "function" ? options.clickStep(value) : options.clickStep;
+      const next = Number.isFinite(step) && step > 0 ? value + step
+        : stops[Math.min(stops.length - 1, stops.indexOf(value) + 1)];
+      update(options.wrapOnClick && value === values.at(-1) ? values[0] : next);
+    }
+
     button.setAttribute("role", "spinbutton");
     button.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
@@ -383,9 +391,7 @@
     const endPointer = (event) => {
       if (event.pointerId !== pointerId) return;
       cancelPointer();
-      if (options.stepOnClick && !held && !moved && event.type === "pointerup") {
-        update(dragValues[Math.min(dragValues.length - 1, startIndex + 1)]);
-      }
+      if (!held && !moved && event.type === "pointerup") advanceClick();
       if (!held && event.type === "pointerup" && startValue !== value) options.onManualChange?.(startValue, value, event.pointerType);
     };
     button.addEventListener("pointerup", endPointer);
@@ -400,11 +406,12 @@
       }
       cancelPointer();
     });
-    button.addEventListener("dblclick", () => update(defaultValue()));
+    button.addEventListener("dblclick", () => { if (options.resetOnDoubleClick !== false) update(defaultValue()); });
     button.addEventListener("click", event => {
-      if (!options.stepOnClick || event.detail !== 0) return;
-      const stops = interactionValues();
-      update(stops[Math.min(stops.length - 1, stops.indexOf(value) + 1)]);
+      if (event.detail !== 0 || event.pointerType) return;
+      const before = value;
+      advanceClick();
+      if (before !== value) options.onManualChange?.(before, value, "keyboard");
     });
     button.addEventListener("keydown", (event) => {
       if (options.onHold && event.shiftKey && event.key === "Enter") {

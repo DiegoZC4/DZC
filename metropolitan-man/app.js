@@ -2,7 +2,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const audio = $('audio');
-const local = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+const local = false;
 const storageKey = 'readalong-metropolitan-man-seven-v1';
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch {}
@@ -15,6 +15,170 @@ let rate = Number(saved.rate) || 1, fontSize = Number(saved.fontSize) || 19, fol
 let previewMode = new URLSearchParams(location.search).get('preview') === 'released' ? 'released' : 'all';
 let asOf = new URLSearchParams(location.search).get('asOf') || new Intl.DateTimeFormat('en-CA', {timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const packetCache = new Map();
+// Explicit, resumable offline save. Percentages count committed IndexedDB bytes.
+const offlineCopy = {status: null, running: false, job: 0, error: '', worker: null, targetUrl: ''};
+const downloadPaths = {
+  save: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  done: '<path d="m20 6-11 11-5-5"/>'
+};
+
+function offlineAudioUrl(media) {
+  const url = new URL(resource(media.path), location.href);
+  url.searchParams.set('mc', media.sha256);
+  url.searchParams.set('bytes', String(media.bytes));
+  return url;
+}
+function hasOfflineCopy() {
+  return week?.audio[codec] && offlineCopy.status?.eligible && offlineCopy.status?.received > 0
+    && offlineCopy.status.url === offlineAudioUrl(week.audio[codec]).href;
+}
+function offlineMessage(type, data = {}, timeout = 60000) {
+  return new Promise((resolve, reject) => {
+    const worker = navigator.serviceWorker?.controller;
+    if (!worker || !offlineCopy.worker) { reject(new Error('Offline storage is not ready')); return; }
+    const channel = new MessageChannel();
+    const finish = () => { clearTimeout(timer); channel.port1.close(); };
+    const timer = setTimeout(() => { finish(); reject(new Error('Download interrupted; tap to resume')); }, timeout);
+    channel.port1.onmessage = event => {
+      finish();
+      if (event.data.error) reject(new Error(event.data.error));
+      else if (event.data.protocol !== 1) reject(new Error('Offline reader updated; reload before downloading'));
+      else resolve(event.data);
+    };
+    worker.postMessage({type, page: new URL(resource(''), location.href).href, ...data}, [channel.port2]);
+  });
+}
+function paintOffline() {
+  const button = $('offline-download'), media = week?.audio[codec], status = offlineCopy.status;
+  const current = media && status?.url === offlineAudioUrl(media).href && status.eligible;
+  const bytes = current ? status.received : 0;
+  const complete = current && status.shellReady && bytes === status.total && status.chunks.length === Math.ceil(status.total/status.chunkBytes);
+  const percent = complete ? 100 : media ? Math.min(99, Math.floor(100 * bytes/media.bytes)) : 0;
+  const action = offlineCopy.running ? 'Pause download' : complete ? 'Downloaded for offline listening' : bytes ? 'Resume offline download' : 'Download for offline listening';
+  button.disabled = !media || !offlineCopy.worker;
+  button.dataset.state = complete ? 'complete' : offlineCopy.running ? 'saving' : bytes ? 'partial' : 'empty';
+  button.querySelector('svg').innerHTML = downloadPaths[complete ? 'done' : offlineCopy.running ? 'pause' : 'save'];
+  $('offline-percent').textContent = percent + '%';
+  button.title = offlineCopy.error || action + ' (' + percent + '% saved)';
+  button.setAttribute('aria-label', action + ', ' + percent + '% saved');
+  $('offline-remove').hidden = !status?.policy?.url;
+  const old = status?.policy && status.policy.week !== week?.id;
+  $('offline-detail').textContent = offlineCopy.error || (old
+    ? 'Reading ' + Number(status.policy.week.slice(5)) + ' is saved. Downloading this reading replaces it.'
+    : complete ? 'Available offline. ' + (bytes/1e6).toFixed(1) + ' MB saved.'
+    : bytes ? (bytes/1e6).toFixed(1) + ' / ' + (media.bytes/1e6).toFixed(1) + ' MB saved. ' + (offlineCopy.running ? 'Downloading...' : 'Partial download; tap the arrow to resume.')
+    : 'Download only when you need offline listening. One reading and audio format are kept.');
+}
+async function refreshOffline() {
+  if (!week?.audio[codec]) return;
+  const url = offlineAudioUrl(week.audio[codec]).href;
+  if (offlineCopy.running && offlineCopy.targetUrl !== url) stopOffline();
+  if (!offlineCopy.worker) { paintOffline(); return; }
+  try {
+    const status = await offlineMessage('metro-status', {url});
+    if (week?.audio[codec] && url === offlineAudioUrl(week.audio[codec]).href) offlineCopy.status = status;
+  } catch (error) { offlineCopy.error = error.message; }
+  paintOffline();
+}
+function stopOffline() {
+  ++offlineCopy.job;
+  offlineCopy.running = false;
+  paintOffline();
+}
+async function toggleOffline() {
+  if (offlineCopy.running) { stopOffline(); return; }
+  if (!week?.audio[codec]) return;
+  if (hasOfflineCopy() && offlineCopy.status.shellReady && offlineCopy.status.received === offlineCopy.status.total) {
+    toast('This reading is available offline. Manage it in Settings.');return;
+  }
+  const id = week.id, format = codec, job = ++offlineCopy.job;
+  offlineCopy.targetUrl = offlineAudioUrl(week.audio[codec]).href;
+  offlineCopy.running = true;offlineCopy.error = '';paintOffline();
+  try {
+    await offlineReady;
+    if (job !== offlineCopy.job) return;
+    const status = await offlineMessage('metro-prepare', {week: id, codec: format});
+    if (job !== offlineCopy.job) return;
+    offlineCopy.status = status;
+    const total = Math.ceil(status.total/status.chunkBytes);
+    // Ogg needs the final granule to determine duration after a cold start.
+    // Save both ends before the main sequential body, including both tail chunks.
+    const order = [...new Set([0, Math.max(0,total-1), Math.max(0,total-2), ...Array.from({length:total},(_,i)=>i)])];
+    const have = new Set(status.chunks);
+    for (const index of order) {
+      if (job !== offlineCopy.job || week.id !== id || codec !== format) break;
+      if (have.has(index)) continue;
+      const updated = await offlineMessage('metro-chunk', {url: status.url, index});
+      if (job !== offlineCopy.job) break;
+      offlineCopy.status = updated;
+      paintOffline();
+    }
+    // The initial native stream may predate service-worker control. Rebind only
+    // after its metadata has been saved, without changing play/pause intent.
+    if (job === offlineCopy.job && audioControls && audio.error) {
+      setAudio(playbackPosition());
+    }
+  } catch (error) {
+    if (job === offlineCopy.job) {
+      offlineCopy.error = 'Download paused: ' + error.message;
+      toast('Partial download kept. Tap the download arrow to resume.');
+    }
+  } finally {
+    if (job === offlineCopy.job) { offlineCopy.running = false; await refreshOffline(); }
+  }
+}
+async function initializeOffline() {
+  if (!isSecureContext || !('serviceWorker' in navigator)) {
+    offlineCopy.error = 'Offline listening requires HTTPS (or localhost).';return;
+  }
+  try {
+    const registration = await navigator.serviceWorker.register('offline-worker.js', {scope: './', updateViaCache: 'none'});
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { navigator.serviceWorker.removeEventListener('controllerchange', changed); reject(new Error('Reload to enable offline listening')); }, 10000);
+      function changed() { clearTimeout(timer); navigator.serviceWorker.removeEventListener('controllerchange', changed); resolve(); }
+      navigator.serviceWorker.addEventListener('controllerchange', changed);
+      if (navigator.serviceWorker.controller) changed();
+    });
+    const expected = new URL('offline-worker.js', location.href).href;
+    if (navigator.serviceWorker.controller.scriptURL !== expected) throw new Error('Reader worker is not controlling this page yet');
+    offlineCopy.worker = registration.active;
+    await refreshOffline();
+  } catch (error) { offlineCopy.error = 'Offline listening unavailable: ' + error.message; }
+  paintOffline();
+}
+const offlineReady = initializeOffline();
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', () => {
+  const controller = navigator.serviceWorker.controller;
+  if (controller?.scriptURL === new URL('offline-worker.js', location.href).href) {
+    offlineCopy.worker = controller;refreshOffline();
+  }
+});
+$('offline-download').addEventListener('click', toggleOffline);
+$('offline-remove').addEventListener('click', async () => {
+  stopOffline();
+  try { offlineCopy.status = await offlineMessage('metro-clear');offlineCopy.error = ''; }
+  catch (error) { offlineCopy.error = error.message; }
+  paintOffline();
+});
+let offlineRefreshTimer;
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', event => {
+  if (!['audio-cache-event','audio-cache-current'].includes(event.data?.type)) return;
+  clearTimeout(offlineRefreshTimer);
+  offlineRefreshTimer = setTimeout(refreshOffline, 150);
+});
+window.addEventListener('pagehide', stopOffline);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshOffline(); });
+async function refreshOfflineCatalog() {
+  if (!catalog?.offlineReading) return;
+  const path = resource('data/catalog.json');
+  const data = await safeFetch(path).catch(() => null);
+  if (data && !data.offlineReading && path === resource('data/catalog.json')) { catalog = data;renderSchedule();updateSearchScope(); }
+}
+window.addEventListener('online', refreshOfflineCatalog);
+$('schedule-open').addEventListener('click', refreshOfflineCatalog);
+
 // The catalog describes the verified full recording. A partial Ogg response
 // can look like a shorter, successfully ended file to the browser demuxer.
 let lastGoodAudioTime = 0, requestedAudioTime = null, resumeRequested = false;
@@ -45,6 +209,12 @@ function recoverAudio(reason, resume = resumeRequested || playbackIntent || !aud
   requestedAudioTime = position;
   audio.pause();
   resumeRequested = resume;
+  if (hasOfflineCopy() && navigator.onLine === false) {
+    playbackFailed = true;
+    resumeRequested = false;playbackIntent = false;
+    $('status').textContent = 'This part is not downloaded yet. Saved audio is still available; reconnect to finish downloading.';
+    syncPlay();savePosition();return;
+  }
   if (recoveryAttempts >= 2) {
     playbackFailed = true;
     resumeRequested = false;playbackIntent = false;
@@ -58,7 +228,7 @@ function recoverAudio(reason, resume = resumeRequested || playbackIntent || !aud
   queueMicrotask(() => {
     if (token !== mediaToken || !audioControls) return;
     // First bypass a damaged cached response, then use the independent codec.
-    if (recoveryAttempts === 2) {
+    if (recoveryAttempts === 2 && !hasOfflineCopy()) {
       const other = codec === 'opus' ? 'mp3' : 'opus';
       if (week.audio[other]) { codec = other;syncPill('codec-pill',codec,'codec'); }
     }
@@ -81,7 +251,7 @@ function setAudio(time = 0, recovery = null) {
   const media = week.audio[codec];
   $('play').disabled = !media;
   if (!media) { audio.removeAttribute('src');audio.load();return; }
-  const url = new URL(resource(media.path),location.href);
+  const url = offlineAudioUrl(media);
   if (recovery) url.searchParams.set('audio-retry',Date.now()+'-'+token);
   audio.dataset.week = week.id;audio.src = url.href;audio.playbackRate = rate;
   audio.addEventListener('loadedmetadata', () => {
@@ -153,6 +323,25 @@ audio.addEventListener('ended', () => {
 audio.addEventListener('error', () => {
   if (audio.getAttribute('src')) recoverAudio(audio.error?.message || 'media download error');
 });
+
+// Some mobile demuxers stall indefinitely instead of emitting a media error
+// when an offline seek needs a missing range. Keep the saved target intact.
+let audioStallTimer = null, audioStallToken = null;
+function watchAudioStall() {
+  // Repeated waiting/stalled events must not keep postponing the deadline.
+  if (audioStallTimer !== null && audioStallToken === mediaToken) return;
+  clearTimeout(audioStallTimer);
+  const token = mediaToken, position = audio.currentTime;
+  audioStallToken = token;
+  audioStallTimer = setTimeout(() => {
+    audioStallTimer = null;
+    if (token !== mediaToken || !audioControls || playbackFailed || recoveryPending) return;
+    if (!audio.seeking && audio.readyState >= 2 && (audio.paused || audio.currentTime > position + .1)) return;
+    if (audio.seeking || audio.readyState < 1 || playbackIntent || resumeRequested) recoverAudio('audio request stalled');
+  }, navigator.onLine === false ? 1500 : 10000);
+}
+for (const event of ['loadstart','waiting','stalled','seeking']) audio.addEventListener(event, watchAudioStall);
+audio.addEventListener('playing', () => { clearTimeout(audioStallTimer);audioStallTimer = null; });
 
 // Inlined by the Metropolitan adapter; the shared Unsong template is unchanged.
 let audioControls = saved.audioControls !== false;
@@ -238,17 +427,87 @@ function displayError(error) { $('status').textContent = error.message || String
 // Pausing, scrubbing or switching files may cancel a queued play request normally.
 function displayPlaybackError(error) { if(error?.name !== 'AbortError') displayError(error); }
 function currentChapter(t) { if(!week) return null; return week.chapters.findLast(c=>c.start<=t) || week.chapters[0]; }
-function updateStats() { if(!week) return; const media=week.audio[codec]; $('codec-detail').textContent=media ? (codec==='opus'?'Opus, 32 kbps mono':'MP3, 96 kbps mono')+' · '+(media.bytes/1e6).toFixed(1)+' MB' : 'This format is still being prepared. Reload when encoding finishes.'; $('download').href=media?resource(media.path):'#'; $('download').hidden=!media; }
+function updateStats() { if(!week) return; const media=week.audio[codec]; $('codec-detail').textContent=media ? (codec==='opus'?'Opus, 32 kbps mono':'MP3, 96 kbps mono')+' · '+(media.bytes/1e6).toFixed(1)+' MB' : 'This format is still being prepared. Reload when encoding finishes.'; refreshOffline(); }
 function setRate(value) { rate=Number(Math.max(.5,Math.min(3,value)).toFixed(2)); audio.playbackRate=rate; saved.rate=rate; const el=$('speed'); el.textContent=rate+'×';el.dataset.value=rate;el.setAttribute('aria-valuenow',rate);persist();updateStats(); }
 function setFont(value) { fontSize=Math.max(14,Math.min(28,Math.round(value))); saved.fontSize=fontSize; document.documentElement.style.setProperty('--reader-size',fontSize+'px'); $('font-size').textContent=fontSize;$('font-size').dataset.value=fontSize;$('font-size').setAttribute('aria-valuenow',fontSize);persist(); }
-function bindDrag(id, get, set, step, pixels, min, max) {
-  const el=$(id);let start=null;
-  const commit=v=>{v=Math.min(max,Math.max(min,v));if(Math.abs(v-get())>.00001){set(v);el.dispatchEvent(new Event('input',{bubbles:true}));}};
-  el.addEventListener('pointerdown',e=>{if(e.button!==0)return;start={y:e.clientY,v:get(),id:e.pointerId};el.setPointerCapture(e.pointerId);e.preventDefault();});
-  el.addEventListener('pointermove',e=>{if(!start)return;commit(start.v+Math.round((start.y-e.clientY)/pixels)*step);});
-  const stop=()=>{start=null;};el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);el.addEventListener('lostpointercapture',stop);window.addEventListener('blur',stop);
-  el.addEventListener('keydown',e=>{const delta=({ArrowUp:step,ArrowRight:step,ArrowDown:-step,ArrowLeft:-step})[e.key];if(delta){e.preventDefault();commit(get()+delta);}else if(e.key==='Home'){e.preventDefault();commit(min);}else if(e.key==='End'){e.preventDefault();commit(max);}});
+function bindDrag(id, get, set, step, pixels, min, max, clickStep) {
+  const el = $(id);
+  let gesture = null;
+  const commit = value => {
+    value = Math.min(max, Math.max(min, value));
+    if (Math.abs(value - get()) > .00001) {
+      set(value);
+      el.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+  };
+  const inside = event => {
+    const box = el.getBoundingClientRect();
+    return event.clientX >= box.left && event.clientX < box.right &&
+      event.clientY >= box.top && event.clientY < box.bottom;
+  };
+  const release = () => {
+    const previous = gesture;
+    gesture = null;
+    if (previous && el.hasPointerCapture(previous.id)) {
+      el.releasePointerCapture(previous.id);
+    }
+    return previous;
+  };
+  const cancel = event => {
+    if (!gesture || (event?.pointerId !== undefined && event.pointerId !== gesture.id)) return;
+    const previous = release();
+    // OS navigation gestures can cancel a captured touch after several moves.
+    // Restore both the displayed rate and its persisted preference in that case.
+    commit(previous.value);
+  };
+  const move = event => {
+    if (!gesture || event.pointerId !== gesture.id) return;
+    if (el.disabled || (event.type === 'pointermove' && gesture.pointerType === 'mouse' && !(event.buttons & 1))) {
+      cancel(event);
+      return;
+    }
+    const dx = event.clientX - gesture.x;
+    const dy = gesture.y - event.clientY;
+    gesture.moved ||= Math.hypot(dx, dy) >= gesture.threshold;
+    if (gesture.moved) commit(gesture.value + Math.round(dy / pixels) * step);
+  };
+  el.addEventListener('pointerdown', event => {
+    if (gesture || el.disabled || event.button !== 0 || event.isPrimary === false || !inside(event)) return;
+    gesture = {
+      id: event.pointerId, pointerType: event.pointerType,
+      x: event.clientX, y: event.clientY, value: get(), moved: false,
+      threshold: event.pointerType === 'mouse' ? 2 : 8
+    };
+    try { el.setPointerCapture(event.pointerId); }
+    catch { gesture = null; return; }
+    event.preventDefault();
+  });
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', event => {
+    if (!gesture || event.pointerId !== gesture.id) return;
+    move(event);
+    const previous = release();
+    if (previous && !previous.moved && !el.disabled && inside(event)) commit(previous.value + clickStep);
+    event.preventDefault();
+  });
+  el.addEventListener('pointercancel', cancel);
+  el.addEventListener('lostpointercapture', cancel);
+  window.addEventListener('blur', cancel);
+  window.addEventListener('pagehide', cancel);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) cancel(); });
+  el.addEventListener('click', event => {
+    // Pointer activation is handled on release; only keyboard/AT clicks act here.
+    if (!gesture && !el.disabled && event.detail === 0 && !event.pointerType) commit(get() + clickStep);
+  });
+  el.addEventListener('keydown', event => {
+    const delta = {ArrowUp: step, ArrowRight: step, ArrowDown: -step, ArrowLeft: -step}[event.key];
+    if (el.disabled || (!delta && !['Home', 'End'].includes(event.key))) return;
+    event.preventDefault();
+    cancel();
+    commit(event.key === 'Home' ? min : event.key === 'End' ? max : get() + delta);
+  });
 }
+
 function renderSchedule() {
   $('schedule-status').textContent=catalog.scheduleStatus;
   const list=$('schedule-list');list.replaceChildren();
@@ -262,7 +521,7 @@ function renderSchedule() {
     words.textContent=w.words.toLocaleString()+' words';
     minutes.textContent=Math.round(w.readingMinutes)+' min read'+(Number.isFinite(w.duration)?' · '+Math.round(w.duration/60)+' min listen':'');
     right.append(words,minutes);
-    if(!w.available){const unlock=document.createElement('small');unlock.textContent=w.releaseAt?'Unlocks '+dateLabel(w.releaseAt):'Not released yet';right.append(unlock);}
+    if(!w.available){const unlock=document.createElement('small');unlock.textContent=catalog.offlineReading?'Not saved offline':w.releaseAt?'Unlocks '+dateLabel(w.releaseAt):'Not released yet';right.append(unlock);}
     if(saved.weeks[w.id]?.done){const done=document.createElement('small');done.textContent='Finished';right.append(done);}
     button.append(left);if(right.childElementCount)button.append(right);button.addEventListener('click',()=>{$('schedule-dialog').close();loadWeek(w.id).catch(displayError);});list.append(button);
   });
@@ -344,7 +603,7 @@ async function copy(text){try{await navigator.clipboard.writeText(text);toast('L
 
 /* Reviewed references travel with each released packet, never with a global spoiler index. */
 let referenceNotes = new Map(), referenceFocusNodes = [], referenceOrigin = null;
-let referenceSection = null, referenceLimit = -1, selectedLookup = '', selectionTimer;
+let referenceSection = null, selectedLookup = '', selectionTimer;
 // Retired display preferences must not hide any reference markers.
 for(const key of ['referenceDensity','referenceConfidence','referenceUsefulness','references','hiddenReferences'])delete saved[key];
 const referenceKinds = {philosophy:'Philosophy',history:'History / real people',scripture:'Biblical text',tradition:'Religious tradition',literature:'Literature',science:'Science / mathematics',fiction:'Superman / comics'};
@@ -363,26 +622,6 @@ function sourceAnchor(source) {
 function clearReferenceFocus() {
   referenceFocusNodes.forEach(n=>n.classList.remove('reference-focus'));referenceFocusNodes=[];
   $('reader').querySelector('[aria-current="true"].reference-mark')?.removeAttribute('aria-current');
-}
-function sectionAtReadingPosition() {
-  const headings=[...$('reader').querySelectorAll('h2[id^="section-"]')];
-  return (headings.findLast(h=>h.getBoundingClientRect().top<Math.min(innerHeight*.3,240)) || headings[0])?.id;
-}
-function renderNearby(sectionId) {
-  referenceSection=sectionId;
-  const chapter=week?.chapters.find(c=>c.id===sectionId);
-  $('reference-nearby-label').textContent=chapter?'Earlier references · '+chapter.label:'References up to this passage';
-  const list=$('reference-nearby-list');list.replaceChildren();
-  const seen=new Set();
-  const ordered=[...(packet?.referenceOccurrences || [])].sort((a,b)=>a.firstWord-b.firstWord);
-  for(const occurrence of ordered){
-    if(occurrence.sectionId!==sectionId || occurrence.firstWord>referenceLimit || seen.has(occurrence.referenceId))continue;
-    const note=referenceNotes.get(occurrence.referenceId);if(!note)continue;
-    seen.add(occurrence.referenceId);
-    const button=referenceElement('button','',note.title);button.type='button';button.dataset.referenceId=note.id;
-    button.addEventListener('click',()=>showReference(note.id,occurrence));list.append(button);
-  }
-  if(!seen.size)list.append(referenceElement('p','muted small','No earlier references in this chapter.'));
 }
 function setReferencePanel(open, origin=null) {
   const wasOpen=!$('reference-panel').hidden;
@@ -405,7 +644,6 @@ function showReference(id, occurrence=null, trigger=null) {
   const note=referenceNotes.get(id);if(!note)return;
   occurrence ||= packet.referenceOccurrences.find(o=>o.referenceId===id && o.sectionId===referenceSection) || packet.referenceOccurrences.find(o=>o.referenceId===id);
   const marker=trigger || $('reader').querySelector('.reference-mark[data-occurrence="'+packet.referenceOccurrences.indexOf(occurrence)+'"]');
-  referenceLimit=occurrence?.lastWord??-1;
   clearReferenceFocus();marker?.setAttribute('aria-current','true');
   if(occurrence && occurrence.firstWord!==null){
     for(let i=occurrence.firstWord;i<=occurrence.lastWord;i++){const n=wordNodes.get(i);if(n){n.classList.add('reference-focus');referenceFocusNodes.push(n);}}
@@ -425,11 +663,10 @@ function showReference(id, occurrence=null, trigger=null) {
     const li=document.createElement('li');li.append(a,referenceElement('small','',locator));sources.append(li);
   }
   detail.append(sources);
-  detail.append(referenceElement('p','reference-footnote','Editorial annotation, not Alexander Wales’s. '+(note.verifiedOn?'Source check '+note.verifiedOn:'Suggested reference; source check incomplete')+'. Links open separately; external pages may contain spoilers.'));
-  renderNearby(occurrence?.sectionId || sectionAtReadingPosition());setReferencePanel(true,marker);$('reference-panel').scrollTop=0;
+  referenceSection=occurrence?.sectionId || null;setReferencePanel(true,marker);$('reference-panel').scrollTop=0;
 }
 function mountReferences() {
-  clearReferenceFocus();referenceNotes=new Map((packet?.references || []).map(n=>[n.id,n]));referenceOrigin=null;referenceSection=null;referenceLimit=-1;
+  clearReferenceFocus();referenceNotes=new Map((packet?.references || []).map(n=>[n.id,n]));referenceOrigin=null;referenceSection=null;
   $('reference-panel').hidden=true;document.body.classList.remove('references-open');
   $('reader').querySelectorAll('.reference-mark').forEach(n=>n.remove());
   (packet?.referenceOccurrences || []).forEach((occurrence,index)=>{
@@ -619,7 +856,6 @@ async function openSearchResult(entry) {
   else{$('reader').focus({preventScroll:true});clearReferenceFocus();}
 }
 $('search-open').addEventListener('click',()=>openSearch());
-$('search-from-reference').addEventListener('click',()=>openSearch());
 $('search-dialog').addEventListener('close',()=>{cancelSearchWork();$('search-open').setAttribute('aria-expanded','false');});
 $('search-query').addEventListener('input',()=>{
   clearTimeout(searchTimer);searchRun++;$('search-results').replaceChildren();$('search-more').hidden=true;
@@ -669,7 +905,7 @@ $('reader').addEventListener('pointerdown',e=>{textDown={x:e.clientX,y:e.clientY
 $('reader').addEventListener('click',e=>{const word=e.target.closest('.timed');if(!audioControls||!word||!textDown||Math.hypot(e.clientX-textDown.x,e.clientY-textDown.y)>8||window.getSelection()?.toString())return;const timing=times.find(row=>row[0]===Number(word.dataset.w));if(timing){attached=true;seek(timing[1]/1000);}});
 for(const event of ['wheel','touchmove'])window.addEventListener(event,()=>{userScrollIntent=performance.now()+600;if(follow)attached=false;},{passive:true});
 window.addEventListener('scroll',()=>{if(performance.now()>programmaticUntil&&performance.now()<userScrollIntent)attached=false;returnControl();clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{const el=document.elementFromPoint(Math.min(innerWidth-20,Math.max(20,innerWidth/2)),Math.min(innerHeight/2,200));const block=el?.closest('#reader [id]');if(block){readingBlock=block.id;savePosition();}},300);},{passive:true});
-window.addEventListener('keydown',e=>{const editing=e.target.closest('textarea,[contenteditable=true],input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])');if(!audioControls||editing||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();e.stopPropagation();if(!e.repeat)togglePlay();}else if(e.target===document.body&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();seek(audio.currentTime+(e.key==='ArrowLeft'?-15:15));}},{capture:true});
+window.addEventListener('keydown',e=>{const editing=e.target.closest('button.drag-number,textarea,[contenteditable=true],input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])');if(!audioControls||editing||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();e.stopPropagation();if(!e.repeat)togglePlay();}else if(e.target===document.body&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();seek(audio.currentTime+(e.key==='ArrowLeft'?-15:15));}},{capture:true});
 document.addEventListener('pointerup',e=>{const b=e.target.closest('button');if(b)queueMicrotask(()=>b.blur());});
 audio.addEventListener('timeupdate',()=>{if(!document.hidden)updatePlayback();});
 audio.addEventListener('play',syncPlay);audio.addEventListener('pause',()=>{syncPlay();savePosition();});
@@ -677,7 +913,7 @@ document.addEventListener('visibilitychange',()=>{savePosition();if(!document.hi
 window.addEventListener('hashchange',()=>{const m=location.hash.match(/^#(week-\d\d)(?:@([\d.]+))?$/);if(m&&catalog)loadWeek(m[1],m[2]===undefined?null:Number(m[2])).catch(displayError);});
 window.addEventListener('resize',()=>{syncPill('visibility-pill',previewMode,'mode');if($('settings-dialog').open)syncPill('codec-pill',codec,'codec');});
 if('mediaSession'in navigator){for(const[action,handler]of Object.entries({play:()=>{if(audioControls)startPlayback();},pause:()=>pausePlayback(),seekbackward:d=>seek(playbackPosition()-(d.seekOffset||15)),seekforward:d=>seek(playbackPosition()+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)})){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
-bindDrag('speed',()=>rate,setRate,.05,6,.5,3);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
+bindDrag('speed',()=>rate,setRate,.05,6,.5,3,.05);bindDrag('font-size',()=>fontSize,setFont,1,8,14,28,1);setRate(rate);setFont(fontSize);$('follow').textContent=follow?'On':'Off';$('follow').setAttribute('aria-pressed',String(follow));
 new ResizeObserver(entries=>{document.documentElement.style.setProperty('--player-height',entries[0].target.getBoundingClientRect().height+'px');}).observe(document.querySelector('.transport'));
 loadCatalog().then(()=>{
   const q=new URLSearchParams(location.search);

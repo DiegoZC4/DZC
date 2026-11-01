@@ -20,11 +20,6 @@ body.references-open .reading-layout{grid-template-columns:minmax(0,1fr) 350px}
 .reference-source-list{padding:0;list-style:none;margin:16px 0 8px;font-size:12px}
 .reference-source-list li{margin:9px 0;overflow-wrap:anywhere}
 .reference-source-list small{display:block;color:var(--muted);font-size:11px}
-.reference-footnote{font-size:11px;color:var(--muted)}
-#reference-nearby{border-top:1px solid var(--line);margin-top:18px;padding-top:5px}
-#reference-nearby-label{font-size:12px;line-height:1.5}
-#reference-nearby-list button,#reference-matches button{display:block;text-align:left;width:100%;border:0;background:none;font-size:12px;padding:6px 0;line-height:1.5;min-height:32px}
-#reference-nearby-list button:hover,#reference-matches button:hover{text-decoration:underline}
 .reference-lookup{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
 .reference-lookup label{font-size:12px;display:block;margin-bottom:6px}
 #reference-query{font:13px system-ui;display:block;width:100%;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);padding:9px}

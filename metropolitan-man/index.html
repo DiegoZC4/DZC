@@ -21,8 +21,8 @@
   </script>
   <title>The Metropolitan Man</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css?v=metropolitan-ui-20261018">
-  <link rel="stylesheet" href="player.css?v=metropolitan-ui-20261018">
+  <link rel="stylesheet" href="styles.css?v=5577733e84e3">
+  <link rel="stylesheet" href="player.css?v=7b4e0acfff37">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · MP3" href="feed.xml">
   <link rel="alternate" type="application/rss+xml" title="Metropolitan Man assignments · Opus" href="feed-opus.xml">
   <meta name="dzc-annotations" content="metropolitan-man">
@@ -64,10 +64,7 @@
       <h2 id="reference-heading" tabindex="-1">Reference</h2>
       <button id="references-close" type="button" aria-label="Close references"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
-    <p class="reference-tip">Tap a reference icon to preview; ⌘/Ctrl-click opens its source in a new tab.</p>
     <div id="reference-detail" aria-live="polite"></div>
-    <details id="reference-nearby"><summary id="reference-nearby-label">References in this chapter</summary><div id="reference-nearby-list"></div></details>
-    <button id="search-from-reference" class="search-from-reference" type="button">Search text and references</button>
   </aside>
   </div>
   <button id="lookup-selection" class="lookup-selection" type="button" hidden>Search selection</button>
@@ -85,7 +82,10 @@
           <button id="play" class="primary icon" type="button" aria-label="Play" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
           <button id="forward" class="skip-button" type="button" aria-label="Forward 15 seconds" title="Forward 15 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">15</span></button>
         </div>
+        <div class="playback-files">
+        <button id="offline-download" type="button" disabled aria-label="Download for offline listening" title="Download for offline listening"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span id="offline-percent">0%</span></button>
         <button id="share" class="position-link" type="button" aria-label="Copy position link" title="Copy position link" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+        </div>
       </div>
     </div>
   </div>
@@ -136,7 +136,7 @@
     <div id="audio-settings">
     <div class="setting"><span>Follow narration</span><button id="follow" type="button" aria-pressed="true">On</button></div>
     <div class="setting"><span>Audio format</span><div id="codec-pill" class="pill" role="group" aria-label="Audio format"><span class="thumb" aria-hidden="true"></span><button type="button" data-codec="opus" aria-pressed="true">Opus</button><button type="button" data-codec="mp3" aria-pressed="false">MP3</button></div></div>
-    <p id="codec-detail" class="muted small"></p><a id="download" download>Download this assignment</a>
+    <p id="codec-detail" class="muted small"></p><p id="offline-detail" class="muted small"></p><button id="offline-remove" type="button" hidden>Remove offline download</button>
     <p class="muted small">Drag numbers up/down, or focus them and use arrow keys. Click a timed word to seek. Space plays/pauses; ←/→ skip 15 seconds.</p>
     <p id="alignment-detail" class="muted small"></p>
     </div>
@@ -155,6 +155,6 @@
     </nav>
   </dialog>
   <div id="toast" role="status" hidden></div>
-  <script src="app.js?v=bc23b87690a7" defer></script>
+  <script src="app.js?v=495c270be5ce" defer></script>
 </body>
 </html>

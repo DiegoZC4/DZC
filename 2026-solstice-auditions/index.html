@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow"><title>2026 Solstice Auditions - Melete</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%8E%A4%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=126db10e8878">
+  <link rel="stylesheet" href="styles.css?v=ee2e56ffb554">
   <script defer src="vendor/lucide.min.js?v=ab85225ecc1d"></script>
   <script defer src="vendor/alphaTab.min.js?v=2d0335501b87"></script>
   <script defer src="vendor/notation-spacing.js?v=726d26ac4253"></script>
@@ -18,11 +18,11 @@
   <script defer src="recording_timing.js?v=f5b2c9b38450"></script>
   <script defer src="vendor/melete-synth.js?v=5be3d7c95598"></script>
   <script defer src="melody.js?v=384657d42894"></script>
-  <script defer src="waveform_lanes.js?v=2906c4627429"></script>
+  <script defer src="waveform_lanes.js?v=65d02bd6fd56"></script>
   
   <script defer src="vendor/infinite-pager.js?v=bf1d3c4ee53c"></script>
   <script defer src="reviews.js?v=8a35b9f5fa7a"></script>
-  <script defer src="app.js?v=b7a82a93093a"></script>
+  <script defer src="app.js?v=e61e14f23053"></script>
 </head>
 <body>
   <div class="workspace" id="practiceView">
@@ -71,7 +71,6 @@
             <div class="track-controls"><button id="referenceVocal" type="button" aria-pressed="true" title="Mute vocal"><i data-lucide="volume-2"></i><span>Vocal</span></button><button id="vocalLevel" class="track-level" aria-label="Vocal volume" data-value="100"></button></div>
             <div class="track-controls"><button id="referenceBacking" type="button" aria-pressed="true" title="Mute backing"><i data-lucide="volume-2"></i><span>Backing</span></button><button id="backingLevel" class="track-level" aria-label="Backing volume" data-value="100"></button></div>
             <div class="track-controls"><button id="metronome" type="button" aria-pressed="false" title="Enable metronome" aria-label="Enable metronome"><i data-lucide="timer"></i><span>Click</span></button><button id="clickLevel" class="track-level" aria-label="Click volume" data-value="100"></button></div>
-            <div class="track-controls"><button id="melody" type="button" aria-pressed="false" title="Unmute synthesized melody" aria-label="Unmute synthesized melody"><i data-lucide="music-2"></i><span>Melody</span></button><button id="melodyLevel" class="track-level" aria-label="Melody volume" data-value="100"></button></div>
           </div>
           <div id="waveformTimeline" class="waveform-timeline" role="slider" tabindex="0" aria-label="Shared track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
             <canvas id="waveformCanvas" aria-hidden="true"></canvas>
@@ -79,6 +78,7 @@
           </div>
         </div>
         <div class="notation-wrap"><div class="notation" id="notation" aria-label="Conventional melody notation"></div><div id="scorePlayhead" class="score-playhead" hidden></div></div>
+        <div class="pitch-controls backing-controls" role="group" aria-label="MIDI playback"><div class="track-controls midi-controls"><button id="melody" type="button" aria-pressed="false" title="Unmute MIDI melody" aria-label="Unmute MIDI melody"><i data-lucide="music-2"></i><span>MIDI</span></button><button id="melodyLevel" class="track-level" aria-label="MIDI volume" data-value="100"></button></div></div>
         <div class="pitch-scroll" id="pitchScroll"><div id="pitchbar" aria-label="Melody and microphone pitch contour"></div></div>
         <div class="take-panel"><div class="take-list">
         <div class="take-heading"><h3>Takes <span id="takeCount"></span></h3><div id="takeScope" class="source-pill" role="tablist" aria-label="Whose takes" hidden><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-scope="mine" aria-selected="true">Mine</button><button type="button" role="tab" data-scope="all" aria-selected="false" tabindex="-1">All</button></div><button id="refreshReview" class="icon" hidden title="Refresh submitted auditions" aria-label="Refresh submitted auditions"><i data-lucide="refresh-cw"></i></button><button id="undoDelete" hidden><i data-lucide="undo-2"></i>Undo delete</button><span id="localStorageSize"></span></div>

@@ -82,13 +82,13 @@
       if(label)this.element.setAttribute('aria-valuetext',label);
     }
     draw(){
-      const width=this.element.clientWidth,height=160,ratio=window.devicePixelRatio||1;
+      const width=this.element.clientWidth,height=124,ratio=window.devicePixelRatio||1;
       if(!width)return;
       this.canvas.width=Math.round(width*ratio);this.canvas.height=Math.round(height*ratio);
       const ctx=this.canvas.getContext('2d');ctx.scale(ratio,ratio);ctx.clearRect(0,0,width,height);
       const d=this.data;if(!d)return;
       const css=getComputedStyle(this.element),line=css.getPropertyValue('--line').trim(),muted=css.getPropertyValue('--muted').trim();
-      const colours=['#5ba9be','#c28c55','#8caa72','#ba7c9b'];
+      const colours=['#5ba9be','#c28c55','#8caa72'];
       const xAt=seconds=>clamp((seconds-d.start)/(d.end-d.start))*width;
       const xTick=tick=>d.map&&d.beatMap?xAt(d.beatMap.seconds(tick)):fraction(tick,d.endTick,d.map,d.start,d.end)*width;
       const count=d.map?d.count||[]:[];
@@ -117,7 +117,7 @@
         }
         ctx.fillStyle=muted;
       }
-      for(let row=0;row<4;row++){
+      for(let row=0;row<3;row++){
         const top=16+row*36,mid=top+18;
         ctx.strokeStyle=line;ctx.globalAlpha=1;ctx.beginPath();ctx.moveTo(0,top+36);ctx.lineTo(width,top+36);ctx.stroke();
         ctx.fillStyle=colours[row];ctx.globalAlpha=d.active[row]?1:.3;
@@ -132,14 +132,6 @@
           }}else{ctx.fillStyle=muted;ctx.font='11px system-ui';ctx.fillText('Waveform pending',8,mid);}
         }else if(row===2)for(const b of [...count.map(b=>({x:xAt(b.seconds),label:b.label})),...d.beats.filter(b=>!d.map||d.beatMap.seconds(b.tick)<d.end-1e-7).map(b=>({x:xTick(b.tick),label:b.label}))]){
           const h=b.label===1?24:13;ctx.fillRect(b.x,mid-h/2,b.label===1?2:1.5,h);
-        }else{
-          const notes=d.notes||[],pitches=notes.map(n=>n[3]),low=Math.min(...pitches),high=Math.max(...pitches);
-          for(const n of notes){
-            const x=xTick(n[1]),end=xTick(n[2]);
-            if(x>=width||end<=x)continue;
-            const y=mid-2-(n[3]-(low+high)/2)/Math.max(1,high-low)*22;
-            ctx.fillRect(x,y,Math.max(1,end-x-1),4);
-          }
         }
       }
       ctx.globalAlpha=1;

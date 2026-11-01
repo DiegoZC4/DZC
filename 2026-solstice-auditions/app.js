@@ -134,10 +134,10 @@
     $("metronome").setAttribute("aria-pressed",String(metronome));
     $("metronome").title=metronome?"Mute metronome":"Enable metronome";$("metronome").setAttribute("aria-label",$("metronome").title);
     $("melody").setAttribute("aria-pressed",String(melody));$("melody").disabled=busy||!sourceReady;
-    $("melody").title=`${melody?'Mute':'Unmute'} synthesized melody; hold to solo or restore all tracks`;
+    $("melody").title=`${melody?'Mute':'Unmute'} MIDI melody; hold to solo or restore all tracks`;
     $("melody").setAttribute("aria-label",$("melody").title);
     for(const [i,id] of ['vocalLevel','backingLevel','clickLevel','melodyLevel'].entries()){
-      $(id).disabled=busy;$(id).title=`${['Vocal','Backing','Click','Melody'][i]} volume; drag to adjust, hold to emphasize / reduce / restore`;
+      $(id).disabled=busy;$(id).title=`${['Vocal','Backing','Click','MIDI'][i]} volume; drag to adjust, hold to emphasize / reduce / restore`;
     }
     const transposeLocked=!!recording||busy||!!selected;
     $("transpose").inert=transposeLocked;$("transpose").setAttribute("aria-disabled",String(transposeLocked));$("transpose").tabIndex=transposeLocked?-1:0;
@@ -160,7 +160,7 @@
     // A loop that runs past the music clicks on to its seam.
     const clicks=map?Math.max(map.endTick,alignment?.loop?.endTick??0):undefined;
     waveforms.set({map,beatMap,start:count.start,count:count.beats,endTick:sequence.endTick,measures:map?grid.measures:sequence.measures,beats:T.measureBeats(sequence,clicks),grid,
-      cut,playbackEnd,envelopes:entry?.tracks,notes:sequence.notes,active:[!!map&&referenceAudio.vocal,!!map&&referenceAudio.backing,metronome,melody],
+      cut,playbackEnd,envelopes:entry?.tracks,active:[!!map&&referenceAudio.vocal,!!map&&referenceAudio.backing,metronome],
       edit:beatEditing&&!!map&&!!alignment?.beatAnchors&&!currentTake()&&!recording});
     waveforms.seekable(!recording&&!busy&&sourceReady);
   }

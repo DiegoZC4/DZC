@@ -68,20 +68,21 @@ aside{padding:14px 8px}.aside-heading{padding:0 8px 10px}
 }
 .waveform-mixer{display:grid;grid-template-columns:94px minmax(0,1fr);gap:8px;margin:2px 0 12px;border-block:1px solid var(--line)}
 .cut-label{font-size:12px;line-height:1.5;margin:-10px 0 12px;color:var(--muted)}
-.waveform-mixer .track-labels{display:grid;grid-template-rows:16px repeat(4,36px);gap:0;margin:0;align-items:center}
+.waveform-mixer .track-labels{display:grid;grid-template-rows:16px repeat(3,36px);gap:0;margin:0;align-items:center}
 .track-labels button{width:94px;justify-content:flex-start;white-space:nowrap}
 .beat-edit-cell{display:flex;height:16px;align-items:center}.beat-edit-cell button{width:28px;height:16px;min-height:0;padding:0;justify-content:center;box-shadow:none}.beat-edit-cell svg{width:13px;height:13px}
 .track-labels button:nth-of-type(1){box-shadow:inset 3px 0 #5ba9be}.track-labels button:nth-of-type(2){box-shadow:inset 3px 0 #c28c55}.track-labels button:nth-of-type(3){box-shadow:inset 3px 0 #8caa72}
-.waveform-timeline{position:relative;height:160px;min-width:0;overflow:hidden;cursor:crosshair;touch-action:pan-y;outline-offset:2px}
-.waveform-timeline canvas{display:block;width:100%;height:160px}
+.waveform-timeline{position:relative;height:124px;min-width:0;overflow:hidden;cursor:crosshair;touch-action:pan-y;outline-offset:2px}
+.waveform-timeline canvas{display:block;width:100%;height:124px}
 .waveform-mixer{grid-template-columns:152px minmax(0,1fr)}
 .track-controls{display:grid;grid-template-columns:94px 54px;gap:4px}
-.track-labels .track-level{width:54px;justify-content:center;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums;box-shadow:none}
+.track-controls .track-level{width:54px;justify-content:center;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums;box-shadow:none}
 .track-labels .track-controls .track-level{box-shadow:none}
 .track-controls:nth-child(2)>button:first-child{box-shadow:inset 3px 0 #5ba9be}
 .track-controls:nth-child(3)>button:first-child{box-shadow:inset 3px 0 #c28c55}
 .track-controls:nth-child(4)>button:first-child{box-shadow:inset 3px 0 #8caa72}
-.track-controls:nth-child(5)>button:first-child{box-shadow:inset 3px 0 #ba7c9b}
+.pitch-controls{margin:4px 0}
+.midi-controls>button:first-child{width:94px;justify-content:flex-start;box-shadow:inset 3px 0 #87b6aa}
 #loop[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 18%,var(--surface));border-color:var(--accent);color:var(--accent)}
 .waveform-playhead{position:absolute;top:16px;bottom:0;width:2px;transform:translateX(-1px);background:var(--pink);pointer-events:none}
 .waveform-timeline:focus-visible{outline:2px solid var(--accent)}.waveform-timeline[aria-disabled=true]{cursor:default}

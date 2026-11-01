@@ -425,7 +425,10 @@ async function clearDownload(page) {
 }
 
 async function shellResponse(request) {
-  try { return await fetch(request, {signal: AbortSignal.timeout(6000)}); }
+  // A newer HTML response in the browser HTTP cache can reference scripts that
+  // are absent from the committed offline bundle. Use live network or that
+  // bundle, not a mixture of two independently cached UI versions.
+  try { return await fetch(request, {cache: 'no-store', signal: AbortSignal.timeout(6000)}); }
   catch (error) {
     const url = new URL(request.url);
     const page = pageFor(url) || pageFor(new URL(BASE.pathname + url.search, BASE));

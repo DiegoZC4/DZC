@@ -57,7 +57,7 @@
   const referenceAudio = new MeleteReferenceAudio.Player($("backingAudio"), {
     buffered:true,onError: message => {stopPlayback();status(message,true);}, onChange: () => updateReferenceControls()
   });
-  let trackLevels=[100,100,100,100],loopEnabled=false;
+  let trackLevels=[100,100,100,100],loopEnabled=true;
   const levelControls=['vocalLevel','backingLevel','clickLevel','melodyLevel'].map((id,index)=>{
     const control=MeleteDragNumber($(id),{values:Array.from({length:41},(_,i)=>i*5),defaultValue:100,pixelsPerStep:5,
       format:v=>`${v}%`,aria:v=>`${v}%`,onHold:()=>emphasizeTrack(index)});
@@ -1005,7 +1005,7 @@
       $("mic").setAttribute('aria-expanded',String(!$("micSettings").hidden));$("display").setAttribute('aria-expanded',String(!$("displaySettings").hidden));
     }catch{}
     try{const saved=JSON.parse(localStorage.getItem("melete-audition-settings")||"{}");
-      loopEnabled=saved.loopEnabled===true;
+      loopEnabled=saved.loopEnabled!==false;
       showAllTakes=saved.showAllTakes===true;
       melody=saved.melody===true;
       trackLevels=M.savedLevels(saved.trackLevels);

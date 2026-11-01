@@ -146,6 +146,7 @@ main{padding:6px 18px 18px}
 .sidebar-title{font-size:16px;line-height:1.3;padding:3px 8px 12px;letter-spacing:0}
 .toolbar #display{margin-left:0}
 .toolbar .account{margin-left:auto;flex:0 0 auto;gap:8px}
+#googleButton{overflow:clip}
 .toolbar #accountName{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #backingStatus:empty,#backingNote:empty{display:none}
 .settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:6px 0;border-bottom:1px solid var(--line)}

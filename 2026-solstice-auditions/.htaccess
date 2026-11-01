@@ -1,0 +1,8 @@
+Options -Indexes
+<Files "lib.php">
+Require all denied
+</Files>
+<IfModule mod_headers.c>
+Header always set X-Content-Type-Options "nosniff"
+Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+</IfModule>

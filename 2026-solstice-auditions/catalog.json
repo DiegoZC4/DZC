@@ -1,0 +1,578 @@
+{
+  "title": "Solstice Auditions",
+  "programVersion": "v5",
+  "programUrl": "https://docs.google.com/document/d/1sAiH12Kg-Q8H0km78r-vJQ1TCCpjJ4Ugwes-JtEAMp4/edit",
+  "songs": [
+    {
+      "id": "hymn-to-breaking-strain",
+      "title": "Hymn to the Breaking Strain",
+      "season": "Fall",
+      "ready": true,
+      "version": "d57b788e03d5b6c3d6ea45390f988b324acfd83763628173fb43f3dbf499dee1",
+      "tempo": 70.0,
+      "duration": 34.5,
+      "countIn": {
+        "seconds": 3.214285714285714,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.8571428571428571
+          },
+          {
+            "label": 3,
+            "seconds": 1.7142857142857142
+          },
+          {
+            "label": 4,
+            "seconds": 2.571428571428571
+          }
+        ]
+      },
+      "score": "scores/hymn-to-breaking-strain.musicxml",
+      "playback": "scores/hymn-to-breaking-strain.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=pEwxguHUi_U",
+      "sourceLabel": "Leslie Fish",
+      "sourceMeasures": "1-11",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/hymn-to-breaking-strain.musicxml",
+        "-12": "scores/transposed/hymn-to-breaking-strain/-12.musicxml",
+        "-11": "scores/transposed/hymn-to-breaking-strain/-11.musicxml",
+        "-10": "scores/transposed/hymn-to-breaking-strain/-10.musicxml",
+        "-9": "scores/transposed/hymn-to-breaking-strain/-9.musicxml",
+        "-8": "scores/transposed/hymn-to-breaking-strain/-8.musicxml",
+        "-7": "scores/transposed/hymn-to-breaking-strain/-7.musicxml",
+        "-6": "scores/transposed/hymn-to-breaking-strain/-6.musicxml",
+        "-5": "scores/transposed/hymn-to-breaking-strain/-5.musicxml",
+        "-4": "scores/transposed/hymn-to-breaking-strain/-4.musicxml",
+        "-3": "scores/transposed/hymn-to-breaking-strain/-3.musicxml",
+        "-2": "scores/transposed/hymn-to-breaking-strain/-2.musicxml",
+        "-1": "scores/transposed/hymn-to-breaking-strain/-1.musicxml",
+        "1": "scores/transposed/hymn-to-breaking-strain/+1.musicxml",
+        "2": "scores/transposed/hymn-to-breaking-strain/+2.musicxml",
+        "3": "scores/transposed/hymn-to-breaking-strain/+3.musicxml",
+        "4": "scores/transposed/hymn-to-breaking-strain/+4.musicxml",
+        "5": "scores/transposed/hymn-to-breaking-strain/+5.musicxml",
+        "6": "scores/transposed/hymn-to-breaking-strain/+6.musicxml",
+        "7": "scores/transposed/hymn-to-breaking-strain/+7.musicxml",
+        "8": "scores/transposed/hymn-to-breaking-strain/+8.musicxml",
+        "9": "scores/transposed/hymn-to-breaking-strain/+9.musicxml",
+        "10": "scores/transposed/hymn-to-breaking-strain/+10.musicxml",
+        "11": "scores/transposed/hymn-to-breaking-strain/+11.musicxml",
+        "12": "scores/transposed/hymn-to-breaking-strain/+12.musicxml"
+      },
+      "notationVersion": "d57b788e03d5b6c3d6ea45390f988b324acfd83763628173fb43f3dbf499dee1"
+    },
+    {
+      "id": "bold-orion",
+      "title": "Bold Orion",
+      "season": "Fall",
+      "ready": true,
+      "version": "c541d6f9b56c450f0d42b280d4c69e74b84e58bf8720496d2263e25794113fdb",
+      "tempo": 104.0,
+      "duration": 37.5,
+      "countIn": {
+        "seconds": 1.7307692307692306,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.5769230769230769
+          },
+          {
+            "label": 3,
+            "seconds": 1.1538461538461537
+          }
+        ]
+      },
+      "score": "scores/bold-orion.musicxml",
+      "playback": "scores/bold-orion.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=b9BGaKkQEEw",
+      "sourceLabel": "Leo Kretzner; original 1982 recording",
+      "sourceMeasures": "12-28",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/bold-orion.musicxml",
+        "-12": "scores/transposed/bold-orion/-12.musicxml",
+        "-11": "scores/transposed/bold-orion/-11.musicxml",
+        "-10": "scores/transposed/bold-orion/-10.musicxml",
+        "-9": "scores/transposed/bold-orion/-9.musicxml",
+        "-8": "scores/transposed/bold-orion/-8.musicxml",
+        "-7": "scores/transposed/bold-orion/-7.musicxml",
+        "-6": "scores/transposed/bold-orion/-6.musicxml",
+        "-5": "scores/transposed/bold-orion/-5.musicxml",
+        "-4": "scores/transposed/bold-orion/-4.musicxml",
+        "-3": "scores/transposed/bold-orion/-3.musicxml",
+        "-2": "scores/transposed/bold-orion/-2.musicxml",
+        "-1": "scores/transposed/bold-orion/-1.musicxml",
+        "1": "scores/transposed/bold-orion/+1.musicxml",
+        "2": "scores/transposed/bold-orion/+2.musicxml",
+        "3": "scores/transposed/bold-orion/+3.musicxml",
+        "4": "scores/transposed/bold-orion/+4.musicxml",
+        "5": "scores/transposed/bold-orion/+5.musicxml",
+        "6": "scores/transposed/bold-orion/+6.musicxml",
+        "7": "scores/transposed/bold-orion/+7.musicxml",
+        "8": "scores/transposed/bold-orion/+8.musicxml",
+        "9": "scores/transposed/bold-orion/+9.musicxml",
+        "10": "scores/transposed/bold-orion/+10.musicxml",
+        "11": "scores/transposed/bold-orion/+11.musicxml",
+        "12": "scores/transposed/bold-orion/+12.musicxml"
+      },
+      "notationVersion": "de5330bf5ed4e4affa960175957c88b884b7d17516b0f8e91bd0a4444fa32650"
+    },
+    {
+      "id": "who-by-fire",
+      "title": "Who by Fire",
+      "season": "Winter",
+      "ready": true,
+      "version": "b5464652ee206f3a45fd50b7eabd5878df60b765cc79a7891236685ea07909b3",
+      "tempo": 65.0,
+      "duration": 41.07692307692308,
+      "countIn": {
+        "seconds": 3.230769230769231,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.9230769230769231
+          },
+          {
+            "label": 1,
+            "seconds": 1.8461538461538463
+          },
+          {
+            "label": 2,
+            "seconds": 2.769230769230769
+          }
+        ]
+      },
+      "score": "scores/who-by-fire.musicxml",
+      "playback": "scores/who-by-fire.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=ilGahIwQEQ0",
+      "sourceLabel": "Leonard Cohen",
+      "sourceMeasures": "29-40",
+      "status": "Edited melody workbook",
+      "sourceRange": null,
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/who-by-fire.musicxml",
+        "-12": "scores/transposed/who-by-fire/-12.musicxml",
+        "-11": "scores/transposed/who-by-fire/-11.musicxml",
+        "-10": "scores/transposed/who-by-fire/-10.musicxml",
+        "-9": "scores/transposed/who-by-fire/-9.musicxml",
+        "-8": "scores/transposed/who-by-fire/-8.musicxml",
+        "-7": "scores/transposed/who-by-fire/-7.musicxml",
+        "-6": "scores/transposed/who-by-fire/-6.musicxml",
+        "-5": "scores/transposed/who-by-fire/-5.musicxml",
+        "-4": "scores/transposed/who-by-fire/-4.musicxml",
+        "-3": "scores/transposed/who-by-fire/-3.musicxml",
+        "-2": "scores/transposed/who-by-fire/-2.musicxml",
+        "-1": "scores/transposed/who-by-fire/-1.musicxml",
+        "1": "scores/transposed/who-by-fire/+1.musicxml",
+        "2": "scores/transposed/who-by-fire/+2.musicxml",
+        "3": "scores/transposed/who-by-fire/+3.musicxml",
+        "4": "scores/transposed/who-by-fire/+4.musicxml",
+        "5": "scores/transposed/who-by-fire/+5.musicxml",
+        "6": "scores/transposed/who-by-fire/+6.musicxml",
+        "7": "scores/transposed/who-by-fire/+7.musicxml",
+        "8": "scores/transposed/who-by-fire/+8.musicxml",
+        "9": "scores/transposed/who-by-fire/+9.musicxml",
+        "10": "scores/transposed/who-by-fire/+10.musicxml",
+        "11": "scores/transposed/who-by-fire/+11.musicxml",
+        "12": "scores/transposed/who-by-fire/+12.musicxml"
+      },
+      "notationVersion": "e345743221eddf311d9a8032f887177a7a82d95dadb9d94c0061fb5d2658c1a8"
+    },
+    {
+      "id": "no-one-survives",
+      "title": "No One Survives",
+      "season": "Winter",
+      "ready": true,
+      "version": "3dbb2bf2098cc214c21d638395e43c36916000e47028fc2a4e28d7573f770ebf",
+      "tempo": 73.0,
+      "duration": 57.12328767123287,
+      "countIn": {
+        "seconds": 2.054794520547945,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.821917808219178
+          },
+          {
+            "label": 3,
+            "seconds": 1.643835616438356
+          }
+        ]
+      },
+      "score": "scores/no-one-survives.musicxml",
+      "playback": "scores/no-one-survives.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=RlOxHjqRQOo",
+      "sourceLabel": "Daniel Kahn & The Painted Bird",
+      "sourceMeasures": "41-58",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/no-one-survives.musicxml",
+        "-12": "scores/transposed/no-one-survives/-12.musicxml",
+        "-11": "scores/transposed/no-one-survives/-11.musicxml",
+        "-10": "scores/transposed/no-one-survives/-10.musicxml",
+        "-9": "scores/transposed/no-one-survives/-9.musicxml",
+        "-8": "scores/transposed/no-one-survives/-8.musicxml",
+        "-7": "scores/transposed/no-one-survives/-7.musicxml",
+        "-6": "scores/transposed/no-one-survives/-6.musicxml",
+        "-5": "scores/transposed/no-one-survives/-5.musicxml",
+        "-4": "scores/transposed/no-one-survives/-4.musicxml",
+        "-3": "scores/transposed/no-one-survives/-3.musicxml",
+        "-2": "scores/transposed/no-one-survives/-2.musicxml",
+        "-1": "scores/transposed/no-one-survives/-1.musicxml",
+        "1": "scores/transposed/no-one-survives/+1.musicxml",
+        "2": "scores/transposed/no-one-survives/+2.musicxml",
+        "3": "scores/transposed/no-one-survives/+3.musicxml",
+        "4": "scores/transposed/no-one-survives/+4.musicxml",
+        "5": "scores/transposed/no-one-survives/+5.musicxml",
+        "6": "scores/transposed/no-one-survives/+6.musicxml",
+        "7": "scores/transposed/no-one-survives/+7.musicxml",
+        "8": "scores/transposed/no-one-survives/+8.musicxml",
+        "9": "scores/transposed/no-one-survives/+9.musicxml",
+        "10": "scores/transposed/no-one-survives/+10.musicxml",
+        "11": "scores/transposed/no-one-survives/+11.musicxml",
+        "12": "scores/transposed/no-one-survives/+12.musicxml"
+      },
+      "notationVersion": "bc503663070fb11af55660a0a1c8db72c071bd5a6ce4fc6b340e726b2726ff7e"
+    },
+    {
+      "id": "songs-stay-sung",
+      "title": "Songs Stay Sung",
+      "season": "Spring",
+      "ready": true,
+      "version": "83144b4c26838e9e3c4de922944fdb129060a342258302fb754306186b102233",
+      "tempo": 60.0,
+      "duration": 21.5,
+      "countIn": {
+        "seconds": 2.5,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 1.0
+          },
+          {
+            "label": 3,
+            "seconds": 2.0
+          }
+        ]
+      },
+      "score": "scores/songs-stay-sung.musicxml",
+      "playback": "scores/songs-stay-sung.json",
+      "sourceUrl": "https://windborne.bandcamp.com/track/songs-stay-sung",
+      "sourceLabel": "Zoe Mulford & Windborne",
+      "sourceMeasures": "59-64",
+      "status": "Edited melody workbook",
+      "sourceRange": null,
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/songs-stay-sung.musicxml",
+        "-12": "scores/transposed/songs-stay-sung/-12.musicxml",
+        "-11": "scores/transposed/songs-stay-sung/-11.musicxml",
+        "-10": "scores/transposed/songs-stay-sung/-10.musicxml",
+        "-9": "scores/transposed/songs-stay-sung/-9.musicxml",
+        "-8": "scores/transposed/songs-stay-sung/-8.musicxml",
+        "-7": "scores/transposed/songs-stay-sung/-7.musicxml",
+        "-6": "scores/transposed/songs-stay-sung/-6.musicxml",
+        "-5": "scores/transposed/songs-stay-sung/-5.musicxml",
+        "-4": "scores/transposed/songs-stay-sung/-4.musicxml",
+        "-3": "scores/transposed/songs-stay-sung/-3.musicxml",
+        "-2": "scores/transposed/songs-stay-sung/-2.musicxml",
+        "-1": "scores/transposed/songs-stay-sung/-1.musicxml",
+        "1": "scores/transposed/songs-stay-sung/+1.musicxml",
+        "2": "scores/transposed/songs-stay-sung/+2.musicxml",
+        "3": "scores/transposed/songs-stay-sung/+3.musicxml",
+        "4": "scores/transposed/songs-stay-sung/+4.musicxml",
+        "5": "scores/transposed/songs-stay-sung/+5.musicxml",
+        "6": "scores/transposed/songs-stay-sung/+6.musicxml",
+        "7": "scores/transposed/songs-stay-sung/+7.musicxml",
+        "8": "scores/transposed/songs-stay-sung/+8.musicxml",
+        "9": "scores/transposed/songs-stay-sung/+9.musicxml",
+        "10": "scores/transposed/songs-stay-sung/+10.musicxml",
+        "11": "scores/transposed/songs-stay-sung/+11.musicxml",
+        "12": "scores/transposed/songs-stay-sung/+12.musicxml"
+      },
+      "notationVersion": "1a17f8cdcb90acbd06be4c2961bf592b7ef9f40345b45a135ba7c1c22cf5189a"
+    },
+    {
+      "id": "ballad-of-smallpox-gone",
+      "title": "Ballad of Smallpox Gone",
+      "season": "Spring",
+      "ready": true,
+      "version": "52b3e4fc12d0fcdb01a2f5a005222dc8a5eb19bd796723ae03a62de4bd0ce3b4",
+      "tempo": 116.0,
+      "duration": 14.482758620689655,
+      "countIn": {
+        "seconds": 2.0689655172413794,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.5172413793103449
+          },
+          {
+            "label": 3,
+            "seconds": 1.0344827586206897
+          },
+          {
+            "label": 4,
+            "seconds": 1.5517241379310347
+          }
+        ]
+      },
+      "score": "scores/ballad-of-smallpox-gone.musicxml",
+      "playback": "scores/ballad-of-smallpox-gone.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=32yPWJcq2AI",
+      "sourceLabel": "Leslie Fish",
+      "sourceMeasures": "65-71",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/ballad-of-smallpox-gone.musicxml",
+        "-12": "scores/transposed/ballad-of-smallpox-gone/-12.musicxml",
+        "-11": "scores/transposed/ballad-of-smallpox-gone/-11.musicxml",
+        "-10": "scores/transposed/ballad-of-smallpox-gone/-10.musicxml",
+        "-9": "scores/transposed/ballad-of-smallpox-gone/-9.musicxml",
+        "-8": "scores/transposed/ballad-of-smallpox-gone/-8.musicxml",
+        "-7": "scores/transposed/ballad-of-smallpox-gone/-7.musicxml",
+        "-6": "scores/transposed/ballad-of-smallpox-gone/-6.musicxml",
+        "-5": "scores/transposed/ballad-of-smallpox-gone/-5.musicxml",
+        "-4": "scores/transposed/ballad-of-smallpox-gone/-4.musicxml",
+        "-3": "scores/transposed/ballad-of-smallpox-gone/-3.musicxml",
+        "-2": "scores/transposed/ballad-of-smallpox-gone/-2.musicxml",
+        "-1": "scores/transposed/ballad-of-smallpox-gone/-1.musicxml",
+        "1": "scores/transposed/ballad-of-smallpox-gone/+1.musicxml",
+        "2": "scores/transposed/ballad-of-smallpox-gone/+2.musicxml",
+        "3": "scores/transposed/ballad-of-smallpox-gone/+3.musicxml",
+        "4": "scores/transposed/ballad-of-smallpox-gone/+4.musicxml",
+        "5": "scores/transposed/ballad-of-smallpox-gone/+5.musicxml",
+        "6": "scores/transposed/ballad-of-smallpox-gone/+6.musicxml",
+        "7": "scores/transposed/ballad-of-smallpox-gone/+7.musicxml",
+        "8": "scores/transposed/ballad-of-smallpox-gone/+8.musicxml",
+        "9": "scores/transposed/ballad-of-smallpox-gone/+9.musicxml",
+        "10": "scores/transposed/ballad-of-smallpox-gone/+10.musicxml",
+        "11": "scores/transposed/ballad-of-smallpox-gone/+11.musicxml",
+        "12": "scores/transposed/ballad-of-smallpox-gone/+12.musicxml"
+      },
+      "notationVersion": "fefb4960029ed774c538bb45997dcf47b52120c696b57d4e1b0ddc30aec45fde"
+    },
+    {
+      "id": "here-comes-the-sun",
+      "title": "Here Comes the Sun",
+      "season": "Spring",
+      "ready": true,
+      "version": "b921add905ccbbe8041e7b846135e45bac45b45ec8dee497c05d4f80cd31329e",
+      "tempo": 64.0,
+      "duration": 30.0,
+      "countIn": {
+        "seconds": 0,
+        "beats": []
+      },
+      "score": "scores/here-comes-the-sun.musicxml",
+      "playback": "scores/here-comes-the-sun.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=xUNqsfFUwhY",
+      "sourceLabel": "The Beatles",
+      "sourceMeasures": "72-79",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/here-comes-the-sun.musicxml",
+        "-12": "scores/transposed/here-comes-the-sun/-12.musicxml",
+        "-11": "scores/transposed/here-comes-the-sun/-11.musicxml",
+        "-10": "scores/transposed/here-comes-the-sun/-10.musicxml",
+        "-9": "scores/transposed/here-comes-the-sun/-9.musicxml",
+        "-8": "scores/transposed/here-comes-the-sun/-8.musicxml",
+        "-7": "scores/transposed/here-comes-the-sun/-7.musicxml",
+        "-6": "scores/transposed/here-comes-the-sun/-6.musicxml",
+        "-5": "scores/transposed/here-comes-the-sun/-5.musicxml",
+        "-4": "scores/transposed/here-comes-the-sun/-4.musicxml",
+        "-3": "scores/transposed/here-comes-the-sun/-3.musicxml",
+        "-2": "scores/transposed/here-comes-the-sun/-2.musicxml",
+        "-1": "scores/transposed/here-comes-the-sun/-1.musicxml",
+        "1": "scores/transposed/here-comes-the-sun/+1.musicxml",
+        "2": "scores/transposed/here-comes-the-sun/+2.musicxml",
+        "3": "scores/transposed/here-comes-the-sun/+3.musicxml",
+        "4": "scores/transposed/here-comes-the-sun/+4.musicxml",
+        "5": "scores/transposed/here-comes-the-sun/+5.musicxml",
+        "6": "scores/transposed/here-comes-the-sun/+6.musicxml",
+        "7": "scores/transposed/here-comes-the-sun/+7.musicxml",
+        "8": "scores/transposed/here-comes-the-sun/+8.musicxml",
+        "9": "scores/transposed/here-comes-the-sun/+9.musicxml",
+        "10": "scores/transposed/here-comes-the-sun/+10.musicxml",
+        "11": "scores/transposed/here-comes-the-sun/+11.musicxml",
+        "12": "scores/transposed/here-comes-the-sun/+12.musicxml"
+      },
+      "notationVersion": "e2ce77952e23ea6c7d2d4dbe7881be5441f21514fe30ffd6f056d59886587037"
+    },
+    {
+      "id": "a-toast-for-unknown-heroes",
+      "title": "A Toast for Unknown Heroes",
+      "season": "Summer",
+      "ready": true,
+      "version": "4c8c805e0120b3abf229079dff940001c4ef17ecfe99c9780699a9d71ba603db",
+      "tempo": 116.0,
+      "duration": 17.844827586206897,
+      "countIn": {
+        "seconds": 1.810344827586207,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.5172413793103449
+          },
+          {
+            "label": 3,
+            "seconds": 1.0344827586206897
+          },
+          {
+            "label": 4,
+            "seconds": 1.5517241379310347
+          }
+        ]
+      },
+      "score": "scores/a-toast-for-unknown-heroes.musicxml",
+      "playback": "scores/a-toast-for-unknown-heroes.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=zc8tCd4uAF0",
+      "sourceLabel": "Leslie Fish; recording selected by Diego",
+      "sourceMeasures": "80-88",
+      "sourceRange": null,
+      "status": "Edited melody workbook",
+      "transcriptionMethod": "MVSEP + AnthemScore, checked against independent CREPE F0 and full-mix beat analysis",
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/a-toast-for-unknown-heroes.musicxml",
+        "-12": "scores/transposed/a-toast-for-unknown-heroes/-12.musicxml",
+        "-11": "scores/transposed/a-toast-for-unknown-heroes/-11.musicxml",
+        "-10": "scores/transposed/a-toast-for-unknown-heroes/-10.musicxml",
+        "-9": "scores/transposed/a-toast-for-unknown-heroes/-9.musicxml",
+        "-8": "scores/transposed/a-toast-for-unknown-heroes/-8.musicxml",
+        "-7": "scores/transposed/a-toast-for-unknown-heroes/-7.musicxml",
+        "-6": "scores/transposed/a-toast-for-unknown-heroes/-6.musicxml",
+        "-5": "scores/transposed/a-toast-for-unknown-heroes/-5.musicxml",
+        "-4": "scores/transposed/a-toast-for-unknown-heroes/-4.musicxml",
+        "-3": "scores/transposed/a-toast-for-unknown-heroes/-3.musicxml",
+        "-2": "scores/transposed/a-toast-for-unknown-heroes/-2.musicxml",
+        "-1": "scores/transposed/a-toast-for-unknown-heroes/-1.musicxml",
+        "1": "scores/transposed/a-toast-for-unknown-heroes/+1.musicxml",
+        "2": "scores/transposed/a-toast-for-unknown-heroes/+2.musicxml",
+        "3": "scores/transposed/a-toast-for-unknown-heroes/+3.musicxml",
+        "4": "scores/transposed/a-toast-for-unknown-heroes/+4.musicxml",
+        "5": "scores/transposed/a-toast-for-unknown-heroes/+5.musicxml",
+        "6": "scores/transposed/a-toast-for-unknown-heroes/+6.musicxml",
+        "7": "scores/transposed/a-toast-for-unknown-heroes/+7.musicxml",
+        "8": "scores/transposed/a-toast-for-unknown-heroes/+8.musicxml",
+        "9": "scores/transposed/a-toast-for-unknown-heroes/+9.musicxml",
+        "10": "scores/transposed/a-toast-for-unknown-heroes/+10.musicxml",
+        "11": "scores/transposed/a-toast-for-unknown-heroes/+11.musicxml",
+        "12": "scores/transposed/a-toast-for-unknown-heroes/+12.musicxml"
+      },
+      "notationVersion": "4c8c805e0120b3abf229079dff940001c4ef17ecfe99c9780699a9d71ba603db"
+    },
+    {
+      "id": "brighter-than-today",
+      "title": "Brighter Than Today",
+      "season": "Summer",
+      "ready": true,
+      "version": "c642d721506751a819743701f2af90e0d3510a452f0d6dadff2a85d45296714f",
+      "tempo": 73.0,
+      "duration": 26.301369863013697,
+      "countIn": {
+        "seconds": 3.287671232876712,
+        "beats": [
+          {
+            "label": 1,
+            "seconds": 0.0
+          },
+          {
+            "label": 2,
+            "seconds": 0.821917808219178
+          },
+          {
+            "label": 3,
+            "seconds": 1.643835616438356
+          },
+          {
+            "label": 4,
+            "seconds": 2.4657534246575343
+          }
+        ]
+      },
+      "score": "scores/brighter-than-today.musicxml",
+      "playback": "scores/brighter-than-today.json",
+      "sourceUrl": "https://www.youtube.com/watch?v=RGVZdk5hIG0",
+      "sourceLabel": "Raymond Arnold; updated rendition selected by Diego",
+      "sourceMeasures": "89-96",
+      "status": "Edited melody workbook",
+      "sourceRange": null,
+      "workbookSha256": "163955fd8347ceffd72c4b3c54004d99fcf5e010612041e34a8b95bebe82a9c9",
+      "transpositions": {
+        "0": "scores/brighter-than-today.musicxml",
+        "-12": "scores/transposed/brighter-than-today/-12.musicxml",
+        "-11": "scores/transposed/brighter-than-today/-11.musicxml",
+        "-10": "scores/transposed/brighter-than-today/-10.musicxml",
+        "-9": "scores/transposed/brighter-than-today/-9.musicxml",
+        "-8": "scores/transposed/brighter-than-today/-8.musicxml",
+        "-7": "scores/transposed/brighter-than-today/-7.musicxml",
+        "-6": "scores/transposed/brighter-than-today/-6.musicxml",
+        "-5": "scores/transposed/brighter-than-today/-5.musicxml",
+        "-4": "scores/transposed/brighter-than-today/-4.musicxml",
+        "-3": "scores/transposed/brighter-than-today/-3.musicxml",
+        "-2": "scores/transposed/brighter-than-today/-2.musicxml",
+        "-1": "scores/transposed/brighter-than-today/-1.musicxml",
+        "1": "scores/transposed/brighter-than-today/+1.musicxml",
+        "2": "scores/transposed/brighter-than-today/+2.musicxml",
+        "3": "scores/transposed/brighter-than-today/+3.musicxml",
+        "4": "scores/transposed/brighter-than-today/+4.musicxml",
+        "5": "scores/transposed/brighter-than-today/+5.musicxml",
+        "6": "scores/transposed/brighter-than-today/+6.musicxml",
+        "7": "scores/transposed/brighter-than-today/+7.musicxml",
+        "8": "scores/transposed/brighter-than-today/+8.musicxml",
+        "9": "scores/transposed/brighter-than-today/+9.musicxml",
+        "10": "scores/transposed/brighter-than-today/+10.musicxml",
+        "11": "scores/transposed/brighter-than-today/+11.musicxml",
+        "12": "scores/transposed/brighter-than-today/+12.musicxml"
+      },
+      "notationVersion": "c7b103794474c5732e3db0933d95d60c6a49f388e7cc4bba25fcee90ebe11fcc"
+    }
+  ]
+}

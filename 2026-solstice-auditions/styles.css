@@ -32,12 +32,8 @@ aside{padding:14px 8px}.aside-heading{padding:0 8px 10px}
 #time{width:69px;white-space:nowrap}#count:empty{display:none}
 @media(max-width:800px){.toolbar .transport{flex-basis:auto}.source-pill{margin-left:auto}.toolbar #mic{margin-left:0}.toolbar .volume{margin-left:0}.playback-position{gap:6px 9px}.playback-position #backingNote{flex-basis:100%}.toolbar .backing-controls{margin-left:0}}
 
-/* Small practice tools share the existing toolbar; their settings stay folded. */
+/* Practice tools share the existing toolbar. */
 :root{color-scheme:light dark;--surface:#fff;--page:#fafcfb;--hover:#edf3f0;--outline:#b84d6266}
-#display{margin-left:auto}#mic{margin-left:0}.toolbar>.icon{width:32px;flex:0 0 32px;padding:4px}
-.display-settings{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:12px 0;font-size:12px}
-.display-settings label{display:grid;grid-template-columns:48px 110px 42px;align-items:center;gap:8px}
-.display-settings input{width:110px}.display-settings output{text-align:right;font-variant-numeric:tabular-nums}
 .take-heading{justify-content:flex-start;gap:12px}.take-heading #localStorageSize{margin-left:auto}
 #undoDelete{height:27px;min-height:27px;font-size:11px;padding:3px 6px}
 .takes{width:520px;min-width:480px;max-width:none}.takes th{background:var(--page);z-index:1}
@@ -47,16 +43,7 @@ aside{padding:14px 8px}.aside-heading{padding:0 8px 10px}
 .takes th[aria-sort=ascending],.takes th[aria-sort=descending]{color:var(--accent)}
 .takes .is-dominated{outline:1px solid var(--outline);outline-offset:-2px}
 .takes tr[data-id]:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.mic-check-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.mic-check-heading h2{margin:0}.mic-check-close{width:30px;height:30px;padding:4px}
-.mic-check-dialog select{width:100%;min-width:0}.mic-check-device{font-size:11px;color:var(--muted);overflow-wrap:anywhere;min-height:18px;margin:6px 0 12px}
-.mic-check-meter{height:14px;background:var(--line);border-radius:3px;overflow:hidden}
-.mic-check-fill{width:100%;height:100%;transform:scaleX(0);transform-origin:left;background:#399777}
-.mic-check-readout{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;font-size:12px}
-.mic-check-readout output{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.mic-check-dialog[data-state=quiet] .mic-check-fill{background:#b58a2d}.mic-check-dialog[data-state=clipping] .mic-check-fill{background:#d75252}
-.mic-check-dialog[data-state=clipping] [role=status],.mic-check-dialog[data-state=error] [role=status]{color:var(--pink)}
-@media(max-width:800px){.toolbar #display{margin-left:auto}.takes th{font-size:10px}.take-heading{gap:7px}}
+@media(max-width:800px){.takes th{font-size:10px}.take-heading{gap:7px}}
 /* The trace is graded by note at any octave: green the right note, red a wrong one, plain between notes. */
 .trace-halo{stroke:#f0f5f2;stroke-width:4.2;opacity:.9}.trace-on{stroke:#16803c}.trace-off{stroke:#cc2f3b}
 @media(prefers-color-scheme:dark){
@@ -141,24 +128,50 @@ main{padding:6px 18px 18px}
 @media(max-width:1000px){.take-panel{grid-template-columns:minmax(0,1fr)}.take-actions{padding-top:0}.take-actions .submission{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}}
 @media(max-width:800px){aside{position:static;max-height:none;padding:6px 14px}#songList{gap:10px}.season-group{display:flex;flex:0 0 auto;align-items:center;gap:5px;margin:0}.season-heading{margin:0;padding:0 2px;border:0;font-size:10px}main{padding:6px 14px 30px}}
 
-/* One transport row; the waveforms own seeking and each take owns its actions. */
+/* Transport stays on top; complete settings groups wrap below it. */
 .workspace{min-height:100dvh}
 .sidebar-title{font-size:16px;line-height:1.3;padding:3px 8px 12px;letter-spacing:0}
-.toolbar #display{margin-left:0}
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding-bottom:10px}
+.transport-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px 16px}
+.transport-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-height:32px}
+.transport-controls>.icon{width:32px;flex:0 0 32px;padding:4px}
 .toolbar .account{margin-left:auto;flex:0 0 auto;gap:8px}
 #googleButton{overflow:clip}
 .toolbar #accountName{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #backingStatus:empty,#backingNote:empty{display:none}
-.settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:6px 0;border-bottom:1px solid var(--line)}
-.settings-row #micSettings,.settings-row .display-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:0;margin:0;border:0;font-size:12px}
-.settings-row label{display:flex;align-items:center;gap:7px}
-.settings-row #micDevice{width:230px;max-width:100%;height:30px}
-.settings-row #latency{width:55px;height:30px}
-.display-settings .scale-number{width:56px;height:30px;min-height:30px;justify-content:center;padding:3px 6px;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums}
+.melete-range-low,.melete-range-high{cursor:pointer;touch-action:pan-x;pointer-events:none}
+.range-hit{pointer-events:all}
+.melete-range-low:focus-visible,.melete-range-high:focus-visible{outline:none}
+g[role=button]:focus-visible .range-hit rect{stroke:var(--accent);stroke-width:1}
+.hover-notehead{fill:#7a8d99!important}
+.preview-notehead{fill:#2196f3!important}
+.settings-groups{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.toolbar .settings-group{display:block;min-width:0;margin:0;padding:4px 8px 8px;border:1px solid var(--line);border-radius:5px;font-size:12px}
+.settings-group legend{padding:0 4px;font-size:10px;font-weight:650;text-transform:uppercase;color:var(--muted);letter-spacing:0}
+.toolbar #micSettings{display:block;flex:0 1 240px;padding:4px 8px 8px;gap:0}
+.mic-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center}
+.toolbar .mic-input{display:block;min-width:0}
+#micDevice{width:100%;min-width:0;max-width:100%;text-overflow:ellipsis}
+.loop-control{display:flex;align-items:center;gap:6px;font-size:12px}
+.loop-control .icon{width:32px;height:32px;padding:4px}
+.display-controls{display:grid;grid-template-columns:max-content 56px;align-items:center;gap:6px 12px}
+.display-controls .scale-number{width:56px;height:30px;min-height:30px;justify-content:center;padding:3px 6px;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums}
+.mic-check-inline{grid-column:1/-1;position:relative;height:30px;min-width:0}
+.mic-check-inline .mic-check-meter{position:absolute;inset:0;height:auto;margin:0;border-radius:4px;overflow:hidden;background:var(--line)}
+.mic-check-inline .mic-check-fill{height:100%;transform-origin:left;transform:scaleX(0);background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.mic-check-inline[data-state=clipping] .mic-check-fill{background:color-mix(in srgb,var(--pink) 50%,transparent)}
+.mic-check-inline[data-state=error] #checkMicrophone{color:var(--pink)}
+#checkMicrophone{position:relative;width:100%;height:30px;min-height:30px;padding:3px 8px;background:transparent;justify-content:flex-start}
+#checkMicrophone:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+#checkMicrophone:disabled{opacity:1}
+#checkMicrophone [role=status]{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#checkMicrophone output{margin-left:auto;min-width:72px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .take-panel{display:block;max-width:740px}
 .takes{width:100%;min-width:620px}
 .takes td:last-child,.takes th:last-child{width:100px;white-space:nowrap}
 .takes td:last-child button{width:30px;height:28px;min-height:28px}
 .takes [data-submit-take]{color:var(--accent)}
 .season-heading{letter-spacing:0}
-@media(max-width:800px){.sidebar-title{font-size:14px;padding:2px 0 8px}.settings-row{gap:8px 16px}.settings-row #micDevice{width:190px}.toolbar .account{margin-left:auto}.takes{width:660px}.takes td:first-child,.takes th:first-child{width:160px}}
+@media(max-width:800px){.sidebar-title{font-size:14px;padding:2px 0 8px}.toolbar .account{margin-left:auto}.toolbar #accountName{max-width:70px}.transport-controls{gap:6px 10px}.takes{width:660px}.takes td:first-child,.takes th:first-child{width:160px}}
+@media(max-width:480px){.toolbar #accountName{display:none}}
+@media print{.toolbar{display:none}}

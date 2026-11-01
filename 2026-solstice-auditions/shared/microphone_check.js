@@ -38,9 +38,9 @@
     signal: "Input detected", clipping: "Clipping", muted: "Input muted"};
 
   class Check {
-    constructor({dialog, trigger, acquire, release, choose, busy, failureMessage, refresh}) {
-      Object.assign(this, {dialog, trigger, acquire, release, choose, busy, failureMessage, refresh});
-      this.select = dialog.querySelector("select");
+    constructor({dialog, trigger, acquire, release, choose, busy, failureMessage, refresh, inline = false, select}) {
+      Object.assign(this, {dialog, trigger, acquire, release, choose, busy, failureMessage, refresh, inline});
+      this.select = select || dialog.querySelector("select");
       this.status = dialog.querySelector("[role=status]");
       this.meter = dialog.querySelector("[role=meter]");
       this.fill = dialog.querySelector(".mic-check-fill");
@@ -50,33 +50,49 @@
       this.generation = 0;
       this.active = false;
       trigger.addEventListener("click", () => {
-        dialog.showModal();
+        if (this.inline) {
+          if (this.busy()) return;
+          if (this.active) { this.close(); return; }
+        } else dialog.showModal();
         void this.start();
       });
-      dialog.querySelector(".mic-check-close").addEventListener("click", () => this.close());
-      dialog.addEventListener("close", () => { if (!dialog.open) this.stop(); });
-      this.retry.addEventListener("click", () => { void this.start(); });
+      dialog.querySelector(".mic-check-close")?.addEventListener("click", () => this.close());
+      if (!inline) dialog.addEventListener("close", () => { if (!dialog.open) this.stop(); });
+      this.retry?.addEventListener("click", () => { void this.start(); });
       this.select.addEventListener("change", () => {
         if (this.busy() || this.requesting) return;
         const selected = this.select.value;
+        const restart = !this.inline || this.active || this.dialog.dataset.state === "error";
         this.stop();
         this.choose(selected);
-        void this.start();
+        if (restart) void this.start();
       });
+      if (inline) this.paint("idle", "Test input");
     }
     syncSelector(original) {
-      this.select.replaceChildren(...Array.from(original.options, option => option.cloneNode(true)));
-      this.select.value = original.value;
+      if (this.select !== original) {
+        this.select.replaceChildren(...Array.from(original.options, option => option.cloneNode(true)));
+        this.select.value = original.value;
+      }
       this.select.disabled = this.busy() || this.requesting;
       this.select.title = this.busy() ? "Stop Sing and recording to change microphone" : "Microphone input";
     }
     paint(state, text = labels[state], db = -60, percent = 0) {
       this.dialog.dataset.state = state;
-      if (this.status.textContent !== text) this.status.textContent = text;
+      const visible = this.inline && state === "error" ? "Input unavailable"
+        : this.inline && state === "requesting" ? "Connecting..." : text;
+      if (this.status.textContent !== visible) this.status.textContent = visible;
       this.meter.setAttribute("aria-valuenow", String(Math.round(db)));
       this.meter.setAttribute("aria-valuetext", `${text}; ${db <= -60 ? "below -60" : db.toFixed(0)} dBFS`);
       this.fill.style.transform = `scaleX(${percent / 100})`;
-      this.readout.textContent = db <= -60 ? "< -60 dBFS" : `${db.toFixed(0)} dBFS`;
+      this.readout.textContent = this.inline && ["idle", "error", "requesting"].includes(state) ? ""
+        : db <= -60 ? "< -60 dBFS" : `${db.toFixed(0)} dBFS`;
+      if (this.inline) {
+        const action = this.active ? "Stop microphone check" : state === "error" ? "Retry microphone check" : "Test microphone input";
+        this.trigger.setAttribute("aria-pressed", String(this.active));
+        this.trigger.setAttribute("aria-label", action);
+        this.trigger.title = [this.inputLabel, text, this.busy() ? "Recording input" : action].filter(Boolean).join("; ");
+      }
     }
     stop() {
       this.generation++;
@@ -89,21 +105,26 @@
     }
     close() {
       this.stop();
-      if (this.dialog.open) this.dialog.close();
+      if (this.inline) {
+        this.select.disabled = this.busy();
+        this.inputLabel = "";
+        this.paint("idle", "Test input");
+      } else if (this.dialog.open) this.dialog.close();
     }
     fail(message) {
       this.stop();
       this.select.disabled = this.busy();
       this.paint("error", message);
-      this.retry.hidden = false;
+      if (this.retry) this.retry.hidden = false;
     }
     async start() {
       this.stop();
       const generation = this.generation;
       this.active = this.requesting = true;
       this.select.disabled = true;
-      this.retry.hidden = true;
-      this.device.textContent = "";
+      if (this.retry) this.retry.hidden = true;
+      if (this.device) this.device.textContent = "";
+      this.inputLabel = "";
       this.paint("requesting", "Waiting for microphone...");
       try {
         if (this.refresh) await this.refresh();
@@ -112,7 +133,8 @@
         if (generation !== this.generation) { this.release(); return; }
         this.requesting = false;
         this.select.disabled = this.busy();
-        this.device.textContent = track.label || "Microphone";
+        this.inputLabel = track.label || "Microphone";
+        if (this.device) this.device.textContent = this.inputLabel;
         this.source = source;
         this.analyser = context.createAnalyser();
         this.analyser.fftSize = 2048;

@@ -146,7 +146,6 @@
       if(d.cut){
         const end=Math.min(width-1,xAt(d.cut.end));
         ctx.strokeStyle=muted;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(end,16);ctx.lineTo(end,height);ctx.stroke();
-        ctx.fillStyle=muted;ctx.font='10px system-ui';ctx.textAlign='right';ctx.fillText('End',end-4,8);
         if(Number.isFinite(d.cut.loopStart)){
           const x=xAt(d.cut.loopStart);ctx.fillStyle=css.getPropertyValue('--accent').trim();
           ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x+6,16);ctx.lineTo(x,22);ctx.closePath();ctx.fill();

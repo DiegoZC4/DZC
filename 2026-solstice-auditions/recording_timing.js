@@ -105,7 +105,7 @@
     return measureBeats(sequence,ref.end).map(b=>({...b,seconds:(at(b.tick)-ref.timing.origin)/ref.rate}))
       .filter(b=>b.seconds>=0&&b.seconds<ref.seconds);
   }
-  const LOOP_FADE = .025;
+  const LOOP_FADE = .025, START_FADE = .25;
   class ByteCache {
     constructor(limit){this.limit=limit;this.bytes=0;this.items=new Map();}
     get(key){const item=this.items.get(key);if(!item)return;
@@ -226,7 +226,7 @@
       for(const [name,node] of Object.entries(this.gains)){
         node.gain.cancelScheduledValues(this.context.currentTime);
         if(immediate){node.gain.setValueAtTime(0,this.context.currentTime);node.gain.setValueAtTime(0,this.startTime);
-          node.gain.linearRampToValueAtTime(levels[name]*this.level,this.startTime+.25);}
+          node.gain.linearRampToValueAtTime(levels[name]*this.level,this.startTime+START_FADE);}
         else node.gain.setTargetAtTime(levels[name]*this.level,this.context.currentTime,.005);
         if(Number.isFinite(this.endTime)&&this.endTime>this.context.currentTime)node.gain.setValueAtTime(0,this.endTime);
       }
@@ -239,6 +239,6 @@
     }
     cancel(){this.abort?.abort();this.stop();}
   }
-  const api={plan,repeatPlan,loopRegion,passAt,tickAt,staffTick,secondsAt,mixGains,measuresTo,measureBeats,clickBeats,ByteCache,ClipCache,Deck};
+  const api={plan,repeatPlan,loopRegion,passAt,tickAt,staffTick,secondsAt,mixGains,measuresTo,measureBeats,clickBeats,START_FADE,ByteCache,ClipCache,Deck};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.MeleteRecordingTiming=api;
 })(globalThis);

@@ -20,6 +20,16 @@
     if(!envelope?.peaks?.length||time<envelope.start||time>=envelope.end)return 0;
     return envelope.peaks[Math.min(envelope.peaks.length-1,Math.floor((time-envelope.start)/(envelope.end-envelope.start)*envelope.peaks.length))]/255;
   }
+  function bounds(d){
+    const start=Math.min(d.start??d.map.start,d.map.start),cut=d.playbackEnd??d.cut?.end??Math.max(d.map.end,d.beatMap?.end??-Infinity);
+    return {start,end:d.edit?Math.max(cut,d.map.end,d.beatMap?.end??-Infinity)+EDIT_TAIL:cut};
+  }
+  function audiblePeak(envelope,time,cut){
+    if(cut&&(time<cut.start||time>=cut.end||time>=cut.fadeOut?.end))return 0;
+    // The outro fade is baked into the MP3; only the runtime entrance ramp is applied here.
+    const fade=cut?.fadeIn,gain=fade?clamp((time-fade.start)/(fade.end-fade.start)):1;
+    return peakAt(envelope,time)*gain;
+  }
   class View{
     constructor(element,canvas,cursor,onSeek){
       Object.assign(this,{element,canvas,cursor,onSeek,data:null,position:0,enabled:true,onDrag:null,dragging:null});
@@ -45,7 +55,7 @@
       this.observer=new ResizeObserver(()=>this.draw());this.observer.observe(element);
     }
     set(data){
-      if(data?.map){data.start=Math.min(data.start??data.map.start,data.map.start);data.end=Math.max(data.map.end,data.beatMap?.end??-Infinity)+(data.edit?EDIT_TAIL:0);}
+      if(data?.map)Object.assign(data,bounds(data));
       this.data=data;this.draw();
     }
     // Temporary beat review: onDrag(tick, seconds, done) receives bar line and beat moves.
@@ -92,6 +102,7 @@
       }
       let last=-80;const handles=this.handles();
       for(const [i,m] of d.measures.entries()){
+        if(d.map&&d.beatMap.seconds(m[0])>=d.end-1e-7)continue;
         const x=xTick(m[0]);
         ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,height);ctx.stroke();
         if(x>last+40&&x<width-12){ctx.fillText(String(i+1),x+(handles.length?7:3),8);last=x;}
@@ -111,25 +122,49 @@
         ctx.strokeStyle=line;ctx.globalAlpha=1;ctx.beginPath();ctx.moveTo(0,top+36);ctx.lineTo(width,top+36);ctx.stroke();
         ctx.fillStyle=colours[row];ctx.globalAlpha=d.active[row]?1:.3;
         if(row<2){
+          ctx.globalAlpha=.2;ctx.strokeStyle=colours[row];ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(width,mid);ctx.stroke();
+          ctx.globalAlpha=d.active[row]?1:.3;
           const envelope=d.map&&d.envelopes?.[row===0?'vocal':'backing'];
           if(envelope){for(let x=0;x<width;x+=2){
-            const t=d.start+(x+.5)/width*(d.end-d.start),amplitude=peakAt(envelope,t);
-            const h=Math.max(1,amplitude*27);ctx.fillRect(x,mid-h/2,1.5,h);
+            const t=d.start+(x+.5)/width*(d.end-d.start),amplitude=audiblePeak(envelope,t,d.cut);
+            if(amplitude<=0)continue;
+            const h=amplitude*27;ctx.fillRect(x,mid-h/2,1.5,h);
           }}else{ctx.fillStyle=muted;ctx.font='11px system-ui';ctx.fillText('Waveform pending',8,mid);}
-        }else if(row===2)for(const b of [...count.map(b=>({x:xAt(b.seconds),label:b.label})),...d.beats.map(b=>({x:xTick(b.tick),label:b.label}))]){
+          ctx.globalAlpha=.85;ctx.strokeStyle=colours[row];
+          for(const [fade,rising] of [[d.cut?.fadeIn,true],[d.cut?.fadeOut,false]])if(fade&&fade.start<d.cut.end){
+            ctx.beginPath();ctx.moveTo(xAt(fade.start),mid-(rising?0:14));ctx.lineTo(xAt(fade.end),mid-(rising?14:0));ctx.stroke();
+          }
+        }else if(row===2)for(const b of [...count.map(b=>({x:xAt(b.seconds),label:b.label})),...d.beats.filter(b=>!d.map||d.beatMap.seconds(b.tick)<d.end-1e-7).map(b=>({x:xTick(b.tick),label:b.label}))]){
           const h=b.label===1?24:13;ctx.fillRect(b.x,mid-h/2,b.label===1?2:1.5,h);
         }else{
           const notes=d.notes||[],pitches=notes.map(n=>n[3]),low=Math.min(...pitches),high=Math.max(...pitches);
           for(const n of notes){
             const x=xTick(n[1]),end=xTick(n[2]);
+            if(x>=width||end<=x)continue;
             const y=mid-2-(n[3]-(low+high)/2)/Math.max(1,high-low)*22;
             ctx.fillRect(x,y,Math.max(1,end-x-1),4);
           }
         }
       }
       ctx.globalAlpha=1;
+      if(d.cut){
+        const end=Math.min(width-1,xAt(d.cut.end));
+        ctx.strokeStyle=muted;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(end,16);ctx.lineTo(end,height);ctx.stroke();
+        ctx.fillStyle=muted;ctx.font='10px system-ui';ctx.textAlign='right';ctx.fillText('End',end-4,8);
+        const fade=d.cut.fadeOut;
+        if(fade&&fade.start<d.cut.end){
+          const x=xAt(fade.start);ctx.textAlign='right';ctx.fillText('Fade',Math.min(x-4,end-29),8);
+          ctx.setLineDash([2,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,88);ctx.stroke();ctx.setLineDash([]);
+        }
+        if(Number.isFinite(d.cut.loopStart)){
+          const x=xAt(d.cut.loopStart);ctx.fillStyle=css.getPropertyValue('--accent').trim();
+          ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x+6,16);ctx.lineTo(x,22);ctx.closePath();ctx.fill();
+        }
+        ctx.textAlign='left';ctx.lineWidth=1;
+        this.element.title=`Audio ends at ${d.cut.end.toFixed(3)} s${fade?`; fades ${fade.start.toFixed(3)}-${fade.end.toFixed(3)} s`:''}`;
+      }
     }
   }
-  const api={fraction,tickAt,playheadAt,peakAt,View};
+  const api={fraction,tickAt,playheadAt,peakAt,bounds,audiblePeak,View};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.MeleteWaveformLanes=api;
 })(globalThis);

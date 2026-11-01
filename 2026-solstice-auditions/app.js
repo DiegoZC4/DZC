@@ -87,7 +87,7 @@
   const key = () => `solstice-auditions:${song.id}:${song.version}`;
   const usingReference = () => currentTake() ? currentTake().pitchReference?.timing?.kind==="recording" : playbackMode === "recording" && !!referenceAudio.timeline;
   const activeMap = () => currentTake()?.pitchReference?.timing?.kind==="recording" ? new MeleteReferenceAudio.Timeline(currentTake().pitchReference.timing.anchors) : referenceAudio.timeline;
-  const maxPosition = () => usingReference() ? activeMap().endTick / sequence.endTick * song.duration : song.duration;
+  const maxPosition = () => usingReference() ? (currentTake()?.pitchReference?.end??loopRegion()?.endTick??activeMap().endTick) / sequence.endTick * song.duration : song.duration;
   const displayShift = () => currentTake()?.pitchReference?.timing?.pitchShift ?? currentTake()?.transpose ?? currentTake()?.octave ?? transposition();
   async function loadBackings(){
     try{const response=await fetch("backings.json",{cache:"no-store"});if(!response.ok)return;
@@ -135,10 +135,14 @@
     const beats=currentTake()?.pitchReference?.timing?.beatAnchors||alignment?.beatAnchors;
     const beatMap=map&&beats?new MeleteReferenceAudio.Timeline(beatPreview||beats):map;
     const count=map?countInLane(map):{start:null,beats:[]},grid=beatGrid();
+    const clip=clipCatalog.songs.find(s=>s.id===song.id),take=currentTake(),saved=take?.pitchReference,region=saved?.timing?.loop||alignment?.loop;
+    const playbackEnd=saved?.timing?.kind==='recording'?saved.timing.origin+saved.seconds*saved.rate:clip?.end;
+    const cut=map&&clip?{start:clip.start,end:Math.min(clip.end,playbackEnd),fadeOut:clip.fadeOut||alignment?.loop?.fadeOut,
+      fadeIn:{start:Math.max(count.start,clip.start),end:Math.max(count.start,clip.start)+T.START_FADE*(take?.rate||rate())},loopStart:region?.start}:null;
     // A loop that runs past the music clicks on to its seam.
     const clicks=map?Math.max(map.endTick,alignment?.loop?.endTick??0):undefined;
     waveforms.set({map,beatMap,start:count.start,count:count.beats,endTick:sequence.endTick,measures:map?grid.measures:sequence.measures,beats:T.measureBeats(sequence,clicks),grid,
-      envelopes:entry?.tracks,notes:sequence.notes,active:[!!map&&referenceAudio.vocal,!!map&&referenceAudio.backing,metronome,melody],
+      cut,playbackEnd,envelopes:entry?.tracks,notes:sequence.notes,active:[!!map&&referenceAudio.vocal,!!map&&referenceAudio.backing,metronome,melody],
       edit:beatEditing&&!!map&&!!alignment?.beatAnchors&&!currentTake()&&!recording});
     waveforms.seekable(!recording&&!busy&&sourceReady);
   }
@@ -308,11 +312,11 @@
     }
     return {...bar,x};
   }
-  function reference(takeRate=rate(),shift=transposition(),latency=Number($("latency").value)/1000,loop=null){
+  function reference(takeRate=rate(),shift=transposition(),latency=Number($("latency").value)/1000,loop=loopRegion()){
     return T.plan(song,sequence,usingReference()?alignment:null,takeRate,shift,latency,loop).ref;
   }
   // Seamless repeats: every pass covers the same bars, so the click keeps its meter at the wrap.
-  function loopRegion(){return loopEnabled?T.loopRegion(sequence,alignment,usingReference()):null;}
+  function loopRegion(){return usingReference()||loopEnabled?T.loopRegion(sequence,alignment,usingReference()):null;}
   function svg(tag,attrs={},text){const n=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
   function takeContour(take){
     if(!takeContours.has(take))takeContours.set(take,P.readContour(take));
@@ -390,8 +394,9 @@
     $("playhead")?.setAttribute("x1",x);$("playhead")?.setAttribute("x2",x);
     $("seek").value=String(Math.min(1000,seconds/maxPosition()*1000));
     const map=activeMap();
-    const elapsed=usingReference()?map.seconds(tick)-map.start:seconds;
-    const duration=usingReference()?map.end-map.start:song.duration;
+    const elapsed=usingReference()?(Number.isFinite(media)?media:map.seconds(tick))-map.start:seconds;
+    const cutoff=currentTake()?.pitchReference?.timing?.loop?.end??(currentTake()?map?.end:alignment?.loop?.end)??map?.end;
+    const duration=usingReference()?cutoff-map.start:song.duration;
     $("time").textContent=`${clock(elapsed)} / ${clock(duration)}`;
     waveforms.move(waveforms.at(tick,media),$("time").textContent);
     const staffTick=staffCursorTick(tick,media),point=scorePoint(staffTick),cursor=$("scorePlayhead");cursor.hidden=!point;
@@ -534,13 +539,13 @@
     try{busy=true;updateControls();await ensureAudio();const take=currentTake(),r=take?.rate||rate(),shift=displayShift();
       let buffer;if(take){buffer=await context.decodeAudioData(await(await takeWav(take)).arrayBuffer());}
       const loop=take?null:loopRegion(),ref=take?.pitchReference||reference(r,shift,undefined,loop);
-      const repeat=loop?T.repeatPlan(song,sequence,usingReference()?alignment:null,r,shift,loop).ref:null;
+      const repeat=loopEnabled&&loop?T.repeatPlan(song,sequence,usingReference()?alignment:null,r,shift,loop).ref:null;
       if(ref.timing?.kind==="recording")await prepareClips(r,shift);
       if(song.id!==songId||selected!==takeId||recording||revision!==playRevision)return;
       const at=context.currentTime+.15;let from=current>=maxPosition()-.01?0:current;
       let offset=from===0?0:ref.timing?T.secondsAt(ref,from/song.duration*sequence.endTick):ref.leadInSeconds+from/r;
       // The cursor may sit in bars a loop skips; start that loop from the top.
-      if(repeat&&offset>=ref.seconds-.05){from=0;offset=0;}
+      if(offset>=ref.seconds-.05){from=0;offset=0;}
       if(buffer){const node=context.createBufferSource();node.buffer=buffer;node.connect(master);node.start(at,offset+ref.latency);nodes.push(node);playbackBuffer=buffer;}
       if(ref.timing?.kind==="recording")deck.start(at,ref.timing.origin+offset*r,ref.timing.loop?.end??ref.timing.anchors.at(-1)[1],referenceAudio.vocal,referenceAudio.backing,repeat?.timing.origin??null);
       else scheduleGuide(at+(from===0?ref.leadInSeconds:0),from,r,shift,ref.end??sequence.endTick);
@@ -702,7 +707,7 @@
       const latency=Math.max(0,Number(stream.getAudioTracks()[0]?.getSettings?.().latency)||0)+(context.baseLatency||0)+(context.outputLatency||0)+LIMITER_DELAY+Number($("latency").value)/1000;
       const r=rate(),shift=transposition();
       const loop=loopRegion(),prepared=T.plan(song,sequence,usingReference()?alignment:null,r,shift,latency,loop),ref=prepared.ref;
-      const repeat=loop?T.repeatPlan(song,sequence,usingReference()?alignment:null,r,shift,loop).ref:null;
+      const repeat=loopEnabled&&loop?T.repeatPlan(song,sequence,usingReference()?alignment:null,r,shift,loop).ref:null;
       source=micContext.createMediaStreamSource(stream);
       analyser=micContext.createAnalyser();analyser.fftSize=4096;source.connect(analyser);
       capture=await R.PcmCapture.create(micContext,source,(frame,samples)=>{

@@ -1,4 +1,4 @@
-/* Range-aware audio cache. This worker controls only /sequences-audio* pages. */
+/* Shared range cache for /lsrg/ and legacy /sequences-audio* scopes. */
 'use strict';
 const CACHE_PROTOCOL = 2;
 const CHUNK_BYTES = 256 * 1024;
@@ -12,9 +12,18 @@ let database;
 
 function pageFor(url) {
   const parsed = new URL(url, self.location.href);
-  if (parsed.origin !== self.location.origin
-      || !/^\/sequences-audio(?:-preview)?\.html$/.test(parsed.pathname)) return null;
+  if (parsed.origin !== self.location.origin) return null;
+  // Keep the original policy and shell keys: moving the page must not delete
+  // existing downloads, re-enable a removed download, or duplicate audio bytes.
+  if (/^\/lsrg\/?$/i.test(parsed.pathname)) parsed.pathname = '/sequences-audio.html';
+  if (!/^\/sequences-audio(?:-preview)?\.html$/.test(parsed.pathname)) return null;
   return new URL(parsed.pathname, self.location.href).href;
+}
+
+function pageFetchUrl(page) {
+  const url = new URL(page);
+  if (url.pathname === '/sequences-audio.html') url.pathname = '/lsrg/';
+  return url.href;
 }
 
 function assetFor(url) {
@@ -155,7 +164,7 @@ async function setDownloadEnabled(asset, enabled) {
 async function cachePage(page) {
   if (!shellRequests.has(page)) {
     const pending = (async () => {
-      const response = await fetch(page, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+      const response = await fetch(pageFetchUrl(page), { cache: 'no-store', signal: AbortSignal.timeout(8000) });
       if (response.status !== 200 || response.redirected || !/text\/html/i.test(response.headers.get('Content-Type') || '')) {
         throw new Error('Read-along page is unavailable');
       }
@@ -207,7 +216,7 @@ async function pageResponse(page) {
     const saved = await caches.open(SHELL_CACHE).then(cache => cache.match(page)).catch(() => null);
     if (saved) return saved;
     // Cache denial must not break ordinary online use.
-    return fetch(page);
+    return fetch(pageFetchUrl(page));
   }
 }
 
@@ -355,7 +364,7 @@ self.addEventListener('message', event => {
           catch (error) { if (!saved || !policy) throw error; }
           policy = await currentPolicy(page);
         }
-        event.ports[0]?.postMessage({ protocol: CACHE_PROTOCOL, policy });
+        event.ports[0]?.postMessage({ protocol: CACHE_PROTOCOL, routeVersion: 1, policy });
         return;
       }
       const asset = assetFor(event.data.url);
@@ -363,7 +372,7 @@ self.addEventListener('message', event => {
       const status = event.data.type === 'audio-cache-status'
         ? await cacheStatus(asset, Boolean(event.data.touch))
         : await setDownloadEnabled(asset, event.data.type === 'audio-cache-enable');
-      event.ports[0]?.postMessage({ protocol: CACHE_PROTOCOL, ...status });
+      event.ports[0]?.postMessage({ protocol: CACHE_PROTOCOL, routeVersion: 1, ...status });
     } catch (error) {
       event.ports[0]?.postMessage({ error: error.message });
     }

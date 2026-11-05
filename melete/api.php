@@ -41,14 +41,17 @@ try {
     $action = (string)($_GET['action'] ?? 'status');
     if ($method === 'POST' && !hash_equals($_SESSION['csrf'], $_SERVER['HTTP_X_MELETE_CSRF'] ?? '')) throw new MeleteHttpError(403, 'Session expired; sign in again');
     if ($action === 'status' && $method === 'GET') reply(['configured' => (bool)($config['client_id'] ?? ''), 'clientId' => $config['client_id'] ?? '',
-        'csrf' => $_SESSION['csrf'], 'nonce' => $_SESSION['nonce'], 'user' => $_SESSION['user'] ?? null]);
+        'csrf' => $_SESSION['csrf'], 'nonce' => $_SESSION['nonce'], 'user' => $_SESSION['user'] ?? null,
+        'reviewer' => meleteCanReview($_SESSION['user'] ?? [], $config)]);
     if ($action === 'login' && $method === 'POST') {
         if (($_SESSION['login_at'] ?? 0) > time() - 2) throw new MeleteHttpError(429, 'Please wait before retrying sign-in');
         $_SESSION['login_at'] = time(); $body = readJson();
         $claims = meleteVerify((string)($body['credential'] ?? ''), $config['client_id'] ?? '', $_SESSION['nonce'], meleteCerts($directory));
         session_regenerate_id(true);
         $_SESSION['owner'] = hash('sha256', $claims['sub']);
-        $_SESSION['user'] = ['id' => $_SESSION['owner'], 'name' => substr((string)($claims['name'] ?? 'Signed in'), 0, 120)];
+        $_SESSION['user'] = ['id' => $_SESSION['owner'], 'name' => substr((string)($claims['name'] ?? 'Signed in'), 0, 120),
+            'email' => ($claims['email_verified'] ?? false) === true ? strtolower((string)($claims['email'] ?? '')) : '',
+            'email_verified' => ($claims['email_verified'] ?? false) === true];
         $_SESSION['expires'] = time() + 604800; $_SESSION['nonce'] = bin2hex(random_bytes(32)); $_SESSION['csrf'] = bin2hex(random_bytes(32));
         reply(['user' => $_SESSION['user'], 'csrf' => $_SESSION['csrf']]);
     }
@@ -57,13 +60,33 @@ try {
     }
     $owner = $_SESSION['owner'] ?? null;
     if (!$owner) throw new MeleteHttpError(401, 'Sign in before accessing backups');
+    $user = $_SESSION['user']; $reviewer = meleteCanReview($user, $config);
     session_write_close();
     $db = meleteDatabase($directory);
-    if ($action === 'load' && $method === 'GET') reply(['profile' => meleteProfile($db, $owner, meleteId($_GET['key'] ?? null))]);
+    if ($action === 'list' && $method === 'GET') {
+        $review = ($_GET['scope'] ?? 'mine') === 'review';
+        if ($review && !$reviewer) throw new MeleteHttpError(403, 'Reviewer access required');
+        $song = (string)($_GET['song'] ?? '');
+        if (!$song || strlen($song) > 255) throw new MeleteHttpError(400, 'Song required');
+        $offset = filter_var($_GET['offset'] ?? 0, FILTER_VALIDATE_INT);
+        if ($offset === false || $offset < 0 || $offset > 10000) throw new MeleteHttpError(400, 'Invalid page');
+        reply(meleteList($db, $owner, $review, $song, $offset));
+    }
+    if ($action === 'load' && $method === 'GET') {
+        $key = meleteId($_GET['key'] ?? null);
+        reply(['profile' => meleteProfile($db, meleteReadOwner($db, $owner, $_GET['owner'] ?? null, $key, $reviewer), $key)]);
+    }
     if ($action === 'blob') {
         $hash = meleteId($_GET['hash'] ?? null);
         if ($method === 'GET') {
-            $q = $db->prepare('SELECT data FROM blobs WHERE owner=? AND hash=?'); $q->execute([$owner, $hash]); $raw = $q->fetchColumn();
+            $reader = $owner;
+            if (isset($_GET['owner']) && $_GET['owner'] !== $owner) {
+                $key = meleteId($_GET['key'] ?? null);
+                $reader = meleteReadOwner($db, $owner, $_GET['owner'], $key, $reviewer);
+                $profile = meleteProfile($db, $reader, $key);
+                if (!$profile || !in_array($hash, meleteBlobRefs($profile['payload']), true)) throw new MeleteHttpError(404, 'Recording not found');
+            }
+            $q = $db->prepare('SELECT data FROM blobs WHERE owner=? AND hash=?'); $q->execute([$reader, $hash]); $raw = $q->fetchColumn();
             if ($raw === false) throw new MeleteHttpError(404, 'Recording not found');
             header('Content-Type: application/octet-stream'); echo $raw; exit;
         }
@@ -90,6 +113,7 @@ try {
         if (($old['revision'] ?? 0) !== $body['revision']) throw new MeleteHttpError(409, 'Cloud revision changed');
         if ($action === 'delete') {
             $q = $db->prepare('DELETE FROM profiles WHERE owner=? AND slot=?'); $q->execute([$owner, $key]);
+            $q = $db->prepare('DELETE FROM profile_visibility WHERE owner=? AND slot=?'); $q->execute([$owner, $key]);
             meleteCollect($db, $owner); $db->exec('COMMIT'); reply(['ok' => true]);
         }
         foreach ($body['payload']['records'] as $entry) foreach (['audio', 'pitches'] as $type) {
@@ -105,6 +129,10 @@ try {
         if (!$old && $q->fetchColumn() >= 256) throw new MeleteHttpError(413, 'Cloud profile limit reached');
         $q = $db->prepare('INSERT OR REPLACE INTO profiles VALUES (?,?,?,?,?)');
         $q->execute([$owner, $key, $body['revision'] + 1, json_encode($body['payload'], JSON_THROW_ON_ERROR), time()]);
+        if (isset($body['reviewable']) && !is_bool($body['reviewable'])) throw new MeleteHttpError(400, 'Invalid review setting');
+        $q = $db->prepare('INSERT INTO profile_visibility(owner,slot,name,created,reviewable) VALUES (?,?,?,?,?) ON CONFLICT(owner,slot) DO UPDATE SET name=excluded.name,reviewable=COALESCE(?,profile_visibility.reviewable)');
+        $q->execute([$owner, $key, $user['name'], $old['updated'] ?? time(), (int)($body['reviewable'] ?? false),
+            isset($body['reviewable']) ? (int)$body['reviewable'] : null]);
         meleteCollect($db, $owner); $db->exec('COMMIT'); reply(['profile' => meleteProfile($db, $owner, $key)]);
     }
     throw new MeleteHttpError(404, 'Unknown backup action');

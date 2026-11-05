@@ -4,3 +4,9 @@ main { max-width: 26rem; margin: 12vh auto; padding: 20px; }
 h1 { font-size: 24px; letter-spacing: 0; }
 p { font-size: 14px; line-height: 1.5; }
 button { font: inherit; padding: 6px 10px; cursor: pointer; }
+.inline { background: transparent; }
+.inline main { margin: 0; padding: 0 2px; height: 24px; display: flex; align-items: center; gap: 4px; }
+.inline main h1, .inline main > p:not(#status), .inline #close { display: none; }
+.inline #google { order: -1; flex: 0 0 auto; }
+.inline #status { min-width: 0; margin: 0; font-size: 10px; line-height: 12px; overflow: hidden; text-overflow: ellipsis; }
+.inline button { padding: 2px; font-size: 10px; }

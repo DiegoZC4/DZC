@@ -51,7 +51,39 @@ function meleteDatabase(string $directory): PDO {
     $db->exec('PRAGMA journal_mode=WAL');
     $db->exec('CREATE TABLE IF NOT EXISTS profiles (owner TEXT NOT NULL, slot TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL, updated INTEGER NOT NULL, PRIMARY KEY(owner,slot))');
     $db->exec('CREATE TABLE IF NOT EXISTS blobs (owner TEXT NOT NULL, hash TEXT NOT NULL, data BLOB NOT NULL, bytes INTEGER NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(owner,hash))');
+    $db->exec('CREATE TABLE IF NOT EXISTS profile_visibility (owner TEXT NOT NULL, slot TEXT NOT NULL, name TEXT NOT NULL, created INTEGER NOT NULL, reviewable INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(owner,slot))');
     return $db;
+}
+function meleteCanReview(array $user, array $config): bool {
+    return ($user['email_verified'] ?? false) === true && in_array(strtolower($user['email'] ?? ''),
+        array_map('strtolower', $config['reviewers'] ?? []), true);
+}
+function meleteReadOwner(PDO $db, string $owner, mixed $requested, string $key, bool $reviewer): string {
+    if ($requested === null || $requested === $owner) return $owner;
+    $requested = meleteId($requested);
+    if (!$reviewer) throw new MeleteHttpError(403, 'Reviewer access required');
+    $q = $db->prepare('SELECT 1 FROM profile_visibility WHERE owner=? AND slot=? AND reviewable=1');
+    $q->execute([$requested, $key]);
+    if (!$q->fetchColumn()) throw new MeleteHttpError(404, 'Uploaded take not found');
+    return $requested;
+}
+function meleteList(PDO $db, string $owner, bool $review, string $song, int $offset): array {
+    $sql = 'SELECT p.owner,p.slot,p.updated,p.payload,v.name,v.created,v.reviewable FROM profiles p LEFT JOIN profile_visibility v ON p.owner=v.owner AND p.slot=v.slot WHERE ';
+    $sql .= $review ? 'v.reviewable=1' : 'p.owner=?';
+    $sql .= ' AND json_extract(p.payload,\'$.state.song\')=? ORDER BY p.updated DESC,p.owner,p.slot LIMIT 51 OFFSET ?';
+    $q = $db->prepare($sql); $args = $review ? [$song, $offset] : [$owner, $song, $offset];
+    foreach ($args as $i => $value) $q->bindValue($i + 1, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    $q->execute(); $rows = $q->fetchAll(PDO::FETCH_ASSOC); $more = count($rows) > 50; $items = [];
+    foreach (array_slice($rows, 0, 50) as $row) {
+        $payload = json_decode($row['payload'], true, 512, JSON_THROW_ON_ERROR);
+        $meta = $payload['summary'] ?? [];
+        $items[] = ['owner' => $row['owner'], 'key' => $row['slot'], 'name' => $row['name'] ?: 'Account',
+            'label' => (string)($payload['state']['descriptor']['label'] ?? ''),
+            'createdAt' => $meta['createdAt'] ?? ((int)($row['created'] ?? $row['updated']) * 1000),
+            'updatedAt' => $meta['updatedAt'] ?? ((int)$row['updated'] * 1000),
+            'mean' => $meta['pitchScore']['meanAbsCents'] ?? null, 'reviewable' => (bool)$row['reviewable']];
+    }
+    return ['items' => $items, 'next' => $more ? $offset + 50 : null];
 }
 function meleteProfile(PDO $db, string $owner, string $key): ?array {
     $q = $db->prepare('SELECT revision,payload,updated FROM profiles WHERE owner=? AND slot=?'); $q->execute([$owner, $key]);
@@ -82,12 +114,18 @@ function meleteValidatePayload(array $payload, string $key): void {
             || $r['sampleRate'] < 8000 || $r['sampleRate'] > 192000 || $r['frames'] > $r['sampleRate'] * 300 + 1
             || ($entry['audio']['bytes'] ?? 0) !== 44 + $r['frames'] * 2
             || !is_array($r['pitchReference'] ?? null) || !is_array($r['pitchContour'] ?? null)) throw new MeleteHttpError(400, 'Invalid recording metadata');
-        $ids[$r['id']] = true;
+        $ids[$r['id']] = $r;
     }
-    $last = 0;
+    $last = -300;
     foreach ($s['segments'] as $segment) {
         if (!isset($ids[$segment['takeId'] ?? '']) || !is_numeric($segment['from'] ?? null) || !is_numeric($segment['to'] ?? null)
             || $segment['from'] < $last || $segment['to'] <= $segment['from'] || $segment['to'] > 3600) throw new MeleteHttpError(400, 'Invalid comp segments');
+        if ($segment['from'] < 0) {
+            $r = $ids[$segment['takeId']];
+            $origin = $r['origin'] ?? null; $lead = $r['pitchReference']['leadInSeconds'] ?? null;
+            if (!is_numeric($origin) || !is_numeric($lead) || $lead <= 0 || $lead > $r['frames'] / $r['sampleRate']
+                || $segment['from'] < $origin || $segment['from'] < -$lead) throw new MeleteHttpError(400, 'Invalid count-in capture');
+        }
         $last = $segment['to']; $needed[$segment['takeId']] = true;
     }
     if ($s['bestId'] ?? null) { if (!isset($ids[$s['bestId']])) throw new MeleteHttpError(400, 'Missing continuous recording'); $needed[$s['bestId']] = true; }

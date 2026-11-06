@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "sourceSha256": "394fd48a58107d00c20e1ca802550b7f129f05a155e1ed62394603484fd66ab7",
+  "scoreSha256": "25fb776da92ce56440da29ba1a3eefab76e27feaaaa5dc8b73c4a55b08a4b5df",
+  "analysisTimeline": "original-frame-grid",
+  "analysisSourceSha256": "bcfc25a2476446db14ff79f98f4184641de6ba1de8af9c0c5ac37d5a6c610958",
+  "url": "data/the-seed-2026-10-25-trimmed/tracking.f32",
+  "frames": 7656,
+  "count": 40,
+  "width": 6,
+  "stride": 241,
+  "stepSeconds": 0.04,
+  "windowSeconds": 0.18575963718820862,
+  "lowCents": 3400,
+  "highCents": 9000,
+  "fields": [
+    "cents",
+    "support",
+    "fundamental",
+    "harmonics",
+    "spread",
+    "harmonicMask"
+  ],
+  "method": "Envelope-normalized harmonic ridge candidates; no score mask or vowel classifier",
+  "aliases": [
+    {
+      "part": 8,
+      "source": 1
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Choir Spectrogram - Analysis Notes</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif;letter-spacing:0}body{max-width:760px;margin:0 auto;padding:24px;line-height:1.55}h1{font-size:24px}h2{font-size:18px;margin-top:24px}a{color:light-dark(#246b9c,#92c8ec)}
+</style>
+<a href="./">Back to recordings</a>
+<h1>Analysis Notes</h1>
+<p>This is an experimental rehearsal-review tool, not a validated choir grade or a measurement of each singer's accuracy.</p>
+<h2>Pitch and Timing</h2>
+<p>The background is the recording's spectrogram. Colored score bands span 50 cents above and below each written equal-tempered pitch. Detected paths are score-informed estimates from harmonic ridges, not isolated voice recordings. Shared pitches, overlapping harmonics, and missing fundamentals can make part assignment ambiguous. Dashed paths indicate weaker evidence; confidence is a heuristic, not a probability.</p>
+<p>Analysis uses approximately 186-millisecond windows sampled every 40 milliseconds. Fine drawing or boundary editing does not increase that acoustic resolution. Incorrect score alignment can look like a pitch error. Boundary edits change the score-to-audio alignment, never the recording itself.</p>
+<h2>Optional Curves</h2>
+<p><strong>Tuning drift</strong> is a slow reference relative to A440. It uses 90-second windows of reliable evidence and is limited to 10 cents per minute. Brief mistakes are not excused by quickly changing the pitch standard.</p>
+<p><strong>Chord mismatch</strong> is a dimensionless spectral cost, not average cents error or a percentage correct. It compares measured energy with the expected chord's harmonic pattern after slow drift compensation. Vowels, room acoustics, noise, alignment errors, and missing voices can also affect it. Use listening and the spectrogram to interpret unusual sections.</p>
+<h2>Recordings and Saved Edits</h2>
+<p>Previews contain the aligned musical performance with one second of padding at each end where available. Spectral analysis retains the original frame positions. Autumn uses only the recorder's combined mix.</p>
+<p>Choose a recording, then copy the page address to share its song and rehearsal date. Alignment edits are saved only in your browser; a shared link does not include those edits. Export and import an alignment file to transfer them. This analyzer does not request microphone access or upload recordings or browser edits.</p>
+</html>

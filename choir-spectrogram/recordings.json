@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "recordings": [
+    {
+      "id": "the-seed-2026-10-25",
+      "song": "the-seed",
+      "title": "The Seed",
+      "date": "2026-10-25",
+      "channels": [
+        {
+          "id": "mix",
+          "label": "Rehearsal mix",
+          "recordingId": "the-seed-2026-10-25",
+          "manifest": "data/the-seed-2026-10-25-trimmed/manifest.json",
+          "audio": "data/the-seed-2026-10-25-trimmed/rehearsal.mp3"
+        }
+      ]
+    },
+    {
+      "id": "autumn-2026-11-01",
+      "song": "autumn",
+      "title": "Autumn",
+      "date": "2026-11-01",
+      "channels": [
+        {
+          "id": "mix",
+          "label": "Combined mix",
+          "recordingId": "autumn-2026-11-01-mix",
+          "manifest": "data/autumn-2026-11-01-mix-trimmed/manifest.json",
+          "audio": "data/autumn-2026-11-01-mix-trimmed/rehearsal.mp3"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "sourceSha256": "d23701dfcbcada2d170e80bcedeb550047d1d5a82a59fec8ecc1844465ed2a5b",
+  "scoreSha256": "62c43b43d5fb8597298963ab4301fb3a39ff55e2d89a738d0cca5792fcc213c0",
+  "analysisTimeline": "original-frame-grid",
+  "analysisSourceSha256": "71af09beb8b78034d679486b9a0d65c79cb2bc207456e200417e816f9fd32129",
+  "url": "data/autumn-2026-11-01-mix-trimmed/tracking.f32",
+  "frames": 4025,
+  "count": 40,
+  "width": 6,
+  "stride": 241,
+  "stepSeconds": 0.04,
+  "windowSeconds": 0.18575963718820862,
+  "lowCents": 3400,
+  "highCents": 9000,
+  "fields": [
+    "cents",
+    "support",
+    "fundamental",
+    "harmonics",
+    "spread",
+    "harmonicMask"
+  ],
+  "method": "Envelope-normalized harmonic ridge candidates; no score mask or vowel classifier",
+  "aliases": []
+}

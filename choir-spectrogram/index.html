@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="theme-color" content="#171c19">
+<title>Rehearsal Spectrogram - Melete</title>
+<link rel="icon" href="data:,"><link rel="stylesheet" href="style.css?v=recordings-2">
+<script defer src="vendor/lucide.min.js"></script>
+<script defer src="analysis-core.js?v=slow-drift-2"></script><script defer src="recording-route.js?v=1"></script><script defer src="app.js?v=date-links-5"></script>
+</head>
+<body data-practice-url="/autumn-seed/">
+<header>
+  <a id="back" class="icon" href="../#the-seed" aria-label="Back to Melete" title="Back to Melete"><i data-lucide="arrow-left"></i></a>
+  <select id="recording" aria-label="Rehearsal recording" disabled><option>Loading recordings...</option></select>
+  <select id="channel" aria-label="Microphone source" hidden></select>
+  <span class="header-space"></span>
+  <a class="icon" href="methods.html" aria-label="Analysis methods and limitations" title="Analysis methods and limitations"><i data-lucide="info"></i></a>
+  <button class="icon" id="settings" aria-label="Settings" title="Settings" aria-expanded="true" aria-controls="settingsPanel"><i data-lucide="settings"></i></button>
+</header>
+<main>
+  <section class="transport" aria-label="Playback">
+    <button class="icon primary" id="play" aria-label="Play" title="Play / pause" disabled><i data-lucide="play"></i></button>
+    <input id="seek" type="range" min="0" max="307" step=".01" value="0" aria-label="Playback position">
+    <output id="clock">0:00 / 0:00</output>
+    <select id="speed" aria-label="Playback speed" title="Playback speed"><option value=".5">0.5x</option><option value=".75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option></select>
+    <button class="icon" id="mute" aria-label="Mute" title="Mute" aria-pressed="false"><i data-lucide="volume-2"></i></button>
+    <input id="volume" type="range" min="0" max="1" step=".01" value="1" aria-label="Playback volume">
+  </section>
+  <section id="settingsPanel" aria-label="Analysis settings">
+    <div class="control-row">
+      <div id="parts" class="tool-group parts" aria-label="Visible voice parts"></div>
+      <div class="tool-group overlays" aria-label="Overlays">
+        <button id="bands" aria-pressed="true" title="Show note bands: 50 cents above and below each written pitch">±50¢</button>
+        <button id="drift" aria-pressed="false" title="Show slow tuning drift relative to A440">Tuning drift</button>
+        <button id="mismatch" aria-pressed="false" title="Show spectral chord mismatch, not an intonation grade">Chord mismatch</button>
+      </div>
+    </div>
+    <div class="control-row">
+      <div class="tool-group alignment">
+        <select id="measure" aria-label="Measure boundary"></select>
+        <input id="boundaryTime" type="number" min="0" step=".01" aria-label="Boundary time in seconds" title="Boundary time (seconds)">
+        <button id="place" class="icon" aria-label="Move boundary to playhead" title="Move boundary to playhead"><i data-lucide="crosshair"></i></button>
+        <button id="undo" class="icon" aria-label="Undo alignment edit" title="Undo" disabled><i data-lucide="undo-2"></i></button>
+        <button id="redo" class="icon" aria-label="Redo alignment edit" title="Redo" disabled><i data-lucide="redo-2"></i></button>
+      </div>
+      <div class="tool-group">
+        <button id="export" class="icon" aria-label="Export alignment" title="Export alignment"><i data-lucide="download"></i></button>
+        <button id="import" class="icon" aria-label="Import alignment" title="Import alignment"><i data-lucide="upload"></i></button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+        <button id="reset" class="icon" aria-label="Restore automatic alignment" title="Restore automatic alignment"><i data-lucide="rotate-ccw"></i></button>
+      </div>
+      <div class="tool-group zoom">
+        <button id="zoomOut" class="icon" aria-label="Zoom out" title="Zoom out (Alt + scroll)"><i data-lucide="zoom-out"></i></button>
+        <output id="windowSize">24 s</output>
+        <button id="zoomIn" class="icon" aria-label="Zoom in" title="Zoom in (Alt + scroll)"><i data-lucide="zoom-in"></i></button>
+        <button id="previous" class="icon" aria-label="Previous window" title="Pan left (Cmd + scroll)"><i data-lucide="chevron-left"></i></button>
+        <button id="next" class="icon" aria-label="Next window" title="Pan right (Cmd + scroll)"><i data-lucide="chevron-right"></i></button>
+        <button id="follow" class="icon" aria-label="Follow playback" title="Follow playback" aria-pressed="true"><i data-lucide="locate-fixed"></i></button>
+      </div>
+      <output id="saveStatus" role="status">Loading...</output>
+    </div>
+  </section>
+  <canvas id="overview" height="52" tabindex="0" role="slider" aria-label="Recording overview" aria-valuemin="0" aria-valuemax="307" aria-valuenow="0"></canvas>
+  <div class="plot" id="plot">
+    <canvas id="chart" aria-label="Rehearsal spectrogram and score notes" title="Cmd + scroll: pan time. Alt + scroll: zoom time. Shift + scroll: zoom pitch. Scroll: move up or down in pitch."></canvas>
+    <div id="pitchScroll" tabindex="0" aria-label="Piano roll vertical scroll"><div id="pitchExtent"></div></div>
+    <div id="boundaries" aria-label="Draggable measure boundaries"></div>
+    <div id="playhead" aria-hidden="true"></div>
+    <output id="hover" hidden></output>
+    <output id="analysisStatus" role="status">Preparing curves...</output>
+  </div>
+</main>
+<audio id="audio" preload="metadata"></audio>
+</body>
+</html>

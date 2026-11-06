@@ -22,6 +22,16 @@ The PHP connection is read-only. Existing archive DBs are never modified.
 All segment anchors are retained (including fractional seconds); compressed
 per-recording anchor arrays use Unicode character offsets, not byte offsets.
 External-content FTS avoids storing a second full copy of the transcript text.
+Scope filtering uses a compact covering metadata index before fetching large
+transcript rows. Keep the documented unary `+f.rowid` in the search query: a
+plain rowid `IN` can make SQLite rerun FTS for every selected recording.
+
+The November 5 publication contains 25,030 nonempty transcripts: 23,464 YouTube,
+920 mrgirl, 359 Yarvin and 287 Barry Harris, across 1,039 YouTube channels plus
+three archive groups. Six empty completed mrgirl transcripts and eight empty
+Barry Harris transcripts are not searchable; other untranscribed catalogued
+entries remain accounted for in the manifest. This is a publication snapshot,
+not a claim that the download/transcription queues are finished.
 
 ## Refresh / publish
 
@@ -36,6 +46,10 @@ verify SHA-256 and SQLite integrity on the host, then atomically repoint
 the original corpus databases or replace the old YouTube production database.
 Deploy only this route and the legacy UI redirect from an isolated worktree;
 leave unrelated website changes alone. No new recurring automation is added.
+`finalize_search_index.py` records the one-time addition of the filter index
+to the initial verified snapshot; future builds include that index directly.
+Maintenance scripts, Markdown and database/archive file extensions are denied
+by the route's `.htaccess`, in addition to keeping the data outside webroot.
 
 For local preview set `TRANSCRIPTS_DB` to the publication snapshot and run PHP
 bound to localhost. All browser assets and requests are same-origin, so the
@@ -74,3 +88,7 @@ apostrophes, limits and literal/injection handling. `preview_fixture.py` is a
 temporary fixture-only local server; do not confuse its four records with live
 coverage. Stop it after browser QA. Recheck the deployed API, all collections,
 timestamp links, search and mobile dismissal after every publication.
+`verify_publication.py` checks all four collections against the exact snapshot,
+including source timestamp anchors, title/OR filters and bounded query latency.
+Publication receipts are retained in the external archive's `publication/`
+directory and the host's private `transcript-data/` directory.

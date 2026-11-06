@@ -1,0 +1,4 @@
+*.sqlite3*
+*.gz
+__pycache__/
+.test-output/

@@ -1,0 +1,10 @@
+# Only the UI and read-only API are public; maintenance files are not downloads.
+Options -Indexes
+<FilesMatch "\.(py|md|sqlite3?|db|gz)(-[a-z]+)?$">
+  Require all denied
+</FilesMatch>
+<FilesMatch "^(index\.html|api\.php)$">
+  Header always set Cache-Control "no-store, max-age=0"
+  Header always set CDN-Cache-Control "no-store"
+  Header always set LiteSpeed-Cache-Control "no-cache"
+</FilesMatch>

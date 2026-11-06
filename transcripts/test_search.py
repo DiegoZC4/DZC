@@ -92,6 +92,12 @@ class SearchTests(unittest.TestCase):
         with self.assertRaises(ValueError): public_url('file:///private/secret')
         with self.assertRaises(ValueError): public_url('https://u:p@example.com/')
 
+    def test_php_database_is_readonly(self):
+        cmd = 'require $argv[1]; try {corpus_db()->exec("CREATE TABLE forbidden(x)"); exit(2);} catch (PDOException $e) {echo "readonly";}'
+        out = subprocess.check_output([PHP,'-r',cmd,str(HERE/'search.php')],
+                env={**os.environ,'TRANSCRIPTS_DB':str(self.path)}, timeout=10)
+        self.assertEqual(out.decode(), 'readonly')
+
 
 if __name__ == '__main__':
     unittest.main()

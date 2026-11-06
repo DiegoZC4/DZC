@@ -1,6 +1,6 @@
 # Only the UI and read-only API are public; maintenance files are not downloads.
 Options -Indexes
-<FilesMatch "\.(py|md|sqlite3?|db|gz)(-[a-z]+)?$">
+<FilesMatch "\.(py|cjs|md|sqlite3?|db|gz)(-[a-z]+)?$">
   Require all denied
 </FilesMatch>
 <FilesMatch "^(index\.html|api\.php)$">

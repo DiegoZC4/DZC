@@ -28,9 +28,11 @@ plain rowid `IN` can make SQLite rerun FTS for every selected recording.
 
 The November 5 publication contains 25,030 nonempty transcripts: 23,464 YouTube,
 920 mrgirl, 359 Yarvin and 287 Barry Harris, across 1,039 YouTube channels plus
-three archive groups. Six empty completed mrgirl transcripts and eight empty
+three creator channels. Six empty completed mrgirl transcripts and eight empty
 Barry Harris transcripts are not searchable; other untranscribed catalogued
-entries remain accounted for in the manifest. This is a publication snapshot,
+entries remain accounted for in the manifest. All 1,042 channels share one picker;
+the backend corpus field only records provenance and supports old API links.
+This is a publication snapshot,
 not a claim that the download/transcription queues are finished.
 
 ## Refresh / publish
@@ -44,6 +46,12 @@ Upload the new artifact into the existing private `transcript-data` directory,
 verify SHA-256 and SQLite integrity on the host, then atomically repoint
 `current.sqlite3`. Keep the previous version for rollback. Never upload any of
 the original corpus databases or replace the old YouTube production database.
+Build `interviews.json` with `build_interviews.py` under `heavy-run`, using the
+disjoint `publication/interview-groups` collision key, the verified snapshot,
+and an external `--audit` receipt. The group file is bound to the snapshot's
+build timestamp and record count; a stale file is ignored rather than applied
+to newer records. Deploy the new group file with each new snapshot.
+
 Deploy only this route and the legacy UI redirect from an isolated worktree;
 leave unrelated website changes alone. No new recurring automation is added.
 `finalize_search_index.py` records the one-time addition of the filter index
@@ -62,14 +70,40 @@ actual public HTTPS route; it does not register or change a DevHub service.
 - A literal phrase searches the transcript, case-insensitively.
 - Join alternatives with `OR` or `|`; double quotes around phrases are optional.
 - The title box is a separate substring filter (accent-insensitive).
-- The collection buttons and channel/category picker restrict scope.
+- The single channel/category picker restricts scope. mrgirl, Curtis Yarvin /
+  Moldbug and Barry Harris are normal channels alongside Steve Mould and others,
+  independent of which platform hosts the source recording.
 - Timestamp links use each source platform's supported URL convention. A
   source without a known timestamp convention is labelled for manual seeking.
-- Query URLs preserve collection, title and channel/category filters.
+- Query URLs preserve title and channel/category filters. Old creator-collection
+  bookmarks and browser history migrate to the equivalent channel filter.
 - Search history stays in the browser, not on the server.
 - Results are bounded (up to 200); the UI indicates when to narrow a search.
 - Word timestamps and automatic speaker identity labels are not part of this
   public snapshot. Recognition errors and inaccessible source links may remain.
+
+## One result card per interview
+
+The November 6 grouping pass groups 181 redundant entries into 169 multi-source
+groups: 25,030 source transcripts remain intact, presented as 24,849 recording
+groups. New Founding #71 (YouTube `nMu3gu8NXX8` and its Podbean episode) is one
+group with both source links. This does not delete or deduplicate archive audio.
+
+Same canonical source URLs are grouped. Other candidates require substantial
+whole-transcript overlap in both directions plus compatible title metadata;
+titles alone, short-clip containment, mismatched dates/episode numbers and
+ambiguous titles do not establish identity. Identical captions can themselves
+be bad source data: the audit retains these conflicts for review instead of
+hiding a possibly different episode. Unknown duplicates can still remain.
+
+Title searches return one row per group. Text results share one card and merge
+matching passages across editions, while retaining distinct occurrences and
+unique alternate-edition matches. Each hit keeps its own source timestamps;
+YouTube is preferred only when that edition actually matched the query and
+scope. The API retains per-edition `matched_sources` and `source_versions`.
+The card's expandable Sources control exposes alternate original pages.
+Grouping precedes result limits. Browser history is preserved, but cached
+pre-grouping payloads are refetched so old duplicate cards cannot reappear.
 
 ## Mobile behavior
 
@@ -82,13 +116,17 @@ explicit “Done editing · hide keyboard” control. Inputs are at least 16px.
 
 ## Tests
 
-`python3 -B -m unittest -v test_search.py` uses disposable four-collection
+`python3 -B -m unittest -v test_search.py test_interviews.py` uses disposable
 fixtures and PHP. It checks scope, title search, OR, Unicode timestamp mapping,
-apostrophes, limits and literal/injection handling. `preview_fixture.py` is a
+apostrophes, limits, literal/injection handling, duplicate editions, distinct
+episodes, alternate passages and source-native timestamps. `node test_ui.cjs`
+checks history migration, cache invalidation and card grouping without touching
+browser storage. `preview_fixture.py` is a
 temporary fixture-only local server; do not confuse its four records with live
 coverage. Stop it after browser QA. Recheck the deployed API, all collections,
 timestamp links, search and mobile dismissal after every publication.
-`verify_publication.py` checks all four collections against the exact snapshot,
-including source timestamp anchors, title/OR filters and bounded query latency.
+`verify_publication.py` checks all four backend sources against the exact snapshot,
+including source timestamp anchors, title/OR filters, bounded query latency,
+unified channel entries and the New Founding grouping with native timestamps.
 Publication receipts are retained in the external archive's `publication/`
 directory and the host's private `transcript-data/` directory.

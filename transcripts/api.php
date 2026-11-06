@@ -10,9 +10,10 @@ try {
     $action = (string)($_GET['action'] ?? 'search');
     if (in_array($action, ['channels','status'], true)) {
         $manifest = json_decode((string)$db->query("SELECT value FROM metadata WHERE key='manifest'")->fetchColumn(), true);
-        $channels = $db->query('SELECT * FROM channels ORDER BY CASE WHEN corpus="youtube" THEN 1 ELSE 0 END, channel COLLATE NOCASE')->fetchAll();
+        $channels = $db->query('SELECT * FROM channels ORDER BY channel COLLATE NOCASE')->fetchAll();
         $payload = ['ok'=>true, 'channels'=>$channels, 'manifest'=>$manifest,
-            'stats'=>['videos'=>$manifest['records'], 'channels'=>$manifest['channels']]];
+            'stats'=>['videos'=>$manifest['records'], 'channels'=>$manifest['channels'],
+                'unique_interviews'=>corpus_interviews($db)['unique_interviews']]];
     } elseif ($action === 'search') {
         $channels = $_GET['channels'] ?? [];
         if (is_string($channels)) $channels = $channels === '' ? [] : explode(',', $channels);

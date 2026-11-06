@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Transcripts · Diego</title>
-<meta name="description" content="Search timestamped transcripts from mrgirl, Curtis Yarvin / Moldbug, Barry Harris, and the YouTube channel collection.">
+<meta name="description" content="Search timestamped transcripts across channels, including mrgirl, Curtis Yarvin / Moldbug, Barry Harris and Steve Mould.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff0000'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='28' font-weight='900' fill='white'%3ECC%3C/text%3E%3C/svg%3E">
 <style>
@@ -100,9 +100,11 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 .site-heading { display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; margin:10px 0; }
 .site-heading h1 { font-size:22px; margin:0; }
 .site-heading p { color:var(--muted); font-size:14px; margin:0; }
-.collection-buttons { display:flex; gap:6px; flex-wrap:wrap; }
-.collection-buttons button { padding:0 12px; min-height:44px; font-size:14px; }
-.collection-buttons button[aria-pressed="true"] { background:var(--accent); color:white; border-color:var(--accent); }
+.source-versions { margin-top:10px; color:var(--muted); font-size:13px; }
+.source-versions summary { cursor:pointer; padding:12px 0; min-height:44px; }
+.source-versions a { display:block; padding:10px 0; overflow-wrap:anywhere; }
+.title-only-result { padding:0 14px; }
+.title-only-result .video-result { border:0; padding-left:0; padding-right:0; }
 .channel-popup { display:none; position:absolute; left:0; right:0; z-index:8; margin-top:6px; border:1px solid var(--line); border-radius:8px; background:var(--panel); box-shadow:0 10px 28px #0002; }
 .channel-picker[data-open="true"] .channel-popup { display:block; }
 .channel-options { display:block; position:static; margin:0; border:0; box-shadow:none; max-height:min(38dvh,320px); overscroll-behavior:contain; }
@@ -124,7 +126,7 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media (prefers-color-scheme: dark) {
   :root { --bg:#171918; --panel:#222624; --ink:#eef0ea; --muted:#a8b1a9; --line:#444d47; --accent:#f39283; --accent-soft:#422d29; }
-  button.primary,.collection-buttons button[aria-pressed="true"] { color:#181818; }
+  button.primary { color:#181818; }
   .history-item:hover,.video-result:hover { background:#2d332f; }
   .channel-option:hover,.channel-option[data-active="true"] { background:#323a34; color:var(--ink); }
   .time { border-color:#6d4840; }
@@ -134,7 +136,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid v
   .channel-picker,#titleInput { grid-column:1 / -1; }
   .keyboard-done { display:block; grid-column:1/-1; min-height:44px; }
   .searchbar:not(:focus-within) .keyboard-done { display:none; }
-  .collection-buttons button { flex:1 0 auto; }
   input { font-size:16px; }
   .subnav { align-items: flex-start; flex-direction: column; }
   .page-nav { justify-content: flex-start; }
@@ -154,13 +155,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid v
 <body>
 <main>
   <header class="site-heading"><h1>Transcripts</h1><p>Find a phrase. Jump to the source.</p></header>
-  <nav class="collection-buttons" id="collections" aria-label="Transcript collection">
-    <button type="button" data-collection="" aria-pressed="true">All collections</button>
-    <button type="button" data-collection="mrgirl" aria-pressed="false">mrgirl</button>
-    <button type="button" data-collection="yarvin" aria-pressed="false">Moldbug / Yarvin</button>
-    <button type="button" data-collection="barry-harris" aria-pressed="false">Barry Harris</button>
-    <button type="button" data-collection="youtube" aria-pressed="false">YouTube channels</button>
-  </nav>
   <form class="searchbar" id="searchForm">
     <div class="channel-picker" id="channelPicker">
       <div class="channel-tokenbox" id="channelTokenbox">
@@ -177,7 +171,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid v
     <button class="primary" type="submit">Search</button>
     <button type="button" class="keyboard-done" id="keyboardDone">Done editing · hide keyboard</button>
   </form>
-  <p class="search-help">Search a phrase, or join alternatives with <strong>OR</strong>. Narrow with a video title. Overlapping editions are kept; transcripts may contain recognition errors.</p>
+  <p class="search-help">Search a phrase, or join alternatives with <strong>OR</strong>. Choose any channel above, including mrgirl, Curtis Yarvin / Moldbug and Barry Harris. Duplicate editions are grouped with their source links; transcripts may contain recognition errors.</p>
   <div class="subnav">
     <div class="channel-summary" id="channelSummary">Loading channels...</div>
     <div class="page-nav">
@@ -212,8 +206,6 @@ const recentSearches = document.getElementById('recentSearches');
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
 let channelRows = [];
-let allChannelRows = [];
-let selectedCollection = '';
 let searchController = null;
 let channelByName = new Map();
 let selectedFilters = [];
@@ -261,12 +253,6 @@ function init() {
   document.getElementById('keyboardDone').addEventListener('click', () => {
     dismissChannelOptions(); document.activeElement?.blur();
   });
-  document.getElementById('collections').addEventListener('click', event => {
-    const button = event.target.closest('[data-collection]');
-    if (!button) return;
-    chooseCollection(button.dataset.collection, true);
-    if (queryInput.value.trim() || titleInput.value.trim()) search();
-  });
   channelFilterInput.addEventListener('input', renderChannelOptions);
   channelFilterInput.addEventListener('focus', openChannelOptions);
   channelFilterInput.addEventListener('keydown', handleChannelInputKeydown);
@@ -297,14 +283,13 @@ function init() {
   updateResultLimitControl();
   renderRecentSearches();
   const params = new URLSearchParams(location.search);
-  if (params.has('q') || params.has('title') || params.has('collection')) {
+  if (['q','title','collection','channel','category'].some(key => params.has(key))) {
     queryInput.value = params.get('q') || '';
     titleInput.value = params.get('title') || '';
-    selectedCollection = params.get('collection') || '';
-    selectedFilters = [
+    selectedFilters = migrateCollectionFilters(params.get('collection'), [
       ...params.getAll('channel').map(value => ({type:'channel',value,label:value})),
       ...params.getAll('category').map(value => ({type:'category',value,label:value}))
-    ];
+    ]);
   } else restoreLatestSearch();
   loadChannels();
 }
@@ -312,19 +297,18 @@ function init() {
 async function loadChannels() {
   try {
     const payload = await getJson('api.php?action=channels');
-    allChannelRows = (payload.channels || []).map(row => ({
+    channelRows = (payload.channels || []).map(row => ({
       ...row,
       category: row.category || inferChannelCategory(row.channel)
     }));
-    channelByName = new Map(allChannelRows.map(row => [row.channel, row]));
-    chooseCollection(selectedCollection);
+    channelByName = new Map(channelRows.map(row => [row.channel, row]));
     renderSelectedFilters();
     renderChannelOptions();
     const stats = payload.stats || {};
     if (activeCachedSearch) {
       restoreCachedSearch(activeCachedSearch);
     } else if (!hasRenderedSearch) {
-      meta.textContent = `${Number(stats.videos || 0).toLocaleString()} transcripts · ${Number(stats.channels || 0).toLocaleString()} channels / archive groups · snapshot ${payload.manifest?.built_at?.slice(0,10) || ''}`;
+      meta.textContent = `${Number(stats.unique_interviews || stats.videos || 0).toLocaleString()} recordings · ${Number(stats.channels || 0).toLocaleString()} channels · snapshot ${payload.manifest?.built_at?.slice(0,10) || ''}`;
     }
     if (location.search && (queryInput.value || titleInput.value)) search();
   } catch (error) {
@@ -334,14 +318,10 @@ async function loadChannels() {
   }
 }
 
-function chooseCollection(value, clearFilters = false) {
-  selectedCollection = ['', 'youtube', 'mrgirl', 'yarvin', 'barry-harris'].includes(value) ? value : '';
-  if (clearFilters) selectedFilters = [];
-  channelRows = allChannelRows.filter(row => !selectedCollection || row.corpus === selectedCollection);
-  document.querySelectorAll('[data-collection]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.collection === selectedCollection)));
-  closeChannelOptions();
-  renderSelectedFilters();
-  renderChannelOptions();
+function migrateCollectionFilters(collection, filters) {
+  // Old bookmarks/history still select the same creator, now a normal channel.
+  const creator = {mrgirl:'mrgirl', yarvin:'Curtis Yarvin / Moldbug', 'barry-harris':'Barry Harris'}[collection];
+  return creator ? [{type:'channel', value:creator, label:creator}] : filters;
 }
 
 function groupChannelsByCategory(rows) {
@@ -415,7 +395,7 @@ function updateChannelSummary() {
   const selected = selectedChannels().length;
   channelSummary.textContent = selectedFilters.length
     ? `${selected} of ${total} channels selected`
-    : `${total === 1 ? '1 archive group' : `All ${total} channels`} selected`;
+    : `${total === 1 ? '1 channel' : `All ${total} channels`} selected`;
 }
 
 function renderSelectedFilters() {
@@ -611,7 +591,7 @@ function readSearchCache() {
 
 function normalizeCachedSearch(entry) {
   if (!entry || typeof entry !== 'object') return null;
-  const channels = normalizeCachedFilters(Array.isArray(entry.filters) ? entry.filters : entry.channels);
+  const channels = migrateCollectionFilters(entry.collection, normalizeCachedFilters(Array.isArray(entry.filters) ? entry.filters : entry.channels));
   const title = entry.title ?? entry.titleFilter ?? '';
   const transcript = entry.transcript ?? entry.query ?? '';
   const payloadResults = Array.isArray(entry.payload?.results) ? entry.payload.results : [];
@@ -622,7 +602,7 @@ function normalizeCachedSearch(entry) {
       ? entry.videos
       : payloadResults.map(item => item.youtube_id);
   const normalized = {
-    collection: String(entry.collection || ''),
+    cacheVersion: 2,
     channels: uniqueFilters(channels),
     title: String(title || '').trim(),
     transcript: String(transcript || '').trim(),
@@ -630,7 +610,8 @@ function normalizeCachedSearch(entry) {
     limit,
     createdAt: Number(entry.createdAt) || Date.now()
   };
-  if (entry.payload && Array.isArray(entry.payload.results)) {
+  // Retain history, but refetch pre-grouping payloads rather than showing duplicates.
+  if (entry.cacheVersion === 2 && entry.payload && Array.isArray(entry.payload.results)) {
     normalized.payload = {
       results: entry.payload.results.slice(0, limit),
       timing: entry.payload.timing || null
@@ -810,7 +791,6 @@ function writeSearchCache(entries) {
 
 function currentSearchState() {
   return {
-    collection: selectedCollection,
     channels: selectedFilters.map(filter => ({
       type: filter.type,
       value: filter.value,
@@ -824,7 +804,6 @@ function currentSearchState() {
 
 function searchCacheKey(state) {
   return JSON.stringify({
-    collection: state.collection || '',
     channels: normalizeCachedFilters(state.channels || []).map(filter => `${filter.type}:${filter.value}`).sort(),
     title: state.title || '',
     transcript: state.transcript || ''
@@ -834,7 +813,7 @@ function searchCacheKey(state) {
 function saveSearchCache(state, payload) {
   const results = Array.isArray(payload.results) ? payload.results : [];
   const entry = {
-    collection: state.collection || '',
+    cacheVersion: 2,
     channels: uniqueFilters(state.channels || []),
     title: state.title || '',
     transcript: state.transcript || '',
@@ -932,7 +911,7 @@ function historyFieldValues(entry) {
   return {
     channels: entry.channels?.length
       ? entry.channels.map(filter => filter.label || filter.value).join(', ')
-      : (entry.collection || 'All'),
+      : 'All',
     videos: entry.title || 'All',
     search: entry.transcript || 'All'
   };
@@ -1055,7 +1034,6 @@ function restoreCachedSearch(entry) {
   const normalized = normalizeCachedSearch(entry);
   if (!normalized) return;
   activeCachedSearch = normalized;
-  chooseCollection(normalized.collection);
   setResultLimit(normalized.limit || DEFAULT_RESULT_LIMIT);
   titleInput.value = normalized.title || '';
   queryInput.value = normalized.transcript || '';
@@ -1159,7 +1137,6 @@ async function search(options = {}) {
   try {
     const params = new URLSearchParams({
       action: 'search',
-      collection: selectedCollection,
       limit: String(resultLimit)
     });
     if (query) params.set('q', query);
@@ -1171,7 +1148,6 @@ async function search(options = {}) {
     renderResults(payload.results || [], query, titleFilter, payload.timing || null);
     if (payload.truncated) meta.textContent += ' · More matches available; narrow the search or increase Results.';
     const shareParams = new URLSearchParams();
-    if (selectedCollection) shareParams.set('collection', selectedCollection);
     if (query) shareParams.set('q', query);
     if (titleFilter) shareParams.set('title', titleFilter);
     for (const filter of selectedFilters) shareParams.append(filter.type, filter.value);
@@ -1197,15 +1173,18 @@ function renderResults(items, query, titleFilter = '', timing = null) {
   const timingText = timing && Number.isFinite(Number(timing.total_ms)) ? ` · ${formatMs(timing.total_ms)}` : '';
   const cacheText = timing?.cached ? ' · cached' : '';
   meta.textContent = titleOnly
-    ? `${videoCount} video title${videoCount === 1 ? '' : 's'} matching "${titleFilter}"${timingText}${cacheText}`
-    : `${items.length} result${items.length === 1 ? '' : 's'} in ${videoCount} video${videoCount === 1 ? '' : 's'}${titleScope} for "${query}"${timingText}${cacheText}`;
+    ? `${videoCount} recording${videoCount === 1 ? '' : 's'} matching "${titleFilter}"${timingText}${cacheText}`
+    : `${items.length} passage${items.length === 1 ? '' : 's'} in ${videoCount} recording${videoCount === 1 ? '' : 's'}${titleScope} for "${query}"${timingText}${cacheText}`;
   if (!items.length) {
     results.innerHTML = '<div class="empty">No matches.</div>';
     return;
   }
   const fragment = document.createDocumentFragment();
   if (titleOnly) {
-    for (const item of items) {
+    for (const group of groups) {
+      const item = group.items[0];
+      const article = document.createElement('article');
+      article.className = 'result title-only-result';
       const link = document.createElement('a');
       link.className = 'video-result';
       link.href = item.url || `https://www.youtube.com/watch?v=${encodeURIComponent(item.youtube_id || '')}`;
@@ -1219,7 +1198,9 @@ function renderResults(items, query, titleFilter = '', timing = null) {
       link.querySelector('.avatar-slot').replaceWith(channelAvatarElement(item.channel || ''));
       link.querySelector('.video-result-channel').textContent = item.channel || '';
       link.querySelector('.video-result-title').textContent = item.title || item.youtube_id || '';
-      fragment.appendChild(link);
+      article.appendChild(link);
+      appendSourceVersions(article, group.items);
+      fragment.appendChild(article);
     }
     results.replaceChildren(fragment);
     return;
@@ -1258,7 +1239,7 @@ function renderResults(items, query, titleFilter = '', timing = null) {
       const time = hit.querySelector('.time');
       time.href = item.url;
       time.textContent = item.timestamp || '0:00';
-      time.title = item.timestamp_supported === false ? 'Source page; seek manually to ' + item.timestamp : 'Open source at ' + item.timestamp;
+      time.title = item.timestamp_supported === false ? 'Source page; seek manually to ' + item.timestamp : 'Open ' + item.platform + ' at ' + item.timestamp;
       const snippet = hit.querySelector('.snippet');
       renderSnippet(snippet, item);
       if (item.match_count > 1) {
@@ -1269,6 +1250,7 @@ function renderResults(items, query, titleFilter = '', timing = null) {
       }
       hits.appendChild(hit);
     }
+    appendSourceVersions(article, group.items);
     fragment.appendChild(article);
   }
   results.replaceChildren(fragment);
@@ -1283,7 +1265,7 @@ function groupResultsByVideo(items) {
   const groups = [];
   const byVideo = new Map();
   for (const item of items) {
-    const key = item.youtube_id || `${item.channel}:${item.title}`;
+    const key = item.interview_id || item.recording_id || item.youtube_id || `${item.channel}:${item.title}`;
     let group = byVideo.get(key);
     if (!group) {
       group = { key, items: [] };
@@ -1293,6 +1275,28 @@ function groupResultsByVideo(items) {
     group.items.push(item);
   }
   return groups;
+}
+
+function appendSourceVersions(container, items) {
+  const sources = new Map();
+  for (const item of items) {
+    for (const source of item.source_versions || []) sources.set(source.url, source);
+  }
+  if (sources.size < 2) return;
+  const details = document.createElement('details');
+  details.className = 'source-versions';
+  const summary = document.createElement('summary');
+  summary.textContent = `Sources (${sources.size}) · same recording`;
+  details.appendChild(summary);
+  for (const source of sources.values()) {
+    const link = document.createElement('a');
+    link.href = source.url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    link.textContent = `${source.platform} · ${source.source_channel || source.channel} — ${source.title}`;
+    details.appendChild(link);
+  }
+  container.appendChild(details);
 }
 
 function renderSnippet(container, item) {

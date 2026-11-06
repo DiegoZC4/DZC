@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/interviews.php';
 
 // A read-only publication artifact, outside the public webroot in production.
 function corpus_db(): PDO {
@@ -157,16 +158,33 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
         $sql = $ids . ' ORDER BY r.title_fold LIMIT 301';
     }
     $stmt = $db->prepare($sql); $stmt->execute($params);
-    $columns = $match !== '' ? '*' : 'key,corpus,channel,source_channel,platform,title,url,transcript_origin';
-    $record = $db->prepare('SELECT ' . $columns . ' FROM records WHERE id=?');
-    $results = []; $candidates = 0; $truncated = false;
+    $record = $db->prepare('SELECT key,corpus,channel,source_channel,platform,title,url,transcript_origin FROM records WHERE id=?');
+    $recordKey = $db->prepare('SELECT key FROM records WHERE id=?');
+    $transcript = $db->prepare('SELECT text,anchors FROM records WHERE id=?');
+    $interviews = corpus_interviews($db)['by_key'];
+    $results = []; $byInterview = []; $candidates = 0; $truncated = false;
     while ($candidate = $stmt->fetch()) {
         $candidates++;
-        if ($candidates > 300 || count($results) >= $limit) { $truncated = true; break; }
+        if ($candidates > 300) { $truncated = true; break; }
+        if (count($results) >= $limit) {
+            $recordKey->execute([$candidate['id']]);
+            $key = $recordKey->fetchColumn();
+            $gid = $interviews[$key]['id'] ?? $key;
+            if (!isset($byInterview[$gid])) { $truncated = true; continue; }
+        }
         $record->execute([$candidate['id']]);
         $row = $record->fetch();
         if (!$row) continue;
-        if (!$terms) { $results[] = corpus_payload($row); continue; }
+        $base = corpus_group_payload(corpus_payload($row), $interviews);
+        // Resolve duplicates before applying the result limit. Continue looking
+        // at editions of accepted interviews, without loading unrelated text.
+        if (count($results) >= $limit && !isset($byInterview[$base['interview_id']])) { $truncated = true; continue; }
+        if (!$terms) {
+            if (!corpus_add_result($results, $byInterview, $base, true, $limit)) $truncated = true;
+            continue;
+        }
+        $transcript->execute([$candidate['id']]);
+        $row += $transcript->fetch();
         $occurrences = corpus_occurrences($row['text'], $terms);
         if (!$occurrences) continue;
         $decoded = gzuncompress($row['anchors']);
@@ -182,7 +200,6 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
             else $groups[$last][] = $hit;
         }
         foreach ($groups as $group) {
-            if (count($results) >= $limit) { $truncated = true; break; }
             $start = max(0, $group[0][0] - 120); $last = end($group);
             $end = min(mb_strlen($row['text'], 'UTF-8'), $last[0] + $last[1] + 120);
             $parts = $start > 0 ? [['text'=>'…', 'match'=>false]] : [];
@@ -193,7 +210,8 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
                 $cursor = $at + $length;
             }
             $parts[] = ['text'=>mb_substr($row['text'],$cursor,$end-$cursor,'UTF-8') . ($end < mb_strlen($row['text'],'UTF-8') ? '…' : ''), 'match'=>false];
-            $results[] = corpus_payload($row, corpus_time($anchors, $group[0][0]), $parts, count($group));
+            $item = corpus_group_payload(corpus_payload($row, corpus_time($anchors, $group[0][0]), $parts, count($group)), $interviews);
+            if (!corpus_add_result($results, $byInterview, $item, false, $limit)) $truncated = true;
         }
     }
     return ['results'=>$results, 'timing'=>['total_ms'=>round((microtime(true)-$started)*1000,1), 'candidate_videos'=>$candidates], 'truncated'=>$truncated];

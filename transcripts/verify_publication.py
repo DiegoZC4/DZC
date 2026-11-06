@@ -28,6 +28,8 @@ def verify(url, snapshot):
     assert status['manifest'] == manifest, 'Publication manifest mismatch'
     assert status['stats']['videos'] == db.execute('SELECT COUNT(*) FROM records').fetchone()[0]
     assert sum(c['video_count'] for c in status['channels']) == manifest['records']
+    channels = {c['channel'] for c in status['channels']}
+    assert {'mrgirl','Curtis Yarvin / Moldbug','Barry Harris','Steve Mould'} <= channels
     receipts = []
     for corpus, query in [('mrgirl','responsibility'),('yarvin','monarchy'),('barry-harris','diminished'),('youtube','physics')]:
         found = api(action='search', collection=corpus, q=query, limit=8)
@@ -47,11 +49,29 @@ def verify(url, snapshot):
                          'search_ms':found['timing']['total_ms']})
     title = api(action='search',collection='mrgirl',q='responsibility',title_filter='Your Orgasm')
     assert title['results'] and all('your orgasm' in r['title'].lower() for r in title['results'])
+    assert len({r['interview_id'] for r in title['results']}) == 1, 'mrgirl Rumble/Odysee editions were not grouped'
     alternatives = api(action='search',q='Hermione OR Emma Watson',collection='mrgirl')
     assert alternatives['results']
+    founding = api(action='search', title_filter='What happens if we lose', channel='Curtis Yarvin / Moldbug')
+    assert len(founding['results']) == 1, 'New Founding #71 is duplicated'
+    assert {s['platform'] for s in founding['results'][0]['source_versions']} == {'youtube','podcast'}
+    founding_text = api(action='search', q='government', title_filter='What happens if we lose', channel='Curtis Yarvin / Moldbug')
+    assert founding_text['results']
+    assert len({r['interview_id'] for r in founding_text['results']}) == 1
+    checked_alternates = 0
+    for result in founding_text['results']:
+        for source in result.get('matched_sources', [result]):
+            row = db.execute('SELECT anchors,url FROM records WHERE key=?', (source['recording_id'],)).fetchone()
+            anchors = json.loads(zlib.decompress(row['anchors']))
+            assert any(abs(a[1] - source['start_seconds']) < .001 for a in anchors)
+            assert urllib.parse.urlsplit(source['url']).hostname == urllib.parse.urlsplit(row['url']).hostname
+            checked_alternates += 1
     report = {'verified_at':dt.datetime.now(dt.timezone.utc).isoformat(), 'url':url,
               'records':manifest['records'], 'channels':manifest['channels'], 'collections':receipts,
-              'title_filter_matches':len(title['results']), 'or_matches':len(alternatives['results'])}
+              'title_filter_matches':len(title['results']), 'or_matches':len(alternatives['results']),
+              'new_founding_title_results':len(founding['results']), 'new_founding_passages':len(founding_text['results']),
+              'new_founding_native_timestamps_checked':checked_alternates,
+              'unique_recording_groups':status['stats']['unique_interviews']}
     report['title_filter_ms'] = title['timing']['total_ms']
     report['or_ms'] = alternatives['timing']['total_ms']
     assert report['title_filter_ms'] < 10000, 'Slow title filter'

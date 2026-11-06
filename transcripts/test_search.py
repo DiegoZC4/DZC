@@ -98,6 +98,15 @@ class SearchTests(unittest.TestCase):
                 env={**os.environ,'TRANSCRIPTS_DB':str(self.path)}, timeout=10)
         self.assertEqual(out.decode(), 'readonly')
 
+    def test_platform_timestamps(self):
+        cases = [('youtube','?t=125s'),('odysee','?t=125'),('rumble','?start=125'),
+                 ('substack','?timestamp=125'),('vimeo','#t=125s'),('twitch','?t=0h2m5s')]
+        cmd = 'require $argv[1]; echo corpus_url("https://example.com/video",$argv[2],125.5);'
+        for platform, suffix in cases:
+            with self.subTest(platform=platform):
+                out = subprocess.check_output([PHP,'-r',cmd,str(HERE/'search.php'),platform],timeout=10)
+                self.assertEqual(out.decode(), 'https://example.com/video'+suffix)
+
 
 if __name__ == '__main__':
     unittest.main()

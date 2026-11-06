@@ -1150,7 +1150,7 @@ async function search(options = {}) {
   setResultLimit(options.limit ?? resultLimit);
   if (!titleFilter && !query) {
     lastRenderedSearch = null;
-    results.innerHTML = '<div class="empty">Type a video title or transcript substring.</div>';
+    results.innerHTML = '<div class="empty">Type a video title or transcript phrase.</div>';
     return;
   }
   const channels = selectedChannels();

@@ -83,7 +83,8 @@ function corpus_url(string $url, string $platform, float $time): string {
     elseif ($platform === 'substack') $q['timestamp'] = (string)$seconds;
     elseif ($platform === 'twitch') $q['t'] = sprintf('%dh%dm%ds', intdiv($seconds,3600), intdiv($seconds%3600,60), $seconds%60);
     $base .= $q ? '?' . http_build_query($q) : '';
-    if (in_array($platform, ['vimeo', 'podcast', 'website', 'bandcamp'], true)) $base .= '#t=' . $seconds;
+    if ($platform === 'vimeo') $base .= '#t=' . $seconds . 's';
+    elseif (in_array($platform, ['podcast', 'website', 'bandcamp'], true)) $base .= '#t=' . $seconds;
     return $base;
 }
 

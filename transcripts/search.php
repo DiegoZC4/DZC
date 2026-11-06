@@ -163,7 +163,9 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
         foreach ($occurrences as $hit) {
             $last = count($groups) - 1;
             $prev = $last >= 0 ? end($groups[$last]) : null;
-            if ($prev === null || $hit[0] - ($prev[0] + $prev[1]) > 120) $groups[] = [$hit];
+            // Dense common words must not turn an entire interview into one mobile card.
+            if ($prev === null || $hit[0] - ($prev[0] + $prev[1]) > 120
+                || $hit[0] + $hit[1] - $groups[$last][0][0] > 360) $groups[] = [$hit];
             else $groups[$last][] = $hit;
         }
         foreach ($groups as $group) {

@@ -107,6 +107,15 @@ class SearchTests(unittest.TestCase):
                 out = subprocess.check_output([PHP,'-r',cmd,str(HERE/'search.php'),platform],timeout=10)
                 self.assertEqual(out.decode(), 'https://example.com/video'+suffix)
 
+    def test_dense_matches_keep_snippets_bounded(self):
+        with sqlite3.connect(self.path) as db:
+            db.execute('UPDATE records SET text=? WHERE id=1', ('responsibility matters. ' * 2000,))
+            db.execute("INSERT INTO records_fts(records_fts) VALUES('rebuild')")
+        result = self.query('responsibility', corpus='mrgirl', limit=10)
+        self.assertEqual(len(result['results']), 10)
+        self.assertTrue(result['truncated'])
+        self.assertTrue(all(len(r['snippet']) <= 602 for r in result['results']))
+
 
 if __name__ == '__main__':
     unittest.main()

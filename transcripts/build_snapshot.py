@@ -29,6 +29,7 @@ CREATE TABLE records (
  platform TEXT NOT NULL, anchors BLOB NOT NULL, transcript_origin TEXT NOT NULL);
 CREATE INDEX records_channel ON records(channel);
 CREATE INDEX records_corpus ON records(corpus);
+CREATE INDEX records_filter_metadata ON records(corpus,title_fold,channel,key);
 CREATE VIRTUAL TABLE records_fts USING fts5(title, text, content='records',
  content_rowid='id', tokenize='unicode61 remove_diacritics 2');
 CREATE TABLE channels (channel TEXT PRIMARY KEY, category TEXT NOT NULL,

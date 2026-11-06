@@ -32,6 +32,7 @@ def verify(url, snapshot):
     for corpus, query in [('mrgirl','responsibility'),('yarvin','monarchy'),('barry-harris','diminished'),('youtube','physics')]:
         found = api(action='search', collection=corpus, q=query, limit=8)
         assert found['results'], (corpus, 'no results')
+        assert found['timing']['total_ms'] < 10000, (corpus, 'slow search', found['timing'])
         assert all(r['collection'] == corpus for r in found['results'])
         for r in found['results']:
             row = db.execute('SELECT * FROM records WHERE key=?', (r['recording_id'],)).fetchone()
@@ -51,6 +52,9 @@ def verify(url, snapshot):
     report = {'verified_at':dt.datetime.now(dt.timezone.utc).isoformat(), 'url':url,
               'records':manifest['records'], 'channels':manifest['channels'], 'collections':receipts,
               'title_filter_matches':len(title['results']), 'or_matches':len(alternatives['results'])}
+    report['title_filter_ms'] = title['timing']['total_ms']
+    report['or_ms'] = alternatives['timing']['total_ms']
+    assert report['title_filter_ms'] < 10000, 'Slow title filter'
     db.close()
     return report
 

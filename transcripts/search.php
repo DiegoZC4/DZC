@@ -116,10 +116,8 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
     $where = []; $params = [];
     if ($q !== '' && $match === '') throw new InvalidArgumentException('Search for at least one word.');
     if (mb_strlen($title) > 300) throw new InvalidArgumentException('Use a shorter title filter.');
-    $from = 'records r';
     if ($match !== '') {
-        $from = 'records_fts f JOIN records r ON r.id=f.rowid';
-        $where[] = 'records_fts MATCH :q'; $params[':q'] = $match;
+        $params[':q'] = $match;
     }
     if ($title !== '') {
         $where[] = "r.title_fold LIKE :title ESCAPE '\\'";
@@ -143,16 +141,31 @@ function corpus_search(PDO $db, string $q, string $title, array $channels, strin
     if ($scope) $where[] = '(' . implode(' OR ', $scope) . ')';
     if ($corpus !== '') { $where[] = 'r.corpus=:corpus'; $params[':corpus'] = $corpus; }
     if ($id !== '') { $where[] = 'r.key=:id'; $params[':id'] = $id; }
-    if (!$where) return ['results'=>[], 'timing'=>['total_ms'=>0], 'truncated'=>false];
-    $order = $match !== '' ? 'rank' : 'r.title_fold';
-    // Filtered title-only searches may browse the index without loading transcript text.
-    $columns = $match !== '' ? 'r.*' : 'r.key,r.corpus,r.channel,r.source_channel,r.platform,r.title,r.url,r.transcript_origin';
-    $sql = 'SELECT ' . $columns . ' FROM ' . $from . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY ' . $order . ' LIMIT 301';
+    if (!$where && $match === '') return ['results'=>[], 'timing'=>['total_ms'=>0], 'truncated'=>false];
+    // Apply scope in a compact covering index BEFORE reading large transcript rows.
+    // Otherwise a rare title plus a common word scans thousands of interviews.
+    $ids = 'SELECT r.id FROM records r INDEXED BY records_filter_metadata';
+    if ($where) $ids .= ' WHERE ' . implode(' AND ', $where);
+    if ($match !== '') {
+        $sql = 'SELECT f.rowid AS id FROM records_fts f WHERE records_fts MATCH :q';
+        // Unary + intentionally prevents an FTS rowid-lookup plan that re-runs
+        // MATCH for every scoped recording. Keep rank streaming, then test IDs
+        // against the compact IN-set before loading any transcript text.
+        if ($where) $sql .= ' AND +f.rowid IN (' . $ids . ')';
+        $sql .= ' ORDER BY rank LIMIT 301';
+    } else {
+        $sql = $ids . ' ORDER BY r.title_fold LIMIT 301';
+    }
     $stmt = $db->prepare($sql); $stmt->execute($params);
+    $columns = $match !== '' ? '*' : 'key,corpus,channel,source_channel,platform,title,url,transcript_origin';
+    $record = $db->prepare('SELECT ' . $columns . ' FROM records WHERE id=?');
     $results = []; $candidates = 0; $truncated = false;
-    while ($row = $stmt->fetch()) {
+    while ($candidate = $stmt->fetch()) {
         $candidates++;
         if ($candidates > 300 || count($results) >= $limit) { $truncated = true; break; }
+        $record->execute([$candidate['id']]);
+        $row = $record->fetch();
+        if (!$row) continue;
         if (!$terms) { $results[] = corpus_payload($row); continue; }
         $occurrences = corpus_occurrences($row['text'], $terms);
         if (!$occurrences) continue;

@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Thu, 29 Oct 2026 02:39:41 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 10 Nov 2026 00:04:50 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,38 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/lsrg/</link>
     </image>
+    <item>
+      <title>#106 - Definitions and Boundaries</title>
+      <link>https://diegozc.com/lsrg/#lsrg-106</link>
+      <guid isPermaLink="false">urn:lsrg:106:weekly</guid>
+      <pubDate>Tue, 10 Nov 2026 00:04:50 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Disputing Definitions by Eliezer Yudkowsky
+https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/7X2j8HAkWdmMoS8PE
+
+9:59 - Feel the Meaning by Eliezer Yudkowsky
+
+17:30 - The Argument from Common Usage by Eliezer Yudkowsky
+
+26:11 - Empty Labels by Eliezer Yudkowsky
+
+31:59 - (Optional) Where to Draw the Boundaries? by Zack_M_Davis
+https://www.lesswrong.com/posts/esRZaPXSHgWzyB2NL/where-to-draw-the-boundaries
+
+Read along: https://diegozc.com/lsrg/#lsrg-106
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Zack_M_Davis</itunes:author>
+      <itunes:episode>106</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3387</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-106-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-106-weekly.m4a" length="20456416" type="audio/mp4" />
+    </item>
     <item>
       <title>#105 - Categories</title>
       <link>https://diegozc.com/lsrg/#lsrg-105</link>

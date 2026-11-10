@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Zack_M_Davis",
+  "title": "#106 - Definitions and Boundaries",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for November 10, 2026.",
+  "fileName": "lsrg-106-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 598.9,
+      "title": "Disputing Definitions",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/7X2j8HAkWdmMoS8PE"
+    },
+    {
+      "startTime": 598.9,
+      "endTime": 1050.4,
+      "title": "Feel the Meaning",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/dMCFk2n2ur8n62hqB"
+    },
+    {
+      "startTime": 1050.4,
+      "endTime": 1571.0,
+      "title": "The Argument from Common Usage",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/9ZooAqfh2TC9SBDvq"
+    },
+    {
+      "startTime": 1571.0,
+      "endTime": 1918.9,
+      "title": "Empty Labels",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/i2dfY65JciebF3CAo"
+    },
+    {
+      "startTime": 1918.9,
+      "endTime": 3386.7,
+      "title": "(Optional) Where to Draw the Boundaries?",
+      "url": "https://www.lesswrong.com/posts/esRZaPXSHgWzyB2NL/where-to-draw-the-boundaries"
+    }
+  ]
+}

@@ -3370,15 +3370,16 @@ html[data-book-text-only="true"] .narration-row-highlight { opacity:0!important;
   }
   window.addEventListener('hashchange', jumpHash);
   document.querySelector('#book-share').addEventListener('click', async event => {
+    const button = event.currentTarget;
     const t = api.globalCurrentTime();
     const index = api.chapters.findLastIndex(ch => ch.start <= t);
     const hash = `#c${Math.max(0,index)+1}@${t.toFixed(1)}&mode=${prefs.mode}`;
     history.replaceState(null, '', hash);
     try {
       await navigator.clipboard.writeText(location.href);
-      event.currentTarget.textContent = 'Copied';
+      button.textContent = 'Copied';
       setTimeout(() => { document.querySelector('#book-share').textContent = 'Copy position link'; }, 1500);
-    } catch { event.currentTarget.textContent = 'Copy the address bar'; }
+    } catch { button.textContent = 'Copy the address bar'; }
   });
   // Use the common transport functions for all OS/keyboard controls.
   function play() {

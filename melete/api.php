@@ -3,6 +3,7 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 require_once __DIR__ . '/lib.php';
 require_once __DIR__ . '/rehearsals.php';
+require_once __DIR__ . '/directory.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -46,6 +47,7 @@ try {
         'csrf' => $_SESSION['csrf'], 'nonce' => $_SESSION['nonce'], 'user' => $_SESSION['user'] ?? null,
         'reviewer' => meleteCanReview($_SESSION['user'] ?? [], $config),
         'rehearsalReviewer' => (bool)meleteRehearsalDates($directory, $_SESSION['user'] ?? []),
+        'directoryAccess' => (bool)meleteDirectoryPaths($directory, $_SESSION['user'] ?? [], (string)($_GET['song'] ?? '')),
         'submissionReviewer' => meleteSubmissionReviewer($_SESSION['user'] ?? [], $config, (string)($_GET['song'] ?? ''))]);
     if ($action === 'login' && $method === 'POST') {
         if (($_SESSION['login_at'] ?? 0) > time() - 2) throw new MeleteHttpError(429, 'Please wait before retrying sign-in');
@@ -66,6 +68,9 @@ try {
     if (!$owner) throw new MeleteHttpError(401, 'Sign in before accessing backups');
     $user = $_SESSION['user']; $reviewer = meleteCanReview($user, $config);
     session_write_close();
+    if ($action === 'directory' && $method === 'GET') {
+        reply(['directory' => meleteDirectory($directory, $user, (string)($_GET['song'] ?? ''))]);
+    }
     if ($action === 'rehearsals' && $method === 'GET') {
         $song = (string)($_GET['song'] ?? '');
         if (!$song || strlen($song) > 255) throw new MeleteHttpError(400, 'Song required');

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 ini_set('display_errors', '0');
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/rehearsals.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -19,6 +20,7 @@ function readJson(): array {
 }
 try {
     $config = require is_file(__DIR__ . '/config.local.php') ? __DIR__ . '/config.local.php' : __DIR__ . '/config.example.php';
+    if(is_file(__DIR__.'/submission-reviewers.php'))$config['submission_reviewer_hashes']=require __DIR__.'/submission-reviewers.php';
     $directory = $config['data_dir'] ?? '';
     if (!$directory || $directory[0] !== '/') throw new MeleteHttpError(503, 'Private backup storage is not configured');
     umask(0077);
@@ -42,7 +44,9 @@ try {
     if ($method === 'POST' && !hash_equals($_SESSION['csrf'], $_SERVER['HTTP_X_MELETE_CSRF'] ?? '')) throw new MeleteHttpError(403, 'Session expired; sign in again');
     if ($action === 'status' && $method === 'GET') reply(['configured' => (bool)($config['client_id'] ?? ''), 'clientId' => $config['client_id'] ?? '',
         'csrf' => $_SESSION['csrf'], 'nonce' => $_SESSION['nonce'], 'user' => $_SESSION['user'] ?? null,
-        'reviewer' => meleteCanReview($_SESSION['user'] ?? [], $config)]);
+        'reviewer' => meleteCanReview($_SESSION['user'] ?? [], $config),
+        'rehearsalReviewer' => (bool)meleteRehearsalDates($directory, $_SESSION['user'] ?? []),
+        'submissionReviewer' => meleteSubmissionReviewer($_SESSION['user'] ?? [], $config, (string)($_GET['song'] ?? ''))]);
     if ($action === 'login' && $method === 'POST') {
         if (($_SESSION['login_at'] ?? 0) > time() - 2) throw new MeleteHttpError(429, 'Please wait before retrying sign-in');
         $_SESSION['login_at'] = time(); $body = readJson();
@@ -62,7 +66,32 @@ try {
     if (!$owner) throw new MeleteHttpError(401, 'Sign in before accessing backups');
     $user = $_SESSION['user']; $reviewer = meleteCanReview($user, $config);
     session_write_close();
+    if ($action === 'rehearsals' && $method === 'GET') {
+        $song = (string)($_GET['song'] ?? '');
+        if (!$song || strlen($song) > 255) throw new MeleteHttpError(400, 'Song required');
+        reply(['items' => meleteRehearsalList($directory, $user, $song), 'next' => null]);
+    }
     $db = meleteDatabase($directory);
+    if ($action === 'submit' && $method === 'POST') reply(meleteSubmit($db,$owner,$user['name'],readJson()));
+    if ($action === 'submissions' && $method === 'GET') {
+        $song=(string)($_GET['song']??'');$review=($_GET['scope']??'mine')==='review';
+        if(!$song || strlen($song)>255)throw new MeleteHttpError(400,'Song required');
+        if($review && !meleteSubmissionReviewer($user,$config,$song))throw new MeleteHttpError(403,'Reviewer access required');
+        $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);
+        if($offset===false || $offset<0)throw new MeleteHttpError(400,'Invalid page');
+        reply(meleteSubmissionList($db,$owner,$song,$review,$offset));
+    }
+    if ($action === 'submission' && $method === 'GET') {
+        $reader=meleteId($_GET['owner']??$owner);$id=meleteId($_GET['id']??null);
+        reply(['manifest'=>meleteReadSubmission($db,$reader,$id,$owner,$user,$config)]);
+    }
+    if ($action === 'withdraw' && $method === 'POST') {
+        $id=meleteId(readJson()['id']??null);$db->exec('BEGIN IMMEDIATE');
+        $q=$db->prepare('DELETE FROM submissions WHERE owner=? AND id=?');$q->execute([$owner,$id]);
+        if(!$q->rowCount())throw new MeleteHttpError(404,'Submission not available');
+        $q=$db->prepare('DELETE FROM submission_chunks WHERE owner=? AND id=?');$q->execute([$owner,$id]);
+        meleteCollect($db,$owner);$db->exec('COMMIT');reply(['ok'=>true]);
+    }
     if ($action === 'list' && $method === 'GET') {
         $review = ($_GET['scope'] ?? 'mine') === 'review';
         if ($review && !$reviewer) throw new MeleteHttpError(403, 'Reviewer access required');
@@ -80,7 +109,11 @@ try {
         $hash = meleteId($_GET['hash'] ?? null);
         if ($method === 'GET') {
             $reader = $owner;
-            if (isset($_GET['owner']) && $_GET['owner'] !== $owner) {
+            if (isset($_GET['submission'])) {
+                $reader=meleteId($_GET['owner']??$owner);
+                $m=meleteReadSubmission($db,$reader,meleteId($_GET['submission']),$owner,$user,$config);
+                if(!in_array($hash,$m['audio']['chunks'],true) && !in_array($hash,$m['pitches']['chunks'],true))throw new MeleteHttpError(404,'Recording not found');
+            } elseif (isset($_GET['owner']) && $_GET['owner'] !== $owner) {
                 $key = meleteId($_GET['key'] ?? null);
                 $reader = meleteReadOwner($db, $owner, $_GET['owner'], $key, $reviewer);
                 $profile = meleteProfile($db, $reader, $key);

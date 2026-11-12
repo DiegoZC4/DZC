@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/submissions.php';
 
 spl_autoload_register(function (string $class): void {
     $prefix = 'Firebase\\JWT\\';
@@ -52,6 +53,7 @@ function meleteDatabase(string $directory): PDO {
     $db->exec('CREATE TABLE IF NOT EXISTS profiles (owner TEXT NOT NULL, slot TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL, updated INTEGER NOT NULL, PRIMARY KEY(owner,slot))');
     $db->exec('CREATE TABLE IF NOT EXISTS blobs (owner TEXT NOT NULL, hash TEXT NOT NULL, data BLOB NOT NULL, bytes INTEGER NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(owner,hash))');
     $db->exec('CREATE TABLE IF NOT EXISTS profile_visibility (owner TEXT NOT NULL, slot TEXT NOT NULL, name TEXT NOT NULL, created INTEGER NOT NULL, reviewable INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(owner,slot))');
+    meleteSubmissionTables($db);
     return $db;
 }
 function meleteCanReview(array $user, array $config): bool {
@@ -136,7 +138,7 @@ function meleteCollect(PDO $db, string $owner): void {
     $q = $db->prepare('SELECT payload FROM profiles WHERE owner=?'); $q->execute([$owner]);
     $keep = [];
     foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $raw) foreach (meleteBlobRefs(json_decode($raw, true)) as $hash) $keep[$hash] = true;
-    $q = $db->prepare('SELECT hash FROM blobs WHERE owner=? AND created<?'); $q->execute([$owner, time() - 3600]);
+    $q = $db->prepare('SELECT hash FROM blobs b WHERE owner=? AND created<? AND NOT EXISTS (SELECT 1 FROM submission_chunks c WHERE c.owner=b.owner AND c.hash=b.hash)'); $q->execute([$owner, time() - 3600]);
     $delete = $db->prepare('DELETE FROM blobs WHERE owner=? AND hash=?');
     foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $hash) if (!isset($keep[$hash])) $delete->execute([$owner, $hash]);
 }

@@ -58,7 +58,9 @@ try {
     else {
         $id=$_GET['id']??'';
         if (!is_string($id) || !preg_match('/^[a-f0-9]{24}$/D',$id)) stopReview(404,'Not found');
-        $file=$dir.'/assets/'.$id.($action==='audio'?'.mp3':'.json');
+        $timing=$_GET['timing']??'recorded';
+        if(!in_array($timing,['recorded','aligned'],true))stopReview(404,'Not found');
+        $file=$dir.'/assets/'.$id.($timing==='aligned'?'.aligned':'').($action==='audio'?'.mp3':'.json');
         $type=$action==='audio'?'audio/mpeg':'application/json';
     }
     $resolved=realpath($file);

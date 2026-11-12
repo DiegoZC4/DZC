@@ -28,6 +28,7 @@ function meleteRehearsalList(string $directory, array $user, string $song): arra
                 'uploaded' => ($item['createdAt'] ?? strtotime($date . 'T12:00:00Z') * 1000),
                 'tracked' => ($item['raw']['coverage'] ?? 0) * 100,
                 'mean' => $item['raw']['mean'] ?? null, 'median' => $item['raw']['median'] ?? null,
+                'within' => isset($item['raw']['within50']) ? $item['raw']['within50'] * 100 : null,
                 'takes' => count(array_unique(array_column($item['segments'], 2))),
                 'origin' => $item['origin'], 'end' => $item['end'], 'segments' => $item['segments']];
         }

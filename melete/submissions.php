@@ -32,6 +32,7 @@ function meleteSubmission(array $m): array {
     $stats=$m['stats']??null;
     if(!is_array($stats) || !$num($stats['tracked']??null) || $stats['tracked']<0 || $stats['tracked']>100)$invalid();
     foreach(['mean','median'] as $k)if(!array_key_exists($k,$stats) || ($stats[$k]!==null && (!$num($stats[$k]) || $stats[$k]<0)))$invalid();
+    if(isset($stats['within']) && (!$num($stats['within']) || $stats['within']<0 || $stats['within']>100))$invalid();
     if(!is_array($m['audio']??null)||!is_array($m['pitches']??null))$invalid();
     foreach(['audio','pitches'] as $k) {
         $p=$m[$k];
@@ -43,7 +44,8 @@ function meleteSubmission(array $m): array {
     if($m['pitches']['bytes']%12!==0 || $m['pitches']['bytes']>12*(ceil(($m['seconds']-$m['origin'])*1000)+4096))$invalid();
     return ['version'=>1,'song'=>$m['song'],'track'=>meleteId($m['track']??null),'label'=>$m['label'],'fingerprint'=>$m['fingerprint'],
         'part'=>$m['part'],'line'=>$m['line']??null,'rate'=>$m['rate'],'seconds'=>$m['seconds'],'origin'=>$m['origin'],
-        'seams'=>$m['seams'],'stats'=>['tracked'=>$stats['tracked'],'mean'=>$stats['mean'],'median'=>$stats['median'],'takes'=>count($sources)],
+        'seams'=>$m['seams'],'stats'=>['tracked'=>$stats['tracked'],'mean'=>$stats['mean'],'median'=>$stats['median'],
+            'within'=>$stats['within']??null,'takes'=>count($sources)],
         'audio'=>$m['audio'],'pitches'=>$m['pitches']];
 }
 function meleteSubmit(PDO $db,string $owner,string $name,array $body): array {

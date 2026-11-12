@@ -79,11 +79,16 @@ function meleteList(PDO $db, string $owner, bool $review, string $song, int $off
     foreach (array_slice($rows, 0, 50) as $row) {
         $payload = json_decode($row['payload'], true, 512, JSON_THROW_ON_ERROR);
         $meta = $payload['summary'] ?? [];
+        $score = $meta['pitchScore'] ?? [];
         $items[] = ['owner' => $row['owner'], 'key' => $row['slot'], 'name' => $row['name'] ?: 'Account',
             'label' => (string)($payload['state']['descriptor']['label'] ?? ''),
             'createdAt' => $meta['createdAt'] ?? ((int)($row['created'] ?? $row['updated']) * 1000),
             'updatedAt' => $meta['updatedAt'] ?? ((int)$row['updated'] * 1000),
-            'mean' => $meta['pitchScore']['meanAbsCents'] ?? null, 'reviewable' => (bool)$row['reviewable']];
+            'mean' => $score['meanAbsCents'] ?? null, 'median' => $score['medianAbsCents'] ?? null,
+            'tracked' => ($score['expectedSeconds'] ?? 0) > 0 ? ($score['coverage'] ?? 0) * 100 : null,
+            'within' => ($score['trackedSeconds'] ?? 0) > 0 && isset($score['within50CentsSeconds'])
+                ? $score['within50CentsSeconds'] / $score['trackedSeconds'] * 100 : null,
+            'reviewable' => (bool)$row['reviewable']];
     }
     return ['items' => $items, 'next' => $more ? $offset + 50 : null];
 }

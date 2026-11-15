@@ -1120,6 +1120,128 @@ html.text-only .reader-word {cursor:text}
 html.text-only .reading-progress {bottom:1rem}
 .reader-word {scroll-margin-bottom:var(--player-height)}
 @media(max-width:600px){#reader {padding-inline:clamp(.55rem,3vw,1rem)}.bookplate {padding-top:1.8rem}.bookplate h1{max-width:15ch}.case-file header{margin-top:1.75rem}}
+</style><style>#prose-find, #prose-locator {
+  --find-wash: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  --find-selected: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  color: var(--ink);
+  background: var(--paper);
+  font: .85rem/1.4 system-ui, sans-serif;
+}
+#prose-find {
+  inset: calc(var(--find-offset, 0px) + min(9dvh, 4.5rem)) 0 auto;
+  width: min(44rem, calc(100% - 2rem));
+  max-width: none;
+  max-height: min(34rem, calc(var(--find-height, 100dvh) - min(9dvh, 4.5rem) - 1rem));
+  margin: 0 auto; padding: 0; overflow: hidden;
+  border: 1px solid var(--line); border-radius: .8rem;
+  box-shadow: 0 1.4rem 4rem #0004;
+}
+#prose-find[open] { display: flex; flex-direction: column; }
+#prose-find::backdrop { background: #11131968; }
+:root:has(#prose-find[open]) { overflow: hidden; }
+#prose-find [hidden], #prose-locator[hidden] { display: none; }
+.find-field { display: flex; align-items: center; gap: .65rem; padding: .42rem .55rem .42rem 1rem; }
+.find-field > svg { color: var(--accent); flex: none; }
+#prose-find svg, #prose-locator svg {
+  width: 1.12rem; height: 1.12rem; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+#prose-query {
+  width: 0; flex: 1; min-width: 0; height: 2.35rem; padding: 0; border: 0;
+  outline: none; color: var(--ink); background: transparent; font: 500 max(16px, 1.04rem)/1.4 system-ui, sans-serif;
+}
+#prose-query::placeholder { color: var(--muted); }
+#prose-find button, #prose-locator button { color: inherit; background: none; border: 0; font: inherit; cursor: pointer; }
+#prose-find .find-icon, #prose-locator .find-icon {
+  display: inline-grid; place-items: center; flex: none;
+  width: 2.45rem; height: 2.45rem; padding: 0; border-radius: .4rem; color: var(--muted);
+}
+#prose-find .find-icon[hidden] { display: none; }
+#prose-find #prose-close {
+  min-height: 2.45rem; padding: .3rem .5rem; border-radius: .35rem;
+  color: var(--accent); font-size: .8rem; font-weight: 550;
+}
+#prose-find button:focus-visible, #prose-locator button:focus-visible, #search-open.float-button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px;
+}
+#prose-summary {
+  flex: none; margin: 0; padding: .48rem 1rem; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: .73rem; font-variant-numeric: tabular-nums;
+}
+.find-body {
+  min-height: 0; display: grid; grid-template-columns: minmax(10rem, 32%) minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+}
+.find-chapters, .find-excerpts { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.find-chapters { padding: .55rem .35rem; border-right: 1px solid var(--line); background: var(--find-wash); }
+#prose-find .find-scope {
+  display: flex; align-items: baseline; gap: .38rem; width: 100%; padding: .45rem .55rem;
+  text-align: left; line-height: 1.32; font-size: .78rem; border-radius: .32rem;
+}
+.scope-no, .scope-count, .find-heading small { color: var(--muted); font: .66rem/1.5 ui-monospace, Menlo, monospace; }
+.scope-name { flex: 1; overflow-wrap: anywhere; }
+#prose-find .find-scope[aria-pressed="true"] { font-weight: 650; color: var(--accent); background: var(--find-selected); }
+.single-find-group { grid-template-columns: minmax(0, 1fr); }
+.single-find-group .find-chapters { display: none; }
+.find-excerpts { padding: 0 .55rem .5rem; }
+.find-heading {
+  display: flex; align-items: baseline; gap: .45rem; margin: 0;
+  padding: .72rem .5rem .35rem; font-size: .76rem; font-weight: 680; color: var(--accent);
+}
+.find-heading small { color: inherit; font-weight: 550; }
+.find-hit {
+  padding: .5rem .55rem; border-radius: .35rem; cursor: pointer;
+  font: .94rem/1.4 Georgia, "Times New Roman", serif; overflow-wrap: anywhere;
+}
+.find-hit[aria-selected="true"] { background: var(--find-selected); }
+.find-hit mark {
+  background: color-mix(in srgb, var(--accent) 16%, transparent); color: inherit;
+  font-weight: bold; border-radius: 2px;
+}
+.find-hit + .find-hit { border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+#prose-more { height: 1px; }
+#prose-locator {
+  position: fixed; z-index: 21; top: calc(env(safe-area-inset-top) + 3.35rem);
+  left: max(.5rem, env(safe-area-inset-left)); max-width: calc(100% - 1rem);
+  display: flex; align-items: center; padding: .06rem .2rem;
+  border: 1px solid var(--line); border-radius: .55rem; box-shadow: 0 .18rem .75rem #0002;
+}
+#prose-reopen { display: flex; align-items: center; gap: .45rem; min-width: 0; min-height: 2.45rem; padding: 0 .55rem; }
+#prose-reopen svg { flex: none; color: var(--accent); }
+#prose-reopen span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 12rem; }
+#prose-count { padding-inline: .25rem; color: var(--muted); font-size: .73rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  #prose-find .find-icon:hover, #prose-locator button:hover, #prose-find .find-scope:hover,
+  .find-hit:hover { background: var(--find-selected); }
+}
+@media (max-width: 600px) {
+  #prose-find {
+    inset-block-start: calc(var(--find-offset, 0px) + max(.38rem, env(safe-area-inset-top)));
+    width: calc(100% - .75rem);
+    max-height: calc(var(--find-height, 100dvh) - max(.38rem, env(safe-area-inset-top)) - max(.38rem, env(safe-area-inset-bottom)));
+    border-radius: .68rem;
+  }
+  .find-body { display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .find-chapters, .find-excerpts { overflow: visible; }
+  .find-chapters {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: .28rem; border: 0; border-bottom: 1px solid var(--line);
+  }
+  #prose-find .find-scope { align-items: center; min-height: 2.2rem; padding: .28rem .42rem; font-size: .72rem; }
+  .find-excerpts { padding-inline: .35rem; }
+  .find-field { gap: .45rem; padding-left: .7rem; }
+}
+::highlight(prose-find-all) { background-color: #ffe39a; color: #29200c; }
+::highlight(prose-find-current) { background-color: #854211; color: white; text-decoration: underline; }
+#prose-find-overlays { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+#prose-find-overlays i { position: absolute; background: #f3bb4c66; border-radius: 1px; }
+#prose-find-overlays i.current { background: #f8992470; outline: 2px solid #ba6a16; }
+.viewport-rail .progress-rail-fill { opacity: .45; }
+.viewport-rail::after {
+  content: ""; position: absolute; inset-inline: 0;
+  top: min(var(--progress-fill, 0%), calc(100% - 2px));
+  height: max(2px, var(--viewport-span, 0%)); background: var(--progress-color);
+}
 </style>
 </head>
 <body>
@@ -1346,7 +1468,7 @@ html.text-only .reading-progress {bottom:1rem}
     // Published episodes (~46 min each). The scrubber spans one of these, which
     // is a far more usable grain than a 5-6 hour file or the 167-hour book.
     const episodes = [];
-    const metadata = {"bookId":"antimemetics","week":1,"author":"qntm","edition":"Original SCP Wiki: Marion Wheeler","audioSha256":"3f2c6242f8196c72f6f599371a40aca141337765c3e022ebfa81beab5675f573","audioBytes":132001821,"quality":[{"chapter":1,"title":"SCP-055","timed":874,"words":920,"whisper":874,"captionBackfill":0,"first":780,"last":388180},{"chapter":2,"title":"We Need To Talk About Fifty-Five","timed":2541,"words":2604,"whisper":2523,"captionBackfill":18,"first":398180,"last":1527480},{"chapter":3,"title":"Introductory Antimemetics","timed":3406,"words":3447,"whisper":3390,"captionBackfill":16,"first":1545040,"last":2910620},{"chapter":4,"title":"Unforgettable, That's What You Are","timed":4161,"words":4223,"whisper":4152,"captionBackfill":9,"first":2929700,"last":4711640},{"chapter":5,"title":"CASE COLOURLESS GREEN","timed":3487,"words":3540,"whisper":3473,"captionBackfill":14,"first":4730000,"last":6313840},{"chapter":6,"title":"Your Last First Day","timed":2751,"words":2778,"whisper":2741,"captionBackfill":10,"first":6333440,"last":7695920},{"chapter":7,"title":"SCP-2256","timed":814,"words":836,"whisper":806,"captionBackfill":8,"first":7712960,"last":8157240}],"chapters":[{"label":"SCP-055","start":0,"target":"c1"},{"label":"We Need To Talk About Fifty-Five","start":390,"target":"c2"},{"label":"Introductory Antimemetics","start":1536,"target":"c3"},{"label":"Unforgettable, That's What You Are","start":2919,"target":"c4"},{"label":"CASE COLOURLESS GREEN","start":4720,"target":"c5"},{"label":"Your Last First Day","start":6322,"target":"c6"},{"label":"SCP-2256","start":7711,"target":"c7"}],"seekChapters":[],"audioSource":"../audio/antimemetics-w01-3f2c6242f819.m4a","audioTracks":[{"source":"../audio/antimemetics-w01-3f2c6242f819.m4a","start":0,"end":8162.003084,"duration":8162.003084,"label":"Week 1"}],"durationSeconds":8162.003084,"readerTemplateVersion":9,"readerTemplateSha256":"2537b9d3ce53aed0ac22626f00a5e622f4d53ca82c2459eebe97970aeec8e230"};
+    const metadata = {"bookId":"antimemetics","week":1,"author":"qntm","edition":"Original SCP Wiki: Marion Wheeler","proseNavigation":{"section":"Chapter","collection":"Week","label":"Week 1"},"audioSha256":"3f2c6242f8196c72f6f599371a40aca141337765c3e022ebfa81beab5675f573","audioBytes":132001821,"quality":[{"chapter":1,"title":"SCP-055","timed":874,"words":920,"whisper":874,"captionBackfill":0,"first":780,"last":388180},{"chapter":2,"title":"We Need To Talk About Fifty-Five","timed":2541,"words":2604,"whisper":2523,"captionBackfill":18,"first":398180,"last":1527480},{"chapter":3,"title":"Introductory Antimemetics","timed":3406,"words":3447,"whisper":3390,"captionBackfill":16,"first":1545040,"last":2910620},{"chapter":4,"title":"Unforgettable, That's What You Are","timed":4161,"words":4223,"whisper":4152,"captionBackfill":9,"first":2929700,"last":4711640},{"chapter":5,"title":"CASE COLOURLESS GREEN","timed":3487,"words":3540,"whisper":3473,"captionBackfill":14,"first":4730000,"last":6313840},{"chapter":6,"title":"Your Last First Day","timed":2751,"words":2778,"whisper":2741,"captionBackfill":10,"first":6333440,"last":7695920},{"chapter":7,"title":"SCP-2256","timed":814,"words":836,"whisper":806,"captionBackfill":8,"first":7712960,"last":8157240}],"chapters":[{"label":"SCP-055","start":0,"target":"c1"},{"label":"We Need To Talk About Fifty-Five","start":390,"target":"c2"},{"label":"Introductory Antimemetics","start":1536,"target":"c3"},{"label":"Unforgettable, That's What You Are","start":2919,"target":"c4"},{"label":"CASE COLOURLESS GREEN","start":4720,"target":"c5"},{"label":"Your Last First Day","start":6322,"target":"c6"},{"label":"SCP-2256","start":7711,"target":"c7"}],"seekChapters":[],"audioSource":"../audio/antimemetics-w01-3f2c6242f819.m4a","audioTracks":[{"source":"../audio/antimemetics-w01-3f2c6242f819.m4a","start":0,"end":8162.003084,"duration":8162.003084,"label":"Week 1"}],"durationSeconds":8162.003084,"readerTemplateVersion":9,"readerTemplateSha256":"668fb3f95917a992d64a0074a7df80437425b9c76c80bc987e38a84d5d3b62c5"};
     const seekChapters = metadata.seekChapters || chapters;
     const audio = document.querySelector("#audio");
     const reader = document.querySelector("#reader");
@@ -1934,7 +2056,7 @@ html.text-only .reading-progress {bottom:1rem}
     }
 
     function updateReadingProgress(requestedCurrent = null) {
-      if (document.hidden || readingProgress.hidden) return;
+      if (metadata.proseNavigation || document.hidden || readingProgress.hidden) return;
       const duration = Number(metadata.durationSeconds)
         || Number(player.dataset.duration)
         || 1;
@@ -2114,6 +2236,18 @@ html.text-only .reading-progress {bottom:1rem}
     }
 
     function readingViewport() {
+      if (metadata.proseNavigation) {
+        const visual = window.visualViewport;
+        const find = document.getElementById("prose-locator");
+        const top = Math.max(visual?.offsetTop || 0, topInset(),
+          find && !find.hidden ? find.getBoundingClientRect().bottom : 0) + 4;
+        const dock = playerDock.getBoundingClientRect();
+        const bottom = Math.min(
+          visual ? visual.offsetTop + visual.height : innerHeight,
+          dock.height ? dock.top : Infinity,
+        ) - 4;
+        return {top, bottom: Math.max(top + 1, bottom)};
+      }
       const viewportTop = topInset();
       const viewportBottom = playerDock.getBoundingClientRect().top;
       return {
@@ -2451,10 +2585,12 @@ html.text-only .reading-progress {bottom:1rem}
     }
 
     renderChapters();
-    document.querySelector("#search-open").addEventListener(
-      "click",
-      () => setDrawer(true, "search"),
-    );
+    function openBookFind() {
+      if (document.dispatchEvent(new Event("reader:find", {cancelable: true}))) {
+        setDrawer(true, "search");
+      }
+    }
+    document.querySelector("#search-open").addEventListener("click", openBookFind);
     document.querySelector("#menu-open").addEventListener(
       "click",
       () => setDrawer(true, "chapters"),
@@ -2513,8 +2649,8 @@ html.text-only .reading-progress {bottom:1rem}
     } catch (error) { /* private mode or an old malformed value */ }
 
     const progressAvailable = {
-      segment: authorSegments.length > 0,
-      chapter: tracks.length > 0,
+      segment: !metadata.proseNavigation && authorSegments.length > 0,
+      chapter: !metadata.proseNavigation && tracks.length > 0,
       thread: chapters.length > 0,
       book: Number(metadata.durationSeconds) > 0,
     };
@@ -2710,7 +2846,7 @@ html.text-only .reading-progress {bottom:1rem}
         && event.key.toLowerCase() === "f"
       ) {
         event.preventDefault();
-        setDrawer(true, "search");
+        openBookFind();
         return;
       }
       if (event.key === "Escape") setDrawer(false);
@@ -3144,6 +3280,7 @@ html.text-only .reading-progress {bottom:1rem}
       reindexReader,
       resetReaderAfterSwap,
       narrationDirection,
+      readingViewport,
       updateNarrationReturn,
       scrollToNarration,
       // Mounting text above the viewport shifts everything below it, so the
@@ -3199,16 +3336,6 @@ html.text-only .reading-progress {bottom:1rem}
   const nodeWord = el => (el?.nodeType === 3 ? el.parentElement : el)?.closest?.(".reader-word");
   const locate = id => /^c[1-9]\d*-w[1-9]\d*$/.test(id || "") ? document.getElementById(id) : null;
   const words = [...reader.querySelectorAll(".reader-word")];
-  let searchDocs;
-  api.setSearchProvider({
-    search(query,limit) {
-      searchDocs ??= [...reader.querySelectorAll(".reader-heading,.reader-paragraph")].map(element=>({
-        element,text:element.textContent,label:element.closest(".case-file").querySelector("h2").textContent,
-      }));
-      return api.findSubstringMatches(searchDocs,query,limit);
-    },
-    reveal(result) { api.revealSearchMatch(result.element,result.matchStart,result.matchLength); },
-  });
   let target = null, marked = null, clearNotice = 0, cursor = null, timer = 0, generation = 0, inflight;
   const own = new Set();
   const visible = () => !document.hidden && navigator.onLine && accept.checked;
@@ -3334,11 +3461,6 @@ html.text-only .reading-progress {bottom:1rem}
       document.getElementById(api.chapters[+btn.dataset.chapter].target).scrollIntoView({block:"start"});
     }
   }, true);
-  const label = $('[data-progress-toggle="thread"]');
-  if (label) label.textContent = "Chapter";
-  $('[data-progress-toggle="book"]').textContent = "Week";
-  $('[data-progress-scope="thread"]').setAttribute("aria-label","Chapter progress");
-  $('[data-progress-scope="book"]').setAttribute("aria-label","Week progress");
   const ticks = document.createElement("div"); ticks.className = "chapter-markers"; ticks.setAttribute("aria-hidden","true");
   for (const ch of api.chapters.slice(1)) {
     const tick = document.createElement("i"); tick.style.left = (100*ch.start/api.tracks[0].duration) + "%"; ticks.append(tick);
@@ -3369,7 +3491,7 @@ html.text-only .reading-progress {bottom:1rem}
   }
   audio.addEventListener("play",followPlay);
   document.addEventListener("keydown",e=>{
-    if (e.defaultPrevented || e.isComposing || e.target.closest('input,textarea,select,[contenteditable=true]') || drawer.classList.contains("open")) return;
+    if (e.defaultPrevented || e.isComposing || e.target.closest('button,input,textarea,select,[contenteditable=true],#prose-find') || drawer.classList.contains("open")) return;
     const t=api.globalCurrentTime(), k=e.key.toLowerCase();
     const chapterMod=/Mac|iPhone|iPad/.test(navigator.platform)?e.altKey:e.ctrlKey;
     if (chapterMod && ["arrowleft","arrowright"].includes(k)) {e.preventDefault();chapterJump(k==="arrowleft"?-1:1);return;}
@@ -3384,6 +3506,393 @@ html.text-only .reading-progress {bottom:1rem}
     const fn = actions[k] || (/^\d$/.test(k)?()=>jump(api.tracks[0].duration*Number(k)/10):null);
     if (fn) {e.preventDefault();if (!e.repeat || ![" ","k","f","m"].includes(k)) fn();}
   }, true);
+})();
+</script><dialog id="prose-find" aria-label="Search the reading">
+  <div class="find-field">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    <input type="text" inputmode="search" id="prose-query" role="combobox" aria-label="Search the reading" aria-autocomplete="list"
+      aria-expanded="false" aria-controls="prose-results" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+    <button type="button" class="find-icon" id="prose-clear" aria-label="Clear search" title="Clear search" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6m0-6 6 6"/></svg>
+    </button>
+    <button type="button" id="prose-close" aria-label="Close search" title="Close search (Esc)">Cancel</button>
+  </div>
+  <p id="prose-summary" role="status" aria-live="polite" aria-atomic="true"></p>
+  <div class="find-body" hidden>
+    <nav class="find-chapters" aria-label="Filter matches by chapter"></nav>
+    <div class="find-excerpts">
+      <div id="prose-results" role="listbox" aria-label="Matching passages"></div>
+      <div id="prose-more" aria-hidden="true"></div>
+    </div>
+  </div>
+</dialog>
+<section id="prose-locator" aria-label="Passage search navigation" hidden>
+  <button type="button" id="prose-reopen" title="Show search results">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    <span></span>
+  </button>
+  <output id="prose-count" aria-live="polite"></output>
+  <button type="button" class="find-icon" id="prose-prev" aria-label="Previous match" title="Previous match (Shift+Enter)">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
+  <button type="button" class="find-icon" id="prose-next" aria-label="Next match" title="Next match (Enter)">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <button type="button" class="find-icon" id="prose-dismiss" aria-label="Dismiss matches" title="Dismiss matches (Esc)">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m18 6-12 12M6 6l12 12"/></svg>
+  </button>
+</section>
+<div id="prose-find-overlays" aria-hidden="true"></div>
+<script>(() => {
+  "use strict";
+  const api = window.readerApi, config = window.readerData.proseNavigation;
+  const $ = q => document.querySelector(q);
+  const panel = $("#prose-find"), opener = $("#search-open"), input = $("#prose-query");
+  const locator = $("#prose-locator"), reopen = $("#prose-reopen"), counter = $("#prose-count");
+  const prev = $("#prose-prev"), next = $("#prose-next"), overlays = $("#prose-find-overlays");
+  const summary = $("#prose-summary"), body = $(".find-body"), nav = $(".find-chapters");
+  const excerpts = $(".find-excerpts"), results = $("#prose-results"), more = $("#prose-more");
+  const blocks = [], sections = api.chapters.map((ch, index) => {
+    const root = document.getElementById(ch.target);
+    const nodes = [...root.querySelectorAll(".reader-heading,.reader-paragraph,.reader-epigraph")];
+    for (const el of nodes) blocks.push({el, section: index});
+    return {first: nodes[0], last: nodes.at(-1), name: ch.label};
+  });
+  const oldSetting = opener.closest(".setting");
+  $(".float-left").insertBefore(opener, $(".book-mark"));
+  oldSetting.remove();
+  opener.className = "float-button";
+  opener.setAttribute("aria-expanded", "false");
+  opener.setAttribute("aria-controls", panel.id);
+  opener.setAttribute("aria-haspopup", "dialog");
+  opener.setAttribute("aria-label", "Find in " + config.label);
+  opener.querySelector("svg").setAttribute("focusable", "false");
+  opener.title = opener.getAttribute("aria-label") + " (Ctrl/Cmd+F)";
+  input.placeholder = "Search " + config.label + "\u2026";
+  const rails = ["thread", "book"].map((key, i) => {
+    const rail = $('[data-progress-scope="' + key + '"]');
+    const label = i ? config.collection : config.section;
+    const toggle = $('[data-progress-toggle="' + key + '"]');
+    toggle.textContent = label;
+    toggle.closest(".setting").querySelector(".setting-label").textContent = "Scroll position";
+    rail.classList.add("viewport-rail");
+    rail.setAttribute("aria-label", label + " scroll position");
+    return rail;
+  });
+  const attr = (el, name, val) => { if (el.getAttribute(name) !== val) el.setAttribute(name, val); };
+  const prop = (el, name, val) => { if (el.style.getPropertyValue(name) !== val) el.style.setProperty(name, val); };
+  function railWindow(rail, label, lo, hi, view) {
+    const percent = y => Math.max(0, Math.min(100, (y - lo) * 100 / Math.max(1, hi - lo)));
+    const top = percent(view.top), bottom = percent(view.bottom);
+    prop(rail, "--progress-fill", top.toFixed(3) + "%");
+    prop(rail, "--viewport-span", (bottom - top).toFixed(3) + "%");
+    attr(rail, "aria-valuenow", String(Math.round(top)));
+    const text = label + ": " + Math.round(top) + "% to " + Math.round(bottom) + "% visible";
+    attr(rail, "aria-valuetext", text);
+    attr(rail, "title", text);
+  }
+  function paintRails(view) {
+    if ($("#reading-progress").hidden) return;
+    const tops = sections.map(s => s.first.getBoundingClientRect().top);
+    const center = (view.top + view.bottom) / 2;
+    const i = Math.max(0, tops.findLastIndex(y => y <= center));
+    const end = sections.at(-1).last.getBoundingClientRect().bottom;
+    railWindow(rails[0], config.section + " " + (i + 1) + ": " + sections[i].name,
+      tops[i], sections[i].last.getBoundingClientRect().bottom, view);
+    railWindow(rails[1], config.label, tops[0], end, view);
+  }
+
+  function lowerBound(array, predicate) {
+    let lo = 0, hi = array.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (predicate(array[mid])) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  }
+  function matchRange(hit) {
+    if (hit.range) return hit.range;
+    const block = blocks[hit.block];
+    if (!block.nodes) {
+      const tree = document.createTreeWalker(block.el, NodeFilter.SHOW_TEXT);
+      let pos = 0, node;
+      block.nodes = [];
+      while ((node = tree.nextNode())) {
+        if (!node.length) continue;
+        block.nodes.push({node, start: pos, end: pos + node.length});
+        pos += node.length;
+      }
+    }
+    // Exact offsets may straddle emphasis, punctuation, or two timed word spans.
+    const a = block.nodes[lowerBound(block.nodes, n => n.end > hit.start)];
+    const b = block.nodes[lowerBound(block.nodes, n => n.end >= hit.end)];
+    const r = document.createRange();
+    r.setStart(a.node, hit.start - a.start);
+    r.setEnd(b.node, hit.end - b.start);
+    return hit.range = r;
+  }
+
+  let hits = [], groups = [], scope = -1, passageScope = -1, index = -1, cursor = -1, rendered = 0;
+  let term = null, frame = 0, lastPaint = "", lastGroup = null;
+  const slice = (s = scope) => s < 0 ? {start: 0, end: hits.length} : groups[s];
+  const amount = (n, unit) => n.toLocaleString() + " " + unit + (n === 1 ? "" : unit === "match" ? "es" : "s");
+  const nativeMarks = Boolean(window.CSS?.highlights && window.Highlight);
+  function clearMarks() {
+    if (nativeMarks) {
+      CSS.highlights.delete("prose-find-all");
+      CSS.highlights.delete("prose-find-current");
+    }
+    overlays.replaceChildren();
+    lastPaint = "";
+  }
+  function paintMatches(view) {
+    if (locator.hidden || index < 0) return;
+    const first = lowerBound(blocks, b => b.el.getBoundingClientRect().bottom >= view.top);
+    const past = lowerBound(blocks, b => b.el.getBoundingClientRect().top > view.bottom);
+    const key = [first, past, index].join(":");
+    if (nativeMarks && lastPaint === key) return;
+    lastPaint = key;
+    const all = nativeMarks ? new Highlight() : document.createDocumentFragment();
+    function add(range, active) {
+      if (nativeMarks) { if (!active) all.add(range); return; }
+      for (const box of range.getClientRects()) {
+        if (!box.width || box.bottom < view.top || box.top > view.bottom) continue;
+        const mark = document.createElement("i");
+        if (active) mark.className = "current";
+        mark.style.cssText = "left:" + box.left + "px;top:" + box.top + "px;width:" + box.width + "px;height:" + box.height + "px";
+        all.append(mark);
+      }
+    }
+    for (let n = lowerBound(hits, h => h.block >= first); n < hits.length && hits[n].block < past; n++)
+      if (n !== index) add(matchRange(hits[n]), false);
+    const active = matchRange(hits[index]);
+    if (nativeMarks) {
+      CSS.highlights.set("prose-find-all", all);
+      CSS.highlights.set("prose-find-current", new Highlight(active));
+    } else { add(active, true); overlays.replaceChildren(all); }
+  }
+  function schedule() {
+    if (!frame) frame = requestAnimationFrame(() => {
+      frame = 0;
+      const view = api.readingViewport();
+      paintRails(view);
+      paintMatches(view);
+    });
+  }
+  function visit(n) {
+    const {start, end} = slice(passageScope), count = end - start;
+    if (!count) return;
+    index = start + (n - start + count) % count;
+    const hit = hits[index];
+    locator.hidden = false;
+    reopen.lastElementChild.textContent = term;
+    reopen.setAttribute("aria-label", "Show search results for " + term);
+    counter.value = (index - start + 1).toLocaleString() + "/" + count.toLocaleString();
+    counter.setAttribute("aria-label", "Match " + (index - start + 1) + " of " + count);
+    api.setUserDetached(true);
+    const box = matchRange(hit).getBoundingClientRect(), view = api.readingViewport();
+    if (box.top < view.top || box.bottom > view.bottom)
+      scrollBy({top: box.top - view.top - Math.max(0, (view.bottom - view.top - box.height) / 2), behavior: "instant"});
+    schedule();
+  }
+
+  function tag(name, className, text) {
+    const el = document.createElement(name);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+  function passageRow(i) {
+    const h = hits[i], text = blocks[h.block].text, row = tag("div", "find-hit");
+    let lo = Math.max(0, h.start - 40), hi = Math.min(text.length, h.end + 60);
+    while (lo > 0 && lo < h.start && !/\s/.test(text[lo - 1])) lo++;
+    while (hi < text.length && hi > h.end && !/\s/.test(text[hi])) hi--;
+    row.id = "find-hit-" + i;
+    row.dataset.hit = i;
+    row.tabIndex = -1;
+    row.setAttribute("role", "option");
+    row.setAttribute("aria-selected", "false");
+    row.append((lo ? "\u2026 " : "") + text.slice(lo, h.start), tag("mark", "", text.slice(h.start, h.end)),
+      text.slice(h.end, hi) + (hi < text.length ? " \u2026" : ""));
+    return row;
+  }
+  function appendPage() {
+    const end = slice().end, stop = Math.min(end, rendered + 32);
+    for (; rendered < stop; rendered++) {
+      const s = blocks[hits[rendered].block].section;
+      if (!lastGroup || Number(lastGroup.dataset.section) !== s) {
+        lastGroup = tag("div", "find-group"); lastGroup.dataset.section = s;
+        const head = tag("h3", "find-heading");
+        head.id = "find-chapter-" + s;
+        head.append(tag("small", "", config.section + " " + (s + 1)), sections[s].name);
+        lastGroup.setAttribute("role", "group"); lastGroup.setAttribute("aria-labelledby", head.id);
+        lastGroup.append(head); results.append(lastGroup);
+      }
+      lastGroup.append(passageRow(rendered));
+    }
+    more.hidden = rendered >= end;
+  }
+  function selectRow(n, scroll = false) {
+    const {start, end} = slice();
+    if (n < start || n >= end) return;
+    if (n === rendered) appendPage();
+    const row = document.getElementById("find-hit-" + n);
+    if (!row) return;
+    const old = document.getElementById("find-hit-" + cursor);
+    if (old) { old.setAttribute("aria-selected", "false"); old.tabIndex = -1; }
+    cursor = n; row.setAttribute("aria-selected", "true"); row.tabIndex = 0;
+    input.setAttribute("aria-activedescendant", row.id);
+    if (scroll) row.scrollIntoView({block:"nearest", behavior:"instant"});
+  }
+  function chooseScope(s) {
+    scope = s; cursor = -1; lastGroup = null; results.replaceChildren();
+    for (const button of nav.children) button.setAttribute("aria-pressed", String(+button.dataset.scope === s));
+    body.scrollTop = excerpts.scrollTop = 0;
+    rendered = slice().start;
+    appendPage(); selectRow(slice().start);
+    const totalGroups = groups.filter(g => g.end > g.start).length;
+    summary.textContent = s < 0
+      ? amount(hits.length, "match") + " in " + amount(totalGroups, config.section.toLowerCase())
+      : amount(slice().end - slice().start, "match") + " in " + config.section + " " + (s + 1) + " \u00b7 " + hits.length.toLocaleString() + " overall";
+  }
+  function scopeButton(s, count) {
+    const button = tag("button", "find-scope");
+    button.type = "button"; button.dataset.scope = s;
+    const label = s < 0 ? "All " + config.section.toLowerCase() + "s" : sections[s].name;
+    if (s >= 0) button.append(tag("span", "scope-no", String(s + 1).padStart(2, "0")));
+    button.append(tag("span", "scope-name", label), tag("span", "scope-count", count.toLocaleString()));
+    button.setAttribute("aria-label", (s < 0 ? label : config.section + " " + (s + 1) + ": " + label) + ", " + amount(count, "match"));
+    return button;
+  }
+  function search() {
+    const query = input.value.trim();
+    $("#prose-clear").hidden = !input.value;
+    if (query === term) return;
+    term = query; locator.hidden = true; index = cursor = scope = -1;
+    clearMarks();
+    input.removeAttribute("aria-activedescendant");
+    hits = []; groups = sections.map(() => ({start: 0, end: 0}));
+    if (term) {
+      const escaped = term.split(/\s+/).map(s => s.replace(/[.*+?^{}$()|[\]\\]/g, "\\$&"));
+      const pattern = new RegExp(escaped.join("\\s+"), "giu");
+      blocks.forEach((b, block) => {
+        b.text ??= b.el.textContent;
+        for (const m of b.text.matchAll(pattern)) {
+          const g = groups[b.section];
+          if (g.start === g.end) g.start = hits.length;
+          hits.push({block, start: m.index, end: m.index + m[0].length});
+          g.end = hits.length;
+        }
+      });
+    }
+    nav.replaceChildren(); results.replaceChildren();
+    body.hidden = !hits.length;
+    input.setAttribute("aria-expanded", String(Boolean(hits.length)));
+    if (!hits.length) {
+      summary.textContent = term ? "No matching passages" : config.label + " \u00b7 " + amount(sections.length, config.section.toLowerCase());
+      return;
+    }
+    nav.append(scopeButton(-1, hits.length));
+    groups.forEach((g, s) => { if (g.end > g.start) nav.append(scopeButton(s, g.end - g.start)); });
+    body.classList.toggle("single-find-group", nav.childElementCount === 2);
+    chooseScope(-1);
+  }
+  function selectedText() {
+    const selection = getSelection();
+    return selection?.rangeCount && !selection.isCollapsed && $("#reader").contains(selection.getRangeAt(0).commonAncestorContainer)
+      ? selection.toString().trim() : "";
+  }
+  let pointerSeed = "";
+  opener.addEventListener("pointerdown", () => { pointerSeed = selectedText(); });
+  opener.addEventListener("pointercancel", () => { pointerSeed = ""; });
+  function fitKeyboard() {
+    if (!panel.open || !window.visualViewport) return;
+    prop(panel, "--find-height", visualViewport.height + "px");
+    prop(panel, "--find-offset", visualViewport.offsetTop + "px");
+  }
+  function openFind() {
+    const seed = selectedText() || (document.activeElement === opener ? pointerSeed : "");
+    pointerSeed = "";
+    if ($("#drawer").classList.contains("open")) $("#menu-close").click();
+    if (!panel.open) panel.showModal();
+    fitKeyboard();
+    opener.setAttribute("aria-expanded", "true");
+    if (seed) input.value = seed;
+    input.focus({preventScroll: true});
+    input.select();
+    search();
+  }
+  function closePanel() {
+    if (panel.open) panel.close();
+    opener.setAttribute("aria-expanded", "false");
+  }
+  function dismiss(focusOpener) {
+    closePanel(); locator.hidden = true; index = -1; clearMarks();
+    if (focusOpener) opener.focus({preventScroll: true});
+    schedule();
+  }
+  function chooseHit(n) {
+    if (n < 0 || !hits[n]) return;
+    closePanel();
+    passageScope = scope;
+    visit(n);
+    next.focus({preventScroll: true});
+  }
+  nav.addEventListener("click", e => {
+    const button = e.target.closest("[data-scope]");
+    if (button) { chooseScope(+button.dataset.scope); }
+  });
+  results.addEventListener("click", e => {
+    const row = e.target.closest("[data-hit]");
+    if (row) { selectRow(+row.dataset.hit); chooseHit(cursor); }
+  });
+  new IntersectionObserver(entries => {
+    if (panel.open && !body.hidden && !more.hidden && entries.some(e => e.isIntersecting)) appendPage();
+  }).observe(more);
+  input.addEventListener("input", e => { if (!e.isComposing) search(); });
+  input.addEventListener("compositionend", search);
+  $("#prose-clear").onclick = () => { input.value = ""; search(); input.focus({preventScroll:true}); };
+  reopen.onclick = openFind;
+  prev.onclick = () => visit(index - 1);
+  next.onclick = () => visit(index + 1);
+  $("#prose-close").onclick = closePanel;
+  $("#prose-dismiss").onclick = () => dismiss(true);
+  panel.addEventListener("cancel", e => { e.preventDefault(); closePanel(); });
+  panel.addEventListener("click", e => {
+    if (e.target !== panel) return;
+    const r = panel.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closePanel();
+  });
+  document.addEventListener("reader:find", e => { e.preventDefault(); openFind(); });
+  for (const id of ["#menu-open", "#settings-open", "#narration-return"]) $(id).addEventListener("click", () => dismiss(false));
+  document.addEventListener("keydown", e => {
+    if (e.defaultPrevented || e.isComposing) return;
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest("input,textarea,select,[contenteditable]")) {
+      e.preventDefault(); openFind(); return;
+    }
+    if (!panel.open && locator.hidden) return;
+    if (e.key === "Escape") {
+      e.preventDefault(); e.stopPropagation();
+      if (panel.open) closePanel(); else dismiss(true);
+      return;
+    }
+    const findAgain = e.key === "F3" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g");
+    if (panel.open && hits.length && (e.target === input || e.target.closest(".find-hit"))) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp" || findAgain) {
+        e.preventDefault(); e.stopPropagation();
+        selectRow(cursor + (e.key === "ArrowUp" || (findAgain && e.shiftKey) ? -1 : 1), true);
+        if (e.target !== input) document.getElementById("find-hit-" + cursor)?.focus({preventScroll:true});
+      } else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); chooseHit(cursor); }
+    } else if (!panel.open && (findAgain || (e.key === "Enter" && (e.target === next || e.target === document.body)))) {
+      e.preventDefault(); visit(index + (e.shiftKey ? -1 : 1));
+    }
+  }, true);
+  for (const type of ["scroll", "resize", "pageshow"]) window.addEventListener(type, schedule, {passive: true});
+  for (const type of ["scroll", "resize"]) window.visualViewport?.addEventListener(type, () => {fitKeyboard(); schedule();}, {passive: true});
+  document.addEventListener("visibilitychange", schedule);
+  const observer = new ResizeObserver(schedule);
+  for (const el of [$("#reader"), $(".player-dock"), $(".float-chrome"), locator, $("#reading-progress")]) observer.observe(el);
+  schedule();
 })();
 </script>
 </body>

@@ -744,6 +744,7 @@
               <div class="audio-controls-setting"><span id="audio-controls-label">Audio controls</span><div id="audio-controls-pill" role="tablist" aria-labelledby="audio-controls-label"><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-value="on" aria-selected="true">On</button><button type="button" role="tab" data-value="off" aria-selected="false" tabindex="-1">Off</button></div></div>
               <label for="reader-text-size">Text size<button id="reader-text-size" type="button" class="drag-number-value" role="spinbutton" data-value="100" aria-label="Reading text size" aria-valuemin="80" aria-valuemax="200" aria-valuenow="100" aria-valuetext="100%" title="Drag up or down to resize text; double-click to reset">100%</button></label>
               <button id="remove-offline-audio" type="button" disabled>Remove downloaded audio<span class="download-size"></span></button>
+              <label title="Keeps only this week. Skips connections marked cellular or Data Saver."><span>Auto-download current week</span><input type="checkbox" id="auto-download-audio"></label>
             </div>
           </div>
         </details>
@@ -3355,7 +3356,7 @@ for(const name of ['online','offline']) addEventListener(name,()=>recordUsage('c
 
     function savePlaybackPosition(audio, seconds = audio.currentTime, force = false) {
       if (!audioControlsEnabled() || Number.isFinite(audio._textOnlyPosition)) return;
-      const value = Number(seconds);
+      const value = Number(audio._reloading && Number.isFinite(audio._pendingPosition) ? audio._pendingPosition : seconds);
       if (!Number.isFinite(value) || value < 0) return;
       const now = Date.now();
       if (!force && now - (audio._lastPositionWrite || 0) < 1000) return;
@@ -3436,6 +3437,7 @@ for(const name of ['online','offline']) addEventListener(name,()=>recordUsage('c
       if (!audio || !audioControlsEnabled()) return;
       audio._playRequested = true;
       const request = audio._playRequestId = (audio._playRequestId || 0) + 1;
+      updateCustomPlayer(audio);
       if (audio.readyState < 3) setPlayerStatus(audio, 'loading');
       prepareOfflinePlayback(audio).then(() => {
         if (!audioControlsEnabled() || audio._playRequestId !== request || !audio._playRequested) return;
@@ -3445,9 +3447,10 @@ for(const name of ['online','offline']) addEventListener(name,()=>recordUsage('c
         if (error?.name === 'AbortError') return;
         audio._playRequested = false;
         audio._retryShouldPlay = error?.name !== 'NotAllowedError';
+        if (audio._retryShouldPlay) schedulePlaybackRecovery(audio);
         logPlayback(audio, 'play-error', error.name);
         setPlayerStatus(audio, 'error', 'Playback unavailable');
-        if (error?.name !== 'NotAllowedError') schedulePlaybackRecovery(audio);
+        updateCustomPlayer(audio);
       });
     }
 
@@ -3461,7 +3464,7 @@ for(const name of ['online','offline']) addEventListener(name,()=>recordUsage('c
     function retryAudio(audio) {
       if (!audioControlsEnabled()) return;
       const stored = savedPlaybackPosition(audio);
-      const position = Number.isFinite(audio.currentTime) && audio.currentTime > 0
+      const position = Number.isFinite(audio._pendingPosition) ? audio._pendingPosition : Number.isFinite(audio.currentTime) && audio.currentTime > 0
         ? audio.currentTime
         : stored || 0;
       const shouldPlay = Boolean(audio._retryShouldPlay || audio._playRequested || !audio.paused);
@@ -3481,7 +3484,13 @@ let offlineCopyActive = null;
 const offlineCopyQueue = [];
 let audioCacheReady;
 let audioCacheListening = false;
-const playbackLogKey = 'sequencesAudio.diagnostics.v1';
+const offlineBook = globalThis.readerData?.bookId === 'antimemetics';
+const offlineCurrent = offlineBook ? '#audio' : '.current-week audio';
+const offlineWorkerPath = offlineBook ? '/antimemetics/offline-worker.js' : '/sequences-audio-worker.js';
+const offlinePrefKey = offlineBook ? 'antimemetics.reader.v1.autoDownload' : 'sequencesAudio.autoDownload';
+let autoSkip = '';
+try { autoSkip = localStorage.getItem(offlinePrefKey + '.skip') || ''; } catch {}
+const playbackLogKey = offlineBook ? 'antimemetics.reader.v1.diagnostics' : 'sequencesAudio.diagnostics.v1';
 let playbackLog = [];
 try { playbackLog = JSON.parse(localStorage.getItem(playbackLogKey) || '[]').slice(-199); } catch {}
 if (!Array.isArray(playbackLog)) playbackLog = [];
@@ -3505,7 +3514,7 @@ function offlineCopyState(audio) {
   if (!offlineCopies.has(audio)) offlineCopies.set(audio, {
     state: 'idle', url: '', received: 0, total: Number(audio.dataset.bytes) || 0,
     attempts: 0, wanted: false, timer: null, storageError: '', lastProgress: 0,
-    generation: 0, controller: null, eligible: Boolean(audio.closest('.current-week'))
+    generation: 0, controller: null, automatic: false, eligible: offlineBook || Boolean(audio.closest('.current-week'))
   });
   return offlineCopies.get(audio);
 }
@@ -3516,7 +3525,7 @@ function formatMegabytes(bytes) {
 }
 
 function renderOfflineCopy(audio) {
-  const badge = audio.closest('.player-dock').querySelector('.offline-copy');
+  const badge = offlineBook ? document.querySelector('#save-offline') : audio.closest('.player-dock').querySelector('.offline-copy');
   if (!badge) return;
   const copy = offlineCopyState(audio);
   if (!copy.eligible) { badge.hidden = true; return; }
@@ -3537,13 +3546,14 @@ function renderOfflineCopy(audio) {
   progress.textContent = progress.hidden ? '' : `${percent}%`;
   badge.title = `${label}. ${detail}`;
   badge.setAttribute('aria-label', badge.title);
+  if (offlineBook) badge.querySelector('.offline-label').textContent = label.split(' (')[0];
   renderDownloadRemoval();
 }
 
 function renderDownloadRemoval() {
   const button = document.querySelector('#remove-offline-audio');
   if (!button) return;
-  const audio = document.querySelector('.current-week audio');
+  const audio = document.querySelector(offlineCurrent);
   const copy = audio && offlineCopyState(audio);
   button.disabled = !copy?.eligible || !copy.received;
   button.querySelector('.download-size').textContent = copy?.eligible && copy.received
@@ -3551,12 +3561,12 @@ function renderDownloadRemoval() {
 }
 
 function applyOfflinePolicy(policy) {
-  const pagePath = location.pathname === '/lsrg/' ? '/sequences-audio.html' : location.pathname;
+  const pagePath = offlineBook ? '/antimemetics/' : location.pathname === '/lsrg/' ? '/sequences-audio.html' : location.pathname;
   if (!policy || new URL(policy.id).pathname !== pagePath) return;
   for (const audio of document.querySelectorAll('audio')) {
     const copy = offlineCopyState(audio);
     const eligible = copy.url === policy.url;
-    if (!eligible || policy.disabled) {
+    if (!eligible || (policy.disabled && copy.enabling !== copy.generation)) {
       pauseOfflineCopy(audio);
       copy.received = 0;
       copy.state = 'idle';
@@ -3568,8 +3578,9 @@ function applyOfflinePolicy(policy) {
 }
 
 async function removeOfflineAudio() {
-  const audio = document.querySelector('.current-week audio');
+  const audio = document.querySelector(offlineCurrent);
   if (!audio || !offlineCopyState(audio).eligible) return;
+  skipAutoFor(audio);
   pauseOfflineCopy(audio);
   try {
     const status = await cacheMessage(offlineCopyState(audio).url, false, 'audio-cache-clear');
@@ -3586,7 +3597,7 @@ document.querySelector('#remove-offline-audio')?.addEventListener('click', remov
 
 function cacheWorker() {
   const worker = navigator.serviceWorker?.controller;
-  return worker && new URL(worker.scriptURL).pathname.endsWith('/sequences-audio-worker.js') ? worker : null;
+  return worker && new URL(worker.scriptURL).pathname === offlineWorkerPath ? worker : null;
 }
 
 function cacheMessage(url, touch = false, type = 'audio-cache-status') {
@@ -3627,9 +3638,9 @@ function setupOfflineCache() {
   if (audioCacheReady) return audioCacheReady;
   audioCacheReady = (async () => {
     if (!isSecureContext || !('serviceWorker' in navigator)) return false;
-    const workerUrl = new URL('/sequences-audio-worker.js', location.href).href;
+    const workerUrl = new URL(offlineWorkerPath, location.href).href;
     const canonical = location.pathname === '/lsrg/';
-    const scope = canonical ? '/lsrg/' : '/sequences-audio';
+    const scope = offlineBook ? '/antimemetics/' : canonical ? '/lsrg/' : '/sequences-audio';
     async function registerScope(path) {
       const registration = await navigator.serviceWorker.getRegistration(path);
       if (registration?.scope === new URL(path, location.href).href && registration.active?.scriptURL === workerUrl) {
@@ -3649,7 +3660,7 @@ function setupOfflineCache() {
       navigator.serviceWorker.addEventListener('controllerchange', check);
       check();
     });
-    const current = document.querySelector('.current-week audio');
+    const current = document.querySelector(offlineCurrent);
     if (!current) return false;
     // A visitor can still have the previous worker controlling this document
     // while the replacement installs. Wait for protocol 2, not just any worker.
@@ -3729,20 +3740,22 @@ function restoreAfterAudioLoad(audio) {
   audio._resumeAfterLoad = false;
 }
 
-async function requestOfflineCopy(audio, manual = false) {
+async function requestOfflineCopy(audio, manual = false, automatic = false) {
   const copy = offlineCopyState(audio);
   // Playback, reconnect, and page visibility may resume an explicitly requested
   // save, but must never opt a visitor into downloading the whole episode.
-  if (!copy.eligible || !copy.url || (!manual && !copy.wanted) || ['queued', 'saving', 'ready'].includes(copy.state)) return;
+  if (!copy.eligible || !copy.url || (!manual && !automatic && !copy.wanted) || ['queued', 'saving', 'ready'].includes(copy.state)) return;
   clearTimeout(copy.timer);
-  if (manual) { copy.storageError = ''; copy.generation += 1; }
+  if (manual || automatic) { copy.automatic = automatic; copy.storageError = ''; copy.generation += 1; }
   const generation = copy.generation;
+  if (manual) copy.enabling = generation;
   copy.wanted = true;
   copy.state = 'queued';
   renderOfflineCopy(audio);
   const available = await setupOfflineCache();
   if (!copy.wanted || copy.generation !== generation) return;
   if (!available) {
+    delete copy.enabling;
     copy.wanted = false;
     copy.state = isSecureContext && 'serviceWorker' in navigator ? 'failed' : 'unavailable';
     if (copy.state === 'failed') copy.storageError = 'Could not prepare offline storage. Reconnect and try again.';
@@ -3753,6 +3766,8 @@ async function requestOfflineCopy(audio, manual = false) {
   } catch (error) {
     copy.wanted = false; copy.state = 'failed'; copy.storageError = error.message;
     renderOfflineCopy(audio); return;
+  } finally {
+    if (copy.enabling === generation) delete copy.enabling;
   }
   if (!copy.eligible || !copy.wanted || copy.generation !== generation) return;
   if (!offlineCopyQueue.includes(audio)) offlineCopyQueue.push(audio);
@@ -3773,9 +3788,62 @@ function pauseOfflineCopy(audio) {
 }
 
 function toggleOfflineCopy(audio) {
-  recordUsage('offline', {w:usageWeek(audio),a:offlineCopyState(audio).wanted?'pause':'start'});
-  if (offlineCopyState(audio).wanted) pauseOfflineCopy(audio);
-  else requestOfflineCopy(audio, true);
+  if (!offlineBook) recordUsage('offline', {w:usageWeek(audio),a:offlineCopyState(audio).wanted?'pause':'start'});
+  if (offlineCopyState(audio).wanted) { skipAutoFor(audio); pauseOfflineCopy(audio); }
+  else { skipAutoFor(null); requestOfflineCopy(audio, true); }
+}
+
+function skipAutoFor(audio) {
+  autoSkip = audio ? offlineCopyState(audio).url : '';
+  try { localStorage.setItem(offlinePrefKey + '.skip', autoSkip); } catch {}
+}
+
+function setupAutoDownload() {
+  const toggle = document.querySelector('#auto-download-audio'), audio = document.querySelector(offlineCurrent);
+  if (!toggle || !audio) return;
+  const pref = key => { try { return localStorage.getItem(key); } catch { return null; } };
+  const allowed = () => navigator.onLine !== false && !navigator.connection?.saveData
+    && navigator.connection?.type !== 'cellular' && !navigator.connection?.metered;
+  const permitted = () => toggle.checked && allowed() && autoSkip !== offlineCopyState(audio).url;
+  let checking = false;
+  async function sync() {
+    const copy = offlineCopyState(audio);
+    if (!permitted()) {
+      if (copy.automatic && copy.wanted) pauseOfflineCopy(audio);
+      return;
+    }
+    if (document.hidden || checking || copy.wanted || copy.state === 'ready') return;
+    checking = true;
+    try {
+      if (!await setupOfflineCache()) return;
+      const status = await refreshOfflineCopy(audio);
+      if (!document.hidden && permitted() && status.eligible && !status.policy?.disabled && !copy.wanted && copy.state !== 'ready')
+        await requestOfflineCopy(audio, false, true);
+    } catch (error) { logPlayback(audio, 'auto-download-unavailable', error.message); }
+    finally { checking = false; }
+  }
+  toggle.checked = pref(offlinePrefKey) === 'true';
+  toggle.addEventListener('change', () => {
+    try { localStorage.setItem(offlinePrefKey, String(toggle.checked)); } catch {}
+    sync();
+  });
+  addEventListener('storage', e => {
+    if (e.key === offlinePrefKey) toggle.checked = e.newValue === 'true';
+    if (e.key === offlinePrefKey + '.skip') {
+      autoSkip = e.newValue || '';
+      if (autoSkip === offlineCopyState(audio).url && offlineCopyState(audio).wanted) pauseOfflineCopy(audio);
+    }
+    if (e.key === offlinePrefKey || e.key === offlinePrefKey + '.skip') sync();
+  });
+  for (const type of ['online', 'offline', 'pageshow']) addEventListener(type, sync);
+  document.addEventListener('visibilitychange', sync);
+  navigator.connection?.addEventListener('change', sync);
+  if (!isSecureContext || !navigator.serviceWorker) {
+    toggle.disabled = true;
+    toggle.title = 'Offline listening requires HTTPS or localhost.';
+    return;
+  }
+  sync();
 }
 
 async function fetchOfflineRange(copy, start, end, signal) {
@@ -3839,7 +3907,7 @@ async function downloadOfflineCopy(audio) {
     if (!copy.wanted || copy.generation !== generation) return;
     if (copy.total > status.budget) {
       copy.wanted = false;
-      copy.storageError = 'Episode exceeds the 64 MB offline limit';
+      copy.storageError = `Episode exceeds the ${formatMegabytes(status.budget)} offline limit`;
       throw new Error(copy.storageError);
     }
     const order = await offlineChunkOrder(copy, status.chunkBytes, controller.signal);
@@ -3862,7 +3930,7 @@ async function downloadOfflineCopy(audio) {
     await refreshOfflineCopy(audio);
     copy.attempts = 0;
     logPlayback(audio, 'offline-complete', `${copy.received} bytes`);
-    recordUsage('offline', {w:usageWeek(audio),a:'complete'}, `offline-complete:${audio.id}`);
+    if (!offlineBook) recordUsage('offline', {w:usageWeek(audio),a:'complete'}, `offline-complete:${audio.id}`);
   } catch (error) {
     if (copy.generation !== generation) return;
     await refreshOfflineCopy(audio).catch(() => {});
@@ -3870,7 +3938,7 @@ async function downloadOfflineCopy(audio) {
     copy.state = copy.received ? 'partial' : 'failed';
     if (!copy.wanted) copy.state = 'failed';
     logPlayback(audio, 'download-paused', error.message);
-    recordUsage('offline', {w:usageWeek(audio),a:copy.received?'partial':'error',n:Math.round(100*copy.received/(copy.total||1))}, `offline-failure:${audio.id}`);
+    if (!offlineBook) recordUsage('offline', {w:usageWeek(audio),a:copy.received?'partial':'error',n:Math.round(100*copy.received/(copy.total||1))}, `offline-failure:${audio.id}`);
     if (copy.wanted) copy.timer = setTimeout(() => requestOfflineCopy(audio), Math.min(30000, 3000 * 2 ** Math.min(copy.attempts - 1, 4)));
   } finally {
     if (copy.controller === controller) copy.controller = null;
@@ -3904,6 +3972,7 @@ function pauseAudio(audio) {
   cancelPlaybackRecovery(audio);
   audio.pause();
   setPlayerStatus(audio);
+  updateCustomPlayer(audio);
 }
 
 document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', async event => {
@@ -4103,7 +4172,7 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
         'aria-valuetext',
         `${formatPlayerTime(current)} of ${formatPlayerTime(duration)}${activeTitle ? `, ${activeTitle}` : ''}`
       );
-      const playing = !audio.paused && !audio.ended;
+      const playing = !audio.ended && (audio._retryShouldPlay || audio._playRequested || !audio.paused);
       play.classList.toggle('is-playing', playing);
       play.setAttribute('aria-label', playing ? 'Pause' : 'Play');
       play.title = playing ? 'Pause' : 'Play';
@@ -5642,6 +5711,7 @@ window.addEventListener('audiocontrolschange', applyAudioControlsPreference);
 applyAudioControlsPreference();
 
     setupOfflineCache();
+    setupAutoDownload();
     applyLinkedMoment(Boolean(window.location.hash));
 
     document.querySelectorAll('details.week').forEach((week) => {
@@ -5681,7 +5751,7 @@ applyAudioControlsPreference();
       logPlayback(activeAudio, 'online');
       if (activeAudio) {
         requestOfflineCopy(activeAudio);
-        if (activeAudio._retryShouldPlay) retryAudio(activeAudio);
+        if (activeAudio._retryShouldPlay || ((activeAudio._playRequested || !activeAudio.paused) && activeAudio.readyState < 3)) retryAudio(activeAudio);
       }
     });
 

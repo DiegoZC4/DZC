@@ -1,10 +1,11 @@
-/* Shared range cache for /lsrg/ and legacy /sequences-audio* scopes. */
+/* Each reader registers this same range-cache implementation in its own scope. */
 'use strict';
+const BOOK = new URL(self.location.href).pathname === '/antimemetics/offline-worker.js';
 const CACHE_PROTOCOL = 2;
 const CHUNK_BYTES = 256 * 1024;
-const CACHE_BUDGET = 64 * 1024 * 1024;
-const DB_NAME = 'sequences-audio-chunks-v1';
-const SHELL_CACHE = 'sequences-audio-pages-v1';
+const CACHE_BUDGET = (BOOK ? 192 : 64) * 1024 * 1024;
+const DB_NAME = BOOK ? 'antimemetics-audio-chunks-v1' : 'sequences-audio-chunks-v1';
+const SHELL_CACHE = BOOK ? 'antimemetics-pages-v1' : 'sequences-audio-pages-v1';
 const SHELL_LIMIT = 16 * 1024 * 1024;
 const inFlight = new Map();
 const shellRequests = new Map();
@@ -13,6 +14,8 @@ let database;
 function pageFor(url) {
   const parsed = new URL(url, self.location.href);
   if (parsed.origin !== self.location.origin) return null;
+  if (BOOK) return /^\/antimemetics\/(?:index\.html)?$/.test(parsed.pathname)
+    ? new URL('/antimemetics/', self.location.href).href : null;
   // Keep the original policy and shell keys: moving the page must not delete
   // existing downloads, re-enable a removed download, or duplicate audio bytes.
   if (/^\/lsrg\/?$/i.test(parsed.pathname)) parsed.pathname = '/sequences-audio.html';
@@ -29,14 +32,16 @@ function pageFetchUrl(page) {
 function assetFor(url) {
   const parsed = new URL(url, self.location.href);
   const size = Number(parsed.searchParams.get('bytes'));
+  const bookName = /^\/audio\/antimemetics-w(\d+)-([a-f0-9]{12})\.m4a$/.exec(parsed.pathname);
+  const hash = parsed.searchParams.get('sa') || '';
   if (parsed.origin !== self.location.origin
-      || !/^\/audio\/lsrg-\d+[-a-z0-9]*\.(m4a|mp3)$/.test(parsed.pathname)
-      || !/^[a-f0-9]{16}$/.test(parsed.searchParams.get('sa') || '')
+      || !(BOOK ? bookName && hash.startsWith(bookName[2]) : /^\/audio\/lsrg-\d+[-a-z0-9]*\.(m4a|mp3)$/.test(parsed.pathname))
+      || !/^[a-f0-9]{16}$/.test(hash)
       || !Number.isSafeInteger(size) || size < 1) return null;
   parsed.hash = '';
-  const page = new URL(parsed.searchParams.get('preview') === '1'
+  const page = new URL(BOOK ? '/antimemetics/' : parsed.searchParams.get('preview') === '1'
     ? '/sequences-audio-preview.html' : '/sequences-audio.html', self.location.href).href;
-  return { url: parsed.href, size, page, type: parsed.pathname.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4' };
+  return { url: parsed.href, size, page, bookWeek: bookName?.[1], type: parsed.pathname.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4' };
 }
 
 function parseRange(header, size) {
@@ -122,16 +127,20 @@ async function notifyPolicy(policy) {
 function manifestAsset(manifest, page) {
   const asset = assetFor(manifest.audio);
   if (manifest.version !== 1 || !asset || asset.page !== page
-      || !/^lsrg-\d+$/.test(manifest.week || '')
-      || !/^\d{4}-\d{2}-\d{2}$/.test(manifest.date || '')) throw new Error('Invalid offline page manifest');
+      || !(BOOK ? manifest.week === Number(asset.bookWeek) && manifest.week > 0
+        : /^lsrg-\d+$/.test(manifest.week || '') && /^\d{4}-\d{2}-\d{2}$/.test(manifest.date || ''))) throw new Error('Invalid offline page manifest');
   return asset;
+}
+
+function newerThanManifest(policy, manifest) {
+  return policy && (BOOK ? policy.week > manifest.week : policy.date > manifest.date);
 }
 
 async function adoptCurrent(manifest, page) {
   const asset = manifestAsset(manifest, page);
   const outcome = await transaction('readwrite', async (assets, chunks, settings) => {
     const previous = await result(settings.get(page));
-    if (previous && previous.date > manifest.date) return { policy: previous, changed: false, stale: true };
+    if (newerThanManifest(previous, manifest)) return { policy: previous, changed: false, stale: true };
     const changed = !previous || previous.url !== asset.url || previous.date !== manifest.date;
     const policy = { id: page, week: manifest.week, date: manifest.date, url: asset.url,
       disabled: changed ? false : Boolean(previous.disabled) };
@@ -192,7 +201,7 @@ async function cachePage(page) {
       const saved = new Response(bytes, { headers });
       const cache = await caches.open(SHELL_CACHE);
       const previous = await currentPolicy(page);
-      if (previous && previous.date > manifest.date) return (await cache.match(page)) || saved;
+      if (newerThanManifest(previous, manifest)) return (await cache.match(page)) || saved;
       // Save the complete shell before retiring last week's audio. A quota
       // failure must not leave the visitor with neither a page nor their audio.
       try {
@@ -344,7 +353,9 @@ self.addEventListener('fetch', event => {
   const asset = event.request.method === 'GET' && assetFor(event.request.url);
   if (asset) event.respondWith((async () => {
     const policy = await currentPolicy(asset.page).catch(() => null);
-    if (policy?.url !== asset.url || policy.disabled) return fetch(event.request);
+    // Keep the book's versioned URL consistently synthetic, including the
+    // transition into/out of saving. storeChunk still enforces consent and age.
+    if (!BOOK && (policy?.url !== asset.url || policy.disabled)) return fetch(event.request);
     return audioResponse(event.request, asset);
   })());
 });

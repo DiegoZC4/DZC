@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Daniel Kokotajlo",
+  "title": "#107 - Words and Categories",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for November 17, 2026.",
+  "fileName": "lsrg-107-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 381.072426,
+      "title": "Taboo Your Words",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/WBdvyyHLdxZSAMmoz"
+    },
+    {
+      "startTime": 381.072426,
+      "endTime": 956.612245,
+      "title": "Replace the Symbol with the Substance",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/GKfPL6LQFgB49FEnv"
+    },
+    {
+      "startTime": 956.612245,
+      "endTime": 1428.916077,
+      "title": "Fallacies of Compression",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/y5MxoeacRKKM3KQth"
+    },
+    {
+      "startTime": 1428.916077,
+      "endTime": 1723.1208840000002,
+      "title": "Categorizing Has Consequences",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/veN86cBhoe7mBxXLk"
+    },
+    {
+      "startTime": 1723.1208840000002,
+      "endTime": 2588.620998,
+      "title": "(Optional) Taboo \"Outside View\"",
+      "url": "https://www.lesswrong.com/posts/BcYfsi7vmhDvzQGiF/taboo-outside-view"
+    }
+  ]
+}

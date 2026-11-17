@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 10 Nov 2026 00:04:50 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 17 Nov 2026 06:17:08 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,38 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/lsrg/</link>
     </image>
+    <item>
+      <title>#107 - Words and Categories</title>
+      <link>https://diegozc.com/lsrg/#lsrg-107</link>
+      <guid isPermaLink="false">urn:lsrg:107:weekly</guid>
+      <pubDate>Tue, 17 Nov 2026 06:17:08 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Taboo Your Words by Eliezer Yudkowsky
+https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/WBdvyyHLdxZSAMmoz
+
+6:21 - Replace the Symbol with the Substance by Eliezer Yudkowsky
+
+15:57 - Fallacies of Compression by Eliezer Yudkowsky
+
+23:49 - Categorizing Has Consequences by Eliezer Yudkowsky
+
+28:43 - (Optional) Taboo "Outside View" by Daniel Kokotajlo
+https://www.lesswrong.com/posts/BcYfsi7vmhDvzQGiF/taboo-outside-view
+
+Read along: https://diegozc.com/lsrg/#lsrg-107
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Daniel Kokotajlo</itunes:author>
+      <itunes:episode>107</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>2589</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-107-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-107-weekly.m4a" length="15504993" type="audio/mp4" />
+    </item>
     <item>
       <title>#106 - Definitions and Boundaries</title>
       <link>https://diegozc.com/lsrg/#lsrg-106</link>

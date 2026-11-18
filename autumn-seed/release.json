@@ -3,8 +3,8 @@
   "kind": "melete-player",
   "nativeProtocol": 1,
   "player": "index.html",
-  "bytes": 11667216,
-  "sha256": "256f8c5d91b8af3510121aa9ff915b683b834caabdef7e0b453e0f34773c732d",
-  "sourceCommit": "d421020b7e62432cffd27df6ae273553cff9597c",
+  "bytes": 11668811,
+  "sha256": "b4cc11a919ae577ac57e9feabd8495c8039fc5ccd1b13949f5c461e8b89f1b73",
+  "sourceCommit": "1e31175ed75d8a0226e052738fad4ae9331e68c2",
   "release": "2026-11-18"
 }

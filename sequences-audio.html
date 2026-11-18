@@ -377,7 +377,7 @@
     .player-status:empty { display: none; }
     .player-context {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       align-items: center;
       min-width: 0;
       gap: 4px;
@@ -509,6 +509,8 @@
     .seek-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 1px rgb(0 0 0 / .25), 0 0 0 3px var(--link); }
     .playback-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; padding: 4px 0 6px; font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; }
     .transport { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+    .player-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-self: end; gap: 4px; }
+    .player-actions > button { flex: none; }
     .week-search-toggle { display: grid; justify-self: end; width: 34px; min-width: 34px; min-height: 34px; padding: 0; place-items: center; border: 0; border-radius: 50%; color: var(--muted); background: transparent; }
     .week-search-toggle:hover, .week-search-toggle[aria-expanded="true"] { color: var(--link); background: var(--soft); }
     .week-search-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
@@ -545,7 +547,11 @@
     .reading-source { display: flex; align-items: flex-start; justify-content: center; min-height: 44px; padding-top: 11px; color: var(--link); }
     .reading-source:hover { background: var(--soft); }
     .chapter-summary:has(.reader-toggle:hover), .chapter-summary:has(.reader-toggle[aria-expanded="true"]) { background: var(--soft); }
-    .chapter-summary:has(.reader-toggle[aria-expanded="true"]) { position: sticky; top: var(--player-dock-height, 0px); z-index: 15; box-shadow: 0 1px 0 var(--line); }
+    .chapter-summary:has(.reader-toggle[aria-expanded="true"]) { position: sticky; top: var(--player-dock-height, 0px); z-index: 15; padding: 0; gap: 0; box-shadow: 0 1px 0 var(--line); }
+    .chapter-summary:has(.reader-toggle[aria-expanded="true"]) .chapter-author,
+    .chapter-summary:has(.reader-toggle[aria-expanded="true"]) .chapter-meta { display: none; }
+    .reader-toggle[aria-expanded="true"] { min-height: 44px; padding: 8px 10px; }
+    .chapter-summary:has(.reader-toggle[aria-expanded="true"]) .reading-source { align-items: center; padding: 0; }
     .chapter.is-current-reading > .chapter-summary {
       background: color-mix(in srgb, var(--link) 10%, transparent);
       box-shadow: inset 3px 0 0 var(--link);
@@ -684,12 +690,12 @@
     @media (max-width: 660px) {
       .playback-controls {
         grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas: "context toggle" "transport transport";
+        grid-template-areas: "context actions" "transport transport";
         row-gap: 2px;
       }
       .player-context { grid-area: context; }
       .transport { grid-area: transport; gap: 4px; }
-      .week-search-toggle { grid-area: toggle; }
+      .player-actions { grid-area: actions; }
     }
     @media (max-width: 760px) {
       .shell { width: calc(100% - 12px); margin-top: 6px; }
@@ -797,14 +803,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-107" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-107" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-107" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -815,7 +813,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-107" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-107" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-107-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-107" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-107-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-107-row" data-week="lsrg-107" hidden role="search" aria-label="Search November 17, 2026 readings">
@@ -1018,14 +1026,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-106" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-106" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-106" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1036,7 +1036,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-106" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-106" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-106-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-106" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-106-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-106-row" data-week="lsrg-106" hidden role="search" aria-label="Search November 10, 2026 readings">
@@ -1148,14 +1158,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-105" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-105" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-105" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1166,7 +1168,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-105" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-105" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-105-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-105" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-105-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-105-row" data-week="lsrg-105" hidden role="search" aria-label="Search November 3, 2026 readings">
@@ -1274,14 +1286,6 @@ https://www.lesswrong.com/posts/895quRDaK6gR2rM82/diseased-thinking-dissolving-q
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-104" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-104" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-104" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1292,7 +1296,17 @@ https://www.lesswrong.com/posts/895quRDaK6gR2rM82/diseased-thinking-dissolving-q
           <button class="skip-button" type="button" data-audio="audio-lsrg-104" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-104" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-104-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-104" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-104-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-104-row" data-week="lsrg-104" hidden role="search" aria-label="Search October 27, 2026 readings">
@@ -1420,14 +1434,6 @@ https://sscpodcast.libsyn.com/the-categories-were-made-for-man-not-man-for-the-c
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-103" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-103" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-103" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1438,7 +1444,17 @@ https://sscpodcast.libsyn.com/the-categories-were-made-for-man-not-man-for-the-c
           <button class="skip-button" type="button" data-audio="audio-lsrg-103" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-103" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-103-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-103" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-103-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-103-row" data-week="lsrg-103" hidden role="search" aria-label="Search October 20, 2026 readings">
@@ -1554,14 +1570,6 @@ https://www.buzzsprout.com/2034731/14292300</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-102" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-102" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-102" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1572,7 +1580,17 @@ https://www.buzzsprout.com/2034731/14292300</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-102" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-102" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-102-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-102" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-102-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-102-row" data-week="lsrg-102" hidden role="search" aria-label="Search October 13, 2026 readings">
@@ -1675,14 +1693,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-101" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-101" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-101" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1693,7 +1703,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-101" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-101" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-101-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-101" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-101-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-101-row" data-week="lsrg-101" hidden role="search" aria-label="Search October 6, 2026 readings">
@@ -1797,14 +1817,6 @@ https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds</
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-100" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-100" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-100" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1815,7 +1827,17 @@ https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds</
           <button class="skip-button" type="button" data-audio="audio-lsrg-100" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-100" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-100-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-100" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-100-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-100-row" data-week="lsrg-100" hidden role="search" aria-label="Search September 29, 2026 readings">
@@ -1919,14 +1941,6 @@ https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-99" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-99" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-99" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -1937,7 +1951,17 @@ https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-99" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-99" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-99-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-99" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-99-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-99-row" data-week="lsrg-99" hidden role="search" aria-label="Search September 22, 2026 readings">
@@ -2040,14 +2064,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-98" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-98" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-98" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2058,7 +2074,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-98" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-98" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-98-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-98" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-98-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-98-row" data-week="lsrg-98" hidden role="search" aria-label="Search September 15, 2026 readings">
@@ -2173,14 +2199,6 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-97" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-97" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-97" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2191,7 +2209,17 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-97" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-97" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-97-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-97" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-97-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-97-row" data-week="lsrg-97" hidden role="search" aria-label="Search September 8, 2026 readings">
@@ -2293,14 +2321,6 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-96" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-96" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-96" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2311,7 +2331,17 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-96" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-96" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-96-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-96" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-96-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-96-row" data-week="lsrg-96" hidden role="search" aria-label="Search September 1, 2026 readings">
@@ -2399,14 +2429,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-95" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-95" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-95" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2417,7 +2439,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-95" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-95" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-95-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-95" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-95-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-95-row" data-week="lsrg-95" hidden role="search" aria-label="Search August 25, 2026 readings">
@@ -2510,14 +2542,6 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-94" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-94" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-94" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2528,7 +2552,17 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
           <button class="skip-button" type="button" data-audio="audio-lsrg-94" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-94" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-94-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-94" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-94-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-94-row" data-week="lsrg-94" hidden role="search" aria-label="Search August 18, 2026 readings">
@@ -2637,14 +2671,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-93" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-93" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-93" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2655,7 +2681,17 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
           <button class="skip-button" type="button" data-audio="audio-lsrg-93" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-93" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-93-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-93" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-93-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-93-row" data-week="lsrg-93" hidden role="search" aria-label="Search August 11, 2026 readings">
@@ -2805,14 +2841,6 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-92" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-92" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-92" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2823,7 +2851,17 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-92" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-92" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-92-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-92" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-92-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-92-row" data-week="lsrg-92" hidden role="search" aria-label="Search July 28, 2026 readings">
@@ -2940,14 +2978,6 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
             </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-90" hidden>Retry</button>
-            <button class="offline-copy" type="button" data-audio="audio-lsrg-90" data-action="download" aria-label="Download for offline listening" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
-                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
-              </svg>
-              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
-            </button>
           </div>
           <div class="transport">
           <button class="drag-number-value rate-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="1" aria-label="Playback speed" aria-valuemin="0.75" aria-valuemax="3" aria-valuenow="1" aria-valuetext="1x" title="Drag up to increase playback speed; down to decrease">1x</button>
@@ -2958,7 +2988,17 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
           <button class="skip-button" type="button" data-audio="audio-lsrg-90" data-direction="1" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds"><svg class="skip-icon" viewBox="0 0 64 64" aria-hidden="true"><g class="skip-arrow"><polyline points="9.57 15.41 12.17 24.05 20.81 21.44" stroke-linecap="round"/><path d="M12.14,23.94a21.91,21.91,0,1,1-.91,13.25" stroke-linecap="round"/></g></svg><span class="skip-value">10</span></button>
           <button class="drag-number-value volume-drag" type="button" role="spinbutton" data-audio="audio-lsrg-90" data-value="100" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%" title="Drag up to increase volume; down to decrease">100%</button>
           </div>
-          <button class="week-search-toggle" type="button" aria-controls="search-lsrg-90-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          <div class="player-actions">
+            <button class="offline-copy" type="button" data-audio="audio-lsrg-90" data-action="download" aria-label="Download for offline listening" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path class="offline-download" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path class="offline-pause" d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" stroke="none"/>
+                <path class="offline-ready" d="M20 6 9 17l-5-5"/>
+              </svg>
+              <span class="offline-copy-progress" aria-hidden="true" hidden></span>
+            </button>
+            <button class="week-search-toggle" type="button" aria-controls="search-lsrg-90-row" aria-expanded="false" aria-label="Show search" title="Search this week"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg></button>
+          </div>
         </div>
       </div>
       <div class="week-search" id="search-lsrg-90-row" data-week="lsrg-90" hidden role="search" aria-label="Search July 21, 2026 readings">

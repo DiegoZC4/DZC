@@ -1,0 +1,9 @@
+/* Timestamped recording pulse, synthesized on the same audio clock as the stems.
+   No fixed-BPM grid, pitch shift, timer, or percussion-track assumption. */
+class RecordingClickProcessor extends AudioWorkletProcessor {
+ constructor(options){super();const p=options.processorOptions||{};this.times=p.times||[];this.accents=p.accents||[];this.accent=false;this.at=p.at||0;this.offset=p.offset||0;this.end=p.end||0;this.rate=p.rate||1;this.loopStart=p.loopStart||0;this.loop=!!p.loop&&this.end>this.loopStart;this.index=0;this.cycle=-1;this.age=Infinity;this.done=false;while(this.index<this.times.length&&this.times[this.index]<this.offset-1e-8)this.index++;this.port.onmessage=e=>{if(e.data==='stop')this.done=true;};}
+ process(inputs,outputs){const out=outputs[0]?.[0];if(!out)return true;for(let i=0;i<out.length;i++){const wall=(currentFrame+i)/sampleRate;let elapsed=(wall-this.at)*this.rate;if(this.done||elapsed<0){out[i]=0;continue;}let source=this.offset+elapsed;if(!this.loop&&source>=this.end){out[i]=0;continue;}const cycle=this.loop&&source>=this.end?1+Math.floor((source-this.end)/(this.end-this.loopStart)):0;if(cycle)source=this.loopStart+(source-this.end)%(this.end-this.loopStart);if(cycle!==this.cycle){if(this.cycle>=0){this.index=0;while(this.index<this.times.length&&this.times[this.index]<this.loopStart-1e-8)this.index++;this.age=Infinity;}this.cycle=cycle;}
+ if(this.index<this.times.length&&source>=this.times[this.index]){this.age=0;this.accent=!!this.accents[this.index];do{this.index++;}while(this.index<this.times.length&&source>=this.times[this.index]);}
+ const t=this.age/sampleRate;out[i]=t<.022?(this.accent?.55:.45)*Math.exp(-t*230)*Math.sin(2*Math.PI*(this.accent?2000:1500)*t):0;this.age++;}return !this.done;}
+}
+registerProcessor('recording-click',RecordingClickProcessor);

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "songs": {
+    "here-comes-the-sun": {
+      "vocalSha256": "52397459c5613a3e174deef4ed61e8eea4750b347cd1b86b7c99d201f3c09826",
+      "seconds": 185.73354,
+      "tonic": 9,
+      "label": "Your harmony",
+      "provenance": "Diego's supplied pitches and lyric performance roles. November 17 rhythm correction: It's / al- / right enter on successive offbeats, with F#-E slurred on al-. The second Here is short in choruses 1 and 3; choruses 2, 4 and the coda anticipate with a quarter-note Here. Offbeats use the current source-matched click grid. Boundaries remain approximate, not certified phoneme measurements. Soloist-only passages are silent; blue unison entries use the melody, red harmony entries use the harmony.",
+      "phraseCues": [[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[2,0],[2,1],[2,2],[2,3],[3,0],[3,1],[4,0],[4,1],[4,2],[4,3],[5,0],[5,1],[5,2],[5,3],[5,4],[6,0],[6,1],[7,0],[7,1],[7,2],[7,3],[8,0],[8,1],[8,2],[8,3],[8,4]],
+      "rolePatterns": {"littleLow":{"unison":"littleLow","harmony":"littleHigh"}},
+      "patterns": {
+        "hereA": [[64,"Here"],[62,"comes"],[64,"the"],[61,"sun"]],
+        "hereD": [[66,"Here"],[64,"comes"],[66,"the"],[63,"sun"]],
+        "alright": [[69,"It's"],[66,"al-"],[64,""],[64,"right"]],
+        "littleLow": [[61,"Lit-"],[57,"tle"],[59,"dar-"],[61,"ling"]],
+        "littleHigh": [[64,"Lit-"],[61,"tle"],[62,"dar-"],[64,"ling"]],
+        "doo": [[64,"doo"],[61,"doo"],[62,"doo"],[64,"doo"]],
+        "sun": [[64,"Sun"],[62,"sun"],[62,"sun"],[62,"here"],[62,"it"],[61,"comes"],[62,""],[61,""]]
+      },
+      "phrases": [
+        {"label":"Refrain 1 - Here comes the sun", "pattern":"hereA", "times":[15.30,15.52,15.98,16.41,17.10]},
+        {"label":"Refrain 1 - doo", "pattern":"doo", "times":[17.18,17.40,17.62,17.84,18.18]},
+        {"label":"Refrain 1 - Here comes the sun (D)", "pattern":"hereD", "times":[18.98,19.20,19.64,20.07,20.78]},
+        {"label":"Refrain 1 - It's all right", "pattern":"alright", "times":[22.385,22.835,23.06,23.285,23.735]},
+        {"label":"Verse 1 - Little darling (lower)", "pattern":"littleLow", "times":[28.12,28.32,28.52,28.78,29.28]},
+        {"label":"Verse 1 - Little darling (upper)", "pattern":"littleHigh", "times":[35.51,35.72,35.95,36.22,36.70]},
+        {"label":"Refrain 2 - Here comes the sun", "pattern":"hereA", "times":[43.02,43.25,43.73,44.23,44.83]},
+        {"label":"Refrain 2 - doo", "pattern":"doo", "times":[44.90,45.12,45.36,45.60,46.06]},
+        {"label":"Refrain 2 - Here comes the sun (D)", "pattern":"hereD", "times":[46.43,46.91,47.39,47.84,48.63]},
+        {"label":"Refrain 2 - It's all right", "pattern":"alright", "times":[50.275,50.745,50.98,51.215,51.685]},
+        {"label":"Verse 2 - Little darling (lower)", "pattern":"littleLow", "times":[59.80,60.02,60.25,60.53,60.95]},
+        {"label":"Verse 2 - Little darling (upper)", "pattern":"littleHigh", "times":[67.28,67.52,67.75,67.99,68.47]},
+        {"label":"Refrain 3 - Here comes the sun", "pattern":"hereA", "times":[74.80,75.01,75.50,75.97,76.68]},
+        {"label":"Refrain 3 - doo", "pattern":"doo", "times":[76.70,76.94,77.16,77.40,77.87]},
+        {"label":"Refrain 3 - Here comes the sun (D)", "pattern":"hereD", "times":[78.56,78.79,79.29,79.75,80.45]},
+        {"label":"Refrain 3 - It's all right", "pattern":"alright", "times":[82.0725,82.5375,82.77,83.0025,83.4675]},
+        {"label":"Sun, sun, sun 1", "pattern":"sun", "times":[96.80,97.47,98.14,98.80,99.04,99.26,99.38,99.49,100.02]},
+        {"label":"Sun, sun, sun 2", "pattern":"sun", "times":[102.72,103.40,104.05,104.73,104.95,105.17,105.28,105.40,105.89]},
+        {"label":"Sun, sun, sun 3", "pattern":"sun", "times":[108.58,109.26,109.94,110.60,110.84,111.06,111.18,111.29,111.85]},
+        {"label":"Sun, sun, sun 4", "pattern":"sun", "times":[114.48,115.16,115.82,116.48,116.70,116.94,117.06,117.17,117.70]},
+        {"label":"Sun, sun, sun 5", "pattern":"sun", "times":[120.38,121.06,121.72,122.39,122.60,122.82,122.94,123.05,123.50]},
+        {"label":"Verse 3 - Little darling (harmony)", "pattern":"littleLow", "times":[132.39,132.60,132.84,133.08,133.55]},
+        {"label":"Verse 3 - Little darling (upper)", "pattern":"littleHigh", "times":[139.89,140.10,140.33,140.57,141.10]},
+        {"label":"Refrain 4 - Here comes the sun", "pattern":"hereA", "times":[147.18,147.52,148.00,148.43,149.12]},
+        {"label":"Refrain 4 - doo", "pattern":"doo", "times":[149.14,149.36,149.60,149.83,150.25]},
+        {"label":"Refrain 4 - Here comes the sun (D)", "pattern":"hereD", "times":[150.77,151.25,151.73,152.17,152.90]},
+        {"label":"Refrain 4 - It's all right", "pattern":"alright", "times":[154.6125,155.0775,155.31,155.5425,156.0075]},
+        {"label":"Coda - Here comes the sun", "pattern":"hereA", "times":[160.41,160.63,161.12,161.58,162.24]},
+        {"label":"Coda - doo", "pattern":"doo", "times":[162.25,162.48,162.72,162.94,163.38]},
+        {"label":"Coda - Here comes the sun (D)", "pattern":"hereD", "times":[163.94,164.40,164.86,165.33,165.95]},
+        {"label":"Coda - It's all right", "pattern":"alright", "times":[167.6325,168.0975,168.33,168.5625,169.0275]},
+        {"label":"Coda - It's all right (last)", "pattern":"alright", "times":[173.215,173.685,173.92,174.155,174.625]}
+      ]
+    }
+  }
+}

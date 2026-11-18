@@ -1,0 +1,12 @@
+Options -Indexes
+DirectoryIndex index.html
+AddType audio/flac .flac
+AddType audio/midi .mid
+<IfModule mod_headers.c>
+Header always set X-Content-Type-Options "nosniff"
+Header always set Content-Security-Policy "base-uri 'self'; connect-src 'self' blob:; form-action 'none'; object-src 'none'"
+Header always set Permissions-Policy "camera=(), microphone=(self)"
+<FilesMatch "\.(html|json|js|css|pdf)$">
+Header set Cache-Control "no-cache"
+</FilesMatch>
+</IfModule>

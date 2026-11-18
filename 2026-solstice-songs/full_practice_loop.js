@@ -2,10 +2,10 @@
 (function(root){'use strict';
 function measures(map,duration){
  if(!(duration>0)||!Array.isArray(map?.downbeats)||!map.downbeats.length)return [];
- const starts=[0];
+ const starts=map.firstDownbeatIsBarOne?[]:[0];
  for(const t of map.downbeats){
   if(!Number.isFinite(t)||t<0||t>=duration||t<starts.at(-1))return [];
-  if(t>starts.at(-1)+.02)starts.push(t);
+  if(!starts.length||t>starts.at(-1)+.02)starts.push(t);
  }
  return starts.map((start,i)=>{
   const end=starts[i+1]??duration,review=map.meterReview?.bars?.find(b=>Math.abs(b.start-start)<.02);

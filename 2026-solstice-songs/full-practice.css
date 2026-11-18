@@ -133,6 +133,8 @@ body:has(#status:not(:empty)) .lyric-return{bottom:max(64px,env(safe-area-inset-
 .lyric-bar-label{flex-basis:100%;font-size:11px}
 .lyric-bar{display:inline-flex;align-items:baseline;gap:8px;border-inline-start:1px solid var(--line);padding:0 9px;line-height:1.4;white-space:nowrap}
 .lyric-bar:last-child{border-inline-end:1px solid var(--line)}.lyric-meter{font-size:10px}.lyric-bar-note{font-size:11px;font-style:italic}
+.lyric-bars button.lyric-bar{display:inline-flex;width:auto;min-height:28px;border-radius:0;border-inline-start:1px solid var(--line);padding:0 8px}
+.lyric-chord.is-playing-chord{color:var(--accent);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 .lyric-sheet[data-harmony=false] .lyric-word{color:inherit;font-weight:400}
 .lyric-sheet[data-harmony=false] .lyric-legend [data-role]{display:none}
 .lyric-sheet[data-chords=false] :is(.lyric-chord,.lyric-bars,.lyric-concert-key,.lyric-chart-status){display:none}

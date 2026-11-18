@@ -13,7 +13,7 @@ let loading=false,busy=false,recording=false,finishing=false,revision=0,playToke
 let lanes=[],layerAudio=null,targetId=null,soloId=null,libraryReady=false,libraryError='',loadEpoch=0,undoTimer=null,downloadSelection=null;
 let pendingTrackEdits=0;
 let lyricRequest,referenceCueRequest,pendingLyric=null,lyricSections=[],currentStanza=null;
-let lyricChart=null;
+let lyricChart=null,updateChord=null;
 const C=MeleteFullPracticeChart;
 const lyricFollow=new MeleteFullPracticeLyricFollow.Follower($('lyricBody'),$('lyricReturn'));
 function transposeLyrics(){if(lyricChart)C.transpose($('lyricSheet'),shift(),lyricChart.key);}
@@ -32,7 +32,8 @@ function lyricJump(t,token){
  if(duration())seek(t);
 }
 function highlightLyrics(t){
- lyricFollow.update(t,recording&&playing);
+ updateChord?.(t);
+ lyricFollow.update(t,playing&&(recording||!!lyricChart?.clocked),!recording);
  const active=lyricSections.findLast(row=>row.at<=t)?.el||null;
  if(active===currentStanza)return;
  currentStanza?.removeAttribute('aria-current');active?.setAttribute('aria-current','location');currentStanza=active;
@@ -62,7 +63,7 @@ function lyricsFor(selected){
 async function showLyrics(selected, token){
  const body=$('lyricBody'),source=$('lyricSource');
  pendingLyric=null;lyricSections=[];currentStanza=null;
- lyricFollow.reset();
+ lyricFollow.reset();updateChord=null;
  lyricChart=null;C.legend($('lyricLegend'),null);syncLyricDisplay();
  body.textContent='Loading lyrics...';body.setAttribute('aria-busy','true');source.replaceChildren();
  body.setAttribute('aria-label',selected.title+' lyrics');
@@ -73,7 +74,8 @@ async function showLyrics(selected, token){
   const content=document.createDocumentFragment(),stem=selected.tracks.find(t=>t.id==='vocals'),followRows=[];
   const cues=stem?.playback?.sha256&&entry.timing?.vocalSha256===stem.playback.sha256?entry.timing.lines:null;
   lyricChart=entry.performance||null;C.legend($('lyricLegend'),lyricChart);
-  if(lyricChart)C.bars(content,lyricChart.before);
+  const makeSeek=(text,t,label)=>cueButton(text,t,label,token);
+  if(lyricChart)C.bars(content,lyricChart.before,makeSeek);
   for(const [i,{label,lines}] of entry.sections.entries()){
    const stanza=document.createElement('section'),heading=document.createElement('h3');
    const chart=lyricChart?.sections[i];if(chart?.noteTitle)heading.title=chart.noteTitle;
@@ -84,24 +86,31 @@ async function showLyrics(selected, token){
     lyricSections.push({at,el:stanza});
    }else heading.textContent=label;
    stanza.append(heading);
-   C.bars(stanza,chart?.before);
+   C.bars(stanza,chart?.before,makeSeek);
    for(const [j,line] of lines.entries()){
     const p=document.createElement('p');p.dataset.lyric=line;const detail=chart?.lines[j];
     if(timed){
      const exact=Number.isFinite(row[j]),at=cueSecond(exact?row[j]:row[0]);
      const button=cueButton(line,at,exact?label+', line '+(j+1):'start of '+label,token);
      C.line(button,line,detail);p.append(button);
-     if(exact)followRows.push({at,el:p});
+     if(exact)followRows.push({at:lyricChart?.clocked?row[j]:at,el:p});
     }else C.line(p,line,detail);
     stanza.append(p);
-    C.bars(stanza,detail?.after);
+    C.bars(stanza,detail?.after,makeSeek);
    }
-   C.bars(stanza,chart?.after);
+   C.bars(stanza,chart?.after,makeSeek);
    content.append(stanza);
   }
   if(entry.url){
    const a=document.createElement('a');a.href=entry.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=entry.source;source.append(a);
   }else source.textContent=entry.source;
+  if(lyricChart?.clocked){
+   for(const row of content.querySelectorAll('.lyric-bars')){
+    const first=row.querySelector('[data-chord-time]');if(first)followRows.push({at:Number(first.dataset.chordTime),el:row});
+   }
+   followRows.sort((a,b)=>a.at-b.at);
+   updateChord=C.chordClock(content);
+  }
   body.replaceChildren(content);body.scrollTop=0;lyricFollow.reset(followRows);transposeLyrics();syncLyricDisplay();syncLyricLock();highlightLyrics(position());
  }catch{
   if(token===revision)body.textContent='Lyrics unavailable for this song.';

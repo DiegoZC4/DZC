@@ -15,7 +15,7 @@ function pulseGrid(map,duration){
    // Carry the edge tempo through unmarked intros/outros without moving any measured beat.
    for(let n=Math.floor((measured[0]+1e-8)/head);n>0;n--)times.push(Math.max(0,measured[0]-n*head));
    times.push(...measured);
-   for(let n=1;measured.at(-1)+n*tail<duration;n++)times.push(measured.at(-1)+n*tail);
+   if(map.extendTail!==false)for(let n=1;measured.at(-1)+n*tail<duration;n++)times.push(measured.at(-1)+n*tail);
   }else for(let n=0;n*GUIDE_PERIOD<duration;n++)times.push(n*GUIDE_PERIOD);
  }
  const downbeats=new Set((map?.downbeats||[]).filter(Number.isFinite).map(t=>Math.round(t*100000)));

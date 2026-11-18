@@ -38,7 +38,7 @@ class Follower{
    if(pointer&&Math.abs(e.clientY-pointer.y)>8){this.intent();pointer={x:e.clientX,y:e.clientY};}
   },{passive:true});
   for(const name of ['pointerup','pointercancel'])this.win.addEventListener(name,()=>{pointer=null;},{passive:true});
-  button.onclick=()=>{if(this.active&&this.target){this.detached=false;this.manualUntil=0;this.pan(true);this.hideReturn();}};
+  button.onclick=()=>{if(this.active&&this.target){this.detached=false;this.manualUntil=0;this.pan(true,true);this.hideReturn();}};
  }
  nested(){return /auto|scroll/.test(this.win.getComputedStyle(this.body).overflowY)&&this.body.scrollHeight>this.body.clientHeight+1;}
  bounds(){
@@ -58,13 +58,15 @@ class Follower{
   const where=direction==='up'?'above':'below',box=this.body.getBoundingClientRect();
   this.button.hidden=false;this.button.tabIndex=0;this.button.setAttribute('aria-hidden','false');
   this.button.dataset.direction=direction;
-  this.button.title='Return to recording lyrics '+where;this.button.setAttribute('aria-label',this.button.title);
+  this.button.title='Return to current lyrics '+where;this.button.setAttribute('aria-label',this.button.title);
   this.button.style.left=Math.max(24,Math.min(this.win.innerWidth-24,(box.left+box.right)/2))+'px';
  }
- pan(center=false){
+ pan(center=false,explicit=false){
   if(!this.target)return;
   const rect=this.target.getBoundingClientRect();let {top,bottom}=this.bounds();
   const nested=this.nested(),box=this.body.getBoundingClientRect();
+  // Listening should follow inside the lyric pane without pulling the mixer offscreen.
+  if(!rect.height||this.paneOnly&&!explicit&&(!nested||bottom-top<80))return;
   const behavior=this.win.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
   if(nested&&bottom-top<80){
    this.automaticUntil=this.win.performance.now()+800;
@@ -80,7 +82,8 @@ class Follower{
   this.target?.classList.remove('is-recording-line');this.target=null;this.rows=rows;
   this.active=false;this.detached=false;this.automaticUntil=0;this.manualUntil=0;this.lastCheck=0;this.hideReturn();
  }
- update(time,running){
+ update(time,running,paneOnly=false){
+  this.paneOnly=paneOnly;
   if(!running||!this.rows.length){
    this.target?.classList.remove('is-recording-line');this.target=null;this.active=false;this.hideReturn();return;
   }

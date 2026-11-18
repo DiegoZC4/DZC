@@ -20,13 +20,23 @@ function words(text,cue){
   const points=[...cuts].sort((x,y)=>x-y);
   return points.slice(0,-1).map((from,i)=>({text:text.slice(from,points[i+1]),
    role:cue.spans?.find(s=>from>=s.from&&from<s.to)?.role||cue.role,
-   chord:cue.chords?.find(c=>c.at===from)?.symbol||''}));
+   chord:cue.chords?.find(c=>c.at===from)?.symbol||'',time:cue.chords?.find(c=>c.at===from)?.time}));
  });
- for(const chord of cue.chords||[])if(chord.at===text.length)groups.push([{text:'',chord:chord.symbol}]);
+ for(const chord of cue.chords||[])if(chord.at===text.length)groups.push([{text:'',chord:chord.symbol,time:chord.time}]);
  return groups;
 }
 function hasRoles(chart){return !!chart?.sections?.some(s=>s.lines.some(l=>l.role||l.spans?.length));}
-function chordNode(doc,symbol){const el=doc.createElement('span');el.className='lyric-chord';el.dataset.chord=symbol;el.textContent=symbol;return el;}
+function chordNode(doc,symbol,time){const el=doc.createElement('span');el.className='lyric-chord';el.dataset.chord=symbol;el.textContent=symbol;
+ if(Number.isFinite(time))el.dataset.chordTime=time;return el;}
+function chordClock(body){
+ const rows=[...body.querySelectorAll('[data-chord-time]')].map(el=>({at:Number(el.dataset.chordTime),el})).sort((a,b)=>a.at-b.at);
+ let previous=null;
+ return time=>{
+  let lo=0,hi=rows.length;while(lo<hi){const mid=(lo+hi)>>1;if(rows[mid].at<=time)lo=mid+1;else hi=mid;}
+  const next=rows[lo-1]?.el||null;if(next===previous)return;
+  previous?.classList.remove('is-playing-chord');next?.classList.add('is-playing-chord');previous=next;
+ };
+}
 function line(el,text,cue){
  el.dataset.lyric=text;
  if(!cue){el.textContent=text;return;}
@@ -35,7 +45,7 @@ function line(el,text,cue){
   const word=doc.createElement('span');word.className='lyric-wordbox';
   for(const bit of bits){
    const cell=doc.createElement('span');cell.className='lyric-bit';
-   const chord=chordNode(doc,bit.chord);chord.setAttribute('aria-hidden','true');
+   const chord=chordNode(doc,bit.chord,bit.time);chord.setAttribute('aria-hidden','true');
    const lyric=doc.createElement('span');lyric.className='lyric-word';
    if(roles[bit.role]){lyric.dataset.role=bit.role;lyric.title=roles[bit.role];}lyric.textContent=bit.text;
    cell.append(chord,lyric);word.append(cell);
@@ -46,15 +56,17 @@ function line(el,text,cue){
  el.dataset.singing=description;
  el.dataset.baseLabel=el.getAttribute('aria-label')||text;
 }
-function bars(parent,groups){
+function bars(parent,groups,makeSeek){
  const doc=parent.ownerDocument;
  for(const group of groups||[]){
   const row=doc.createElement('div');row.className='lyric-bars';if(group.note)row.title=group.note;
   if(group.label){const label=doc.createElement('span');label.className='lyric-bar-label';label.textContent=group.label;row.append(label);}
   for(const value of group.bars){
-   const bar=typeof value==='string'?{chords:value}:value,box=doc.createElement('span');box.className='lyric-bar';
+   const bar=typeof value==='string'?{chords:value}:value,t=bar.times?.[0];
+   const box=Number.isFinite(t)&&makeSeek?makeSeek(bar.chords,t,group.label):doc.createElement('span');
+   box.replaceChildren();box.classList.add('lyric-bar');
    if(bar.meter){const meter=doc.createElement('span');meter.className='lyric-meter';meter.textContent=bar.meter;box.append(meter);}
-   for(const symbol of bar.chords.split(' '))box.append(chordNode(doc,symbol));
+   for(const [i,symbol] of bar.chords.split(' ').entries())box.append(chordNode(doc,symbol,bar.times?.[i]));
    if(bar.note){const note=doc.createElement('span');note.className='lyric-bar-note';note.textContent=bar.note;box.append(note);}
    row.append(box);
   }
@@ -91,6 +103,6 @@ function display(el,{harmony=true,chords=true}={}){
  }
  describe(el);
 }
-root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,line,bars,legend,transpose,display};
+root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,line,bars,legend,transpose,display,chordClock};
 if(typeof module!=='undefined')module.exports=root.MeleteFullPracticeChart;
 })(globalThis);

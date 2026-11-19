@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vowel Lab</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
   <header>
@@ -27,11 +27,11 @@
     <p id="status" role="status">Connecting microphone… Allow access if Chrome asks.</p>
   </section>
   <main id="plot">
-    <canvas id="chart" aria-label="Live vowel chart. F2 increases to the left and F1 increases downward. Both axes use Bark spacing with Hz labels."></canvas>
+    <canvas id="chart" tabindex="0" aria-label="Vowel chart and synthesizer. F2 increases leftward and F1 downward, with Bark spacing and Hz labels." aria-describedby="audition-hint audition-keys" title="Hold or drag to hear a vowel at your last sung pitch"></canvas>
   </main>
   <footer>
     <label>Landmarks <select id="landmarks"><option value="none">Hidden</option><option value="men">Men · speech</option><option value="women">Women · speech</option></select></label>
-    <span id="landmark-note">Fixed Bark spacing · absolute Hz</span>
+    <span id="audition-hint">Hold or drag the chart to hear a vowel.</span>
     <form id="pin-form"><input id="label" aria-label="Example label" placeholder="Singer · vowel · low/high" maxlength="50"><button id="pin" disabled>Pin example</button></form>
     <button id="export" disabled>Export pins</button><button id="clear" disabled>Clear pins</button>
     <span id="pin-status" role="status">Pins save in this browser.</span>
@@ -46,13 +46,15 @@
     </details>
     <details name="lab-panel"><summary>Chart settings</summary>
       <p><label>Trail duration <select id="trail-duration"><option value="0">Off</option><option value="250">0.25 s</option><option value="500" selected>0.5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option></select></label></p>
-      <p>The dot follows the resonances of your voice. At high pitches, widely spaced harmonics can make F1 and F2 hard to distinguish. A hollow dot marks these estimates.</p>
+      <p id="audition-keys">The diamond plays the two resonances under your cursor at your last sung pitch. Before your first note it uses A3. With the chart focused, use arrow keys to move and hold Space to listen.</p>
+      <p>The microphone dot shows F1 and F2 in Hz, estimated by linear prediction from the shape of your spectrum. At high pitches, widely spaced harmonics make the resonances harder to locate. A hollow dot marks these estimates.</p>
       <p>Record clip saves up to two minutes of audio and chart readings on this device.</p></details>
   </footer>
-  <script src="analysis.js"></script>
+  <script src="analysis.js?v=2"></script>
   <script src="landmarks.js"></script>
   <script src="browser_clips.js"></script>
   <script src="clips.js"></script>
-  <script src="app.js"></script>
+  <script src="synthesis.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

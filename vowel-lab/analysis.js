@@ -197,6 +197,22 @@
     };
   }
 
+  function chartFormants({x, y}) {
+    function invert(fraction, limits, barks) {
+      if (fraction <= 0) return limits[0];
+      if (fraction >= 1) return limits[1];
+      const target = barks[0] + fraction * (barks[1] - barks[0]);
+      let [low, high] = limits;
+      for (let i = 0; i < 28; i++) {
+        const mid = (low + high) / 2;
+        if (hzToBark(mid) < target) low = mid;
+        else high = mid;
+      }
+      return (low + high) / 2;
+    }
+    return {f1: invert(y, F1, f1Bark), f2: invert(1 - x, F2, f2Bark)};
+  }
+
   // Adapted from VocalTrack's MIT-licensed Smoother.py (see THIRD-PARTY-NOTICES.txt).
   // Filter log(Hz + 1), then return absolute Hz before the fixed Bark projection.
   // Pitch is deliberately absent: an octave change must not move a fixed vowel.
@@ -297,5 +313,5 @@
     return middle ? {middle, runs:runs.map(run=>run.map(({f1,f2,t})=>({f1,f2,t:t-onset})))} : null;
   }
 
-  return {makeEstimator, makeFormantSmoother, SMOOTHING, hzToBark, chartPoint, F1, F2, strokes, referenceExample, resampler, fundamental, RATE};
+  return {makeEstimator, makeFormantSmoother, SMOOTHING, hzToBark, chartPoint, chartFormants, F1, F2, strokes, referenceExample, resampler, fundamental, RATE};
 });

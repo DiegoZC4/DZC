@@ -135,7 +135,9 @@
         result=this.contour.push(null,t);
         if(result)state=this.limited?'limited':'tracking';
       }else this.contour.reset();
-      return {state,result,raw,rms:Math.sqrt(power),snr};
+      // Pitch drives the listening reference independently of finding two usable formants.
+      const pitchHz = !hum && db >= thresholdDb && state !== 'clipping' ? pitch : null;
+      return {state,result,raw,pitchHz,rms:Math.sqrt(power),snr};
     }
   }
   return {model,Tracker,Contour,formants,thresholdDb,meterMaxDb};

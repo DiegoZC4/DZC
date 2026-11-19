@@ -1,4 +1,4 @@
-importScripts('analysis.js','live_tracker.js');
+importScripts('analysis.js?v=2','live_tracker.js?v=2');
 let tracker,epoch;
 self.onmessage = async ({data}) => {
   try {

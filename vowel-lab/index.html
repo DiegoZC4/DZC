@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-clip-store="browser">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vowel Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Vowel Lab</h1>
+    <button id="start" class="primary" disabled>Connecting microphone…</button>
+    <div class="clip-controls"><button id="record-clip" aria-pressed="false" disabled>Record clip</button><span id="clip-clock" hidden></span></div>
+    <label class="input-label">Input <select id="input" aria-label="Microphone"><option value="">System default</option></select></label>
+    <div class="snr">
+      <div class="snr-heading"><span id="snr-label">Estimated SNR</span><strong id="snr-value">—</strong></div>
+      <div id="snr-meter" role="meter" aria-labelledby="snr-label" aria-describedby="snr-cutoff" aria-valuemin="0" aria-valuetext="Waiting for microphone">
+        <span class="snr-fill"></span><span class="snr-mark"></span>
+      </div>
+      <span id="snr-cutoff"></span>
+    </div>
+    <button id="fullscreen">Full screen</button>
+  </header>
+  <section class="readings" aria-label="Live formants">
+    <div><span>F1</span><strong id="f1">—</strong><span>Hz</span></div>
+    <div><span>F2</span><strong id="f2">—</strong><span>Hz</span></div>
+    <p id="status" role="status">Connecting microphone… Allow access if Chrome asks.</p>
+  </section>
+  <main id="plot">
+    <canvas id="chart" aria-label="Live vowel chart. F2 increases to the left and F1 increases downward. Both axes use Bark spacing with Hz labels."></canvas>
+  </main>
+  <footer>
+    <label>Landmarks <select id="landmarks"><option value="none">Hidden</option><option value="men">Men · speech</option><option value="women">Women · speech</option></select></label>
+    <span id="landmark-note">Fixed Bark spacing · absolute Hz</span>
+    <form id="pin-form"><input id="label" aria-label="Example label" placeholder="Singer · vowel · low/high" maxlength="50"><button id="pin" disabled>Pin example</button></form>
+    <button id="export" disabled>Export pins</button><button id="clear" disabled>Clear pins</button>
+    <span id="pin-status" role="status">Pins save in this browser.</span>
+    <span id="clip-status" role="status"></span>
+    <details id="clip-library" name="lab-panel"><summary>Recordings</summary>
+      <p id="clip-empty"></p>
+      <select id="clip-picker" aria-label="Saved recording" hidden></select>
+      <div id="clip-review" hidden>
+        <audio id="clip-audio" controls preload="none" aria-label="Play saved recording"></audio>
+        <a id="clip-wav" download>Download WAV</a> · <a id="clip-trace" download>Download tracking data</a>
+      </div>
+    </details>
+    <details name="lab-panel"><summary>Chart settings</summary>
+      <p><label>Trail duration <select id="trail-duration"><option value="0">Off</option><option value="250">0.25 s</option><option value="500" selected>0.5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option></select></label></p>
+      <p>The dot follows the resonances of your voice. At high pitches, widely spaced harmonics can make F1 and F2 hard to distinguish. A hollow dot marks these estimates.</p>
+      <p>Record clip saves up to two minutes of audio and chart readings on this device.</p></details>
+  </footer>
+  <script src="analysis.js"></script>
+  <script src="landmarks.js"></script>
+  <script src="browser_clips.js"></script>
+  <script src="clips.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

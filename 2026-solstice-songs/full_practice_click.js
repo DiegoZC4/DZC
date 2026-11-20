@@ -13,7 +13,7 @@ function pulseGrid(map,duration){
  if(duration>0){
   if(aligned){
    // Carry the edge tempo through unmarked intros/outros without moving any measured beat.
-   for(let n=Math.floor((measured[0]+1e-8)/head);n>0;n--)times.push(Math.max(0,measured[0]-n*head));
+   if(map.extendHead!==false)for(let n=Math.floor((measured[0]+1e-8)/head);n>0;n--)times.push(Math.max(0,measured[0]-n*head));
    times.push(...measured);
    if(map.extendTail!==false)for(let n=1;measured.at(-1)+n*tail<duration;n++)times.push(measured.at(-1)+n*tail);
   }else for(let n=0;n*GUIDE_PERIOD<duration;n++)times.push(n*GUIDE_PERIOD);
@@ -26,7 +26,8 @@ function countPlan(grid,target,rate,count){
  if(!count)return {from:target,duration:0,beats:[]};
  const {times,head,tail}=grid,first=times[0]??0;
  let next=times.findIndex(t=>t>=target-1e-8);
- if(next<0)next=times.length?times.length-1+Math.ceil((target-times.at(-1)-1e-8)/tail):Math.ceil(target/head);
+ if(target<first)next=Math.ceil((target-first-1e-8)/head);
+ else if(next<0)next=times.length?times.length-1+Math.ceil((target-times.at(-1)-1e-8)/tail):Math.ceil(target/head);
  const stamp=i=>!times.length?i*head:i<0?first+i*head:i<times.length?times[i]:times.at(-1)+(i-times.length+1)*tail;
  const from=stamp(next-count);
  return {from,duration:(target-from)/rate,beats:Array.from({length:count},(_,i)=>({label:i+1,seconds:(stamp(next-count+i)-from)/rate}))};

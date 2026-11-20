@@ -19,8 +19,9 @@
   <script defer src="shared/take_pitch.js?v=12a39ea5792d"></script>
   <script defer src="shared/live_pitch.js?v=22db73490ab4"></script>
   <script defer src="full_practice_input.js?v=a8ef0ccd95b1"></script>
-  <script defer src="full_practice_loop.js?v=a4ddb6a1e4b3"></script>
+  <script defer src="full_practice_loop.js?v=60b8d5810e78"></script>
   <script defer src="full_practice_pitch.js?v=546875b08614"></script>
+  <script defer src="full_practice_tab.js?v=31cfa48b91e0"></script>
   
   
   
@@ -31,7 +32,7 @@
   <script defer src="vendor/settings-help.js?v=535304bbce6f"></script>
   
   
-<link rel="stylesheet" href="full-practice.css?v=6186e8d1f1b9"><script defer src="full_practice_audio.js?v=3726f2981b94"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=50946c891635"></script><script defer src="full_practice_click.js?v=ee3968bf4742"></script><script defer src="full_practice_chart.js?v=2ea931a296d3"></script><script defer src="full_practice_lyric_follow.js?v=d1772a384808"></script><script defer src="full-practice.js?v=3479bdff3a88"></script></head>
+<link rel="stylesheet" href="full-practice.css?v=14791f05896c"><script defer src="full_practice_audio.js?v=3726f2981b94"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=50946c891635"></script><script defer src="full_practice_click.js?v=ec59e6d66d46"></script><script defer src="full_practice_chart.js?v=9f93c0cbb042"></script><script defer src="full_practice_lyric_follow.js?v=d1772a384808"></script><script defer src="full-practice.js?v=a585128390e6"></script></head>
 <body>
   <div class="workspace" id="practiceView">
     <aside aria-label="Program songs"><h1 class="sidebar-title">2026 Solstice Songs</h1><div id="songList"></div></aside>
@@ -46,12 +47,15 @@
           <div class="transport-controls">
           <div class="transport"><button id="play" title="Play / pause (Space)" aria-label="Play"><i data-lucide="play"></i></button><button id="rewind" title="Return to beginning" aria-label="Return to beginning"><i data-lucide="skip-back"></i></button><button id="record" class="record" aria-describedby="auditionGuidance"><i data-lucide="circle"></i><span>Record</span></button><span class="transport-readout"><output id="time">0:00</output><output id="count" aria-live="off"></output></span></div>
           <div class="transpose-control"><span id="speedLabel">Speed</span><button id="speed" type="button" class="scale-number" role="spinbutton" data-value="1" aria-labelledby="speedLabel"></button></div>
-          <div id="loopControls" class="measure-loop" role="group" aria-label="Practice loop"><button id="loopStart" class="loop-point" type="button">Start</button><button id="loop" class="icon" type="button" aria-label="Enable loop" aria-pressed="false" title="Loop selected measures"><i data-lucide="repeat"></i></button><button id="loopEnd" class="loop-point" type="button">End</button></div>
+          <div id="loopDock"><div id="loopControls" class="measure-loop" role="group" aria-label="Practice loop"><button id="loopStart" class="loop-point" type="button">Start</button><button id="loop" class="icon" type="button" aria-label="Enable loop" aria-pressed="false" title="Repeat the selected range"><i data-lucide="repeat"></i></button><button id="loopEnd" class="loop-point" type="button">End</button></div>
+          <button id="loopUnit" type="button" role="switch" aria-label="Use timestamps for loop endpoints" aria-checked="false" title="Switch between measure and timestamp loops" hidden><span>Bars</span><span>Time</span></button></div>
           <div class="transpose-control"><span id="transposeLabel">Transpose</span><div id="transpose" class="transpose-pager" role="spinbutton" tabindex="0" aria-labelledby="transposeLabel"></div></div>
           <div class="reference-tools">
           <label id="referenceChoice" for="referenceRecording" hidden>Recording <select id="referenceRecording" data-help="Switch performances, including stems, click and lyric cues. Your recorded tracks stay on this device."></select></label>
           <!-- YouTube: unchanged Simple Icons path, CC0; Google LLC trademark. -->
           <a id="source" class="icon source-link" target="_blank" rel="noopener noreferrer" hidden><svg class="youtube-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="7" width="9" height="10" fill="white"></rect><path fill="#ff0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg><i data-lucide="external-link"></i></a>
+          <a id="songbook" class="song-resource" target="_blank" rel="noopener noreferrer" hidden><i data-lucide="book-open" aria-hidden="true"></i><span>Solstice songbook</span></a>
+          <a id="songReference" class="song-resource" target="_blank" rel="noopener noreferrer" hidden></a>
           </div>
           <output id="backingStatus" role="status"></output><span id="backingNote"></span>
           <button id="fullscreen" class="icon" title="Full screen (F)" aria-label="Enter full screen"><i data-lucide="maximize"></i></button>
@@ -116,7 +120,10 @@
         <div id="recovery" hidden><span>Unsaved recording</span><button id="downloadRecovery"><i data-lucide="download"></i>Download recovery</button><button id="retryRecovery"><i data-lucide="refresh-cw"></i>Retry save</button></div>
         </div>
         <section id="lyricSheet" class="lyric-sheet" aria-labelledby="lyricHeading">
-          <div class="lyric-heading"><h2 id="lyricHeading">Lyrics</h2>
+          <div class="lyric-heading"><h2 id="lyricHeading" class="sr-only">Lyrics</h2>
+            <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view"><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lyrics" aria-selected="true" aria-controls="lyricBody">Lyrics</button><button type="button" role="tab" data-view="chart" aria-selected="false" aria-controls="chartBody" tabindex="-1">Chord chart</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1" hidden>Tabs</button></div>
+            <button id="openChartReader" class="icon" type="button" aria-haspopup="dialog" aria-controls="chartReader" title="Fullscreen chord charts" aria-label="Fullscreen chord charts"><i data-lucide="maximize-2"></i></button>
+            <label class="concert-choice" title="Off: keep the guitar shapes fixed and move the capo when transposing."><input type="checkbox" id="concertPitch" checked>Concert pitch</label>
             <div id="lyricDisplay" class="lyric-display" role="group" aria-label="Lyric display" hidden>
               <label title="Color harmony, unison and soloist-only lyrics"><input id="lyricHarmony" type="checkbox" checked aria-controls="lyricBody lyricLegend">Harmony</label>
               <label title="Show chord symbols and instrumental bars"><input id="lyricChords" type="checkbox" checked aria-controls="lyricBody lyricLegend">Chords</label>
@@ -125,13 +132,39 @@
           </div>
           <div id="lyricLegend" class="lyric-legend" aria-label="Backing vocal cues and chord key" hidden></div>
           <div id="lyricBody" tabindex="0" role="region" aria-label="Song lyrics"></div>
+          <div id="chartBody" class="chord-sheet" tabindex="0" role="region" aria-label="Chord chart" hidden></div>
           <button id="lyricReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to recording lyrics"><i data-lucide="arrow-up"></i></button>
+        <div id="guitarTab" class="guitar-tab" aria-label="Guitar tablature" hidden>
+          <div class="lyric-heading">
+            <label class="tab-fingers-choice" title="Picking hand: t = thumb, i = index, m = middle, r = ring"><input type="checkbox" id="tabFingers" checked>Fingering</label>
+            <span id="tabTuning"></span>
+            <a id="tabPdf" download hidden title="Download printable tab" aria-label="Download printable tab"><i data-lucide="file-down"></i></a>
+          </div>
+          <div id="tabBody" tabindex="0" role="region" aria-label="Guitar tablature"></div>
+        </div>
         </section>
         </div>
       </div>
     </main>
   </div>
   <div id="status" role="status" aria-live="polite"></div>
+  <dialog id="chartReader" aria-label="Fullscreen chord charts">
+    <div id="readerPanel">
+      <nav class="reader-nav" aria-label="Chord chart navigation">
+        <button id="readerPrev" type="button" aria-label="Previous song" title="Previous song"><i data-lucide="chevron-left"></i></button>
+        <select id="readerSong" aria-label="Song"></select>
+        <button id="readerNext" type="button" aria-label="Next song" title="Next song"><i data-lucide="chevron-right"></i></button>
+        <select id="readerRef" aria-label="Reference recording" hidden></select>
+        <button id="readerPlay" type="button" aria-label="Play recording" title="Play recording"><i data-lucide="play"></i></button>
+        <button id="readerClose" type="button" aria-label="Close fullscreen charts" title="Close fullscreen charts"><i data-lucide="minimize-2"></i></button>
+      </nav>
+      <div id="readerContent"></div>
+      <p id="readerError" role="status" hidden></p>
+      <div id="readerTransport" hidden>
+        <div class="reader-scrub"><output id="readerTime">0:00</output><input id="readerSeek" type="range" min="0" max="1" value="0" step="any" aria-label="Recording position"></div>
+      </div>
+    </div>
+  </dialog>
   <dialog id="clipDownload" aria-labelledby="clipDialogLabel"><form method="dialog">
     <label id="clipDialogLabel" for="clipFile">Original recording</label><select id="clipFile"></select>
     <label id="clipGainField" hidden>Clip gain (dB) <input id="clipGain" type="number" min="-30" max="30" step="0.1" required></label>

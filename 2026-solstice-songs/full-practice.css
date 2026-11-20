@@ -1,10 +1,16 @@
 .full-presets,.track-tools{display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap}
 .reference-tools,#referenceChoice{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;font-size:12px}
+.reference-tools{flex-wrap:wrap}
+.song-resource{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 3px;white-space:nowrap}
+.song-resource svg{width:15px;height:15px}
+.song-resource[hidden]{display:none}
 #referenceChoice[hidden]{display:none}
 #songParts{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px}
 #songParts[hidden]{display:none}
 #songParts a{display:inline-flex;align-items:center;gap:4px}
 #songParts svg{width:14px;height:14px}
+#songParts button{display:inline-flex;align-items:center;gap:5px;min-height:30px;height:30px;font-size:12px}
+#songParts button[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
 #referenceRecording{min-width:0;max-width:100%;height:32px;font:inherit}
 .reference-tools #source{width:32px;flex:0 0 32px}
 @media(max-width:600px){#player .transport-controls{column-gap:6px}}
@@ -15,6 +21,12 @@
 .measure-loop #loop{border-inline:1px solid var(--line);width:32px;min-width:32px}
 .measure-loop #loop[aria-pressed=true]{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
 .measure-loop .is-set{font-weight:650;color:var(--accent)}
+#loopDock{display:inline-flex;align-items:center;gap:5px}
+.measure-loop[data-unit=time] .loop-point{width:61px;min-width:61px}
+#loopUnit{position:relative;isolation:isolate;display:inline-grid;grid-template-columns:1fr 1fr;gap:0;align-items:center;height:30px;min-height:30px;padding:2px;border-radius:16px;background:var(--hover);font-size:12px}
+#loopUnit::before{content:"";position:absolute;z-index:-1;left:2px;top:2px;bottom:2px;width:calc(50% - 2px);border-radius:13px;background:var(--surface);box-shadow:0 0 0 1px var(--line);transition:transform .15s}
+#loopUnit[aria-checked=true]::before{transform:translateX(100%)}
+#loopUnit span{padding:1px 5px}#loopUnit[aria-checked=false] span:first-child,#loopUnit[aria-checked=true] span:last-child{color:var(--accent);font-weight:650}
 .measure-loop .holding{animation:loop-hold .6s linear forwards}
 @keyframes loop-hold{to{background:color-mix(in srgb,var(--accent) 24%,transparent)}}
 .measure-ruler-row{display:grid;grid-template-columns:var(--names) minmax(114px,1fr);gap:8px;align-items:center;font-size:11px;color:var(--muted)}
@@ -111,6 +123,31 @@ body:has(#player.counting-in) #status:not(.error){clip-path:inset(50%)}
 .lyric-stanza p.is-recording-line{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 2px 0 var(--accent)}
 .lyric-return{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));z-index:19;width:42px;height:42px;min-height:0;padding:0;border-radius:50%;transform:translateX(-50%);backdrop-filter:blur(9px);box-shadow:0 5px 18px #0003;background:color-mix(in srgb,var(--lyric-paper,#fafcfb) 94%,transparent)}
 .lyric-return svg{width:20px;height:20px}.lyric-return[data-direction=down] svg{transform:rotate(180deg)}
+.guitar-tab[hidden],#lyricSheet[hidden]{display:none}
+.guitar-tab{container-type:inline-size;max-width:none}
+.guitar-tab .lyric-heading{justify-content:flex-start;align-items:center}
+.tab-fingers-choice{display:inline-flex;gap:5px;align-items:center;font-size:12px;margin-left:auto;cursor:pointer}
+.tab-fingers-choice input{accent-color:var(--accent)}
+#tabBody{overflow-y:auto;max-height:calc(100dvh - 220px);scrollbar-gutter:stable;padding:1px 6px 8px 0}
+#tabBody:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#tabBody h3{font-size:13px;margin:14px 0 4px}
+.tab-systems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.tab-systems svg{display:block;width:100%;max-width:540px}
+@container(max-width:710px){.tab-systems{grid-template-columns:minmax(0,1fr)}}
+.tab-systems text{font-family:system-ui,sans-serif;fill:currentColor}
+.tab-number,.tab-string-label{font-size:12px}
+.tab-systems :is(.tab-number,.tab-string-label,.tab-optional,.tab-finger){fill:var(--muted)}
+.tab-string-label,.tab-finger,.tab-fret{text-anchor:middle}
+.tab-chord{font-size:17px;font-weight:650}
+.tab-rule{stroke:var(--muted);stroke-width:.8}
+.tab-barline{stroke:var(--muted);stroke-width:1.3}
+.tab-beat{stroke:var(--line);stroke-width:.7;stroke-dasharray:2.3 3}
+.tab-accent{stroke:currentColor;stroke-width:1.4;fill:none;stroke-linejoin:round}
+.tab-fret{font-size:15px;font-weight:650;paint-order:stroke;stroke:var(--page);stroke-width:4;stroke-linejoin:round}
+.tab-finger{font-size:13px;font-style:italic}
+.tab-systems .tab-cue{font:italic 15px Georgia,serif}
+@media(min-width:1111px){.rehearsal-layout:has(.guitar-tab:not([hidden])){grid-template-columns:minmax(280px,.78fr) minmax(0,1.22fr)}}
+@media(max-width:1110px){#guitarTab{grid-row:1;max-width:none}#tabBody{max-height:none;overflow:visible;scrollbar-gutter:auto}}
 body:has(#status:not(:empty)) .lyric-return{bottom:max(64px,env(safe-area-inset-bottom))}
 @media(prefers-color-scheme:dark){:root{--lyric-paper:#161d19}}
 .lyric-seek:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
@@ -148,3 +185,84 @@ body:has(#status:not(:empty)) .lyric-return{bottom:max(64px,env(safe-area-inset-
 @media(max-width:600px){.harmony-heading{display:grid;grid-template-columns:auto auto 28px 28px;justify-content:start}#harmonyPhrase{grid-row:2;grid-column:1/-1;max-width:none;width:100%}#followHarmony{grid-column:4;grid-row:1}}
 @media(max-width:1110px){.rehearsal-layout{grid-template-columns:minmax(0,1fr);gap:16px}.lyric-sheet{border-inline-start:0;padding:0;max-width:65ch}.lyric-heading{justify-content:flex-start}#lyricBody{max-height:none;overflow:visible;padding-inline:0;scrollbar-gutter:auto}#jumpLyrics{display:inline-flex}}
 @media(max-width:600px){.full-mixer{--names:146px}.mixer-stem .track-controls{grid-template-columns:minmax(0,1fr) 37px 19px}.mixer-stem .track-controls>button:first-child{font-size:11px;gap:2px}.mixer-stem .track-level,.local-track .track-level{width:37px;font-size:11px}.local-track .local-controls{grid-template-columns:23px minmax(0,1fr) 37px}.track-tools{gap:4px}}
+/* Chord chart view (iReal-style): bars, barlines and repeats from full-practice-charts.json */
+.lyric-heading .lyric-view{margin:0 auto 0 0}
+#lyricSheet:not([data-view=lyrics]) :is(#lyricDisplay,#lyricLegend,#lyricSource,.lyric-return){display:none}
+#lyricView button[hidden],.tab-fingers-choice[hidden],#tabPdf[hidden]{display:none}
+.concert-choice{display:inline-flex;gap:4px;align-items:center;font-size:12px;white-space:nowrap;cursor:pointer}
+.concert-choice input{accent-color:var(--accent)}
+#tabPdf{margin-inline-start:auto;display:inline-flex;color:inherit}
+#tabPdf svg{width:18px;height:18px}
+#chartBody[hidden]{display:none}
+#chartBody{--sheet-ink:var(--lyric-ink,#202825);--sheet-line:color-mix(in srgb,var(--sheet-ink) 55%,transparent);max-height:calc(100dvh - 220px);min-height:3em;overflow-y:auto;scrollbar-gutter:stable;padding:8px 5px 10px 0;color:var(--sheet-ink)}
+#chartBody:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sheet-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 12px;font-size:12px;color:var(--muted)}
+.sheet-status{font-weight:650;color:var(--sheet-ink)}
+.sheet-note{margin:4px 0 12px;max-width:72ch;font-size:12px;line-height:1.4;color:var(--muted)}
+.sheet-rows{display:grid;row-gap:3px}
+.sheet-label{margin:12px 0 1px 1.9em;font-size:11px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.sheet-label:first-child{margin-top:0}
+.sheet-row{display:grid;grid-template-columns:1.9em minmax(0,1fr);align-items:end}
+.sheet-number{align-self:end;padding:0 6px .95em 0;text-align:right;font-size:10px;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums}
+.sheet-line{display:grid;align-items:stretch}
+.sheet-bar{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.sheet-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 5px;min-width:0;padding:0 2px 2px 5px;font-size:10.5px;line-height:1.15;color:var(--muted)}
+.sheet-text{min-width:0;overflow-wrap:anywhere}
+.sheet-mark{display:inline-grid;place-items:center;min-width:1.5em;height:1.5em;padding:0 2px;border:1.5px solid var(--sheet-ink);border-radius:3px;font-size:11px;font-weight:750;color:var(--sheet-ink)}
+.sheet-icon{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4;color:var(--sheet-ink)}
+.sheet-icon .dot{fill:currentColor;stroke:none}
+.sheet-ending{display:block;height:13px;margin:0 0 1px;padding-left:4px;border-top:1.5px solid var(--sheet-ink);font-size:10px;font-weight:700;line-height:12px}
+.sheet-ending.first{margin-left:3px;border-left:1.5px solid var(--sheet-ink)}
+.sheet-beats{position:relative;display:flex;align-items:center;min-height:36px;border-left:1px solid var(--sheet-line)}
+.sheet-bar:is(.joined,[data-start]) .sheet-beats{border-left-color:transparent}
+.sheet-bar:last-child:not([data-end]) .sheet-beats{border-right:1px solid var(--sheet-line)}
+.sheet-edge{position:absolute;top:3px;bottom:3px;pointer-events:none}
+.sheet-edge.start{left:-1px}.sheet-edge.end{right:0}
+.sheet-edge.double{width:4px;border-inline:1px solid var(--sheet-ink)}
+.sheet-edge.final{width:6px;border-left:1px solid var(--sheet-ink);border-right:3px solid var(--sheet-ink)}
+.sheet-edge.repeat{width:10px}
+.sheet-edge.start.repeat{border-left:3px solid var(--sheet-ink)}.sheet-edge.end.repeat{border-right:3px solid var(--sheet-ink)}
+.sheet-edge.repeat::before,.sheet-edge.repeat::after{content:"";position:absolute;background:var(--sheet-ink)}
+.sheet-edge.repeat::before{top:0;bottom:0;width:1px}
+.sheet-edge.start.repeat::before{left:2px}.sheet-edge.end.repeat::before{right:2px}
+.sheet-edge.repeat::after{top:calc(50% - 6px);width:3px;height:3px;border-radius:50%;box-shadow:0 9px 0 var(--sheet-ink)}
+.sheet-edge.start.repeat::after{left:6px}.sheet-edge.end.repeat::after{right:6px}
+.sheet-bar[data-start=repeat] .sheet-beats{padding-left:9px}.sheet-bar[data-start=double] .sheet-beats{padding-left:4px}
+.sheet-bar[data-end=repeat] .sheet-beats{padding-right:10px}.sheet-bar:is([data-end=double],[data-end=final]) .sheet-beats{padding-right:6px}
+.sheet-meter{display:inline-flex;flex:none;flex-direction:column;align-items:center;margin:0 0 0 4px;font:800 10.5px/.95 Georgia,'Times New Roman',serif}
+.sheet-meter b{font-weight:800}
+.sheet-grid{display:flex;flex:1 1 auto;align-items:center}
+.sheet-chord{position:relative;flex:1 0 0;padding:0 2px 0 6px;line-height:1.1;white-space:nowrap}
+.sheet-rest{flex:1 0 0}
+.sheet-name{display:inline-flex;align-items:baseline;font-size:17px;font-weight:700;color:var(--sheet-ink)}
+.sheet-quality{position:relative;top:-.45em;margin-left:.04em;font-size:.64em;font-weight:650}
+.sheet-bass{margin-left:.03em;font-size:.72em;font-weight:650}
+.sheet-line.tight .sheet-name{font-size:14px;letter-spacing:-.01em}
+.sheet-line.tighter .sheet-chord{padding-left:3px}.sheet-line.tighter .sheet-name{font-size:12px;letter-spacing:-.03em}.sheet-line.tighter .sheet-meter{margin-left:2px}
+.sheet-line.wrap{display:flex;flex-wrap:wrap;row-gap:4px}.sheet-line.wrap>.sheet-bar{flex:var(--cells) 0 0;min-width:min-content}
+.sheet-fermata{position:absolute;top:-11px;left:5px;width:13px;height:13px}
+.sheet-times{position:absolute;right:12px;bottom:1px;font-size:10px;font-weight:700;line-height:1;color:var(--sheet-ink)}
+.sheet-empty{max-width:60ch;padding:12px 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.sheet-empty p{margin:0 0 8px}.sheet-empty-title{font-weight:650;color:var(--sheet-ink)}
+.sheet-switch{min-height:28px;margin-left:4px;padding:3px 10px;font-size:12px}
+@media(max-width:1110px){#chartBody{max-height:none;overflow:visible;padding-inline:0;scrollbar-gutter:auto}}
+@media(max-width:600px){.sheet-row{grid-template-columns:1.6em minmax(0,1fr)}.sheet-label{margin-left:1.6em}.sheet-number{padding-right:4px}.sheet-name{font-size:15px}.sheet-chord{padding-left:4px}.sheet-beats{min-height:33px}}
+#openChartReader{align-self:center;width:32px;padding:4px}
+html:has(#chartReader[open]){overflow:hidden}
+#chartReader{inset:0;margin:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:none;border:0;border-radius:0;padding:0;overflow:hidden;background:var(--page)}
+#readerPanel{display:flex;flex-direction:column;width:100%;height:100%;background:var(--page);color:inherit;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.reader-nav{flex:none;display:grid;grid-template-columns:40px minmax(0,24rem) 40px minmax(0,20rem) 40px 40px;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.reader-nav button,.reader-nav select{height:40px;min-width:0}.reader-nav button{padding:0}.reader-nav select{width:100%;text-overflow:ellipsis}
+.reader-nav:has(#readerRef[hidden]){grid-template-columns:40px minmax(0,24rem) repeat(3,40px)}
+#readerContent{flex:1;min-height:0;display:flex;justify-content:center}
+#readerContent #chartBody{width:100%;max-width:1100px;min-height:0;height:100%;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:12px 16px 24px}
+#readerTransport{flex:none;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:5px 12px;padding:4px 8px;border-top:1px solid var(--line);background:var(--surface)}
+.reader-scrub{display:flex;align-items:center;gap:6px;flex:1 1 120px;max-width:32rem}.reader-scrub input{min-width:40px;width:100%;accent-color:var(--accent)}.reader-scrub output{min-width:3.2em;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+#readerError{flex:none;padding:4px 10px;color:var(--pink)}
+@media(max-width:650px){.reader-nav,.reader-nav:has(#readerRef[hidden]){grid-template-columns:44px minmax(0,1fr) repeat(3,44px);gap:3px;padding:4px}.reader-nav button,.reader-nav select{height:44px}.reader-nav #readerRef{grid-row:2;grid-column:1/-1;height:32px}.reader-nav #readerPlay{grid-column:4;grid-row:1}.reader-nav #readerClose{grid-column:5;grid-row:1}#readerContent #chartBody{padding:6px 6px 20px}}
+@media(prefers-reduced-motion:reduce){#loopUnit::before{transition:none}}
+@media(max-width:650px){
+ #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3)){display:flex;flex-wrap:wrap;row-gap:5px}
+ #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3))>.sheet-bar{flex:var(--cells) 1 0;min-width:min(100%,8.75rem)}
+ #readerContent .sheet-line .sheet-name{font-size:16px;letter-spacing:0}
+}

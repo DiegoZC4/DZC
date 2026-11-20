@@ -18,7 +18,13 @@ function at(bars,time){
  while(lo<hi){const mid=(lo+hi)>>1;if(bars[mid].start<=time+1e-7)lo=mid+1;else hi=mid;}
  return bars[Math.max(0,lo-1)]||null;
 }
-function range(state,bars){
+const minTime=.05;
+function mode(state,bars){return !bars.length||state?.mode==='time'?'time':'bars';}
+function range(state,bars,duration){
+ if(mode(state,bars)==='time'){
+  const start=state?.start??0,end=state?.end;
+  return Number.isFinite(start)&&Number.isFinite(end)&&start>=0&&end<=duration&&end-start>=minTime?{start,end}:null;
+ }
  const start=state?.start??1,end=state?.end;
  if(!Number.isInteger(start)||!Number.isInteger(end)||start<1||end<start||end>bars.length)return null;
  return {start:bars[start-1].start,end:bars[end-1].end};
@@ -29,6 +35,37 @@ function point(state,kind,number){
  if(kind==='end'&&(next.start??1)>number)next.start=null;
  return next;
 }
+function timePoint(state,kind,time,duration){
+ const n=Math.min(duration,Math.max(0,time));
+ if(!Number.isFinite(n)||(kind==='end'?n<minTime:duration-n<minTime))return state;
+ const next={...state,mode:'time',[kind]:n,enabled:true};
+ if(kind==='start'&&Number.isFinite(next.end)&&next.end-n<minTime)next.end=null;
+ if(kind==='end'&&n-(next.start??0)<minTime)next.start=null;
+ return next;
+}
+function whole(state,bars,duration){
+ return mode(state,bars)==='time'?{...state,mode:'time',start:0,end:duration,enabled:true}:
+  {...state,start:1,end:bars.length,enabled:true};
+}
+function restore(stored,bars,duration,sourceVersion){
+ if(!stored||stored.sourceVersion!==sourceVersion||!(duration>0))return null;
+ const unit=mode(stored,bars);
+ if(!['time','bars',undefined].includes(stored.mode)||(!bars.length&&stored.mode!=='time'&&(stored.start!=null||stored.end!=null)))return null;
+ const valid=n=>n==null||(unit==='time'?Number.isFinite(n)&&n>=0&&n<=duration:Number.isInteger(n)&&n>=1&&n<=bars.length);
+ if(!valid(stored.start)||!valid(stored.end))return null;
+ if(!bars.length&&!stored.mode&&stored.enabled)return whole({},bars,duration); // Old full-recording loop.
+ return {...stored,mode:unit};
+}
+function switchMode(state,bars,duration){
+ if(!bars.length)return state;
+ const old=mode(state,bars),unit=old==='bars'?'time':'bars';
+ const previous={start:state.start??null,end:state.end??null};
+ const saved={...state.saved,[old]:previous};
+ const converted=unit==='time'?{start:bars[state.start-1]?.start??null,end:bars[state.end-1]?.end??null}:
+  {start:state.start==null?null:at(bars,state.start).number,end:state.end==null?null:at(bars,Math.max(0,state.end-1e-6)).number};
+ return {...state,mode:unit,saved,...(saved[unit]||converted)};
+}
+function timeLabel(t){const n=Math.round(t*100);return Math.floor(n/6000)+':'+String(Math.floor(n/100)%60).padStart(2,'0')+'.'+String(n%100).padStart(2,'0');}
 function position(time,start,end,loop){
  const n=cycle(time,start,end,loop);
  return n?Math.max(start,time-n*(end-start)):Math.min(time,end);
@@ -50,6 +87,6 @@ function bindPoint(button,activate,clear){
  button.addEventListener('contextmenu',e=>e.preventDefault());
  button.addEventListener('keydown',e=>{if((e.shiftKey&&e.key==='Enter')||e.key==='Delete'||e.key==='Backspace'){e.preventDefault();if(!e.repeat)clear();}});
 }
-const api={measures,at,range,point,position,cycle,bindPoint};
+const api={measures,at,range,point,mode,timePoint,whole,restore,switchMode,timeLabel,position,cycle,bindPoint};
 root.MeleteFullPracticeLoop=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

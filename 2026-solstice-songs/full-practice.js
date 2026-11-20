@@ -16,10 +16,19 @@ let lyricRequest,referenceCueRequest,pendingLyric=null,lyricSections=[],currentS
 let lyricChart=null,updateChord=null;
 const C=MeleteFullPracticeChart;
 const lyricFollow=new MeleteFullPracticeLyricFollow.Follower($('lyricBody'),$('lyricReturn'));
-const pitchDisplay=key=>C.pitchDisplay(song.id,key,shift(),prefs.concertPitch!==false);
+const pitchDisplay=key=>C.pitchDisplay(song.id,key,shift(),prefs.concertPitch!==false,config().shapeCapos?.[song.url]);
+function displayedChartKey(){
+ return lyricView==='chart'?$('chartBody').dataset.key:lyricChart?.key;
+}
+function syncCapo(){
+ const key=displayedChartKey();
+ $('capoChoice').hidden=lyricView==='tabs';
+ $('capoFret').disabled=!song||!key;
+ capo.setValue(song&&key?pitchDisplay(key).fret:0,false);
+}
 function transposeLyrics(){
  if(lyricChart){const d=pitchDisplay(lyricChart.key);C.transpose($('lyricBody'),d.shift,lyricChart.key,d.label);C.transpose($('lyricLegend'),d.shift,lyricChart.key,d.label);}
- transposeSheet();if(lyricView==='tabs'&&tabPart)drawTab();
+ transposeSheet();syncCapo();if(lyricView==='tabs'&&tabPart)drawTab();
 }
 function transposeSheet(){const sheet=$('chartBody');if(sheet.dataset.key){const d=pitchDisplay(sheet.dataset.key);C.sheetTranspose(sheet,d.shift,sheet.dataset.key,d.label);}}
 function syncLyricDisplay(){
@@ -35,6 +44,7 @@ function syncLyricDisplay(){
 let lyricView=null,sheetRequest=null,sheetRun=0;
 const reader=$('chartReader');
 const loopHome=document.createComment('practice loop controls');$('loopDock').before(loopHome);
+const pitchHome=document.createComment('written chord controls');$('chordPitchControls').before(pitchHome);
 let readerReturnView='lyrics',readerNative=false,deferredAudio=null,readerExitUrl=null;
 const sheetKey=s=>s.id+'/'+(s.referenceId||'playlist');
 function chartData(){
@@ -54,7 +64,7 @@ async function showChart(selected,token){
   body.scrollTop=0;transposeSheet();
  }catch{
   if(run===sheetRun){body.textContent='Chord charts unavailable.';delete body.dataset.for;}
- }finally{if(run===sheetRun)body.removeAttribute('aria-busy');}
+ }finally{if(run===sheetRun){body.removeAttribute('aria-busy');syncCapo();}}
 }
 function resetChart(selected,token){
  const body=$('chartBody');sheetRun++;delete body.dataset.for;delete body.dataset.key;body.replaceChildren();body.removeAttribute('aria-busy');
@@ -82,6 +92,7 @@ function setLyricView(view,remember=false){
  if(chart){
   if(song&&$('chartBody').dataset.for!==sheetKey(song))void showChart(song,revision);else C.sheetFit($('chartBody'));
  }else if(tabs)drawTab();else if(was!=='lyrics')highlightLyrics(position());
+ syncCapo();
  if(remember){preferredView=prefs.lyricView=lyricView;persist();}
  const url=new URL(location.href);
  url.searchParams.delete('part');if(lyricView!=='lyrics')url.searchParams.set('view',lyricView);else url.searchParams.delete('view');
@@ -122,7 +133,7 @@ function openReader(native){
  if(reader.open||!song)return;
  if(native)history.pushState({...history.state,chartReaderEntry:true},'',location.href);
  readerReturnView=lyricView;setLyricView('chart');
- $('readerContent').append($('chartBody'));$('readerTransport').append($('loopDock'));reader.showModal();readerControls();
+ $('readerContent').append($('chartBody'));$('readerTransport').append($('loopDock'));$('readerOptions').append($('chordPitchControls'));reader.showModal();readerControls();
  $('readerError').textContent=$('status').classList.contains('error')?$('status').textContent:'';
  $('readerError').hidden=!$('readerError').textContent;
  const url=new URL(location.href);url.searchParams.set('reader','1');history.replaceState(history.state,'',url);
@@ -149,7 +160,7 @@ function finishReaderClose(){
  if($('chartBody').parentElement!==$('readerContent'))return;
  if(document.fullscreenElement===$('readerPanel'))void document.exitFullscreen().catch(()=>{});
  readerNative=false;$('lyricSheet').insertBefore($('chartBody'),$('lyricReturn'));
- loopHome.after($('loopDock'));
+ loopHome.after($('loopDock'));pitchHome.after($('chordPitchControls'));
  setLyricView(readerReturnView);$('openChartReader').focus({preventScroll:true});
  const url=new URL(location.href),pop=history.state?.chartReaderEntry&&url.searchParams.has('reader');
  url.searchParams.delete('reader');url.hash=song.id;
@@ -358,6 +369,14 @@ function persist(){if(song)saved[song.id]=[...mix,...(saved[song.id]||[]).filter
 for(const id of ['lyricHarmony','lyricChords'])$(id).onchange=()=>{prefs[id]=$(id).checked;syncLyricDisplay();persist();};
 $('concertPitch').checked=prefs.concertPitch!==false;
 $('concertPitch').onchange=()=>{prefs.concertPitch=$('concertPitch').checked;persist();transposeLyrics();};
+const capo=MeleteDragNumber($('capoFret'),{values:Array.from({length:12},(_,i)=>i),clickStep:1,pixelsPerStep:12,format:String,
+ defaultValue:()=>song&&displayedChartKey()?C.pitchDisplay(song.id,displayedChartKey(),shift()).fret:0,aria:v=>v?'Fret '+v:'No capo'});
+$('capoFret').oninput=()=>{
+ if(!song||!displayedChartKey())return;
+ const cfg=config();
+ prefs.songs[song.id]={...cfg,shapeCapos:{...cfg.shapeCapos,[song.url]:C.capoAtNativePitch(capo.value(),shift())}};
+ $('concertPitch').checked=prefs.concertPitch=false;persist();transposeLyrics();
+};
 const speed=MeleteDragNumber($('speed'),{values:Array.from({length:31},(_,i)=>(50+i*5)/100),defaultValue:1,clickStep:.05,wrapOnClick:true,pixelsPerStep:8,format:v=>`${Math.round(v*100)}%`,aria:v=>`${Math.round(v*100)}%`});
 const transpose=new MeleteInfinitePager($('transpose'),{options:Array.from({length:25},(_,i)=>({value:12-i,label:i===12?'0':`${i<12?'+':''}${12-i}`})),value:0});
 const axes=Object.fromEntries(['scale','stretch'].map(id=>[id,MeleteDragNumber($(id),{values:Array.from({length:21},(_,i)=>50+i*10),defaultValue:100,clickStep:10,pixelsPerStep:8,format:v=>`${v}%`,aria:v=>`${v}%`})]));
@@ -545,7 +564,8 @@ function drawTab(){
  const fingers=prefs.tabFingers!==false;
  $('tabFingers').checked=fingers;
  $('tabFingers').closest('label').hidden=tabPart.hasFingers===false;
- const d=pitchDisplay(lyricChart?.key||tabPart.recordingKeys?.[song.referenceId||'playlist']||tabPart.key);
+ // This tab is an authored fingering, not a chord sheet that can be revoiced for another capo.
+ const d=C.pitchDisplay(song.id,lyricChart?.key||tabPart.recordingKeys?.[song.referenceId||'playlist']||tabPart.key,shift(),prefs.concertPitch!==false);
  $('tabTuning').textContent='Standard tuning · '+tabPart.key+' shapes · '+(d.fret?'Capo '+d.fret:'No capo');
  MeleteFullPracticeTab.render($('tabBody'),tabPart,fingers&&tabPart.hasFingers!==false,name=>C.transposeChord(name,d.tabShift,tabPart.key));
 }

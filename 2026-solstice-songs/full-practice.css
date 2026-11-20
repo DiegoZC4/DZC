@@ -191,6 +191,12 @@ body:has(#status:not(:empty)) .lyric-return{bottom:max(64px,env(safe-area-inset-
 #lyricView button[hidden],.tab-fingers-choice[hidden],#tabPdf[hidden]{display:none}
 .concert-choice{display:inline-flex;gap:4px;align-items:center;font-size:12px;white-space:nowrap;cursor:pointer}
 .concert-choice input{accent-color:var(--accent)}
+.chord-pitch-controls,#capoChoice{display:inline-flex;align-items:center;white-space:nowrap}
+.chord-pitch-controls{align-self:center;gap:10px;flex:none}
+#capoChoice{gap:4px;font-size:12px;color:var(--muted)}
+#capoChoice[hidden]{display:none}
+#capoFret{width:3em;min-width:0;height:30px;min-height:0;padding:0;cursor:ns-resize;touch-action:none;user-select:none;font-variant-numeric:tabular-nums}
+#capoFret .drag-number-value{font:inherit;color:inherit}
 #tabPdf{margin-inline-start:auto;display:inline-flex;color:inherit}
 #tabPdf svg{width:18px;height:18px}
 #chartBody[hidden]{display:none}
@@ -251,15 +257,17 @@ body:has(#status:not(:empty)) .lyric-return{bottom:max(64px,env(safe-area-inset-
 html:has(#chartReader[open]){overflow:hidden}
 #chartReader{inset:0;margin:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:none;border:0;border-radius:0;padding:0;overflow:hidden;background:var(--page)}
 #readerPanel{display:flex;flex-direction:column;width:100%;height:100%;background:var(--page);color:inherit;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-.reader-nav{flex:none;display:grid;grid-template-columns:40px minmax(0,24rem) 40px minmax(0,20rem) 40px 40px;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.reader-nav{flex:none;display:grid;grid-template-columns:40px minmax(0,24rem) 40px minmax(max-content,32rem) 40px 40px;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
 .reader-nav button,.reader-nav select{height:40px;min-width:0}.reader-nav button{padding:0}.reader-nav select{width:100%;text-overflow:ellipsis}
-.reader-nav:has(#readerRef[hidden]){grid-template-columns:40px minmax(0,24rem) repeat(3,40px)}
+.reader-nav:has(#readerRef[hidden]){grid-template-columns:40px minmax(0,24rem) 40px auto 40px 40px}
+#readerOptions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+#readerOptions select{min-width:0;width:0;flex:1 1 0}
 #readerContent{flex:1;min-height:0;display:flex;justify-content:center}
 #readerContent #chartBody{width:100%;max-width:1100px;min-height:0;height:100%;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:12px 16px 24px}
 #readerTransport{flex:none;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:5px 12px;padding:4px 8px;border-top:1px solid var(--line);background:var(--surface)}
 .reader-scrub{display:flex;align-items:center;gap:6px;flex:1 1 120px;max-width:32rem}.reader-scrub input{min-width:40px;width:100%;accent-color:var(--accent)}.reader-scrub output{min-width:3.2em;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
 #readerError{flex:none;padding:4px 10px;color:var(--pink)}
-@media(max-width:650px){.reader-nav,.reader-nav:has(#readerRef[hidden]){grid-template-columns:44px minmax(0,1fr) repeat(3,44px);gap:3px;padding:4px}.reader-nav button,.reader-nav select{height:44px}.reader-nav #readerRef{grid-row:2;grid-column:1/-1;height:32px}.reader-nav #readerPlay{grid-column:4;grid-row:1}.reader-nav #readerClose{grid-column:5;grid-row:1}#readerContent #chartBody{padding:6px 6px 20px}}
+@media(max-width:650px){.reader-nav,.reader-nav:has(#readerRef[hidden]){grid-template-columns:44px minmax(0,1fr) repeat(3,44px);gap:3px;padding:4px}.reader-nav button,.reader-nav select{height:44px}#readerOptions{grid-row:2;grid-column:1/-1}#readerOptions select,#readerOptions #capoFret{height:36px}.reader-nav #readerPlay{grid-column:4;grid-row:1}.reader-nav #readerClose{grid-column:5;grid-row:1}#readerContent #chartBody{padding:6px 6px 20px}}
 @media(prefers-reduced-motion:reduce){#loopUnit::before{transition:none}}
 @media(max-width:650px){
  #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3)){display:grid;grid-template-columns:repeat(2,minmax(min-content,1fr))!important;row-gap:5px}

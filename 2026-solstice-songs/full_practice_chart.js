@@ -15,10 +15,15 @@ function transposeChord(symbol,shift,key='A'){
 }
 function keyNumber(key){return pc[key[0]]+(key[1]==='#'?1:key[1]==='b'?-1:0);}
 const shapeKeys={'the-circle':'D','bold-orion':'Dm','hymn-to-breaking-strain':'Bm','here-comes-the-sun':'D'};
-function pitchDisplay(song,key,shift,concert=true){
- const shapeKey=shapeKeys[song]||key,baseCapo=(keyNumber(key)-keyNumber(shapeKey)+12)%12;
- const fret=((baseCapo+shift)%12+12)%12;
- return {shift:concert?shift:-baseCapo,shapeKey,fret,tabShift:concert?baseCapo+shift:0,
+const fretClass=n=>((n%12)+12)%12;
+// Store a capo at the recording's native pitch so later audio transposes keep the same shapes.
+function capoAtNativePitch(fret,audioShift){return fretClass(fret-audioShift);}
+function pitchDisplay(song,key,shift,concert=true,chosenCapo){
+ const writtenKey=shapeKeys[song]||key,authored=fretClass(keyNumber(key)-keyNumber(writtenKey));
+ const baseCapo=Number.isInteger(chosenCapo)&&chosenCapo>=0&&chosenCapo<12?chosenCapo:authored;
+ const shapeKey=baseCapo===authored?writtenKey:transposeChord(key,-baseCapo,key);
+ const fret=fretClass(baseCapo+shift);
+ return {shift:concert?shift:-baseCapo,shapeKey,fret,tabShift:concert?authored+shift:0,
   label:concert?'Concert '+transposeChord(key,shift,key):shapeKey+' shapes · '+(fret?'Capo '+fret:'No capo')};
 }
 function migrateShift(cfg,base,alternatives){
@@ -300,7 +305,7 @@ function sheetFit(el){
   }
  }
 }
-root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,pitchDisplay,migrateShift,recordingShift,line,bars,legend,transpose,display,chordClock,
+root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,pitchDisplay,capoAtNativePitch,migrateShift,recordingShift,line,bars,legend,transpose,display,chordClock,
  chordParts,sheetFor,sheetRows,pickupText,barLabel,sheet,sheetTranspose,sheetFit};
 if(typeof module!=='undefined')module.exports=root.MeleteFullPracticeChart;
 })(globalThis);

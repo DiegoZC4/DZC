@@ -32,7 +32,7 @@ function pageFetchUrl(page) {
 function assetFor(url) {
   const parsed = new URL(url, self.location.href);
   const size = Number(parsed.searchParams.get('bytes'));
-  const bookName = /^\/audio\/antimemetics-w(\d+)-([a-f0-9]{12})\.m4a$/.exec(parsed.pathname);
+  const bookName = /^\/audio\/antimemetics-w(\d+)-([a-f0-9]{12})\.(m4a|webm)$/.exec(parsed.pathname);
   const hash = parsed.searchParams.get('sa') || '';
   if (parsed.origin !== self.location.origin
       || !(BOOK ? bookName && hash.startsWith(bookName[2]) : /^\/audio\/lsrg-\d+[-a-z0-9]*\.(m4a|mp3)$/.test(parsed.pathname))
@@ -41,7 +41,8 @@ function assetFor(url) {
   parsed.hash = '';
   const page = new URL(BOOK ? '/antimemetics/' : parsed.searchParams.get('preview') === '1'
     ? '/sequences-audio-preview.html' : '/sequences-audio.html', self.location.href).href;
-  return { url: parsed.href, size, page, bookWeek: bookName?.[1], type: parsed.pathname.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4' };
+  const type = bookName?.[3] === 'webm' ? 'audio/webm' : parsed.pathname.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4';
+  return { url: parsed.href, size, page, bookWeek: bookName?.[1], type };
 }
 
 function parseRange(header, size) {
@@ -133,7 +134,11 @@ function manifestAsset(manifest, page) {
 }
 
 function newerThanManifest(policy, manifest) {
-  return policy && (BOOK ? policy.week > manifest.week : policy.date > manifest.date);
+  if (!policy) return false;
+  if (!BOOK) return policy.date > manifest.date;
+  // A stale AAC response from the same week's rollout must not undo the Opus migration.
+  return policy.week > manifest.week || (policy.week === manifest.week
+    && assetFor(policy.url)?.type === 'audio/webm' && assetFor(manifest.audio)?.type === 'audio/mp4');
 }
 
 async function adoptCurrent(manifest, page) {
@@ -143,7 +148,7 @@ async function adoptCurrent(manifest, page) {
     if (newerThanManifest(previous, manifest)) return { policy: previous, changed: false, stale: true };
     const changed = !previous || previous.url !== asset.url || previous.date !== manifest.date;
     const policy = { id: page, week: manifest.week, date: manifest.date, url: asset.url,
-      disabled: changed ? false : Boolean(previous.disabled) };
+      disabled: Boolean(previous?.disabled && (!changed || (BOOK && previous.week === manifest.week))) };
     for (const item of await result(assets.getAll())) {
       if (assetFor(item.url)?.page === page && item.url !== asset.url) {
         chunks.delete(chunkKeys(item.url));
@@ -277,7 +282,8 @@ async function fetchChunk(asset, index) {
       throw new Error(`Invalid audio range response (${response.status})`);
     }
     const type = response.headers.get('Content-Type') || '';
-    if (!/^(audio\/|application\/octet-stream)/i.test(type)) {
+    if (!/^(audio\/|application\/octet-stream)/i.test(type)
+        && !(asset.type === 'audio/webm' && /^video\/webm(?:\s*;|$)/i.test(type))) {
       await response.body?.cancel();
       throw new Error('Server returned non-audio content');
     }

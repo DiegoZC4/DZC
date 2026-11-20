@@ -79,3 +79,8 @@ RewriteRule ^lsrg/$ sequences-audio.html [L]
   Header always set LiteSpeed-Cache-Control "no-cache"
 </FilesMatch>
 # END LSRG reader routes
+
+# Keep one Vowel Lab build for both public addresses.
+RewriteRule ^vowel$ /vowel/ [R=301,L]
+RewriteRule ^vowel/$ vowel-lab/index.html [L]
+RewriteRule ^vowel/(.+)$ vowel-lab/$1 [L]

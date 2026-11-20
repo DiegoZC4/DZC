@@ -1,7 +1,14 @@
+VoiceSu live formant tracking
+
+The Lab uses the upstream VoiceSu LPC, MFCC and trained Gaussian-mixture readout.
+The browser loads revision cc54abd3887eca90a3c096e0bfc8ca446c0d4e1e.
+https://github.com/brentenjackson/voicesu
+
 VocalTrack smoothing adaptation
 
-The legacy smoother in analysis.js is retained for comparisons. The live
-browser worker uses the LPC estimator and temporal filter in live_tracker.js.
+The legacy smoother in analysis.js and the previous LPC estimator in
+live_tracker.js are retained for comparisons. The live worker uses the
+SignalMeter from live_tracker.js for its signal-to-noise threshold.
 
 The stability gate, log-frequency 1-Euro equations and default parameters in
 analysis.js are adapted from Santiago Barreda's VocalTrack Smoother.py.

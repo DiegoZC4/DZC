@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const {chartPoint, strokes, referenceExample} = VowelLab;
-  const smoothingMethod = 'lpc-envelope-median-v1';
+  const smoothingMethod = VoiceSuLab.algorithm;
   const canvas = $('chart'), context = canvas.getContext('2d');
   const clips = createClipRecorder();
   const snrMeter = $('snr-meter');
@@ -12,10 +12,10 @@
     low_snr: 'Sing louder or move closer to the mic.',
     settling: 'Hold the vowel.', no_vowel: 'Hold a vowel sound.',
     clipping: 'Clipping · lower the mic gain.',
-    error: 'Analysis unavailable. Restart Vowel Lab from its launcher, then retry.'
+    error: 'VoiceSu analysis is unavailable.'
   };
-  let stream, audioContext, source, analyser, worker, timer, pending = false;
-  let generation = 0, current = null, frames = [], pins = [], width = 0, height = 0;
+  let stream, audioContext, source, capture, worker;
+  let generation = 0, current = null, lpc = null, frames = [], lpcFrames = [], pins = [], width = 0, height = 0;
   let inputChoice = '', pinCandidate = null, analysisEpoch = 0, inputMuted = false;
   let connecting = false, wantMicrophone = true;
   const trailSetting=$('trail-duration');
@@ -31,6 +31,17 @@
 
   const preview = VowelSynth.attach(canvas, plotBounds, draw, $('audition-hint'), () => trailMs);
   const songMap = VowelSongMap.attach(draw);
+  const review = createClipTrackingReview($('clip-audio'), {
+    worker: createWorker, clear: clearLive, display: displayReading, status,
+    resume: () => status(stream ? 'Listening · sustain a vowel' : 'Microphone paused.')
+  });
+
+  function createWorker() {
+    const engine = new Worker('worker.js?v=4');
+    const config=document.documentElement.dataset;
+    engine.postMessage({type:'init', station:config.clipStore === 'station' || config.voicesu === 'local'});
+    return engine;
+  }
 
   function status(text, state = '') {
     if ($('status').textContent !== text) $('status').textContent = text;
@@ -66,10 +77,37 @@
   function clearLive() {
     clearTimeout(expiryTimer);
     ++analysisEpoch;
-    current = null; frames = []; pinCandidate = null;
-    $('f1').textContent = $('f2').textContent = '—';
+    current = lpc = null; frames = []; lpcFrames = []; pinCandidate = null;
+    writeFormants();
     showSnr(null); $('pin').disabled = true;
     draw();
+  }
+  function writeFormants() {
+    for (const [key, reading] of [['',current], ['lpc-',lpc]]) {
+      for (const axis of ['f1','f2']) $(key+axis).textContent = reading ? Math.round(reading[axis]) : '—';
+    }
+  }
+  function displayReading(data, now, fromClip) {
+    showSnr(data.snr);
+    current = data.mfcc; lpc = data.result;
+    limited = data.state === 'limited';
+    frames.push({t:now, ...current});
+    lpcFrames.push({t:now, ...lpc});
+    frames = frames.filter(frame => now - frame.t < 3000);
+    lpcFrames = lpcFrames.filter(frame => now - frame.t < 3000);
+    writeFormants();
+    const label = fromClip && (data.state === 'silent' || data.state === 'low_snr')
+      ? 'Below tracking threshold' : statuses[data.state] || 'Hold a vowel sound.';
+    status(fromClip ? 'Recording · ' + label : label, data.state);
+    pinCandidate = current && !limited ? referenceExample(frames) : null;
+    $('pin').disabled = !pinCandidate;
+    draw();
+    clearTimeout(expiryTimer);
+    expiryTimer = setTimeout(function expire() {
+      current=lpc=null; pinCandidate=null; $('pin').disabled=true;
+      writeFormants(); draw();
+      if (frames.some(p=>p.f1 && performance.now()-p.t<trailMs) || lpcFrames.some(p=>p.f1 && performance.now()-p.t<trailMs)) expiryTimer=setTimeout(expire,50);
+    },250);
   }
   function updatePinControls(message) {
     $('export').disabled = $('clear').disabled = !pins.length;
@@ -95,16 +133,16 @@
     const drained = clips.disconnect(message);
     ++generation;
     connecting = false;
-    clearInterval(timer); timer = null;
-    worker?.terminate(); worker = null; pending = false; inputMuted = false;
-    source?.disconnect(); source = null; analyser = null;
+    worker?.terminate(); worker = null; inputMuted = false;
+    if(capture){capture.port.close();capture.disconnect();capture=null;}
+    source?.disconnect(); source = null;
     const tracks = stream?.getTracks() || [];
     stream = null;
     for (const track of tracks) { track.onended = track.onmute = track.onunmute = null; track.stop(); }
     const previousContext = audioContext; audioContext = null;
     if (previousContext) void drained.then(() => previousContext.close()).catch(() => {});
     $('start').textContent = 'Resume microphone'; $('start').disabled = false;
-    clearLive(); status(message);
+    if(!review.active()){clearLive(); status(message);}
   }
   async function start() {
     if (connecting || !wantMicrophone) return;
@@ -124,54 +162,40 @@
       await opened.resume();
       if (session !== generation) { acquired.getTracks().forEach(t => t.stop()); await opened.close(); return; }
       stream = acquired; audioContext = opened;
-      analyser = audioContext.createAnalyser(); analyser.fftSize = 8192; analyser.smoothingTimeConstant = 0;
-      source = audioContext.createMediaStreamSource(stream); source.connect(analyser);
-      worker = new Worker('worker.js?v=2');
-      worker.onerror = () => stop('Analysis failed. Resume the microphone to retry.');
+      source = audioContext.createMediaStreamSource(stream);
+      await audioContext.audioWorklet.addModule('tracking-worklet.js?v=4');
+      if(session !== generation) return;
+      capture = new AudioWorkletNode(audioContext, 'vowel-tracking-capture', {channelCount:1, channelCountMode:'explicit', outputChannelCount:[1]});
+      worker = createWorker();
+      worker.onerror = event => stop(statuses.error + ' ' + event.message);
       worker.onmessage = ({data}) => {
-        if (session !== generation || data.id !== session) return;
-        pending = false;
-        if (data.epoch !== analysisEpoch || inputMuted) return;
-        if (data.state === 'error') { stop(statuses.error); return; }
-        preview.heard($('clip-audio').paused && !songMap.auditioning() ? data.pitchHz : null, data.timeMs);
-        showSnr(data.snr);
-        current = data.result;
-        limited = data.state==='limited';
-        const now = data.timeMs;
-        frames.push({t: now, ...current});
-        frames = frames.filter(frame => now - frame.t < 3000);
-        $('f1').textContent = current ? Math.round(current.f1) : '—';
-        $('f2').textContent = current ? Math.round(current.f2) : '—';
-        status(statuses[data.state] || 'Hold a vowel sound.', data.state);
-        pinCandidate = current && !limited ? referenceExample(frames) : null;
-        $('pin').disabled = !pinCandidate;
-        draw();
-        clearTimeout(expiryTimer);
-        expiryTimer=setTimeout(function expire(){
-          current=null;pinCandidate=null;$('pin').disabled=true;
-          $('f1').textContent=$('f2').textContent='—';
-          draw();
-          if(frames.some(p=>p.f1 && performance.now()-p.t<trailMs))expiryTimer=setTimeout(expire,50);
-        },250);
+        if(session !== generation) return;
+        if(data.type === 'failure'){stop(statuses.error + ' ' + data.error);return;}
+        if(data.type === 'ready'){
+          source.connect(capture);capture.connect(audioContext.destination);
+          clips.connect(audioContext, source, stream.getAudioTracks()[0]);
+          if(!review.active())status('Listening · sustain a vowel');
+          return;
+        }
+        if(data.epoch !== analysisEpoch || inputMuted || review.active()) return;
+        preview.heard(!songMap.auditioning() ? data.pitchHz : null, data.timeMs);
+        displayReading(data, data.timeMs, false);
         clips.displayed(data);
       };
+      capture.port.onmessage = ({data}) => {
+        if(session !== generation || inputMuted || review.active()) return;
+        const rate = audioContext.sampleRate, end = data.first + data.samples.length;
+        const stamp = performance.now() - (audioContext.currentTime - end / rate)*1000;
+        worker.postMessage({...data, type:'samples', rate, epoch:analysisEpoch, stamp, clip:clips.tag(end/rate)}, [data.samples.buffer]);
+      };
+      capture.onprocessorerror = () => stop('Audio capture interrupted. Resume the microphone to retry.');
       for (const track of stream.getAudioTracks()) {
         track.onended = () => stop('Microphone disconnected. Reconnect it or choose another input.');
-        track.onmute = () => { clips.event('mute'); inputMuted = true; clearLive(); status('Microphone input interrupted.'); };
-        track.onunmute = () => { clips.event('unmute'); inputMuted = false; clearLive(); status('Listening — sustain a vowel'); };
+        track.onmute = () => { clips.event('mute'); inputMuted = true; if(!review.active()){clearLive(); status('Microphone input interrupted.');} };
+        track.onunmute = () => { clips.event('unmute'); inputMuted = false; if(!review.active()){clearLive(); status('Listening · sustain a vowel');} };
       }
-      timer = setInterval(() => {
-        if (pending || !analyser || inputMuted) return;
-        const window = new Float32Array(analyser.fftSize);
-        analyser.getFloatTimeDomainData(window);
-        const clip = clips.tag(audioContext.currentTime);
-        const input = window.slice(-Math.round(audioContext.sampleRate*.05));
-        pending = true;
-        worker.postMessage({id: session, epoch: analysisEpoch, timeMs: performance.now(), input, sampleRate: audioContext.sampleRate, clip}, [input.buffer]);
-      }, 1000/60);
       $('start').textContent = 'Pause microphone'; $('start').disabled = false;
-      clips.connect(audioContext, analyser, stream.getAudioTracks()[0]);
-      status('Listening — sustain a vowel');
+      if(!review.active())status('Loading VoiceSu LPC and MFCC…');
       await listInputs();
     } catch (error) {
       acquired?.getTracks().forEach(t => t.stop());
@@ -246,6 +270,7 @@
       ctx.fillText(pin.label,p.x+(p.x>width*.7?-12:12),p.y-10);
     });
     const since=performance.now()-trailMs;
+    if(trailMs)trace(strokes(lpcFrames.filter(p=>p.t>=since)), '#cdb4ff88', 2);
     if(trailMs)trace(strokes(frames.filter(p=>p.t>=since)), '#8be9d270', 3);
     if(trailMs)trace(strokes(preview.trail.filter(p=>p.t>=since)), '#ffd08aab', 2);
     if (current) {
@@ -253,6 +278,11 @@
       ctx.beginPath(); ctx.arc(p.x,p.y,17,0,2*Math.PI); ctx.fillStyle='#8be9d21a'; ctx.fill();
       ctx.beginPath(); ctx.arc(p.x,p.y,8,0,2*Math.PI); ctx.fillStyle='#8be9d2'; if(!limited)ctx.fill();
       ctx.strokeStyle='#d9fff4'; ctx.lineWidth=2; ctx.stroke();
+    }
+    if (lpc) {
+      const p = plotPoint(lpc);
+      ctx.strokeStyle='#cdb4ff'; ctx.lineWidth=2;
+      ctx.strokeRect(p.x-6,p.y-6,12,12);
     }
     if (preview.marker) {
       const {f1, f2} = preview.marker, p = plotPoint(preview.marker);

@@ -15,8 +15,8 @@
   };
 
   // Low-pass before downsampling. Reuse the fractional-delay filters for each input rate.
-  function resampler(inputRate) {
-    const radius = Math.ceil(5 * inputRate / RATE), cutoff = .46 * RATE / inputRate;
+  function resampler(inputRate, outputRate = RATE, frameSize = 900) {
+    const radius = Math.ceil(5 * inputRate / outputRate), cutoff = .46 * Math.min(1, outputRate / inputRate);
     const phases = Array.from({length: 64}, (_, phase) => {
       const weights = Float64Array.from({length: 2 * radius + 1}, (_, i) => {
         const x = i - radius - phase / 64;
@@ -27,12 +27,12 @@
       return weights.map(weight => weight/sum);
     });
     return input => {
-      const count = Math.min(900, Math.floor((input.length - 2 * radius - 2) * RATE / inputRate));
+      const count = Math.min(frameSize, Math.floor((input.length - 2 * radius - 2) * outputRate / inputRate));
       if (count < 300) return null;
       const wave = new Float64Array(count);
-      const start = input.length - radius - 1 - count * inputRate / RATE;
+      const start = input.length - radius - 1 - count * inputRate / outputRate;
       for (let i = 0; i < count; ++i) {
-        const position = start + i * inputRate / RATE, whole = Math.floor(position);
+        const position = start + i * inputRate / outputRate, whole = Math.floor(position);
         const weights = phases[Math.floor((position-whole) * 64)];
         for (let j = 0; j < weights.length; ++j) wave[i] += weights[j] * input[whole-radius+j];
       }

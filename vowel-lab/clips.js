@@ -41,6 +41,7 @@ function createClipRecorder() {
       }catch{if(selectionVersion===version){el('clip-review').hidden=true;message.textContent='Could not open this clip.';}return;}
     }
     audio.src = paths[0];
+    audio.dispatchEvent(new Event('clipselected'));
     for (const [link, file] of [['clip-wav', 'audio.wav'], ['clip-trace', 'trace.json']]) {
       el(link).href = paths[file==='audio.wav'?0:1];
       el(link).download = id + '-' + file;
@@ -57,7 +58,7 @@ function createClipRecorder() {
         ({clips}=await response.json());
       }
       if (request !== listRequest) return;
-      const selected = preferred || lastSaved || picker.value;
+      const selected = preferred || lastSaved || picker.value || location.hash.slice(6);
       picker.replaceChildren(...clips.map(id => new Option(clipLabel(id), id)));
       if (clips.includes(selected)) picker.value = selected;
       picker.hidden = !clips.length;
@@ -71,6 +72,7 @@ function createClipRecorder() {
     else audio.pause();
   });
   picker.addEventListener('change', selectClip);
+  if (/^#clip=[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$/.test(location.hash)) library.open=true;
   audio.addEventListener('play', () => { if (active || opening) audio.pause(); });
 
   async function save() {
@@ -116,7 +118,7 @@ function createClipRecorder() {
     const track = clip.input.settings;
     const trace = new Blob([JSON.stringify({
       startedAt: clip.startedAt, sampleRate: clip.rate, sampleCount: clip.sampleCount,
-      algorithm:'lpc-envelope-median-v1',settings:{windowMs:50,order:12,analysisRate:10000,medianWindowMs:120,smoothingMs:80},
+      algorithm:VoiceSuLab.algorithm,settings:{...VoiceSuLab.settings,primary:'mfcc',windowHash:'native 50 ms SNR window'},
       snrGate:{thresholdDb:15,meterMaxDb:40},trailMs:Number(el('trail-duration').value),
       input: {label: clip.input.label, sampleRate: track.sampleRate, channelCount: track.channelCount,
         echoCancellation: track.echoCancellation, noiseSuppression: track.noiseSuppression, autoGainControl: track.autoGainControl},
@@ -210,7 +212,8 @@ function createClipRecorder() {
       if (!active || active.stopping || data.clip?.id !== active.id) return;
       active.frames.push({clockEndSample: data.clip.endFrame, sampledMs: data.timeMs - active.originMs,
         displayedMs: performance.now() - active.originMs, epoch: data.epoch, state: data.state,
-        raw: data.raw, displayed: data.result, rms: data.rms, snr: data.snr, analysisMs: data.analysisMs,
+        raw: data.raw, rawSource:'lpc', displayed: data.mfcc, lpc: data.result, mfcc: data.mfcc,
+        rms: data.rms, snr: data.snr, analysisMs: data.analysisMs,
         windowSha256: data.windowSha256, windowTail: data.windowTail});
     },
     event(kind) {

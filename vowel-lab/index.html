@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vowel Lab</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <header>
@@ -23,8 +23,8 @@
     <button id="fullscreen">Full screen</button>
   </header>
   <section class="readings" aria-label="Live formants">
-    <div><span>F1</span><strong id="f1">—</strong><span>Hz</span></div>
-    <div><span>F2</span><strong id="f2">—</strong><span>Hz</span></div>
+    <div class="engine-reading"><b class="mfcc-key">● MFCC</b><span>F1</span><strong id="f1">—</strong><span>F2</span><strong id="f2">—</strong><span>Hz</span></div>
+    <div class="engine-reading"><b class="lpc-key">□ LPC</b><span>F1</span><strong id="lpc-f1">—</strong><span>F2</span><strong id="lpc-f2">—</strong><span>Hz</span></div>
     <p id="status" role="status">Connecting microphone… Allow access if Chrome asks.</p>
   </section>
   <main id="lab-workspace">
@@ -64,15 +64,18 @@
     <details name="lab-panel"><summary>Chart settings</summary>
       <p><label>Trail duration <select id="trail-duration"><option value="0">Off</option><option value="250">0.25 s</option><option value="500" selected>0.5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option></select></label></p>
       <p id="audition-keys">The diamond plays the two resonances under your cursor at your last sung pitch. Before your first note it uses A3. With the chart focused, use arrow keys to move and hold Space to listen.</p>
-      <p>The microphone dot shows F1 and F2 in Hz, estimated by linear prediction from the shape of your spectrum. At high pitches, widely spaced harmonics make the resonances harder to locate. A hollow dot marks these estimates.</p>
+      <p>The green circle shows VoiceSu’s trained MFCC estimate. The violet square shows its LPC resonance estimate. Both trails use the same Bark axes. On high notes the circle becomes hollow because widely spaced harmonics make formants harder to locate. Pins use the green trace.</p>
+      <p>Play a saved clip in Recordings to see both estimates on the original audio.</p>
       <p>Record clip saves up to two minutes of audio and chart readings on this device.</p></details>
   </footer>
-  <script src="analysis.js?v=2"></script>
+  <script src="analysis.js?v=4"></script>
+  <script src="voicesu_tracker.js?v=4"></script>
   <script src="landmarks.js"></script>
   <script src="browser_clips.js"></script>
-  <script src="clips.js"></script>
+  <script src="clips.js?v=4"></script>
+  <script src="clip_tracking.js?v=4"></script>
   <script src="synthesis.js"></script>
   <script src="song_map.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

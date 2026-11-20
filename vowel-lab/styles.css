@@ -26,6 +26,11 @@ label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; co
 .readings { display: flex; align-items: center; gap: 30px; padding: 14px 28px 0; }
 .readings div { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .readings span { font-size: 13px; color: #a7b6cc; }
+.engine-reading b { font-size: 13px; white-space: nowrap; }
+.mfcc-key { color: #8be9d2; }
+.lpc-key { color: #cdb4ff; }
+.readings .engine-reading { column-gap: 6px; }
+.readings .engine-reading strong { font-size: clamp(16px, 2vw, 26px); }
 .readings strong { min-width: 4ch; font-size: clamp(24px, 3vw, 38px); font-weight: 500; font-variant-numeric: tabular-nums; }
 #status { font-size: 14px; color: #a7b6cc; margin: 0; }
 #status[data-state="tracking"] { color: #8be9d2; }

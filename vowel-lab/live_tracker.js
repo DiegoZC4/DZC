@@ -87,11 +87,11 @@
     return {bins:re.slice(0,n/2).map((v,i)=>(v*v+im[i]*im[i])/windowPower),n};
   }
   const thresholdDb=15,meterMaxDb=40;
-  class Tracker {
-    constructor(){this.contour=new Contour();this.last=null;this.rate=0;this.indicated=null;this.pause=[];this.room=0;}
-    process(samples,sampleRate,t){
+  class SignalMeter {
+    constructor(){this.last=null;this.rate=0;this.indicated=null;this.pause=[];this.room=0;}
+    measure(samples,sampleRate,t){
       if(sampleRate!==this.rate || this.last!==null && (t<=this.last || t-this.last>250)){
-        this.contour.reset();this.sample=lab.resampler(sampleRate);this.rate=sampleRate;
+        this.sample=lab.resampler(sampleRate);this.rate=sampleRate;
         this.last=null;this.indicated=null;this.pause=[];this.room=0;
       }
       const dt=this.last===null?0:t-this.last;this.last=t;
@@ -124,21 +124,29 @@
       const instant=10*Math.log10(Math.max(1,(power-noise)/noise));
       this.indicated=this.indicated===null || instant<this.indicated ? instant : this.indicated+(instant-this.indicated)*-Math.expm1(-dt/25);
       const db=Math.round(this.indicated*10)/10, snr={db,noiseDbfs:10*Math.log10(noise),thresholdDb,meterMaxDb};
-      let state=clipped>samples.length*.02?'clipping':db<thresholdDb?(power<1e-6?'silent':'low_snr'):!pitch?'no_vowel':'tracking';
+      const state=clipped>samples.length*.02?'clipping':db<thresholdDb?(power<1e-6?'silent':'low_snr'):!pitch?'no_vowel':'tracking';
+      const pitchHz = !hum && db >= thresholdDb && state !== 'clipping' ? pitch : null;
+      return {state,wave,pitchHz,rms:Math.sqrt(power),snr};
+    }
+  }
+  class Tracker {
+    constructor(){this.contour=new Contour();this.meter=new SignalMeter();}
+    process(samples,sampleRate,t){
+      if(sampleRate!==this.meter.rate || this.meter.last!==null && (t<=this.meter.last || t-this.meter.last>250))this.contour.reset();
+      const reading=this.meter.measure(samples,sampleRate,t);
+      let {state,wave,pitchHz,rms,snr}=reading;
       let raw=null,result=null;
       if(state==='tracking'){
         raw=formants(wave);result=this.contour.push(raw,t);
         if(!result)state='settling';
-        else if(pitch>350)state='limited';
+        else if(pitchHz>350)state='limited';
         this.limited=state==='limited';
       }else if(state==='no_vowel'){
         result=this.contour.push(null,t);
         if(result)state=this.limited?'limited':'tracking';
       }else this.contour.reset();
-      // Pitch drives the listening reference independently of finding two usable formants.
-      const pitchHz = !hum && db >= thresholdDb && state !== 'clipping' ? pitch : null;
-      return {state,result,raw,pitchHz,rms:Math.sqrt(power),snr};
+      return {state,result,raw,pitchHz,rms,snr};
     }
   }
-  return {model,Tracker,Contour,formants,thresholdDb,meterMaxDb};
+  return {model,Tracker,SignalMeter,Contour,formants,thresholdDb,meterMaxDb};
 });

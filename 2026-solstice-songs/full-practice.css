@@ -262,7 +262,9 @@ html:has(#chartReader[open]){overflow:hidden}
 @media(max-width:650px){.reader-nav,.reader-nav:has(#readerRef[hidden]){grid-template-columns:44px minmax(0,1fr) repeat(3,44px);gap:3px;padding:4px}.reader-nav button,.reader-nav select{height:44px}.reader-nav #readerRef{grid-row:2;grid-column:1/-1;height:32px}.reader-nav #readerPlay{grid-column:4;grid-row:1}.reader-nav #readerClose{grid-column:5;grid-row:1}#readerContent #chartBody{padding:6px 6px 20px}}
 @media(prefers-reduced-motion:reduce){#loopUnit::before{transition:none}}
 @media(max-width:650px){
- #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3)){display:flex;flex-wrap:wrap;row-gap:5px}
- #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3))>.sheet-bar{flex:var(--cells) 1 0;min-width:min(100%,8.75rem)}
+ #readerContent .sheet-line:has(.sheet-grid .sheet-chord:nth-child(3)){display:grid;grid-template-columns:repeat(2,minmax(min-content,1fr))!important;row-gap:5px}
+ #readerContent .sheet-line.wrap:has(.sheet-grid .sheet-chord:nth-child(3)){display:flex;flex-wrap:wrap}
+ #readerContent .sheet-row:has([data-reader-line-start])>.sheet-number{visibility:hidden}
+ #readerContent .sheet-bar[data-reader-line-start]::before{content:attr(data-bar);position:absolute;right:calc(100% + 4px);bottom:11px;font-size:10px;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums}
  #readerContent .sheet-line .sheet-name{font-size:16px;letter-spacing:0}
 }

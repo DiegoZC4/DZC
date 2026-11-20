@@ -293,6 +293,12 @@ function sheetFit(el){
   for(const l of todo){if(step==='tighter')l.classList.remove('tight');l.classList.add(step);}
   todo=todo.filter(over);
  }
+ if(el.parentElement?.id==='readerContent'&&el.clientWidth<=650){
+  for(const l of lines){
+   const left=l.getBoundingClientRect().left;
+   for(const bar of l.children)bar.toggleAttribute('data-reader-line-start',Math.abs(bar.getBoundingClientRect().left-left)<1);
+  }
+ }
 }
 root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,pitchDisplay,migrateShift,recordingShift,line,bars,legend,transpose,display,chordClock,
  chordParts,sheetFor,sheetRows,pickupText,barLabel,sheet,sheetTranspose,sheetFit};

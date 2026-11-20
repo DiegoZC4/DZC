@@ -141,8 +141,12 @@ async function readerPlayback(){
  if(token===revision&&reader.open)await play();
 }
 $('openChartReader').onclick=()=>openReader(true);
-$('readerClose').onclick=()=>reader.close();
-reader.onclose=()=>{
+function closeReader(){if(reader.open)reader.close();finishReaderClose();}
+$('readerClose').onclick=closeReader;
+reader.oncancel=e=>{e.preventDefault();closeReader();};
+reader.onclose=()=>{if(!reader.open)finishReaderClose();};
+function finishReaderClose(){
+ if($('chartBody').parentElement!==$('readerContent'))return;
  if(document.fullscreenElement===$('readerPanel'))void document.exitFullscreen().catch(()=>{});
  readerNative=false;$('lyricSheet').insertBefore($('chartBody'),$('lyricReturn'));
  loopHome.after($('loopDock'));
@@ -152,11 +156,11 @@ reader.onclose=()=>{
  if(song.referenceId)url.searchParams.set('ref',song.referenceId);else url.searchParams.delete('ref');
  if(pop){readerExitUrl=url.href;history.back();}else history.replaceState(history.state,'',url);
  void resumeAudioLoad();
-};
+}
 window.addEventListener('popstate',()=>{
  if(readerExitUrl){history.replaceState(history.state,'',readerExitUrl);readerExitUrl=null;return;}
  const url=new URL(location.href);
- if(reader.open&&!url.searchParams.has('reader'))reader.close();
+ if(reader.open&&!url.searchParams.has('reader'))closeReader();
  else if(!reader.open&&url.searchParams.get('reader')==='1'&&song){
   openReader(false);
   if(url.hash.slice(1)!==song.id||(url.searchParams.get('ref')||'playlist')!==(song.referenceId||'playlist'))
@@ -165,7 +169,7 @@ window.addEventListener('popstate',()=>{
 });
 document.addEventListener('fullscreenchange',()=>{
  if(document.fullscreenElement===$('readerPanel'))readerNative=true;
- else if(readerNative&&reader.open)reader.close();
+ else if(readerNative&&reader.open)closeReader();
 });
 function stepReader(d){const s=catalog.songs,i=s.findIndex(v=>v.id===song.id);void choose(s[(i+d+s.length)%s.length].id);}
 $('readerPrev').onclick=()=>stepReader(-1);$('readerNext').onclick=()=>stepReader(1);

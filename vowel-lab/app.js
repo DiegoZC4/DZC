@@ -30,6 +30,7 @@
   } catch {}
 
   const preview = VowelSynth.attach(canvas, plotBounds, draw, $('audition-hint'), () => trailMs);
+  const songMap = VowelSongMap.attach(draw);
 
   function status(text, state = '') {
     if ($('status').textContent !== text) $('status').textContent = text;
@@ -132,7 +133,7 @@
         pending = false;
         if (data.epoch !== analysisEpoch || inputMuted) return;
         if (data.state === 'error') { stop(statuses.error); return; }
-        preview.heard($('clip-audio').paused ? data.pitchHz : null, data.timeMs);
+        preview.heard($('clip-audio').paused && !songMap.auditioning() ? data.pitchHz : null, data.timeMs);
         showSnr(data.snr);
         current = data.result;
         limited = data.state==='limited';
@@ -235,6 +236,7 @@
       }
     }
     ctx.save(); ctx.beginPath(); ctx.rect(topLeft.x, topLeft.y, bottomRight.x-topLeft.x, bottomRight.y-topLeft.y); ctx.clip();
+    songMap.draw(ctx, plotPoint, plotBounds());
     pins.forEach((pin, index) => {
       const color = ['#eebd75','#d4a4ed','#98bfff','#f19da7'][index%4];
       trace(pin.runs, color+'60', 1.5);

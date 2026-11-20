@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vowel Lab</title>
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <header>
     <h1>Vowel Lab</h1>
+    <label class="song-control">Song map <select id="song-map"><option value="">Free chart</option><option value="autumn">Autumn</option><option value="the-seed">The Seed</option></select></label>
     <button id="start" class="primary" disabled>Connecting microphone…</button>
     <div class="clip-controls"><button id="record-clip" aria-pressed="false" disabled>Record clip</button><span id="clip-clock" hidden></span></div>
     <label class="input-label">Input <select id="input" aria-label="Microphone"><option value="">System default</option></select></label>
@@ -26,8 +27,24 @@
     <div><span>F2</span><strong id="f2">—</strong><span>Hz</span></div>
     <p id="status" role="status">Connecting microphone… Allow access if Chrome asks.</p>
   </section>
-  <main id="plot">
-    <canvas id="chart" tabindex="0" aria-label="Vowel chart and synthesizer. F2 increases leftward and F1 downward, with Bark spacing and Hz labels." aria-describedby="audition-hint audition-keys" title="Hold or drag to hear a vowel at your last sung pitch"></canvas>
+  <main id="lab-workspace">
+    <div id="plot"><canvas id="chart" tabindex="0" aria-label="Vowel chart and synthesizer. F2 increases leftward and F1 downward, with Bark spacing and Hz labels." aria-describedby="audition-hint audition-keys" title="Hold or drag to hear a vowel at your last sung pitch"></canvas></div>
+    <aside id="song-panel" aria-label="Song vowel map" hidden>
+      <div class="map-heading"><h2 id="map-title">Song vowels</h2><button type="button" id="map-all" hidden>Show all</button></div>
+      <p id="map-count" role="status"></p>
+      <div id="map-key" role="group" aria-label="Vowels in this song"></div>
+      <div id="map-focus" aria-live="polite"></div>
+      <div id="lyric-heading" class="map-heading"><h3>Lyrics</h3><label>Part <select id="map-part"></select></label></div>
+      <div id="map-lyrics" aria-labelledby="lyric-heading" tabindex="0"></div>
+      <details id="map-method"><summary>How to read the map</summary>
+        <p>Each patch encloses the central readings from one excerpt where every sounding part shares a syllable. Separate patches preserve differences between examples. A patch measures the recorded mix. Its size can reflect changes in the vowel, the room or the estimate.</p>
+        <p>Medial vowel frames were checked with two Praat Burg settings and VoiceSu’s classical LPC tracker. Up to three examples per vowel favor agreement, stability and coverage. Some glides yield only an early or late reading. An arrow connects two windows when their centers move beyond the observed scatter.</p>
+        <p>Solid keys have two measured phases or a steady vowel. A half-filled key has only partial glide evidence. An open key has no measured region. Split underlines mark alternative pronunciations. Hums have no vowel target.</p>
+        <label><input type="checkbox" id="map-borrow"> Use the other song’s examples for gaps</label>
+        <label><input type="checkbox" id="map-guides"> Show speech landmarks for gaps</label>
+        <p>Dashed patches name the other song when it supplies an example. Crosses mark published speech averages where available. English R-coloring can also depend on F3.</p>
+      </details>
+    </aside>
   </main>
   <footer>
     <label>Landmarks <select id="landmarks"><option value="none">Hidden</option><option value="men">Men · speech</option><option value="women">Women · speech</option></select></label>
@@ -55,6 +72,7 @@
   <script src="browser_clips.js"></script>
   <script src="clips.js"></script>
   <script src="synthesis.js"></script>
-  <script src="app.js?v=2"></script>
+  <script src="song_map.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

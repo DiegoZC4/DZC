@@ -31,6 +31,52 @@ label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; co
 #status[data-state="tracking"] { color: #8be9d2; }
 #status[data-state="error"], #status[data-state="clipping"] { color: #ffb29b; }
 #plot { min-height: 0; position: relative; margin: 0 12px; }
+#lab-workspace { display: grid; grid-template-columns: minmax(0,1fr); min-height: 0; }
+body.song-open #lab-workspace { grid-template-columns: minmax(0,1fr) clamp(290px,31vw,440px); }
+.song-control select { color: #e6ebf4; }
+#song-panel { min-height: 0; display: flex; flex-direction: column; gap: 9px; margin-top: 8px; padding: 12px 18px; border-left: 1px solid #324154; background: #161e2a; overflow-y: auto; }
+#song-panel[hidden], #song-panel [hidden] { display: none; }
+.map-heading { display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+.map-heading h2, .map-heading h3 { font-size: 16px; font-weight: 600; margin: 0; }
+#map-all { min-height: 24px; font-size: 12px; padding: 2px 8px; }
+#map-count { font-size: 12px; line-height: 1.4; color: #b5c1d1; margin: 0; }
+#map-key { display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; }
+.vowel-key { display: inline-flex; align-items: center; gap: 5px; color: var(--vowel); min-height: 28px; border: 1px solid #455367; border-radius: 6px; padding: 1px 7px; background: #1a2431; font: 14px/1.4 Inter,"Segoe UI",sans-serif; }
+.vowel-key::before { content: ""; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; background: currentColor; }
+.vowel-key[data-evidence="partial"]::before { background: linear-gradient(to right,currentColor 50%,transparent 50%); }
+.vowel-key[data-evidence="none"]::before { background: transparent; }
+.vowel-key[data-evidence="borrowed"]::before { background: transparent; border-style: dashed; }
+.vowel-key[aria-pressed="true"] { border-color: var(--vowel); background: #344253; outline: 1px solid var(--vowel); }
+#map-focus { font-size: 12px; line-height: 1.5; color: #c0ccdc; }
+#map-focus p { margin: 3px 0; }
+#map-focus strong { font-size: 15px; font-weight: 600; }
+.map-example { min-height: 26px; padding: 2px 7px; font-size: 12px; margin: 2px 4px 1px 0; }
+.map-example[aria-pressed="true"] { border-color: #b3e8dc; color: #b3e8dc; }
+#lyric-heading { border-top: 1px solid #334052; padding-top: 10px; }
+#map-part { min-height: 28px; padding-block: 2px; max-width: 150px; }
+#map-lyrics { flex: 1 1 12rem; min-height: 90px; overflow-y: auto; scrollbar-color: #53637b transparent; padding: 2px 5px 2px 0; }
+#map-lyrics:focus-visible { outline: 1px solid #8be9d2; }
+.lyric-line { display: grid; grid-template-columns: 31px 1fr; gap: 4px; align-items: baseline; margin: 2px 0 9px; }
+.lyric-measure { font-size: 11px; font-variant-numeric: tabular-nums; color: #a3afc0; }
+.lyric-words { font-size: 15px; line-height: 1.55; }
+.lyric-word { white-space: nowrap; }
+.lyric-syllable { appearance: none; display: inline; font: inherit; padding: 0; min-height: 0; border: 0; border-radius: 2px; color: var(--vowel); background: transparent; }
+.lyric-syllable[data-choice] { background: var(--stripe) no-repeat bottom / 100% 2px; color: #e0e6f0; }
+.lyric-syllable[aria-pressed="true"] { background-color: #3b485b; box-shadow: 0 0 0 1px var(--vowel); }
+.lyric-syllable:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lyric-neutral { color: #a7afba; }
+#map-method, #map-method[open] { position: static; flex: 0 0 auto; width: 100%; margin: 0; border: 0; border-top: 1px solid #334052; background: transparent; border-radius: 0; padding: 0; box-shadow: none; }
+#map-method summary { font-size: 12px; }
+#map-method p { font-size: 12px; color: #bcc8d9; margin: 0 0 8px; }
+#map-method input { min-height: auto; accent-color: #8be9d2; }
+#map-method label { display: flex; margin-bottom: 6px; color: #e0e8f1; }
+@media (max-width: 800px) {
+  body.song-open { height: auto; min-height: 100dvh; grid-template-rows: auto auto auto auto; }
+  body.song-open #lab-workspace { grid-template-columns: minmax(0,1fr); }
+  body.song-open #plot { height: clamp(275px,53dvh,510px); }
+  #song-panel { border-left: 0; border-top: 1px solid #324154; margin-top: 0; }
+  #map-lyrics { max-height: 275px; }
+}
 canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
 canvas:focus-visible { outline: 2px solid #8be9d2; outline-offset: -2px; }
 footer { border-top: 1px solid #2c3544; font-size: 12px; gap: 9px; padding-block: 9px; }

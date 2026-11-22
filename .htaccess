@@ -80,7 +80,8 @@ RewriteRule ^lsrg/$ sequences-audio.html [L]
 </FilesMatch>
 # END LSRG reader routes
 
-# Keep one Vowel Lab build for both public addresses.
-RewriteRule ^vowel$ /vowel/ [R=301,L]
-RewriteRule ^vowel/$ vowel-lab/index.html [L]
-RewriteRule ^vowel/(.+)$ vowel-lab/$1 [L]
+# Vowel Lab: one public page; the on-disk directory only serves its assets.
+RewriteEngine On
+RewriteRule ^vowels$ vowel-lab/index.html [END]
+RewriteRule ^vowels?(?:/.*)?$ - [R=404,L]
+RewriteRule ^vowel-lab(?:/?|/+index\.html(?:/.*)?)$ - [R=404,L]

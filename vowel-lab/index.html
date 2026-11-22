@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/vowel-lab/">
   <title>Vowel Lab</title>
   <link rel="stylesheet" href="styles.css?v=4">
 </head>
@@ -39,7 +40,7 @@
       <details id="map-method"><summary>How to read the map</summary>
         <p>Each patch encloses the central readings from one excerpt where every sounding part shares a syllable. Separate patches preserve differences between examples. A patch measures the recorded mix. Its size can reflect changes in the vowel, the room or the estimate.</p>
         <p>Medial vowel frames were checked with two Praat Burg settings and VoiceSu’s classical LPC tracker. Up to three examples per vowel favor agreement, stability and coverage. Some glides yield only an early or late reading. An arrow connects two windows when their centers move beyond the observed scatter.</p>
-        <p>Solid keys have two measured phases or a steady vowel. A half-filled key has only partial glide evidence. An open key has no measured region. Split underlines mark alternative pronunciations. Hums have no vowel target.</p>
+        <p>The key groups related held vowels. Select a syllable for its own pronunciation and examples. A solid key has measurements for every sound in its group, including both ends of each glide. Half-filled means incomplete local evidence; open means none. Dashed keys borrow an exact pronunciation from the other song. Split underlines mark alternatives. Hums have no target.</p>
         <label><input type="checkbox" id="map-borrow"> Use the other song’s examples for gaps</label>
         <label><input type="checkbox" id="map-guides"> Show speech landmarks for gaps</label>
         <p>Dashed patches name the other song when it supplies an example. Crosses mark published speech averages where available. English R-coloring can also depend on F3.</p>
@@ -75,7 +76,7 @@
   <script src="clips.js?v=4"></script>
   <script src="clip_tracking.js?v=4"></script>
   <script src="synthesis.js"></script>
-  <script src="song_map.js?v=3"></script>
+  <script src="song_map.js?v=4"></script>
   <script src="app.js?v=4"></script>
 </body>
 </html>

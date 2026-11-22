@@ -5,28 +5,48 @@
   else root.VowelSongMap = api;
 })(globalThis, function songMaps() {
   'use strict';
-  // Shared colors keep a syllable recognizable when switching parts or songs.
-  const colors = {
-    i:'#7cdaff', 'ɪ':'#8aabff', 'ɛ':'#c29aff', 'æ':'#f6a5ed',
-    'ɑ':'#ff9b87', 'ɔ':'#ffa94f', 'ʊ':'#c9dc67', u:'#65dbb4',
-    'ʌ':'#ffcb74', 'ə':'#c0c7d5', 'ø':'#53d7dc', 'ɝ':'#f79cba', 'ɚ':'#cfaeb5',
-    'e>ɪ':'#abacff', 'o>ʊ':'#aad77d', 'a>ɪ':'#fb9cb0', 'a>ʊ':'#f5cc4e',
-    'e>ø':'#80bff4', 'i>ø':'#5fe7ed', 'ɛ>ø':'#d4a7fa', 'ɑ>ø':'#fbac89',
-    'i>ɹ':'#88cde3', 'ɪ>ɹ':'#919fdc', 'ɛ>ɹ':'#e6a4dc', 'ɑ>ɹ':'#eaba97',
-    'ɔ>ɹ':'#f6b96d', 'a>ɪ(>ɹ)':'#f289a0',
-  };
-  const color = v => colors[v] || '#e0e6f0';
+  // Navigation only. Measurements, listening examples and lyric choices stay keyed
+  // by their exact transcription, never by the family of the held sound.
+  const families = [
+    ['EE', ['feel / here','seed'], '#7cdaff', ['i','i>ø','i>ɹ']],
+    ['IH', ['in','will'], '#8aabff', ['ɪ','ɪ>ɹ']],
+    ['AY', ['they / air','rain'], '#abacff', ['e>ɪ','e>ø']],
+    ['EH', ['wend','let'], '#c29aff', ['ɛ','ɛ>ø','ɛ>ɹ']],
+    ['Short A', ['paths / and','that'], '#f6a5ed', ['æ']],
+    ['AH', ['fall / light','rock / my / ground'], '#ff9b87', ['ɑ','a>ɪ','a>ʊ','a>ɪ(>ɹ)','ɑ>ø','ɑ>ɹ']],
+    ['AW', ['autumn','saw'], '#ffa94f', ['ɔ','ɔ>ɹ']],
+    ['OH', ['grows','hold'], '#aad77d', ['o>ʊ']],
+    ['OO', ['soon','blue / could'], '#65dbb4', ['u','ʊ']],
+    ['UH', ['colors / again','dug / weak the'], '#ffcb74', ['ʌ','ə']],
+    ['R', ['rounded R in earth','English R in earth / thunder'], '#53d7dc', ['ø','ɝ','ɚ']],
+  ];
+  const bySymbol = new Map(families.flatMap(row=>row[3].map(v=>[v,row])));
+  const color = v => bySymbol.get(v)?.[2] || '#e0e6f0';
   const compact = v => v.replaceAll('>', '');
   const notation = v => v.replaceAll('>', ' → ').replace('( → ', ' (→ ');
+  const soundNames = {u:'long OO','ʊ':'short OO','ʌ':'stressed UH','ə':'schwa',
+    'ø':'rounded Ö','ɝ':'stressed English ER','ɚ':'unstressed English ER'};
+  function rehearsalGroups(song) {
+    const symbols=Object.keys(song.vowels);
+    const known=song.id==='autumn' || song.id==='the-seed';
+    const rows=known ? families.map(([id,cues,ink,members])=>({
+      id,label:id==='R'?(song.id==='autumn'?'Ö':'ER'):id,cue:cues[song.id==='autumn'?0:1],ink,
+      members:members.filter(v=>Object.hasOwn(song.vowels,v)),
+    })).filter(g=>g.members.length) : [];
+    for(const v of symbols.filter(v=>!known || !bySymbol.has(v)).sort())
+      rows.push({id:v,label:compact(v),cue:notation(v),ink:color(v),members:[v]});
+    return rows;
+  }
   const hz = p => p.center.join(' / ')+' Hz';
   const titleOf = e => 'm'+e.m+' · '+e.word+(e.syllable.toLowerCase()===e.word ? '' : ' ('+e.syllable+')');
   const evidence = (symbol, row) => !row.examples.length ? 'none'
     : !symbol.includes('>') || row.examples.some(e => e.patches.length===2) ? 'measured' : 'partial';
-  const description = {none:'No measured region',partial:'Part of the glide measured',measured:'Reference measured'};
-  const order = symbols => [...symbols].sort((a,b) => {
-    const known = Object.keys(colors);
-    return (known.includes(a)?known.indexOf(a):known.length) - (known.includes(b)?known.indexOf(b):known.length) || a.localeCompare(b);
-  });
+  function groupEvidence(group, song, sourceFor) {
+    const states=group.members.map(v=>evidence(v,song.vowels[v]));
+    if(states.every(s=>s==='measured'))return 'measured';
+    if(states.some(s=>s!=='none'))return 'partial';
+    return group.members.some(v=>sourceFor(v)!==song)?'borrowed':'none';
+  }
   function exampleReading(e) {
     const phases = {steady:'F1 / F2',early:'Early',late:'Late'};
     const readings = e.patches.map(p => phases[p.phase]+' '+hz(p)).join(' · ');
@@ -116,8 +136,9 @@
     const select=el('song-map'), part=el('map-part'), legend=el('map-key'), lyrics=el('map-lyrics'), focus=el('map-focus');
     const known=new Set([...select.options].map(option=>option.value));
     const cache=new Map();
-    let song=null, otherSong=null, selected=[], selectionText='', generation=0, revision=0, layer=null, layerKey='', activeExample=null;
-    let playback=null, quietUntil=0, stopTimer, abort;
+    let song=null, otherSong=null, groups=[], selected=[], selectionText='', generation=0, revision=0, layer=null, layerKey='', activeExample=null;
+    const audioSprites=new Map();
+    let playback=null, output, quietUntil=0, idleTimer, abort;
     const element=(tag,cls,text)=>{
       const node=document.createElement(tag);
       if(cls)node.className=cls;
@@ -127,36 +148,45 @@
     const button=(cls,text)=>{const b=element('button',cls,text);b.type='button';return b;};
     function invalidate(){revision++;redraw();}
     function stopPlayback() {
-      clearTimeout(stopTimer);
       if(!playback)return;
-      const {audio,control}=playback;
+      const {node,control}=playback;
       playback=null;quietUntil=performance.now()+350;
-      control.setAttribute('aria-pressed','false');audio.pause();audio.removeAttribute('src');audio.load();
+      control.setAttribute('aria-pressed','false');
+      if(node){node.onended=null;node.stop();node.disconnect();}
+      clearTimeout(idleTimer);
+      idleTimer=setTimeout(()=>{if(!playback && output?.state==='running')void output.suspend().catch(()=>{});},350);
     }
-    function listen(example, control, source) {
+    function sprite(file) {
+      if(!audioSprites.has(file)) {
+        const pending=fetch(file+'?v=1').then(res=>{
+          if(!res.ok)throw new Error('Missing reference audio');
+          return res.arrayBuffer();
+        }).then(bytes=>output.decodeAudioData(bytes)).catch(error=>{audioSprites.delete(file);throw error;});
+        audioSprites.set(file,pending);
+      }
+      return audioSprites.get(file);
+    }
+    async function listen(example, control, source) {
       const repeated = playback?.control===control;
       stopPlayback();
       if(repeated)return;
-      const audio=new Audio(), [start,end]=example.audio;
-      playback={control,audio};
-      function schedule() {
-        if(playback?.audio!==audio || audio.paused)return;
-        clearTimeout(stopTimer);
-        if(audio.currentTime>=end-.012){stopPlayback();return;}
-        stopTimer=setTimeout(schedule,Math.max(15,(end-audio.currentTime)*1000));
-      }
-      function failed() {
-        if(playback?.audio!==audio)return;
+      clearTimeout(idleTimer);
+      const ticket=playback={control,node:null}, [start,end]=example.audio;
+      control.setAttribute('aria-pressed','true');
+      try {
+        // Unlock in the tap handler; schedule decoded samples, not a network seek.
+        output ||= new AudioContext({latencyHint:'interactive'});
+        const [,buffer]=await Promise.all([output.resume(),sprite(source.audio)]);
+        if(playback!==ticket)return;
+        if(!(start>=0 && start<end && end<=buffer.duration+.001))throw new Error('Invalid excerpt');
+        const node=output.createBufferSource();node.buffer=buffer;node.connect(output.destination);
+        node.onended=()=>{if(playback===ticket)stopPlayback();};
+        node.start(0,start,end-start);ticket.node=node;
+      } catch {
+        if(playback!==ticket)return;
         stopPlayback();control.textContent='Retry · '+titleOf(example);
         control.title='The reference excerpt could not play.';
       }
-      audio.addEventListener('playing',schedule);audio.addEventListener('seeked',schedule);
-      audio.addEventListener('timeupdate',schedule);audio.addEventListener('error',failed);
-      audio.addEventListener('ended',()=>{if(playback?.audio===audio)stopPlayback();});
-      control.setAttribute('aria-pressed','true');
-      // The sprite holds only short excerpts from the same already-aligned performance.
-      audio.src=source.audio+'?v=1';audio.currentTime=start;
-      void audio.play().catch(failed);
     }
 
     function sourceFor(symbol) {
@@ -166,7 +196,8 @@
 
     function selectVowels(symbols, sourceText) {
       stopPlayback();activeExample=null;selected=symbols;selectionText=sourceText;focus.replaceChildren();
-      for(const b of legend.children)b.setAttribute('aria-pressed',String(selected.includes(b.dataset.symbol)));
+      for(const [i,b] of [...legend.children].entries())
+        b.setAttribute('aria-pressed',String(groups[i].members.some(v=>selected.includes(v))));
       for(const b of lyrics.querySelectorAll('button')) {
         b.setAttribute('aria-pressed',String(b.dataset.vowels.split('/').some(v=>selected.includes(v))));
       }
@@ -177,7 +208,10 @@
         if(sourceText)focus.append(element('p','',sourceText));
         for(const symbol of selected) {
           const source=sourceFor(symbol), row=source.vowels[symbol], block=element('div','map-reading');
-          const label=element('strong','',notation(symbol));label.style.color=color(symbol);block.append(label);
+          block.dataset.vowel=symbol;
+          const name=soundNames[symbol];
+          const label=element('strong','',notation(symbol)+(name?' · '+name:''));
+          label.style.color=color(symbol);block.append(label);
           if(!row.examples.length) {
             block.append(document.createTextNode(' · No clean shared-syllable measurement.'));
             const guides=guidesFor(symbol,globalThis.VowelLandmarks);
@@ -196,7 +230,7 @@
               b.title=example.parts.join(', ')+' · '+example.from+' s · '+exampleReading(example);
               b.addEventListener('click',()=>{
                 activeExample=example;info.textContent=titleOf(example)+' · '+exampleReading(example);
-                listen(example,b,source);invalidate();
+                void listen(example,b,source);invalidate();
               });
               list.append(b);
             }
@@ -243,21 +277,23 @@
     }
     function renderKey() {
       legend.replaceChildren();
-      const symbols=order(Object.keys(song.vowels));
-      const measured=symbols.filter(v=>song.vowels[v].examples.length).length;
-      const borrowed=symbols.filter(v=>sourceFor(v)!==song).length;
-      el('map-count').textContent=measured+' of '+symbols.length+' vowel categories measured in this performance.'+
-        (borrowed?' '+borrowed+' more shown from '+otherSong.title+'.':'');
-      for(const symbol of symbols) {
-        const source=sourceFor(symbol), state=source!==song?'borrowed':evidence(symbol,song.vowels[symbol]), b=button('vowel-key',compact(symbol));
-        b.dataset.symbol=symbol;b.dataset.evidence=state;b.style.setProperty('--vowel',color(symbol));
-        b.title=notation(symbol)+' · '+(state==='borrowed'?'Example from '+source.title:description[state]);b.setAttribute('aria-label',b.title);
-        b.addEventListener('click',()=>selectVowels(selected.length===1 && selected[0]===symbol?[]:[symbol]));
+      const measured=groups.filter(g=>g.members.some(v=>song.vowels[v].examples.length)).length;
+      el('map-count').textContent=groups.length+' rehearsal groups · '+measured+' with examples from this recording.';
+      for(const group of groups) {
+        const state=groupEvidence(group,song,sourceFor), b=button('vowel-key',group.label);
+        b.dataset.family=group.id;b.dataset.evidence=state;b.style.setProperty('--vowel',group.ink);
+        b.title=group.label+' · '+group.cue+' · '+group.members.map(notation).join(' / ');
+        b.setAttribute('aria-label',b.title);
+        b.addEventListener('click',()=>{
+          const alreadySelected=selected.length===group.members.length && group.members.every(v=>selected.includes(v));
+          selectVowels(alreadySelected?[]:group.members,alreadySelected?null:group.label+' · '+group.cue);
+        });
         legend.append(b);
       }
     }
     function renderSong(partId) {
       el('map-title').textContent=song.title+' vowels';
+      groups=rehearsalGroups(song);
       renderKey();
       for(const p of song.parts)part.add(new Option(p.name,p.id));
       if(song.parts.some(p=>p.id===partId))part.value=partId;
@@ -272,7 +308,7 @@
     }
     async function loadSong(id, partId) {
       const token=++generation;abort?.abort();stopPlayback();
-      song=null;otherSong=null;selected=[];activeExample=null;layer=null;select.value=known.has(id)?id:'';
+      song=null;otherSong=null;groups=[];selected=[];activeExample=null;layer=null;select.value=known.has(id)?id:'';
       legend.replaceChildren();focus.replaceChildren();part.replaceChildren();lyrics.replaceChildren();
       for(const key of ['map-all','lyric-heading','map-method','map-lyrics'])el(key).hidden=true;
       el('map-method').open=false;
@@ -327,23 +363,31 @@
         layerKey=key;layer=document.createElement('canvas');layer.width=w;layer.height=h;
         const out=layer.getContext('2d');out.setTransform(dpr,0,0,dpr,0,0);
         const project=([f1,f2])=>plotPoint({f1,f2});
-        const labels=[];
-        for(const symbol of selected.length?selected:order(Object.keys(song.vowels))) {
-          const source=sourceFor(symbol), examples=source.vowels[symbol].examples, ink=color(symbol);
-          let anchor;
+        const labels=new Map();
+        for(const group of groups) for(const symbol of group.members) {
+          if(selected.length && !selected.includes(symbol))continue;
+          const source=sourceFor(symbol), examples=source.vowels[symbol].examples, ink=group.ink;
+          const detail=selected.length>0, key=detail?symbol:group.id;
+          function label(p,rank) {
+            if(!p || (labels.get(key)?.rank??-1)>=rank)return;
+            labels.set(key,{p,rank,ink,text:(detail?compact(symbol):group.label)+
+              (source!==song?' · '+source.title:examples.length?'':' *')});
+          }
           for(const example of examples) {
             out.globalAlpha=activeExample && activeExample!==example ? .35 : 1;
-            const points=example.patches.map(p=>drawPatch(out,p,project,ink,selected.length>0,source!==song));
+            const points=example.patches.map(p=>drawPatch(out,p,project,ink,detail,source!==song));
             if(example.motion && points.length===2)arrow(out,points[0],points[1],ink);
-            if(!anchor || example===activeExample)anchor=points[0];
+            // A late-only release is evidence for the path, not an anchor for its held vowel.
+            if(detail || example.patches[0].phase!=='late')label(points[0],
+              (example===activeExample?16:0)+(source===song?8:4)+(example.patches[0].phase==='steady'?2:1));
           }
           out.globalAlpha=1;
           if(!examples.length && el('map-guides').checked) {
-            anchor=speechGuide(out,guidesFor(symbol,globalThis.VowelLandmarks),project,ink);
+            const guides=guidesFor(symbol,globalThis.VowelLandmarks), anchor=speechGuide(out,guides,project,ink);
+            if(detail || guides[0]?.index===0)label(anchor,0);
           }
-          if(anchor)labels.push({p:anchor,text:compact(symbol)+(source!==song?' · '+source.title:examples.length?'':' *'),ink});
         }
-        labelRegions(out,labels,bounds);
+        labelRegions(out,[...labels.values()],bounds);
       }
       ctx.drawImage(layer,0,0,w/dpr,h/dpr);
     }
@@ -357,5 +401,5 @@
     fromURL();
     return {draw, auditioning:()=>Boolean(playback)||performance.now()<quietUntil};
   }
-  return {attach,color,evidence,exampleReading,guidesFor};
+  return {attach,color,evidence,exampleReading,guidesFor,rehearsalGroups,groupEvidence};
 });

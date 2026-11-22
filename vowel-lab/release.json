@@ -1,5 +1,5 @@
 {
-  "source": "63b243881c2bc9daba3028a7a66e9a806e87b3b3",
+  "source": "bb084710c4c615e29117e20be4a4918fe43fc169",
   "trackingRevision": "cc54abd3887eca90a3c096e0bfc8ca446c0d4e1e",
   "assets": {
     "THIRD-PARTY-NOTICES.txt": "8ee662efe445240b0876254fd839efba3c616914c30b9abe22c635a933a73456",
@@ -9,10 +9,10 @@
     "clip-worklet.js": "d921f5dcc56a1f6b513cbf3dfff5b6880b953fc9d49f7228ed0c241e3788f155",
     "clip_tracking.js": "1e57250b416a57b277f8cbd1789845037101992f79008e13b15ec04a22fc9786",
     "clips.js": "db00eca6c3669e52e309b69a7891028b675e4ef5c6ca586b7554c9b7d0ea2bab",
-    "index.html": "01f2dc6ba30ca2c0c32b72acc0a99c310aaddbe30ff71ce0e1b9326d2c5b9040",
+    "index.html": "4050af61c79a98f664835fba69c02e03456966b6460ee6ddf4b5baee3c14f433",
     "landmarks.js": "7f8b190e2f13a1744e49d1c6ea6eab6674a2b479297f80c4af89c3e2ab8d77e5",
     "live_tracker.js": "763d393b1d91f5c2293e40cb88893ead828093ddda8820d5da13be1f32280700",
-    "song_map.js": "d92057d15bd5151adcf3e039dbcddfc8a925465014deadc1f680894351e59e76",
+    "song_map.js": "a907da7ceaf9199a63b75388c938cf121d72cc6b525063b724ccf26a68cb0d40",
     "styles.css": "fe48f6238a20a69b7b48c82fecd91a4525fe4073a04f15018cd9e0303cb3343a",
     "synthesis.js": "100948160838ee2e00203afec2a37120e508cc110f4c13524da5f8e5739ddfd6",
     "tracking-worklet.js": "6aa3f747d6580f05c610e7b51ef56406c67e8681c76ae2bf4b004c04c1ad47b2",

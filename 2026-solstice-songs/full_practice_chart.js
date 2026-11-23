@@ -14,17 +14,35 @@ function transposeChord(symbol,shift,key='A'){
   prefix+names[(pc[n]+(acc==='#'?1:acc==='b'?-1:0)+shift+120)%12]);
 }
 function keyNumber(key){return pc[key[0]]+(key[1]==='#'?1:key[1]==='b'?-1:0);}
-const shapeKeys={'the-circle':'D','bold-orion':'Dm','hymn-to-breaking-strain':'Bm','here-comes-the-sun':'D'};
 const fretClass=n=>((n%12)+12)%12;
-// Store a capo at the recording's native pitch so later audio transposes keep the same shapes.
-function capoAtNativePitch(fret,audioShift){return fretClass(fret-audioShift);}
-function pitchDisplay(song,key,shift,concert=true,chosenCapo){
- const writtenKey=shapeKeys[song]||key,authored=fretClass(keyNumber(key)-keyNumber(writtenKey));
- const baseCapo=Number.isInteger(chosenCapo)&&chosenCapo>=0&&chosenCapo<12?chosenCapo:authored;
- const shapeKey=baseCapo===authored?writtenKey:transposeChord(key,-baseCapo,key);
- const fret=fretClass(baseCapo+shift);
- return {shift:concert?shift:-baseCapo,shapeKey,fret,tabShift:concert?authored+shift:0,
+const validFret=n=>Number.isInteger(n)&&n>=0&&n<=11;
+const validCapo=p=>p&&validFret(p.fret)&&Number.isInteger(p.atShift)&&Math.abs(p.atShift)<=12&&typeof p.keepShapes==='boolean';
+const signatureShapes={'the-circle':'D','here-comes-the-sun':'D','bold-orion':'Dm','who-by-fire':'Am','auld-lang-syne/james-taylor':'C'};
+const openShapes={'auld-lang-syne/playlist':'G','ballad-of-smallpox-gone/ohio-valley':'Am','a-toast-for-unknown-heroes/playlist':'Em'};
+function signatureKey(song,ref){return signatureShapes[song+'/'+(ref||'playlist')]||signatureShapes[song];}
+function pitchDisplay(song,key,shift,concert=true,saved,ref){
+ const signature=signatureKey(song,ref),initial=signature||openShapes[song+'/'+(ref||'playlist')]||key;
+ const plan=validCapo(saved)?saved:{keepShapes:!!signature,fret:fretClass(keyNumber(key)-keyNumber(initial)),atShift:0};
+ const requested=plan.fret+(plan.keepShapes?shift-plan.atShift:0);
+ // Beyond the physical range, revoice the remainder instead of jumping across the neck.
+ const fret=Math.max(0,Math.min(11,requested)),shapeShift=shift-fret,shapeKey=transposeChord(key,shapeShift,key);
+ return {shift:concert?shift:shapeShift,shapeKey,fret,keepShapes:plan.keepShapes,atLimit:fret!==requested,
   label:concert?'Concert '+transposeChord(key,shift,key):shapeKey+' shapes · '+(fret?'Capo '+fret:'No capo')};
+}
+function tabPitch(key,shapes,shift,concert){
+ const required=fretClass(keyNumber(key)-keyNumber(shapes))+shift,fret=fretClass(required);
+ const octave=(fret-required)/12;
+ return {shift:concert?required:0,label:'Standard tuning · '+shapes+' shapes · '+(fret?'Capo '+fret:'No capo')+
+  (octave?' · Tab sounds an octave '+(octave>0?'higher':'lower'):'')};
+}
+function migrateCapo(cfg,rec){
+ const url=rec.url,offset=cfg.shapeCapos?.[url];
+ if(!validFret(offset)||validCapo(cfg.guitarCapos?.[url]))return cfg;
+ // The old field was an offset modulo 12; preserve the fret visible at the last saved audio key.
+ const atShift=recordingShift(cfg,rec),{[url]:used,...other}=cfg.shapeCapos;
+ const next={...cfg,guitarCapos:{...cfg.guitarCapos,[url]:{fret:fretClass(offset+atShift),atShift,keepShapes:!!signatureKey(rec.id,rec.referenceId)}}};
+ if(Object.keys(other).length)next.shapeCapos=other;else delete next.shapeCapos;
+ return next;
 }
 function migrateShift(cfg,base,alternatives){
  if(!Object.hasOwn(cfg,'shift'))return cfg;
@@ -39,16 +57,21 @@ function recordingShift(cfg,rec){
  return Number.isInteger(value)&&Math.abs(value)<=12?value:0;
 }
 function words(text,cue){
+ const anchors=new Map();
+ for(const [i,c] of (cue.chords||[]).entries()){
+  const list=anchors.get(c.at)||[];
+  list.push({chord:c.symbol,time:c.time,open:cue.barPipes?.before?.includes(i),close:cue.barPipes?.after?.includes(i)});
+  anchors.set(c.at,list);
+ }
  const groups=[...text.matchAll(/\S+\s*/g)].map(match=>{
   const a=match.index,b=a+match[0].length,cuts=new Set([a,b]);
   for(const chord of cue.chords||[])if(chord.at>a&&chord.at<b)cuts.add(chord.at);
   for(const span of cue.spans||[])for(const i of [span.from,span.to])if(i>a&&i<b)cuts.add(i);
   const points=[...cuts].sort((x,y)=>x-y);
-  return points.slice(0,-1).map((from,i)=>({text:text.slice(from,points[i+1]),
-   role:cue.spans?.find(s=>from>=s.from&&from<s.to)?.role||cue.role,
-   chord:cue.chords?.find(c=>c.at===from)?.symbol||'',time:cue.chords?.find(c=>c.at===from)?.time}));
+  return points.slice(0,-1).flatMap((from,i)=>(anchors.get(from)||[{chord:''}]).map((c,j)=>({...c,
+   text:j?'':text.slice(from,points[i+1]),role:cue.spans?.find(s=>from>=s.from&&from<s.to)?.role||cue.role})));
  });
- for(const chord of cue.chords||[])if(chord.at===text.length)groups.push([{text:'',chord:chord.symbol,time:chord.time}]);
+ for(const c of anchors.get(text.length)||[])groups.push([{text:'',...c}]);
  return groups;
 }
 function hasRoles(chart){return !!chart?.sections?.some(s=>s.lines.some(l=>l.role||l.spans?.length));}
@@ -72,6 +95,7 @@ function line(el,text,cue){
   for(const bit of bits){
    const cell=doc.createElement('span');cell.className='lyric-bit';
    const chord=chordNode(doc,bit.chord,bit.time);chord.setAttribute('aria-hidden','true');
+   if(bit.open)chord.dataset.barOpen='';if(bit.close)chord.dataset.barClose='';
    const lyric=doc.createElement('span');lyric.className='lyric-word';
    if(roles[bit.role]){lyric.dataset.role=bit.role;lyric.title=roles[bit.role];}lyric.textContent=bit.text;
    cell.append(chord,lyric);word.append(cell);
@@ -86,7 +110,7 @@ function bars(parent,groups,makeSeek){
  const doc=parent.ownerDocument;
  for(const group of groups||[]){
   const row=doc.createElement('div');row.className='lyric-bars';if(group.note)row.title=group.note;
-  if(group.label){const label=doc.createElement('span');label.className='lyric-bar-label';label.textContent=group.label;row.append(label);}
+  if(group.label){row.dataset.barGroup=group.label;const label=doc.createElement('span');label.className='lyric-bar-label';label.textContent=group.label;row.append(label);}
   for(const value of group.bars){
    const bar=typeof value==='string'?{chords:value}:value,t=bar.times?.[0];
    const box=Number.isFinite(t)&&makeSeek?makeSeek(bar.chords,t,group.label):doc.createElement('span');
@@ -108,14 +132,16 @@ function legend(el,chart){
  if(chart.status){const status=doc.createElement('span');status.className='lyric-chart-status';status.textContent=chart.status;status.title=chart.note||chart.source||'';el.append(status);}
  const key=doc.createElement('span');key.className='lyric-concert-key';key.dataset.chartKey=chart.key;el.append(key);
 }
-function transpose(el,shift,key,keyLabel){
- for(const chord of el.querySelectorAll('[data-chord]'))chord.textContent=transposeChord(chord.dataset.chord,shift,key);
+const unchanged=s=>s;
+function transpose(el,shift,key,keyLabel,shapeName=unchanged){
+ for(const chord of el.querySelectorAll('[data-chord]'))chord.textContent=shapeName(transposeChord(chord.dataset.chord,shift,key),chord);
  for(const label of el.querySelectorAll('[data-chart-key]'))label.textContent=keyLabel||'Concert '+transposeChord(label.dataset.chartKey,shift,key);
  describe(el);
 }
 function describe(el){
  for(const line of el.querySelectorAll('.charted-line')){
-  const chords=[...line.querySelectorAll('[data-chord]')].map(c=>c.textContent).filter(Boolean);
+  const chords=[...line.querySelectorAll('[data-chord]')].filter(c=>c.textContent).map(c=>
+   (c.dataset&&'barOpen' in c.dataset?'| ':'')+c.textContent+(c.dataset&&'barClose' in c.dataset?' |':''));
   const labels=[line.dataset.baseLabel];
   if(el.dataset.harmony!=='false'&&line.dataset.singing)labels.push(line.dataset.singing);
   if(el.dataset.chords!=='false'&&chords.length)labels.push('chords '+chords.join(', '));
@@ -277,12 +303,13 @@ function sheet(body,found,{recordings={},choose,disabled=false}={}){
  }
  body.append(meta,note,list);
 }
-function sheetTranspose(el,shift,key,keyLabel){
- for(const chord of el.querySelectorAll('[data-sheet-chord]'))paintChord(chord.querySelector('.sheet-name'),transposeChord(chord.dataset.sheetChord,shift,key));
+function sheetTranspose(el,shift,key,keyLabel,shapeName=unchanged){
+ const name=(s,at)=>shapeName(transposeChord(s,shift,key),at);
+ for(const chord of el.querySelectorAll('[data-sheet-chord]'))paintChord(chord.querySelector('.sheet-name'),name(chord.dataset.sheetChord,chord));
  for(const label of el.querySelectorAll('[data-sheet-key]'))label.textContent=keyLabel||'Concert '+transposeChord(label.dataset.sheetKey,shift,key);
  for(const bar of el.querySelectorAll('.sheet-bar')){
   const cell=barOf.get(bar),say=bar.querySelector('.sheet-say');
-  if(cell&&say)say.textContent=barLabel(cell,cell.bar.chords.map(([s])=>transposeChord(s,shift,key)));
+  if(cell&&say)say.textContent=barLabel(cell,cell.bar.chords.map(([s])=>name(s,bar)));
  }
  sheetFit(el);
 }
@@ -305,7 +332,7 @@ function sheetFit(el){
   }
  }
 }
-root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,pitchDisplay,capoAtNativePitch,migrateShift,recordingShift,line,bars,legend,transpose,display,chordClock,
+root.MeleteFullPracticeChart={roles,words,hasRoles,transposeChord,pitchDisplay,tabPitch,migrateCapo,migrateShift,recordingShift,line,bars,legend,transpose,display,chordClock,
  chordParts,sheetFor,sheetRows,pickupText,barLabel,sheet,sheetTranspose,sheetFit};
 if(typeof module!=='undefined')module.exports=root.MeleteFullPracticeChart;
 })(globalThis);

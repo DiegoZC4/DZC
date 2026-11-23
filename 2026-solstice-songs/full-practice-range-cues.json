@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "recordings": {
+    "https://www.youtube.com/watch?v=iYCkm3HdLzU": {
+      "vocalSha256": "91cd36b3eb1eb6eed642ea9c83ba3b56dce5259ca858abbd4621eccc4a5bb06d",
+      "low": {
+        "midi": 47,
+        "seconds": 139.588,
+        "evidence": "draft+stem"
+      },
+      "high": {
+        "midi": 61,
+        "seconds": 142.262,
+        "evidence": "draft+stem"
+      }
+    },
+    "https://humanistculture.bandcamp.com/track/hymn-to-breaking-strain": {
+      "vocalSha256": "7cae7bdc4ebc8876ebab204973fc32231de46e88d5e550be8a1eda38c6dd43d3",
+      "low": {
+        "midi": 43,
+        "seconds": 202.965,
+        "evidence": "stem+AnthemScore"
+      },
+      "high": {
+        "midi": 62,
+        "seconds": 178.365,
+        "evidence": "stem+AnthemScore"
+      }
+    },
+    "https://www.youtube.com/watch?v=pEwxguHUi_U": {
+      "vocalSha256": "6d0f074a005438785a700edc47ed0a733bd737dd24b28e52a836a8e99c6a21a3",
+      "low": {
+        "midi": 54,
+        "seconds": 50.16,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 65,
+        "seconds": 40.754,
+        "evidence": "score"
+      }
+    },
+    "https://humanistculture.bandcamp.com/track/bold-orion": {
+      "vocalSha256": "343d3ad0b174b84769c2a781a84f6a2154e6e218413155b9d5c3f8c39ff995bf",
+      "low": {
+        "midi": 62,
+        "seconds": 185.105,
+        "evidence": "stem+AnthemScore"
+      },
+      "high": {
+        "midi": 76,
+        "seconds": 193.405,
+        "evidence": "stem+AnthemScore"
+      }
+    },
+    "https://www.youtube.com/watch?v=b9BGaKkQEEw": {
+      "vocalSha256": "46d70d920816e3a34104ab8d4f45d794f9c0ccb725b2f6178f1084f90b45ebe0",
+      "low": {
+        "midi": 48,
+        "seconds": 29.538,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 62,
+        "seconds": 31.308,
+        "evidence": "score"
+      }
+    },
+    "https://www.youtube.com/watch?v=ilGahIwQEQ0": {
+      "vocalSha256": "6bef54bc686d7e346a7c331e9ada3eb2f9b305b61091ddd020750d31ee454794",
+      "low": {
+        "midi": 40,
+        "seconds": 14.28,
+        "evidence": "octave guide"
+      },
+      "high": {
+        "midi": 52,
+        "seconds": 22.479,
+        "evidence": "score+stem"
+      }
+    },
+    "https://www.youtube.com/watch?v=RlOxHjqRQOo": {
+      "vocalSha256": "83b4bd5b66115d85994f4d6d9e2596f4831056b1a14a45cd443f50b9d082c713",
+      "low": {
+        "midi": 44,
+        "seconds": 57.385,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 60,
+        "seconds": 41.355,
+        "evidence": "score+stem"
+      }
+    },
+    "https://www.youtube.com/watch?v=Wo60qDIX27M": {
+      "vocalSha256": "b5e4400e0f5b4c6d03f639d061600376865b15112a21b5e0b22e03f793fba626",
+      "low": {
+        "midi": 42,
+        "seconds": 25.085,
+        "evidence": "stem+AnthemScore"
+      },
+      "high": {
+        "midi": 56,
+        "seconds": 27.845,
+        "evidence": "stem"
+      }
+    },
+    "https://www.youtube.com/watch?v=TzprCXKLBiY": {
+      "vocalSha256": "005aecc8855516202392da0d2163d5be58f61ac6c9c0f7dd6da0a9f6e7f93176",
+      "low": {
+        "midi": 45,
+        "seconds": 128.645,
+        "evidence": "stem"
+      },
+      "high": {
+        "midi": 59,
+        "seconds": 125.865,
+        "evidence": "stem"
+      }
+    },
+    "https://windborne.bandcamp.com/track/songs-stay-sung": {
+      "vocalSha256": "13b06c2522e68ac7df07bae870819b58191fd3031c8e53f95f0d7df22afafd4c",
+      "low": {
+        "midi": 52,
+        "seconds": 21.74,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 69,
+        "seconds": 13.8,
+        "evidence": "score"
+      }
+    },
+    "https://www.youtube.com/watch?v=DOFvpmay3jk": {
+      "vocalSha256": "5826099243f561e4c434a5957e308ee5b01b31607ed1bb555e8d94205dc48bd6",
+      "low": {
+        "midi": 60,
+        "seconds": 17.25,
+        "location": "m1, \u201cis\u201d",
+        "evidence": "reviewed lyric"
+      },
+      "high": {
+        "midi": 72,
+        "seconds": 18.94,
+        "location": "m2, \u201cplague\u201d",
+        "evidence": "reviewed lyric"
+      }
+    },
+    "https://www.youtube.com/watch?v=32yPWJcq2AI": {
+      "vocalSha256": "6641e5986ea2383396fac0d5e1b5967bc5384d98afed018b466b03bd67cf0233",
+      "low": {
+        "midi": 57,
+        "seconds": 8.937,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 70,
+        "seconds": 3.278,
+        "evidence": "score"
+      }
+    },
+    "https://www.youtube.com/watch?v=xUNqsfFUwhY": {
+      "vocalSha256": "52397459c5613a3e174deef4ed61e8eea4750b347cd1b86b7c99d201f3c09826",
+      "low": {
+        "midi": 52,
+        "seconds": 33.016,
+        "evidence": "score+stem"
+      },
+      "high": {
+        "midi": 61,
+        "seconds": 35.5,
+        "evidence": "score"
+      }
+    },
+    "https://www.youtube.com/watch?v=VqHy11zWZA4": {
+      "vocalSha256": "a3c35f67403469e4daaa83af96b343f29ca39a6a7e4bdbeb3477d3d3f32e3ecb",
+      "low": {
+        "midi": 53,
+        "seconds": 70.125,
+        "evidence": "stem+AnthemScore"
+      },
+      "high": {
+        "midi": 70,
+        "seconds": 64.485,
+        "evidence": "stem"
+      }
+    },
+    "https://www.youtube.com/watch?v=zc8tCd4uAF0": {
+      "vocalSha256": "b39119c6a5f3b8642236f9d87906236e0526c42d7df9008ef21a901fcf4ab69d",
+      "low": {
+        "midi": 55,
+        "seconds": 29.425,
+        "evidence": "stem"
+      },
+      "high": {
+        "midi": 71,
+        "seconds": 21.53,
+        "evidence": "score"
+      }
+    },
+    "https://humanistculture.bandcamp.com/track/brighter-than-today": {
+      "vocalSha256": "6de47868992fd090199f83b6342da84c3047626a0a13c5e34698a5ef16d2cd25",
+      "low": null,
+      "high": null
+    },
+    "https://www.youtube.com/watch?v=RGVZdk5hIG0": {
+      "vocalSha256": "e6bfc2e6be85189aa2fe24726d849709d49ff75a04b55b1bedcec036254d8779",
+      "low": {
+        "midi": 59,
+        "seconds": 32.169,
+        "evidence": "score"
+      },
+      "high": {
+        "midi": 71,
+        "seconds": 32.407,
+        "evidence": "score+stem"
+      }
+    }
+  }
+}

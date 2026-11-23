@@ -1,3 +1,5 @@
+#songList .song-name{font-weight:400}
+#songList .song-name strong{font-weight:700}
 .full-presets,.track-tools{display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap}
 .reference-tools,#referenceChoice{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;font-size:12px}
 .reference-tools{flex-wrap:wrap}

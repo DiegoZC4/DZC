@@ -617,7 +617,33 @@ function draw(){
  });
  lanes.forEach(l=>drawLane(l));drawCursor();
 }
-function renderSongs(){const groups=new Map();$('songList').replaceChildren();for(const item of catalog.songs){const season=item.season||'Other';if(!groups.has(season)){const group=document.createElement('section'),h=document.createElement('h2');group.className='season-group';group.dataset.season=season.toLowerCase();group.setAttribute('aria-label',season+' songs');h.className='season-heading';h.textContent=season;group.append(h);$('songList').append(group);groups.set(season,group);}const b=document.createElement('button');b.className='song-choice';b.dataset.id=item.id;b.dataset.season=season.toLowerCase();b.classList.toggle('selected',item.id===song?.id);b.classList.toggle('pending',!item.tracks.length);b.setAttribute('aria-pressed',String(item.id===song?.id));b.setAttribute('aria-label',`${item.title} (${season})`);const name=document.createElement('span');name.className='song-name';name.textContent=item.title;b.append(name);b.onclick=()=>void choose(item.id);groups.get(season).append(b);}}
+const rehearsalNames={
+ 'the-circle':'Circle','hymn-to-breaking-strain':'Strain','bold-orion':'Orion','who-by-fire':'Fire',
+ 'no-one-survives':'Survives','auld-lang-syne':'Auld','songs-stay-sung':'Stay','ballad-of-smallpox-gone':'Smallpox',
+ 'here-comes-the-sun':'Sun','a-toast-for-unknown-heroes':'Heroes','brighter-than-today':'Brighter'
+};
+function songListTitle({id,title}){
+ const name=document.createElement('span');name.className='song-name';
+ const cue=rehearsalNames[id],at=cue?title.indexOf(cue):-1;
+ if(at<0){name.textContent=title;return name;}
+ const strong=document.createElement('strong');strong.textContent=cue;
+ name.append(title.slice(0,at),strong,title.slice(at+cue.length));return name;
+}
+function renderSongs(){
+ const groups=new Map();$('songList').replaceChildren();
+ for(const item of catalog.songs){
+  const season=item.season||'Other';
+  if(!groups.has(season)){
+   const group=document.createElement('section'),h=document.createElement('h2');group.className='season-group';
+   group.dataset.season=season.toLowerCase();group.setAttribute('aria-label',season+' songs');h.className='season-heading';
+   h.textContent=season;group.append(h);$('songList').append(group);groups.set(season,group);
+  }
+  const b=document.createElement('button');b.className='song-choice';b.dataset.id=item.id;b.dataset.season=season.toLowerCase();
+  b.classList.toggle('selected',item.id===song?.id);b.classList.toggle('pending',!item.tracks.length);
+  b.setAttribute('aria-pressed',String(item.id===song?.id));b.setAttribute('aria-label',`${item.title} (${season})`);
+  b.append(songListTitle(item));b.onclick=()=>void choose(item.id);groups.get(season).append(b);
+ }
+}
 function selectRecording(base,requested){
  const group=catalog.references?.[base.id],alts=group?.alternatives||{},ref=requested??prefs.songs[base.id]?.referenceId;
  const alt=Object.hasOwn(alts,ref)?alts[ref]:null,select=$('referenceRecording');

@@ -1,0 +1,40 @@
+{
+  "version": "1.2.0",
+  "author": "Eliezer Yudkowsky and Scott Alexander",
+  "title": "#108 - Category Boundaries",
+  "podcastName": "Lighthaven Sequences Reading Group Audio",
+  "description": "Weekly reading packet for November 24, 2026.",
+  "fileName": "lsrg-108-weekly.m4a",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "endTime": 373.915737,
+      "title": "Sneaking in Connotations",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/yuKaWPRTxZoov4z8K"
+    },
+    {
+      "startTime": 373.915737,
+      "endTime": 875.3523359999999,
+      "title": "Arguing \"By Definition\"",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/cFzC996D7Jjds3vS9"
+    },
+    {
+      "startTime": 875.3523359999999,
+      "endTime": 1288.8082319999999,
+      "title": "Where to Draw the Boundary?",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/d5NyJ2Lf6N22AD9PB"
+    },
+    {
+      "startTime": 1288.8082319999999,
+      "endTime": 1841.6613389999998,
+      "title": "Entropy, and Short Codes",
+      "url": "https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/soQX8yXLbKy7cFvy8"
+    },
+    {
+      "startTime": 1841.6613389999998,
+      "endTime": 3984.071293,
+      "title": "(Optional) Ethnic Tension And Meaningless Arguments",
+      "url": "https://www.lesswrong.com/s/NHXY86jBahi968uW4/p/4xKeNKFXFB458f5N8"
+    }
+  ]
+}

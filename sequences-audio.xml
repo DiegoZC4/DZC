@@ -10,7 +10,7 @@
     <description>One chaptered audio episode for each weekly Lighthaven Sequences Reading Group packet. Every narration is credited and linked to its source.</description>
     <language>en-us</language>
     <copyright>2026 Lighthaven Sequences Reading Group. Third-party audio remains property of its respective rights holders.</copyright>
-    <lastBuildDate>Tue, 17 Nov 2026 06:17:08 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Nov 2026 05:10:49 +0000</lastBuildDate>
     <generator>Sequences audio feed builder</generator>
     <atom:link href="https://diegozc.com/sequences-audio.xml" rel="self" type="application/rss+xml" />
     <itunes:author>Lighthaven Sequences Reading Group</itunes:author>
@@ -30,6 +30,41 @@
       <title>Lighthaven Sequences Reading Group Audio</title>
       <link>https://diegozc.com/lsrg/</link>
     </image>
+    <item>
+      <title>#108 - Category Boundaries</title>
+      <link>https://diegozc.com/lsrg/#lsrg-108</link>
+      <guid isPermaLink="false">urn:lsrg:108:weekly</guid>
+      <pubDate>Tue, 24 Nov 2026 05:10:49 +0000</pubDate>
+      <description><![CDATA[
+0:00 - Sneaking in Connotations by Eliezer Yudkowsky
+https://www.lesswrong.com/s/SGB7Y5WERh4skwtnb/p/yuKaWPRTxZoov4z8K
+
+6:14 - Arguing "By Definition" by Eliezer Yudkowsky
+
+14:35 - Where to Draw the Boundary? by Eliezer Yudkowsky
+
+21:29 - Entropy, and Short Codes by Eliezer Yudkowsky
+
+30:42 - (Optional) Ethnic Tension And Meaningless Arguments by Scott Alexander
+https://www.lesswrong.com/s/NHXY86jBahi968uW4/p/4xKeNKFXFB458f5N8
+
+Read along: https://diegozc.com/lsrg/#lsrg-108
+
+Sources
+Rationality: From AI to Zombies, by Eliezer Yudkowsky
+https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id1299826696
+
+SSC Podcast, Dan Wahl (automated Amazon Polly narration)
+https://danwahl.net/ssc-podcast/ethnic-tension-and-meaningless-arguments/
+]]></description>
+      <itunes:author>Eliezer Yudkowsky and Scott Alexander</itunes:author>
+      <itunes:episode>108</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:duration>3984</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+      <podcast:chapters url="https://diegozc.com/audio/lsrg-108-weekly-chapters.json" type="application/json+chapters" />
+      <enclosure url="https://diegozc.com/sequences-audio-download.php?file=lsrg-108-weekly.m4a" length="24223104" type="audio/mp4" />
+    </item>
     <item>
       <title>#107 - Taboo</title>
       <link>https://diegozc.com/lsrg/#lsrg-107</link>

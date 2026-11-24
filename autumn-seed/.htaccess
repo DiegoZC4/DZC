@@ -1,0 +1,7 @@
+# A stale worker can pin an installed iPad to an older player even when the new HTML is live.
+# The worker still keeps its verified offline player in Cache Storage.
+<Files "melete-offline.js">
+  Header always set Cache-Control "no-store, max-age=0"
+  Header always set CDN-Cache-Control "no-store"
+  Header always set LiteSpeed-Cache-Control "no-cache"
+</Files>

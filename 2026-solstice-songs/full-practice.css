@@ -325,7 +325,16 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-sheet[hidden]{display:none}
 .lead-sheet:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lead-section{margin:16px 0 4px;font-size:13px;line-height:1.4;font-weight:700;color:var(--accent)}
-.lead-caption{display:flex;align-items:baseline;gap:12px;margin:5px 0;color:var(--muted);font-size:11px}
+.lead-overview{display:flex;justify-content:space-between;align-items:baseline;gap:0 12px}
+.lead-caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;margin:0;color:var(--muted);font-size:11px}
+.lead-caption span{white-space:nowrap}
+@container(max-width:440px){.lead-overview{display:block}}
+.lead-form ol{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 4px;list-style:none;margin:0;padding:0}
+.lead-form li{display:inline-flex;align-items:center;gap:4px}
+.lead-form li:not(:last-child)::after{content:"";width:4px;height:4px;border:solid currentColor;border-width:1px 1px 0 0;transform:rotate(45deg);opacity:.55}
+.lead-form-step{min-height:26px;padding:1px 3px;border:0;border-radius:2px;background:transparent;color:inherit;white-space:nowrap;font-size:13px;font-weight:600}
+.lead-form-step[aria-current]{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.lead-form-step:focus-visible,.lead-section:focus-visible{outline-offset:-2px}
 .lead-bars{display:flex;flex-wrap:wrap;align-content:flex-start;row-gap:7px;width:100%}
 .lead-bar{--beat-inset:3px;position:relative;flex:0 0 calc(var(--lead-quarter,36px)*var(--bar-quarters));min-width:0;padding-bottom:5px;box-shadow:inset 1px 0 var(--bar-rule),inset -1px 0 var(--bar-rule)}
 .lead-meta{min-height:18px;padding-inline:var(--beat-inset);display:flex;align-items:baseline;gap:6px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -351,7 +360,7 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-bar.is-recording-line{background:color-mix(in srgb,var(--accent) 9%,transparent)}
 .lead-sheet[data-harmony=true] [data-role=harmony]{color:var(--lyric-harmony);font-weight:600}
 .lead-sheet[data-harmony=true] [data-role=unison]{color:var(--lyric-unison);font-weight:600}
-.lead-sheet[data-harmony=true] [data-role=solo]{color:var(--muted)}
+.lead-sheet[data-harmony=true] [data-role=solo]{color:var(--lead-solo,var(--muted))}
 .lead-sheet[data-harmony=false] .lead-word[data-role]{color:inherit;font-weight:inherit}
 #lyricSheet[data-view=lead] #leadReturn:not([hidden]){display:inline-flex}
 .lead-display{display:flex;align-items:center;flex-wrap:wrap;gap:2px 14px;margin:4px 0 6px;color:var(--muted)}
@@ -359,5 +368,24 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-display .lead-layer{display:inline-flex;align-items:center;gap:4px}
 .lead-display .scale-number{font:600 12px/1 system-ui;font-variant-numeric:tabular-nums;min-width:43px;height:25px;min-height:25px;padding:2px 5px}
 #readerPanel>.lead-display{flex:none;margin:0;padding:3px max(6px,env(safe-area-inset-left));border-bottom:1px solid var(--line)}
-#readerContent #leadBody{width:100%;min-width:0;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:5px 0 22px}
-@media(max-width:1110px){#leadBody{max-height:none;overflow:auto;scrollbar-gutter:auto}}
+#readerContent #leadBody{--lead-fill-lines:1;width:100%;min-width:0;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:0 0 12px}
+@media(max-width:1110px),(pointer:coarse) and (hover:none){
+ .rehearsal-layout:has(#lyricSheet[data-view=lead]){grid-template-columns:minmax(0,1fr)}
+ #lyricSheet[data-view=lead]{max-width:none;border-inline:0;padding-inline:0}
+ #lyricSheet #leadBody{--lead-fill-lines:1;max-height:none;overflow:auto;scrollbar-gutter:auto;padding-inline:0}
+}
+@media screen{
+ #readerPanel:has(#leadBody){
+  color-scheme:dark;color:#fff;--page:#000;--surface:#000;--lyric-ink:#fff;--muted:#fff;--accent:#fff;--hover:#242424;--line:#686868;
+  --lyric-harmony:#ffa2ac;--lyric-unison:#9bcaff;--lead-solo:#c2c2c2;
+ }
+ :where(#readerPanel:has(#leadBody)) :is(button,select){background-color:var(--surface)}
+ :where(#readerPanel:has(#leadBody)) button:enabled:hover{background-color:var(--hover)}
+ #readerContent #leadBody{background:var(--page)}
+ #readerContent .lead-form{padding-inline:2px}
+ #readerContent .lead-caption{margin:0 3px 2px}
+ #readerContent .lead-section{margin:6px 0 1px;line-height:1.2}
+ #readerContent .lead-bars{row-gap:3px}
+ #readerContent .lead-bar{padding-bottom:2px}
+ #readerContent .lead-bar.is-recording-line{background:transparent;box-shadow:inset 1px 0 var(--bar-rule),inset -1px 0 var(--bar-rule),inset 0 -2px currentColor}
+}

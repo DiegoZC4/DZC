@@ -16,6 +16,14 @@ function spans(text,detail,from,to){
  return bounds.slice(0,-1).map((n,i)=>[text.slice(n,bounds[i+1]),roles.find(s=>s.from<=n&&n<s.to)?.role||detail?.role]);
 }
 const measurements=new WeakMap();
+const songForms=new WeakMap();
+function markForm(body,time){
+ const form=songForms.get(body);if(!form)return;
+ const active=form.items.findLast(item=>item.at<=time);
+ if(active===form.active)return;
+ form.active?.button.removeAttribute('aria-current');
+ active?.button.setAttribute('aria-current','location');form.active=active;
+}
 const partial=(text,at)=>at>0&&at<text.length&&/[\p{L}\p{N}]/u.test(text[at-1])&&/[\p{L}\p{N}]/u.test(text[at]);
 function pack(words,width,left,right,fill=false){
  // Leave the remaining words enough room before moving any fragment toward its beat.
@@ -28,19 +36,19 @@ function pack(words,width,left,right,fill=false){
  });
 }
 function wrap(layout,quarter,available){
- let used=0,fullest=0,lines=0,parent=null,wrapped=false;
+ let used=0,fullest=0,lines=0,parent=null;
  for(const b of layout){
   if(b.bar.parentNode!==parent){used=0;parent=b.bar.parentNode;}
-  if(used&&(used+b.quarters)*quarter>available){used=0;wrapped=true;}
+  if(used&&(used+b.quarters)*quarter>available)used=0;
   if(!used)lines++;
   used+=b.quarters;if(used*quarter<=available)fullest=Math.max(fullest,used);
  }
- return {fullest,lines,wrapped};
+ return {fullest,lines};
 }
 function fit(body){
  const layout=measurements.get(body);
  if(!layout||!body.contains(layout[0].bar)||!body.clientWidth)return;
- const css=getComputedStyle(body),pane=body.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight);
+ const css=getComputedStyle(body),pane=layout[0].bar.parentNode.getBoundingClientRect().width;
  const lyrics=body.dataset.lyrics!=='false',chords=body.dataset.chords!=='false';
  const font=parseFloat(css.getPropertyValue('--lead-lyric-size'))||13,edge=Math.max(2.5,font*.17);
  // A whole bar like “vives, no one sur” must join a word at both edges.
@@ -72,8 +80,9 @@ function fit(body){
  }
  const rounded=n=>Math.ceil((n+.05)*64)/64,available=pane-.06,base=rounded(minimum);
  const natural=wrap(layout,base,available),compact=wrap(layout,rounded(tightMinimum),available);
- const snapped=natural.fullest?available/natural.fullest:base,wideReader=pane>=650&&body.closest('#readerContent');
- let ppq=snapped>=base&&(wideReader&&natural.wrapped||(snapped-base)*Math.max(...layout.map(b=>b.quarters))<=4)?snapped:base;
+ const snapped=natural.fullest?available/natural.fullest:base,longest=Math.max(...layout.map(b=>b.quarters));
+ const fillWidth=css.getPropertyValue('--lead-fill-lines').trim()==='1'&&base*longest<=available;
+ let ppq=snapped>=base&&(fillWidth||(snapped-base)*longest<=4)?snapped:base;
  // Only fit ink more tightly when another complete measure really fits, respecting section starts.
  if(compact.lines<natural.lines&&compact.fullest){
   ppq=available/compact.fullest;
@@ -104,23 +113,33 @@ function fit(body){
   }
  }
 }
-function render(body,sheet,entry,seek){
+function render(body,sheet,entry,seek,seekSection=seek){
  const doc=body.ownerDocument,frag=doc.createDocumentFragment(),rows=[],layout=[];
  const el=(name,cls,text)=>{const n=doc.createElement(name);n.className=cls;if(text!=null)n.textContent=text;return n;};
  const button=(text,cls,t,label)=>{
   const b=el('button',cls,text);b.type='button';b.dataset.time=t;b.title=label;b.setAttribute('aria-label',label);b.onclick=()=>seek(t);return b;
  };
  let grid,meter=null,den=4,previous=null;
- const caption=el('div','lead-caption'),key=el('span','',sheet.key);key.dataset.sheetKey=sheet.key;
- caption.append(key,el('span','',sheet.status));frag.append(caption);
- function section(label){
-  if(label)frag.append(el('h3','lead-section',label));
+ const overview=el('div','lead-overview'),caption=el('div','lead-caption'),key=el('span','',sheet.key);key.dataset.sheetKey=sheet.key;
+ const nav=el('nav','lead-form'),list=el('ol',''),items=[];nav.setAttribute('aria-label','Song form');nav.append(list);
+ caption.append(key,el('span','',sheet.status));overview.append(nav,caption);frag.append(overview);
+ function section(label,bar){
+  if(label){
+   const heading=el('h3','lead-section',label),at=bar.start+(bar.pickupAt??0)/bar.beats*(bar.end-bar.start);
+   heading.tabIndex=-1;frag.append(heading);
+   const item=el('li',''),b=button(label,'lead-form-step',at,label+', measure '+bar.number);
+   b.onclick=()=>{
+    heading.focus({preventScroll:true});heading.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+    seekSection(at);
+   };
+   item.append(b);list.append(item);items.push({at,button:b});
+  }
   grid=el('div','lead-bars');frag.append(grid);
  }
  for(const [i,bar] of sheet.bars.entries()){
-  if(bar.sections?.length)section(bar.sections.map(s=>entry.sections[s].label).join(' / '));
-  else if(bar.label)section(bar.label);
-  else if(!grid)section(bar.pickupAt==null&&sheet.bars.some(b=>b.sections?.length)?'Intro':'');
+  if(bar.sections?.length)section(bar.sections.map(s=>entry.sections[s].label).join(' / '),bar);
+  else if(bar.label)section(bar.label,bar);
+  else if(!grid)section(bar.pickupAt==null&&sheet.bars.some(b=>b.sections?.length)?'Intro':'',bar);
   const first=bar.pickupAt??0,duration=bar.beats-first;
   if(bar.meter)den=Number(bar.meter.split('/')[1]);
   const quarters=duration*4/den;
@@ -171,10 +190,11 @@ function render(body,sheet,entry,seek){
   m.append(music,lyricLine);grid.append(m);rows.push({at:bar.start,el:m});
  }
  body.dataset.key=sheet.key;body.dataset.quality=sheet.status;
+ nav.hidden=items.length===0;songForms.set(body,{items});
  body.replaceChildren(frag);body.scrollTop=0;body.scrollLeft=0;
  if(rows.length)measurements.set(body,layout);else measurements.delete(body);
  return rows;
 }
-const api={matches,textId,spans,render,fit,pack};
+const api={matches,textId,spans,render,fit,pack,markForm};
 root.MeleteFullPracticeLead=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

@@ -215,6 +215,19 @@
         "seconds": 32.407,
         "evidence": "score+stem"
       }
+    },
+    "https://secularsolstice.github.io/songs/Song_of_the_Artesian_Water/Song_of_the_Artesian_Water_v2.m4a": {
+      "vocalSha256": "40c3f1eca2e5cbd45d651d5721770fdfb163b609f887a06902a6f805017e3929",
+      "low": {
+        "midi": 55,
+        "seconds": 189.045,
+        "evidence": "stem"
+      },
+      "high": {
+        "midi": 67,
+        "seconds": 189.765,
+        "evidence": "stem"
+      }
     }
   }
 }

@@ -21,7 +21,9 @@ const ranges=new Map([
  [yt('VqHy11zWZA4'),['Gm','F3','Bb4','Estimate','Skybound vocal-stem endpoints; the top may include harmony.']],
  [yt('zc8tCd4uAF0'),['Am','G3','B4','Working','Solar Sailors: the low recurs; the top is brief.']],
  [bc('brighter-than-today'),['D','A3','D5','Score guide','Soprano in the D score; not a verified 2014 solo line.']],
- [yt('RGVZdk5hIG0'),['D','B3','B4','Opening','Edited Bay 2024 audition opening, not the whole song.']]
+ [yt('RGVZdk5hIG0'),['D','B3','B4','Opening','Edited Bay 2024 audition opening, not the whole song.']],
+ ['https://secularsolstice.github.io/songs/Song_of_the_Artesian_Water/Song_of_the_Artesian_Water_v2.m4a',
+  ['Am','G3','G4','Core tune','Both pitches recur in all six verses of the demo. Excludes occasional lower inflections.']]
 ]);
 const letters='CDEFGAB',natural=[0,2,4,5,7,9,11];
 function endpoint(name,shift,key,transposeChord){

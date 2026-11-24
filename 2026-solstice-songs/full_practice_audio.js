@@ -8,9 +8,14 @@ class Deck{
   if(rate!==1||this.shift!==0){const {default:create}=await import('./vendor/SignalsmithStretch.js');try{for(const buffer of this.buffers){const node=await create(this.context,{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[buffer.numberOfChannels]});if(token!==this.token){node.port.close();throw new DOMException('Canceled','AbortError');}this.worklets.push(node);await node.configure({preset:'default'});const channels=Array.from({length:buffer.numberOfChannels},(_,i)=>buffer.getChannelData(i).slice());await node.addBuffers(channels,channels.map(c=>c.buffer));}}catch(e){this.closeWorklets();throw e;}}
   if(token!==this.token)throw new DOMException('Canceled','AbortError');this.prepared=key;
  }
- start(at,offset,duration,mix,loop=false,loopStart=0){this.stop();this.gains=this.buffers.map((buffer,i)=>{const g=this.context.createGain();g.gain.value=mix[i].on?mix[i].level:0;g.connect(this.output);const n=this.worklets[i]||this.context.createBufferSource();n.connect(g);if(this.worklets[i]){void n.start({active:true,output:at,input:offset,rate:this.rate,semitones:this.semitones(this.ids[i]),formantSemitones:0,formantCompensation:this.ids[i]==='vocals'&&this.shift!==0,formantBaseHz:0,loopStart,loopEnd:loop?duration:0});if(!loop)g.gain.setValueAtTime(0,at+(duration-offset)/this.rate);}else{n.buffer=buffer;n.loop=loop;n.loopStart=loopStart;n.loopEnd=duration;n.start(at,offset);if(!loop)n.stop(at+(duration-offset)/this.rate);this.nodes.push(n);}return g;});}
+ start(at,offset,duration,mix,loop=false,loopStart=0){this.stop();
+  // Stretch worklets can emit analysis pre-roll. Gate their shared output independently of the live faders.
+  const gate=this.gate=this.context.createGain();gate.gain.value=0;gate.gain.setValueAtTime(1,at);
+  if(!loop)gate.gain.setValueAtTime(0,at+(duration-offset)/this.rate);
+  gate.connect(this.output);
+  this.gains=this.buffers.map((buffer,i)=>{const g=this.context.createGain();g.gain.value=mix[i].on?mix[i].level:0;g.connect(gate);const n=this.worklets[i]||this.context.createBufferSource();n.connect(g);if(this.worklets[i]){void n.start({active:true,output:at,input:offset,rate:this.rate,semitones:this.semitones(this.ids[i]),formantSemitones:0,formantCompensation:this.ids[i]==='vocals'&&this.shift!==0,formantBaseHz:0,loopStart,loopEnd:loop?duration:0});}else{n.buffer=buffer;n.loop=loop;n.loopStart=loopStart;n.loopEnd=duration;n.start(at,offset);if(!loop)n.stop(at+(duration-offset)/this.rate);this.nodes.push(n);}return g;});}
  mix(values){this.gains.forEach((g,i)=>g.gain.setTargetAtTime(values[i].on?values[i].level:0,this.context.currentTime,.01));}
- stop(){for(const n of this.nodes){try{n.stop();}catch{}n.disconnect();}this.nodes=[];for(const n of this.worklets){void n.stop();n.disconnect();}this.gains.forEach(g=>g.disconnect());this.gains=[];}
+ stop(){this.gate?.disconnect();this.gate=null;for(const n of this.nodes){try{n.stop();}catch{}n.disconnect();}this.nodes=[];for(const n of this.worklets){void n.stop();n.disconnect();}this.gains.forEach(g=>g.disconnect());this.gains=[];}
  closeWorklets(){this.worklets.forEach(n=>{n.disconnect();n.port.close();});this.worklets=[];this.prepared=null;}
  clear(){this.token++;this.stop();this.closeWorklets();this.buffers=[];}
 }

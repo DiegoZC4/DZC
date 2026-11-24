@@ -95,7 +95,7 @@ async function showLead(selected,token){
   if(run!==leadRun||token!==revision)return;
   const sheet=book.version===1&&book.recordings?.[sheetKey(selected)];
   if(!MeleteFullPracticeLead.matches(sheet,selected,entry))throw Error();
-  leadFollow.reset(MeleteFullPracticeLead.render(body,sheet,entry,t=>lyricJump(t,token)));
+  leadFollow.reset(MeleteFullPracticeLead.render(body,sheet,entry,t=>lyricJump(t,token),t=>lyricJump(t,token,{preload:false})));
   body.setAttribute('aria-label',selected.title+' lead sheet, '+sheet.status);
   transposeLead();voicings.focusable(body);syncCapo();highlightLyrics(position());
  }catch{if(run===leadRun){body.textContent='No matching lead sheet for this recording.';delete body.dataset.for;}}
@@ -188,7 +188,7 @@ function openReader(native){
  $('readerError').textContent=$('status').classList.contains('error')?$('status').textContent:'';
  $('readerError').hidden=!$('readerError').textContent;
  const url=new URL(location.href);url.searchParams.set('reader','1');history.replaceState(history.state,'',url);
- $('readerClose').focus({preventScroll:true});C.sheetFit($('chartBody'));
+ $('readerClose').focus({preventScroll:true});if(readerView==='lead')refitLead();else C.sheetFit($('chartBody'));
  if(native&&document.fullscreenEnabled&&!document.fullscreenElement)
   $('readerPanel').requestFullscreen?.().catch(()=>{}); // The dialog also fills the viewport on iOS.
 }
@@ -241,14 +241,21 @@ $('readerPlay').onclick=()=>void readerPlayback();
 $('readerSeek').oninput=e=>{$('readerTime').textContent=clock(Number(e.target.value));};
 $('readerSeek').onchange=e=>seek(Number(e.target.value));
 function cueSecond(t){return Math.max(0,t-.15);} // Leave the singer's first consonant intact.
-function lyricJump(t,token){
+function lyricJump(t,token,{preload=true}={}){
  if(token!==revision||locked())return;
- if(deferredAudio){pendingLyric={token,t};void resumeAudioLoad();return;}
- if(loading){pendingLyric={token,t};return;}
+ if(deferredAudio||loading){
+  pendingLyric={token,t};
+  if(lyricView==='lead')MeleteFullPracticeLead.markForm($('leadBody'),t);
+  if(deferredAudio&&preload)void resumeAudioLoad();
+  return;
+ }
  if(duration())seek(t);
 }
 function highlightLyrics(t){
- if(lyricView==='lead'){leadFollow.update(t,playing,!recording);return;}
+ if(lyricView==='lead'){
+  MeleteFullPracticeLead.markForm($('leadBody'),pendingLyric?.token===revision?pendingLyric.t:t);
+  leadFollow.update(t,playing,!recording);return;
+ }
  if(!$('guitarTab').hidden||lyricView==='chart')return;
  updateChord?.(t);
  lyricFollow.update(t,playing&&(recording||!!lyricChart?.clocked),!recording);
@@ -620,7 +627,7 @@ function draw(){
 const rehearsalNames={
  'the-circle':'Circle','hymn-to-breaking-strain':'Strain','bold-orion':'Orion','who-by-fire':'Fire',
  'no-one-survives':'Survives','auld-lang-syne':'Auld','songs-stay-sung':'Stay','ballad-of-smallpox-gone':'Smallpox',
- 'here-comes-the-sun':'Sun','a-toast-for-unknown-heroes':'Heroes','brighter-than-today':'Brighter'
+ 'here-comes-the-sun':'Sun','a-toast-for-unknown-heroes':'Heroes','brighter-than-today':'Brighter','song-of-the-artesian-water':'Artesian'
 };
 function songListTitle({id,title}){
  const name=document.createElement('span');name.className='song-name';
@@ -718,7 +725,7 @@ async function choose(id,requested){
  const mixerTracks=[...song.tracks,...(song.guides||[])];
  mix=mixerTracks.map(t=>{const old=saved[song.id]?.find(m=>m.id===t.id);return{id:t.id,on:old?.on??true,level:Number.isFinite(old?.level)?Math.min(2,Math.max(0,old.level)):1};});
  if(catalog.references?.[song.id]){prefs.songs[song.id]={...config(),referenceId:song.referenceId||'playlist'};persist();}
- $('excerpts').href=(catalog.auditionBase||'./')+'#'+song.id;showParts();document.title=song.title+' - '+(catalog.title||'Solstice practice');
+ $('excerpts').href=(catalog.auditionBase||'./')+'#'+song.id;$('excerpts').hidden=song.season==='Reserve';showParts();document.title=song.title+' - '+(catalog.title||'Solstice practice');
  const source=$('source');source.href=song.url;source.hidden=!song.url;source.setAttribute('aria-label','Open recording source');
  showSongbook(song.id,song.title);
  source.classList.toggle('youtube',/^(?:https?:\/\/)(?:www\.)?(?:youtube\.com|youtu\.be)\//.test(song.url));
@@ -736,7 +743,7 @@ async function choose(id,requested){
  try{await ensureAudio(false);if(token!==revision)return;
  const [entry,beatMap]=await Promise.all([
   audioLoader.load({...selected,tracks:mixerTracks},ctx,{signal:controller.signal,onProgress:(n,cached)=>{if(token===revision&&!cached)status(`Loading ${n}/${mixerTracks.length}…`);}}),
-  selected.referenceId?referenceCues(selected).then(c=>c.beats):beatCatalog.songs?.[selected.id],
+  selected.rehearsalPulse??(selected.referenceId?referenceCues(selected).then(c=>c.beats):beatCatalog.songs?.[selected.id]),
  ]);
  if(token!==revision)return;buffers=entry.buffers;peaks=entry.peaks;playEnd=duration();deck.setBuffers(buffers,mixerTracks.map(t=>t.id),mixerTracks.filter(t=>t.concertPitch).map(t=>t.id));const version=sourceVersion(),matchedMap=beatMap?.sourceVersion===version?beatMap:null;
  clickTrack.setMap(matchedMap,duration());bars=L.measures(matchedMap,duration());pitchView.setMeasures(bars,clickTrack.grid.times);
@@ -744,7 +751,7 @@ async function choose(id,requested){
  loopState=L.restore(stored,bars,duration(),version)||(!stored&&prefs.loop?L.whole({},bars,duration()):{});
  if(activeLoop())current=activeLoop().start;
  syncLoop();pitchView.move(current,false,true);
- $('clickQuality').textContent=clickTrack.grid.aligned?(beatMap.label||'Estimated recording pulse'):'100 BPM guide (unaligned)';$('clickQuality').title=clickTrack.grid.aligned?beatMap.notes||'':'No matching beat map for this recording.';
+ $('clickQuality').textContent=clickTrack.grid.aligned?(beatMap.label||'Estimated recording pulse'):'Count-in only';$('clickQuality').title=clickTrack.grid.aligned?beatMap.notes||'':'No matching beat map for this recording.';
  mixerTracks.forEach((t,i)=>{const row=document.createElement('div');row.className='mixer-stem '+(t.audioUrl?'arrangement-stem':'full-stem');const controls=document.createElement('div');controls.className='track-controls';const mute=document.createElement('button');mute.className='mute';mute.innerHTML='<i data-lucide="volume-2"></i>';const label=document.createElement('span');label.textContent=t.label;mute.append(label);mute.onclick=()=>{mix[i].on=!mix[i].on;volumes();};const level=document.createElement('button');level.className='track-level';level.setAttribute('aria-label',t.label+' volume');const number=MeleteDragNumber(level,{values:Array.from({length:41},(_,i)=>i*5),defaultValue:100,clickStep:10,pixelsPerStep:5,format:v=>`${v}%`,aria:v=>`${v}%`,onHold:()=>{soloStem(i);}});number.setValue(mix[i].level*100,false);level.oninput=()=>{mix[i].level=number.value()/100;volumes();};const solo=document.createElement('button');solo.className='solo';solo.textContent='S';solo.setAttribute('aria-label','Solo '+t.label);solo.onclick=()=>{soloStem(i);};const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=50;canvas.tabIndex=0;canvas.setAttribute('role','slider');canvas.setAttribute('aria-label',t.label+' position');canvas.setAttribute('aria-valuemin','0');canvas.setAttribute('aria-valuemax',String(duration()));canvas.onclick=e=>{const b=canvas.getBoundingClientRect();seek((e.clientX-b.left)/b.width*duration());};controls.append(mute,level,solo);row.append(controls,waveBed(canvas));$('stems').append(row);});await library;if(token!==revision)return;volumes();renderTracks();draw();status(libraryError,!!libraryError);
  }catch(e){if(token===revision&&e.name!=='AbortError'){status(e.message,true);buffers=[];}}finally{
   if(token===revision){loading=false;update();if(pendingLyric?.token===token&&duration())seek(pendingLyric.t);pendingLyric=null;}
@@ -972,7 +979,7 @@ function playbackKey(e){
   ['TEXTAREA','SELECT'].includes(target.tagName)||(target.tagName==='INPUT'&&!choice))return;
  const consume=()=>{e.preventDefault();e.stopPropagation();};
  if(e.code==='Space'||key==='k'){
-  if((choice||target.closest('#keepShapes,#leadDisplay'))&&e.code==='Space')return;
+  if((choice||target.closest('#keepShapes,#leadDisplay,.lead-form-step'))&&e.code==='Space')return;
   consume();if(!e.repeat)void play();return;
  }
  if(key==='r'){consume();if(!e.repeat&&!$('record').disabled)void startRecord();return;}

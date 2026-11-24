@@ -50,7 +50,7 @@ function stepBeats(grid,position,amount,duration){
 class Click{
  constructor(context,output){this.context=context;this.output=output;this.gain=context.createGain();this.gain.gain.value=0;this.gain.connect(output);this.node=null;this.times=[];this.enabled=false;this.level=.5;}
  async prepare(){if(!this.module)this.module=this.context.audioWorklet.addModule('full_practice_click_worklet.js').catch(e=>{this.module=null;throw e;});await this.module;}
- setMap(data,duration){this.stop();this.grid=pulseGrid(data,duration);this.times=this.grid.times;this.unavailable=false;}
+ setMap(data,duration){this.stop();this.grid=pulseGrid(data,duration);this.times=this.grid.aligned?this.grid.times:[];this.unavailable=false;}
  mix(enabled,level){this.enabled=enabled;this.level=level;this.gain.gain.setTargetAtTime(enabled?level:0,this.context.currentTime,.005);}
  start(at,offset,end,rate,loop,loopStart=0){this.stop();if(!this.times.length||this.unavailable)return;this.node=new AudioWorkletNode(this.context,'recording-click',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1],processorOptions:{times:this.times,accents:this.grid.accents,at,offset,end,rate,loop,loopStart}});this.node.connect(this.gain);}
  stop(){if(this.node){this.node.port.postMessage('stop');this.node.disconnect();this.node.port.close();this.node=null;}}

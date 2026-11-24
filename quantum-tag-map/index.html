@@ -14,6 +14,9 @@
      edit the JSON below in a text editor, and reopen it directly in a browser.
      room is measured in cm. Equipment sizes and positions are in inches.
      size = [length, width, height] of a block in its normal resting pose.
+     For panel mats, each color in panels is one hinged leaf. panelWidthInches
+     sets its face width. height is the standing height. Straight mats accept
+     foldDepth in inches (default 8) to adjust the zigzag.
      at = [south from north wall, east from west wall, height above floor]
      measured to the minimum corner of the rotated footprint. yaw is degrees
      clockwise in local X/Y coordinates viewed from above. vertical selects
@@ -26,6 +29,7 @@
   "title": "Quantum Tag · Savannah",
   "shareUrl": "https://diegozc.com/quantum-tag-map/",
   "room": {"southCm": 1319, "eastCm": 746, "gridInches": 6, "entrywayColor": "#49372e"},
+  "panelWidthInches": 24,
   "airtrackType": "AP-028",
   "types": {
     "AP-001": {"name": "Blue vault tier · widest", "shape": "Taper Y", "size": [48,36,12], "color": "#487eb9", "top": 30},
@@ -44,18 +48,18 @@
     "AP-028": {"name": "Inflatable air track", "shape": "Mat envelope", "size": [216,60,4], "color": "#ec5796"},
     "AP-031": {"name": "Low red steps", "shape": "Stairs X", "size": [26,16,15], "color": "#c84645", "rises": 2},
     "AP-032": {"name": "Blue approach mat", "shape": "Inclined mat", "size": [66,36,52], "color": "#4767a6"},
-    "AP-033": {"name": "Curved tan/blue folding screen", "shape": "Curved screen", "size": [50,46,44], "color": "#bfa078", "panels": ["#bfa078","#516992","#cbaa81","#c3a37c","#516992","#c3a37c","#b89671"]},
+    "AP-033": {"name": "Curved tan/blue folding screen", "shape": "Curved screen", "height": 36, "color": "#bfa078", "panels": ["#bfa078","#516992","#cbaa81","#c3a37c","#516992","#c3a37c","#b89671"]},
     "AP-034": {"name": "Long flexible orange mat", "shape": "Mat envelope", "size": [72,48,6], "color": "#d87542"},
-    "AP-035": {"name": "Yellow / red / green panel mat", "shape": "Folding screen", "size": [107.24108,8,48], "color": "#e9bd40", "panels": ["#e9bd40","#bb3643","#bb3643","#327f78","#327f78"]},
-    "AP-036": {"name": "Orange / green panel mat", "shape": "Folding screen", "size": [106.45971,8,36], "color": "#29935b", "panels": ["#29935b","#e77b3c","#29935b","#e77b3c"]},
-    "AP-037": {"name": "Blue / orange panel mat", "shape": "Folding screen", "size": [103.05203,8,36], "color": "#e77b3c", "panels": ["#e77b3c","#415ca1","#e77b3c","#415ca1"]},
+    "AP-035": {"name": "Yellow / red / green panel mat", "shape": "Folding screen", "height": 48, "color": "#e9bd40", "panels": ["#e9bd40","#bb3643","#bb3643","#327f78","#327f78"]},
+    "AP-036": {"name": "Orange / green panel mat", "shape": "Folding screen", "height": 36, "color": "#29935b", "panels": ["#29935b","#e77b3c","#29935b","#e77b3c"]},
+    "AP-037": {"name": "Blue / orange panel mat", "shape": "Folding screen", "height": 36, "color": "#e77b3c", "panels": ["#e77b3c","#415ca1","#e77b3c","#415ca1"]},
     "AP-038": {"name": "Upright red / blue wedge", "shape": "Upright wedge", "size": [16,48,72], "color": "#415ca1"},
     "AP-039": {"name": "Asymmetric jump pad", "shape": "Jump pad", "size": [43.267,36,19.969], "color": "#429c59"},
     "AP-040": {"name": "Hinged orange wedge wall", "shape": "Hinged wedge", "size": [62,62,44], "color": "#e77b3c"},
-    "AP-042": {"name": "Blue-faced panel mat", "shape": "Folding screen", "size": [101.50862,8,44], "color": "#415ca1", "panels": ["#415ca1","#415ca1","#415ca1","#415ca1"]},
-    "AP-043": {"name": "Teal / yellow / red panel mat", "shape": "Folding screen", "size": [106.29134,8,48], "color": "#327f78", "panels": ["#327f78","#e9bd40","#e9bd40","#bb3643","#bb3643"]},
-    "AP-044": {"name": "White / blue / white panel mat", "shape": "Folding screen", "size": [57.23635,8,44], "color": "#d7dedc", "panels": ["#d7dedc","#374b69","#d7dedc"]},
-    "AP-045": {"name": "Blue / orange mat with yellow binding", "shape": "Folding screen", "size": [72.70033,8,36], "color": "#415ca1", "panels": ["#415ca1","#e77b3c","#415ca1","#415ca1"], "topBindings": {"2": "#e9bd40"}},
+    "AP-042": {"name": "Blue-faced panel mat", "shape": "Folding screen", "height": 48, "color": "#415ca1", "panels": ["#415ca1","#415ca1","#415ca1","#415ca1"]},
+    "AP-043": {"name": "Teal / yellow / red panel mat", "shape": "Folding screen", "height": 48, "color": "#327f78", "panels": ["#327f78","#e9bd40","#e9bd40","#bb3643","#bb3643"]},
+    "AP-044": {"name": "White / blue / white panel mat", "shape": "Folding screen", "height": 36, "color": "#d7dedc", "panels": ["#d7dedc","#374b69","#d7dedc"]},
+    "AP-045": {"name": "Blue / orange mat with yellow binding", "shape": "Folding screen", "height": 36, "foldDepth": 17.6737492, "color": "#415ca1", "panels": ["#415ca1","#e77b3c","#415ca1","#415ca1"], "topBindings": {"2": "#e9bd40"}},
     "AP-046": {"name": "Red tunnel wedge", "shape": "Ramp X", "size": [56,42,22], "color": "#ba3f4b", "rampColors": {"base": "#626368", "side": "#626368", "heel": "#626368"}},
     "AP-047": {"name": "Oversized green team base", "shape": "Box envelope", "size": [48,36,36], "color": "#226c60"},
     "AP-048": {"name": "Thick green slide", "shape": "Inclined mat", "size": [66,36,52], "color": "#298968", "edgeThickness": 14}
@@ -89,17 +93,17 @@
     {"name": "Blue slide", "type": "AP-032", "at": [162,170.85039,0], "yaw": 0},
     {"name": "South boulder base", "type": "AP-027", "at": [467.29134,253.70079,0], "yaw": 0},
     {"name": "East orange end support", "type": "AP-015", "at": [270,221.70079,0], "yaw": 180, "vertical": "length"},
-    {"name": "Curved tan/blue folding screen 1", "type": "AP-033", "at": [435.29134,208.70079,0], "yaw": 20},
+    {"name": "Curved tan/blue folding screen 1", "type": "AP-033", "at": [423.26924,188.48334,0], "yaw": 20},
     {"name": "Center support, north orange block", "type": "AP-015", "at": [234,122.85039,0], "yaw": 90, "vertical": "length", "seam": "widthEnd"},
     {"name": "Center support, south orange block", "type": "AP-015", "at": [258,122.85039,0], "yaw": 90, "vertical": "length", "seam": "widthStart"},
     {"name": "Long orange tunnel wall", "type": "AP-034", "at": [222,164.85039,0], "yaw": 0, "vertical": "width"},
-    {"name": "Blue / orange panel mat 1", "type": "AP-037", "at": [132.45971,243.03753,0], "yaw": 11},
-    {"name": "Orange / green panel mat 1", "type": "AP-036", "at": [26,261.70079,0], "yaw": 0},
-    {"name": "Yellow / red / green panel mat 1", "type": "AP-035", "at": [24,154.45971,0], "yaw": 270},
-    {"name": "Blue / orange mat with yellow binding 1", "type": "AP-045", "at": [279.94788,18.19687,0], "yaw": 200},
+    {"name": "Blue / orange panel mat 1", "type": "AP-037", "at": [141.67465,243.68257,0], "yaw": 8},
+    {"name": "Orange / green panel mat 1", "type": "AP-036", "at": [48.72305,256.61893,0], "yaw": 0},
+    {"name": "Yellow / red / green panel mat 1", "type": "AP-035", "at": [33.57057,140.4424,0], "yaw": 277},
+    {"name": "Blue / orange mat with yellow binding 1", "type": "AP-045", "at": [276.63926,9.06683,0], "yaw": 200},
     {"name": "Teal / yellow / red panel mat 1", "type": "AP-043", "at": [387,24.86663,0], "yaw": 180},
-    {"name": "Blue-faced panel mat 1", "type": "AP-042", "at": [487.29134,32.86663,0], "yaw": 270},
-    {"name": "White / blue / white panel mat 1", "type": "AP-044", "at": [487.29134,134.37525,0], "yaw": 270},
+    {"name": "Blue-faced panel mat 1", "type": "AP-042", "at": [496.1895,32.86663,0], "yaw": 270},
+    {"name": "White / blue / white panel mat 1", "type": "AP-044", "at": [496.1895,125.81823,0], "yaw": 270},
     {"name": "Hinged orange wedge wall 1", "type": "AP-040", "at": [59.02587,162.86649,0], "yaw": 45},
     {"name": "Upright red / blue wedge 1", "type": "AP-038", "at": [279,245.70079,0], "yaw": 180},
     {"name": "Upright red / blue wedge 2", "type": "AP-038", "at": [221,0,0], "yaw": 0},
@@ -110,8 +114,8 @@
     {"name": "Green/yellow incline 1", "type": "AP-016", "at": [65.125,19.441,0], "yaw": 294, "vertical": "width"},
     {"name": "Red tunnel wedge 1", "type": "AP-046", "at": [84.067,0.201,0], "yaw": 114, "vertical": "width"},
     {"name": "North green base", "type": "AP-047", "at": [0,0,0], "yaw": 90},
-    {"name": "North OGOG outer wall", "type": "AP-036", "at": [24,48,0], "yaw": 270},
-    {"name": "North OGOG inner wall", "type": "AP-036", "at": [62,48,0], "yaw": 270},
+    {"name": "North OGOG outer wall", "type": "AP-036", "at": [23.83867,48,0], "yaw": 276},
+    {"name": "North OGOG inner wall", "type": "AP-036", "at": [61.83867,48,0], "yaw": 276},
     {"name": "Thick green slide", "type": "AP-048", "at": [288,86.85039,0], "yaw": 180},
     {"name": "Sideways stairs on west crash pad", "type": "AP-009", "at": [241.5,101.85039,24], "yaw": 0, "vertical": "width"}
   ]
@@ -212,17 +216,29 @@ dialog::backdrop {background:white}
     });
   }
   var boulderFootprint = ([length2, width2]) => boulderRim.map(([x, y]) => [x * length2, y * width2]);
+  var panelThickness = 2;
+  var curvedSweep = 300;
+  function panelMatSize(profile, count, leafWidth, height, foldDepth = 8) {
+    if (profile === "Curved screen") {
+      const halfAngle = curvedSweep * Math.PI / (360 * count);
+      const diameter = leafWidth / Math.sin(halfAngle) + panelThickness;
+      return [diameter, diameter, height];
+    }
+    const swing = foldDepth - panelThickness;
+    if (swing < 0 || swing >= leafWidth) throw new RangeError("Fold depth must leave room for each hinged panel.");
+    return [count * Math.sqrt(leafWidth ** 2 - swing ** 2), foldDepth, height];
+  }
   function screenLeaves([length2, depth], type) {
-    const thick = Math.min(2, depth / 3, length2 / 3);
+    const thick = type.panelWidthInches ? panelThickness : Math.min(panelThickness, depth / 3, length2 / 3);
+    const count = type.panels.length;
     if (type.profile === "Curved screen") {
       const point = (i, inset) => {
-        const angle = (120 + i * 300 / 7) * Math.PI / 180;
+        const angle = (90 + (360 - curvedSweep) / 2 + i * curvedSweep / count) * Math.PI / 180;
         return [length2 / 2 + (length2 / 2 - inset) * Math.cos(angle), depth / 2 + (depth / 2 - inset) * Math.sin(angle)];
       };
-      return Array.from({ length: 7 }, (_, i) => [point(i, 0), point(i + 1, 0), point(i + 1, thick), point(i, thick)]);
+      return Array.from({ length: count }, (_, i) => [point(i, 0), point(i + 1, 0), point(i + 1, thick), point(i, thick)]);
     }
-    const count = type.panels.length;
-    const hinge = (i) => ({ x: length2 * i / count, y: i % 2 ? depth - thick : 0 });
+    const hinge = (i) => ({ x: length2 * (i / count), y: i % 2 ? depth - thick : 0 });
     return Array.from({ length: count }, (_, i) => {
       const a = hinge(i), b = hinge(i + 1);
       return [[a.x, a.y], [b.x, b.y], [b.x, b.y + thick], [a.x, a.y + thick]];
@@ -581,10 +597,11 @@ dialog::backdrop {background:white}
   var equipmentMeshes = [];
   for (const piece of course.pieces) {
     const info = course.types[piece.type], up = verticalAxis(piece), pitch = piece.tilt ?? 0;
-    const type = { ...info, id: piece.type, profile: info.shape, dims: info.size };
-    const group = makePiece(type, info.size, { up, pitch, seam: piece.seam, shadow: webgl });
+    const dims = info.panels ? panelMatSize(info.shape, info.panels.length, course.panelWidthInches, info.height, info.foldDepth) : info.size;
+    const type = { ...info, id: piece.type, profile: info.shape, dims, panelWidthInches: course.panelWidthInches };
+    const group = makePiece(type, dims, { up, pitch, seam: piece.seam, shadow: webgl });
     group.name = piece.name;
-    pose(group, [...piece.at, piece.yaw], restingSize(info.size, up, pitch));
+    pose(group, [...piece.at, piece.yaw], restingSize(dims, up, pitch));
     scene.add(group);
     group.traverse((object) => {
       if (object.isMesh) equipmentMeshes.push(object);

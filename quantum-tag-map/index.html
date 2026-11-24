@@ -62,7 +62,7 @@
     "AP-045": {"name": "Blue / orange mat with yellow binding", "shape": "Folding screen", "height": 48, "foldDepth": 17.6737492, "color": "#415ca1", "panels": ["#415ca1","#e77b3c","#415ca1","#415ca1"], "topBindings": {"2": "#e9bd40"}},
     "AP-046": {"name": "Red tunnel wedge", "shape": "Ramp X", "size": [56,42,22], "color": "#ba3f4b", "rampColors": {"base": "#626368", "side": "#626368", "heel": "#626368"}},
     "AP-047": {"name": "Oversized green team base", "shape": "Box envelope", "size": [48,36,36], "color": "#226c60"},
-    "AP-048": {"name": "Thick green slide", "shape": "Inclined mat", "size": [66,36,52], "color": "#298968", "edgeThickness": 14}
+    "AP-048": {"name": "Thick green slide", "shape": "Inclined mat", "size": [70,96,54.5], "color": "#298968", "matThickness": 18}
   },
   "pieces": [
     {"name": "Pink airtrack", "type": "AP-028", "at": [228,38.85039,48], "yaw": 90},
@@ -116,7 +116,7 @@
     {"name": "North green base", "type": "AP-047", "at": [0,0,0], "yaw": 90},
     {"name": "North OGOG outer wall", "type": "AP-036", "at": [23.83867,48,0], "yaw": 276},
     {"name": "North OGOG inner wall", "type": "AP-036", "at": [61.83867,48,0], "yaw": 276},
-    {"name": "Thick green slide", "type": "AP-048", "at": [288,86.85039,0], "yaw": 180},
+    {"name": "Thick green slide", "type": "AP-048", "at": [282.46,56.85039,0], "yaw": 180},
     {"name": "Sideways stairs on west crash pad", "type": "AP-009", "at": [241.5,101.85039,24], "yaw": 0, "vertical": "width"}
   ]
 }
@@ -179,8 +179,20 @@ dialog::backdrop {background:white}
   // web/shape-geometry.mjs
   var inclineThickness = (height, type) => Math.min(height * 0.35, type?.edgeThickness ?? 4);
   function inclineSection([length2, , height], type) {
-    const thick = inclineThickness(height, type);
-    return [[0, 0], [length2, height - thick], [length2, height], [0, thick]];
+    if (type?.matThickness == null) {
+      const thick = inclineThickness(height, type);
+      return [[0, 0], [length2, height - thick], [length2, height], [0, thick]];
+    }
+    const thickness = Math.min(type.matThickness, length2, height);
+    let low = 0, high = Math.PI / 2;
+    for (let step = 0; step < 42; step++) {
+      const angle = (low + high) / 2, s = Math.sin(angle), c = Math.cos(angle);
+      const run = length2 - thickness * s, rise = height - thickness * c;
+      if (run * s < rise * c) low = angle;
+      else high = angle;
+    }
+    const pitch = (low + high) / 2, dx = thickness * Math.sin(pitch), dz = thickness * Math.cos(pitch);
+    return [[dx, 0], [length2, height - dz], [length2 - dx, height], [0, dz]];
   }
   function pitchedBoxSection([length2, , height], pitch) {
     const angle = pitch * Math.PI / 180, c = Math.cos(angle), s = Math.sin(angle);

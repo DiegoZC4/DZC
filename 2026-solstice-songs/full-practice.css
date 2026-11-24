@@ -341,8 +341,11 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-chord .sheet-name{font-size:var(--lead-chord-size,16px);line-height:1.35;letter-spacing:0}
 .lead-lyrics{position:relative;height:calc(var(--lead-lyric-size,13px)*1.4 + 2px)}
 .lead-words{position:absolute;top:1px;width:max-content;max-width:none;padding:0;white-space:nowrap;font:inherit;font-size:var(--lead-lyric-size,13px);line-height:1.38;text-align:justify;text-align-last:justify}
+.lead-bar[data-fit-lyrics] .lead-words{word-spacing:var(--lead-word-spacing);transform:scaleX(var(--lead-ink-scale));transform-origin:left center}
 .lead-words[data-syllable-gap]::after{content:"-";position:absolute;left:100%;color:var(--muted)}
 .lead-sheet[data-numbers=false] .lead-number,.lead-sheet[data-chords=false] .lead-chord,.lead-sheet[data-lyrics=false] .lead-lyrics{display:none}
+.lead-sheet[data-numbers=false] .lead-meta{min-height:0}
+.lead-sheet[data-numbers=false] .lead-bar{display:flex;flex-direction:column;justify-content:flex-end}
 .lead-sheet[data-chords=false] .lead-music{height:4px}
 .lead-number:hover,.lead-words:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}
 .lead-bar.is-recording-line{background:color-mix(in srgb,var(--accent) 9%,transparent)}

@@ -27,6 +27,16 @@ function pack(words,width,left,right,fill=false){
   const x=Math.max(cursor+w.gap,Math.min(ideal,w.latest));cursor=x+w.ink;return x;
  });
 }
+function wrap(layout,quarter,available){
+ let used=0,fullest=0,lines=0,parent=null,wrapped=false;
+ for(const b of layout){
+  if(b.bar.parentNode!==parent){used=0;parent=b.bar.parentNode;}
+  if(used&&(used+b.quarters)*quarter>available){used=0;wrapped=true;}
+  if(!used)lines++;
+  used+=b.quarters;if(used*quarter<=available)fullest=Math.max(fullest,used);
+ }
+ return {fullest,lines,wrapped};
+}
 function fit(body){
  const layout=measurements.get(body);
  if(!layout||!body.contains(layout[0].bar)||!body.clientWidth)return;
@@ -35,36 +45,53 @@ function fit(body){
  const font=parseFloat(css.getPropertyValue('--lead-lyric-size'))||13,edge=Math.max(2.5,font*.17);
  // A whole bar like “vives, no one sur” must join a word at both edges.
  // Measure it at natural width before asking the browser to justify its spaces.
- for(const b of layout)if(b.words.length===1)b.words[0].el.style.removeProperty('width');
- let minimum=12,densest=0;
+ for(const b of layout){
+  b.bar.removeAttribute('data-fit-lyrics');
+  if(b.words.length===1)b.words[0].el.style.removeProperty('width');
+ }
+ const gap=font*.26,trimLimit=Math.max(0,Math.min(gap-2,font*.105)),scaleFloor=.95;
+ let minimum=12,tightMinimum=12,densest=0;
  for(const b of layout){
   b.left=b.joinLeft?0:edge;b.right=b.joinRight?0:edge;
   if(lyrics&&b.words.length){
-   let ink=b.left+b.right;
+   b.ink=0;b.innerSpaces=0;b.gaps=0;
    for(const [i,w] of b.words.entries()){
-    w.ink=w.el.getBoundingClientRect().width;w.gap=i&&!w.continuation?font*.26:0;ink+=w.ink+w.gap;
+    w.ink=w.el.getBoundingClientRect().width;w.gap=i&&!w.continuation?gap:0;
+    b.ink+=w.ink;b.innerSpaces+=w.spaces;if(w.gap)b.gaps++;
    }
+   const ink=b.left+b.right+b.ink+b.gaps*gap;
+   const tight=b.left+b.right+(b.ink-b.innerSpaces*trimLimit)*scaleFloor+b.gaps*(gap-trimLimit);
    b.density=ink/b.quarters;densest=Math.max(densest,b.density);minimum=Math.max(minimum,b.density);
+   tightMinimum=Math.max(tightMinimum,tight/b.quarters);
   }
   if(chords)for(const [i,c] of b.chords.entries()){
    const span=(b.chords[i+1]?.fraction??1)-c.fraction;
-   minimum=Math.max(minimum,(c.el.getBoundingClientRect().width+1)/(span*b.quarters));
+   const needed=(c.el.getBoundingClientRect().width+1)/(span*b.quarters);
+   minimum=Math.max(minimum,needed);tightMinimum=Math.max(tightMinimum,needed);
   }
  }
- // Fill a complete line when it costs at most a few pixels of extra white per bar.
- // Otherwise wrap at the last complete bar, without justifying individual systems.
- const base=Math.ceil((minimum+.05)*64)/64;
- let used=0,fullest=0,parent=null,wrapped=false;
- for(const b of layout){
-  if(b.bar.parentNode!==parent){used=0;parent=b.bar.parentNode;}
-  if(used&&(used+b.quarters)*base>pane){used=0;wrapped=true;}
-  used+=b.quarters;if(used*base<=pane)fullest=Math.max(fullest,used);
+ const rounded=n=>Math.ceil((n+.05)*64)/64,available=pane-.06,base=rounded(minimum);
+ const natural=wrap(layout,base,available),compact=wrap(layout,rounded(tightMinimum),available);
+ const snapped=natural.fullest?available/natural.fullest:base,wideReader=pane>=650&&body.closest('#readerContent');
+ let ppq=snapped>=base&&(wideReader&&natural.wrapped||(snapped-base)*Math.max(...layout.map(b=>b.quarters))<=4)?snapped:base;
+ // Only fit ink more tightly when another complete measure really fits, respecting section starts.
+ if(compact.lines<natural.lines&&compact.fullest){
+  ppq=available/compact.fullest;
+  for(const b of layout){
+   const width=ppq*b.quarters;
+   if(!lyrics||!b.words.length||b.density*b.quarters<=width)continue;
+   const loss=b.density*b.quarters-width+.06,spaces=b.gaps+b.innerSpaces;
+   const trim=spaces?Math.min(trimLimit,loss/spaces):0;
+   const scale=Math.max(scaleFloor,Math.min(1,(width-b.left-b.right-b.gaps*(gap-trim)-.06)/(b.ink-b.innerSpaces*trim)));
+   b.bar.dataset.fitLyrics='';b.bar.style.setProperty('--lead-word-spacing',-trim+'px');
+   b.bar.style.setProperty('--lead-ink-scale',scale);
+   for(const w of b.words)if(w.gap)w.gap=gap-trim;
+  }
  }
- const snapped=fullest?(pane-.05)/fullest:base,wideReader=pane>=650&&body.closest('#readerContent');
- const ppq=snapped>=base&&(wideReader&&wrapped||(snapped-base)*Math.max(...layout.map(b=>b.quarters))<=4)?snapped:base;
  body.style.setProperty('--lead-quarter',ppq+'px');
  if(lyrics)for(const b of layout){
-  const fill=b.density>=densest-.01,width=ppq*b.quarters;
+  const fitted=b.bar.hasAttribute('data-fit-lyrics'),fill=fitted||b.density>=densest-.01,width=ppq*b.quarters;
+  if(fitted)for(const w of b.words)w.ink=w.el.getBoundingClientRect().width;
   const xs=pack(b.words,width,b.left,b.right,fill);
   b.words.forEach((w,i)=>w.el.style.left=xs[i]+'px');
   for(let i=1;i<b.words.length;i++){
@@ -72,7 +99,8 @@ function fit(body){
    prev.el.toggleAttribute('data-syllable-gap',w.continuation&&xs[i]-xs[i-1]-prev.ink>=font*.45);
   }
   if(b.words.length===1&&(b.joinLeft&&b.joinRight||fill&&/\S\s+\S/.test(b.words[0].el.textContent))){
-   const el=b.words[0].el;el.style.left=b.left+'px';el.style.width=(width-b.left-b.right)+'px';
+   const el=b.words[0].el,scale=fitted?Number(b.bar.style.getPropertyValue('--lead-ink-scale')):1;
+   el.style.left=b.left+'px';el.style.width=(width-b.left-b.right)/scale+'px';
   }
  }
 }
@@ -136,7 +164,8 @@ function render(body,sheet,entry,seek){
     if(root.MeleteFullPracticeChart.roles[role])part.dataset.role=role;
     b.append(part);
    }
-   lyricLine.append(b);box.words.push({el:b,fraction:(beat-first)/duration,continuation});
+   const spaces=(b.textContent.trim().match(/\s+/g)||[]).length;
+   lyricLine.append(b);box.words.push({el:b,fraction:(beat-first)/duration,continuation,spaces});
    previous={s,l,to,box,index:i,el:b};
   }
   m.append(music,lyricLine);grid.append(m);rows.push({at:bar.start,el:m});

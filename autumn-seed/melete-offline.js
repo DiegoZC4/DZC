@@ -1,6 +1,6 @@
 /* Only the public player document belongs in this cache. Never cache account or take data. */
 "use strict";
-const BUILD = "e0468720b511100db4e736fe80017e2178aff2395d2d6125b0fefc749c7cee3d", SHA = "f458ba5a95157b4e78f6104424d849c3c12c234932519052f50f2cc934c2ba25", BYTES = 11691205;
+const BUILD = "9203451102009afe650dd8c445ae57bcc15cd8b16730d118267934e1c0c37cd8", SHA = "72290873209885193095c728bd51953dfaf27fc992199766ffb4447a9fb01166", BYTES = 11691744;
 const scope = new URL(self.registration.scope);
 const shell = new URL("index.html", scope).href;
 const prefix = "melete:offline-player:v1:" + encodeURIComponent(scope.pathname) + ":";
@@ -22,9 +22,10 @@ function restoreCopy() {
   return installingCopy;
 }
 const saved = () => caches.match(shell, {cacheName});
-self.addEventListener("install", event => event.waitUntil(restoreCopy()));
+self.addEventListener("install", event => event.waitUntil(restoreCopy().then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil((async () => {
-  // Default waiting lifecycle: do not replace the running singer's session.
+  // The self-contained document stays alive during a take. Only a subsequent
+  // navigation gets the new shell, even when several old tabs remain open.
   if (!await saved()) await restoreCopy();
   for (const key of await caches.keys()) if (key.startsWith(prefix) && key !== cacheName) await caches.delete(key);
   await self.clients.claim();

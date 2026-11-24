@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Compact, corner-guided jellychip molds. Search in your browser and export millimetre-scale, kerf-compensated laser outlines.">
+<meta name="description" content="Download one-piece, 10 mm deep jellychip casting masters for 100 squares or triangles, or design kerf-compensated laser outlines.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=1">
+<link rel="stylesheet" href="./styles.css?v=2">
 <title>Jellychips · mold designer</title>
 </head>
 <body>
@@ -17,6 +17,22 @@
   <button type="button" id="theme" class="quiet" aria-label="Toggle light and dark theme">Dark</button>
 </header>
 <main>
+<section class="print-files" id="print-molds" aria-labelledby="print-title">
+  <div class="print-heading"><h2 id="print-title">3D-print molds · 10 mm deep</h2>
+    <a href="./downloads/print-10mm/jellychip-pour-boxes-10mm-deep.zip" download>Both molds + guide (ZIP)</a>
+  </div>
+  <div class="print-shapes">
+    <div><div class="print-row"><strong>100 squares · 5 mm sides</strong><span><a href="./downloads/print-10mm/square-100x5mm.3mf" download aria-label="Square mold 3MF">3MF</a> · <a href="./downloads/print-10mm/square-100x5mm.stl" download aria-label="Square mold STL">STL</a></span></div>
+      <p>38.5 g PETG · mix 50 mL silicone (44.0 mL net)</p></div>
+    <div><div class="print-row"><strong>100 triangles · 10 mm sides</strong><span><a href="./downloads/print-10mm/triangle-100x10mm.3mf" download aria-label="Triangle mold 3MF">3MF</a> · <a href="./downloads/print-10mm/triangle-100x10mm.stl" download aria-label="Triangle mold STL">STL</a></span></div>
+      <p>52.7 g PETG · mix 65 mL silicone (57.5 mL net)</p></div>
+  </div>
+  <details><summary>Preview &amp; print settings</summary>
+    <p>Print one file per shape, open side up. Estimates use 20% line infill, four walls, five top and bottom layers, 0.2 mm layers, 1.75 mm PETG at 1.27 g/mL, and no supports or brim. Silicone amounts are parts A+B combined, with extra for the mixing cup.</p>
+    <img src="./downloads/print-10mm/casting-boxes.png" width="920" height="477" loading="lazy" alt="The two one-piece casting boxes, each with a flat, raised chip pattern inside a circular wall.">
+    <p>Cast food-contact silicone in the printed box. Demold it, place it on a rigid tray and weigh 10 g of agar mixture into it; the extra depth is carrying room. These print files are fixed. The controls below customize the laser-cut SVG only.</p>
+  </details>
+</section>
 <section class="controls" aria-label="Mold settings">
   <div id="primary-controls"></div>
   <div class="actions"><button id="search" type="button">Search again</button><button id="stop" type="button" hidden>Stop</button></div>

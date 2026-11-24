@@ -2,6 +2,8 @@
   AddType text/javascript .mjs
   AddType application/wasm .wasm
   AddType image/svg+xml .svg
+  AddType model/stl .stl
+  AddType model/3mf .3mf
 </IfModule>
 <IfModule mod_headers.c>
   <FilesMatch "\.(html|mjs|css|json|svg)$">

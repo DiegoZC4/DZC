@@ -128,11 +128,21 @@
 html,body {margin:0;width:100%;height:100%;overflow:hidden;background:var(--back);overscroll-behavior:none}
 #map {position:fixed;inset:0;isolation:isolate;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 #map:active {cursor:grabbing}
+#map.locked,#map.locked:active {cursor:crosshair}
 #map canvas,#map>svg {display:block;width:100%;height:100%}
 #map:focus {outline:none}
 #map:focus-visible {outline:2px solid var(--edge);outline-offset:-3px}
-.corner {position:fixed;z-index:1;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:46px;height:46px;display:grid;place-items:center;border-radius:13px;border:1px solid var(--edge);background:var(--button);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.map-actions,.dialog-close {position:fixed;z-index:2;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right))}
+.map-actions {display:flex;gap:6px}
+button {-webkit-tap-highlight-color:transparent}
+.corner,.replay {display:grid;place-items:center;width:46px;height:46px;padding:0;border-radius:13px;border:1px solid var(--edge);background:var(--button);color:var(--ink);cursor:pointer;touch-action:manipulation;font:inherit}
 .corner svg {width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#rules {width:auto;padding-inline:16px;font-weight:650}
+#lock-view[aria-pressed="true"] {color:var(--button);background:var(--ink);border-color:var(--ink)}
+#lock-view[aria-pressed="true"] .open-shackle,#lock-view[aria-pressed="false"] .closed-shackle {display:none}
+#map-pointer {position:fixed;z-index:1;pointer-events:none;top:0;left:0;width:40px;height:40px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 2px #25322e,inset 0 0 0 1px #25322e;transform:translate(-50%,-50%);opacity:0;transition:opacity .22s ease-out .22s}
+#map-pointer.pointing {opacity:1;transition:none}
+#map:not(.locked) + #map-pointer {visibility:hidden}
 button:focus-visible,a:focus-visible {outline:3px solid #548e8a;outline-offset:3px}
 dialog {position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:white;color:#19211c;color-scheme:light}
 dialog[open] {display:grid;place-items:center}
@@ -141,6 +151,48 @@ dialog::backdrop {background:white}
 .qr-sheet {display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding: max(58px,env(safe-area-inset-top)) 8px max(20px,env(safe-area-inset-bottom))}
 #qr {display:block;background:white;fill:#141a17;shape-rendering:crispEdges;width:min(100%,calc(100vh - 135px));width:min(100%,calc(100dvh - 135px));height:auto;aspect-ratio:1}
 #address {margin-top:8px;color:#405045;text-decoration:none;overflow-wrap:anywhere}
+#rules-dialog {background:var(--back);color:var(--ink);color-scheme:inherit;overflow:auto;overscroll-behavior:contain}
+#rules-dialog[open] {display:block}
+.rules-sheet {max-width:900px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(30px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
+.rules-sheet h2,.stage-copy h3,.rules-sheet p,.rules-sheet figure {margin:0}
+.rules-sheet h2 {font-size:clamp(32px,5vw,48px);line-height:1.05;letter-spacing:-.045em;padding-right:52px}
+.rules-sheet .rules-intro {margin-top:11px;line-height:1.5;max-width:54ch}
+.stage-tabs {position:relative;display:inline-grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:22px 0;padding:3px;border:1px solid var(--edge);border-radius:30px;background:var(--button)}
+.stage-tabs::before {content:"";position:absolute;inset:3px auto 3px 3px;width:calc((100% - 10px)/3);border-radius:24px;background:var(--ink);transition:transform .18s ease;pointer-events:none}
+.stage-tabs:has(#tab-active[aria-selected="true"])::before {transform:translateX(calc(100% + 2px))}
+.stage-tabs:has(#tab-sleep[aria-selected="true"])::before {transform:translateX(calc(200% + 4px))}
+.stage-tabs button {position:relative;font:600 15px/1 system-ui,sans-serif;color:var(--ink);border:0;border-radius:24px;background:transparent;min-width:84px;min-height:44px;cursor:pointer;touch-action:manipulation}
+.stage-tabs [aria-selected="true"] {color:var(--button)}
+.stage-lesson {display:grid;grid-template-columns:minmax(0,1.55fr) minmax(200px,.85fr);align-items:center;gap:clamp(22px,4vw,48px)}
+.stage-copy h3 {font-size:clamp(23px,3.2vw,35px);line-height:1.1;letter-spacing:-.035em;text-wrap:balance}
+.stage-copy p {font-size:clamp(15px,1.7vw,18px);line-height:1.53;margin-top:10px;max-width:45ch}
+.stage-demo {position:relative;border:1px solid var(--edge);border-radius:17px;overflow:hidden;background:#f5f7ee;color:#263b32;--mat:#a5be9f;--mat-side:#76977c;--mat-top:#c9d8b9;--floor:#dfe7d7;--floor-line:#809882;--ray:#537c5e}
+.speaker-call {display:flex;align-items:center;gap:9px;padding:16px 18px 0;font-weight:650}
+.speaker-call svg,.replay svg {display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stage-demo > svg {width:100%;height:auto;display:block}
+.replay {position:absolute;right:4px;bottom:4px;width:44px;height:44px;border:0;background:transparent;color:inherit}
+.stage-demo .gaze,.stage-demo .route,.stage-demo .shut-eye {display:none}
+.stage-lesson[data-stage="awake"] .gaze {display:block;transform-origin:102px 68px;animation:look-out 1.8s ease-out both}
+.stage-lesson[data-stage="awake"] .upper-body {transform:rotate(7deg);transform-origin:0 -35px;animation:lean-out 1.6s ease-in-out both}
+.stage-lesson[data-stage="active"] .route {display:block}
+.stage-lesson[data-stage="active"] .traveler {transform:translateX(134px);animation:cross-floor 2.15s ease-in-out both}
+.stage-lesson[data-stage="active"] .leg {transform-origin:0 -35px;animation:stride .43s ease-in-out 5}
+.stage-lesson[data-stage="active"] .back-leg {animation-direction:reverse}
+.stage-lesson[data-stage="sleep"] .gaze {display:block;opacity:0;transform-origin:102px 68px;animation:lose-sight 1s ease-in both}
+.stage-lesson[data-stage="sleep"] .open-eye {opacity:0;transform-box:fill-box;transform-origin:center;animation:blink-out .6s ease-in both}
+.stage-lesson[data-stage="sleep"] .shut-eye {display:block;animation:shut-eye .7s ease-in both}
+@keyframes look-out {0%,18% {opacity:0;transform:scaleX(.12)}85%,100% {opacity:1;transform:scaleX(1)}}
+@keyframes lean-out {0%,15% {transform:rotate(0)}80%,100% {transform:rotate(7deg)}}
+@keyframes cross-floor {0%,8% {transform:translateX(0)}94%,100% {transform:translateX(134px)}}
+@keyframes stride {0%,50%,100% {transform:rotate(0)}25% {transform:rotate(21deg)}75% {transform:rotate(-21deg)}}
+@keyframes lose-sight {from {opacity:1;transform:scaleX(1)}to {opacity:0;transform:scaleX(.12)}}
+@keyframes blink-out {from {opacity:1;transform:scaleY(1)}to {opacity:0;transform:scaleY(.1)}}
+@keyframes shut-eye {0%,40% {opacity:0}100% {opacity:1}}
+@media(prefers-reduced-motion:reduce){.stage-demo * {animation:none!important}.replay {display:none}#map-pointer,.stage-tabs::before {transition:none}}
+@media(prefers-color-scheme:dark){.stage-demo {background:#27352d;color:#e7eddf;--mat:#64826a;--mat-side:#476452;--mat-top:#8ba183;--floor:#35493c;--floor-line:#728a76;--ray:#a8c3a0}}
+@media(min-width:651px) and (min-height:560px){#rules-dialog[open] {display:flex;flex-direction:column}.rules-sheet {width:100%;margin-block:auto}}
+@media(max-width:650px){.stage-lesson {grid-template-columns:1fr;gap:20px}.stage-tabs {margin:18px 0}.stage-copy p {margin-top:6px}.rules-sheet {max-width:510px}}
+@media(orientation:landscape) and (max-height:490px){.rules-sheet {max-width:850px;padding-top:max(12px,env(safe-area-inset-top))}.rules-sheet h2 {font-size:29px}.rules-sheet .rules-intro {margin-top:4px}.stage-tabs {margin:8px 0}.stage-lesson {grid-template-columns:minmax(0,1.12fr) minmax(185px,.88fr);gap:24px}.stage-demo {max-width:355px}.stage-copy h3 {font-size:24px}.speaker-call {padding-top:8px}}
 .sr-only {position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 </style>
 </head>
@@ -148,15 +200,75 @@ dialog::backdrop {background:white}
 <h1 class="sr-only">Savannah Quantum Tag course</h1>
 <main id="map" tabindex="0" aria-label="3D course map" aria-describedby="controls">
 </main>
-<p id="controls" class="sr-only">Drag to orbit. Pinch or scroll to zoom. With the map focused, use arrow keys to orbit and plus or minus to zoom.</p>
-<button class="corner" id="share" aria-label="Share map by QR code" title="Share map by QR code" aria-haspopup="dialog" aria-controls="qr-dialog">
+<div id="map-pointer" aria-hidden="true"></div>
+<p id="controls" class="sr-only">Drag to orbit. Pinch or scroll to zoom. With the map focused, use arrow keys to orbit and plus or minus to zoom. Lock the view to point at the course.</p>
+<div class="map-actions" role="group" aria-label="Course map tools">
+  <button class="corner" id="rules" type="button" aria-haspopup="dialog" aria-controls="rules-dialog">Rules</button>
+  <button class="corner" id="lock-view" type="button" aria-label="Lock view" aria-pressed="false" title="Lock the view to point at the map">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="11" rx="2.5"/><path class="open-shackle" d="M8 10V7a4 4 0 0 1 7.8-1.3"/><path class="closed-shackle" d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/></svg>
+  </button>
+  <button class="corner" id="share" aria-label="Share map by QR code" title="Share map by QR code" aria-haspopup="dialog" aria-controls="qr-dialog">
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1"/></svg>
-</button>
+  </button>
+</div>
 <dialog id="qr-dialog" aria-label="Share the Quantum Tag map">
-  <button id="close" class="corner" aria-label="Close QR code" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <button id="close" class="corner dialog-close" aria-label="Close QR code" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   <div class="qr-sheet">
     <svg id="qr" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QR code linking to this course"></svg>
     <a id="address"></a>
+  </div>
+</dialog>
+<dialog id="rules-dialog" aria-labelledby="rules-title">
+  <div class="rules-sheet">
+    <h2 id="rules-title">Rules</h2>
+    <button type="button" class="corner dialog-close" aria-label="Close rules" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <p class="rules-intro">Parth sets the timing. Listen for your team’s stage over the gym speakers.</p>
+    <div class="stage-tabs" role="tablist" aria-label="Speaker stages">
+      <button type="button" id="tab-awake" role="tab" data-stage="awake" aria-selected="true" aria-controls="stage-awake">Awake</button>
+      <button type="button" id="tab-active" role="tab" data-stage="active" aria-selected="false" aria-controls="stage-active" tabindex="-1">Active</button>
+      <button type="button" id="tab-sleep" role="tab" data-stage="sleep" aria-selected="false" aria-controls="stage-sleep" tabindex="-1">Sleep</button>
+    </div>
+    <div class="stage-lesson" data-stage="awake">
+      <figure class="stage-demo">
+        <figcaption class="speaker-call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3zM16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg><span>Yellow Team: <span id="spoken-stage">Awake</span></span></figcaption>
+        <svg role="presentation" aria-hidden="true" viewBox="0 0 360 170">
+          <!-- The mats sit behind the walking lane. All player poses share a pair of planted feet. -->
+          <path fill="var(--floor)" d="M0 127h360v43H0z"/>
+          <path fill="none" stroke="var(--floor-line)" stroke-width="1" d="M0 127h360"/>
+          <path fill="var(--mat)" d="M226 97h90v28h-90z"/>
+          <path fill="var(--mat-top)" d="m226 97 11-8h89l-10 8z"/>
+          <path fill="var(--mat-side)" d="m316 97 10-8v28l-10 8z"/>
+          <path class="route" fill="none" stroke="var(--ray)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="3 5" d="M97 147h103"/>
+          <path class="route" fill="none" stroke="var(--ray)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m194 142 7 5-7 5"/>
+          <g class="gaze"><path fill="var(--ray)" opacity=".13" d="M102 68 203 34q15 31 0 58z"/><path fill="none" stroke="var(--ray)" stroke-width="1.7" stroke-dasharray="3 5" stroke-linecap="round" d="m109 65 92-30m-92 35 92 21"/></g>
+          <g transform="translate(84 137)"><g class="traveler">
+            <ellipse cx="0" cy="2" rx="19" ry="2.8" fill="#253830" opacity=".18"/>
+            <g class="leg back-leg" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="#52605b" stroke-width="9" d="m-3-35-6 16-3 15"/><path stroke="#343c39" stroke-width="6" d="M-14-3h10"/></g>
+            <g class="leg" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="#34443f" stroke-width="10" d="m2-35 4 16 2 15"/><path stroke="#222f2a" stroke-width="6.5" d="M6-3h11"/></g>
+            <g class="upper-body">
+              <path d="M-7-57q6-4 13 1l4 20q-8 4-18 0z" fill="#efbf3f" stroke="#715416" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="m2-53 6 10 8-2" fill="none" stroke="#a37842" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="m1-53 5 7" stroke="#f8d05a" stroke-width="7" stroke-linecap="round"/>
+              <path d="M3-57v-6" fill="none" stroke="#b3834a" stroke-width="6"/>
+              <circle cx="3" cy="-70" r="12" fill="#f2ce97" stroke="#604d37" stroke-width="1.5"/>
+              <path d="M-8-69q-4-15 10-15 10 0 13 8l-10-1-4 5-5 1-2 5z" fill="#49483c"/>
+              <circle class="open-eye" cx="10" cy="-69" r="2.2" fill="#28322c"/>
+              <path class="shut-eye" d="M6-69q3 3 7-1" fill="none" stroke="#28322c" stroke-width="2" stroke-linecap="round"/>
+            </g>
+          </g></g>
+        </svg>
+        <button class="replay" type="button" aria-label="Replay stage animation" title="Replay animation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 .8 6m-.8-6V4m0 6h6"/></svg></button>
+      </figure>
+      <section class="stage-copy" role="tabpanel" id="stage-awake" aria-labelledby="tab-awake" tabindex="0">
+        <h3>Open your eyes.</h3><p>Keep your feet planted. Look around or lean to peek past a mat while you plan your move.</p>
+      </section>
+      <section class="stage-copy" role="tabpanel" id="stage-active" aria-labelledby="tab-active" tabindex="0" hidden>
+        <h3>Move, tag, or carry a flag.</h3><p>If you’re frozen, stay put. Otherwise, tag an opponent to freeze them or a frozen teammate to thaw them.</p>
+      </section>
+      <section class="stage-copy" role="tabpanel" id="stage-sleep" aria-labelledby="tab-sleep" tabindex="0" hidden>
+        <h3>Stop and close your eyes.</h3><p>Stay where you are while the other team plays. Open your eyes when the speakers call your team awake again.</p>
+      </section>
+    </div>
   </div>
 </dialog>
 <noscript>Enable JavaScript to orbit the course.</noscript>
@@ -624,6 +736,7 @@ dialog::backdrop {background:white}
   new ResizeObserver(resize).observe(stage);
   resize();
   stage.addEventListener("keydown", (event) => {
+    if (!orbit.enabled) return;
     const turn = Math.PI / 24;
     const keys = {
       ArrowLeft: () => orbit.rotateLeft(turn),
@@ -640,8 +753,65 @@ dialog::backdrop {background:white}
     keys[event.key]();
   });
   var share = document.querySelector("#share");
-  var dialog = document.querySelector("#qr-dialog");
-  var close = document.querySelector("#close");
+  var qrDialog = document.querySelector("#qr-dialog");
+  var rules = document.querySelector("#rules");
+  var rulesDialog = document.querySelector("#rules-dialog");
+  var lock = document.querySelector("#lock-view");
+  var pointer = document.querySelector("#map-pointer");
+  var locked = false;
+  var pointingId = null;
+  function syncCameraInput() {
+    orbit.enabled = !locked && !qrDialog.open && !rulesDialog.open;
+  }
+  function liftPointer() {
+    pointingId = null;
+    pointer.classList.remove("pointing");
+  }
+  function movePointer(event) {
+    pointer.style.left = event.clientX + "px";
+    pointer.style.top = event.clientY + "px";
+  }
+  lock.addEventListener("click", () => {
+    locked = !locked;
+    if (locked) interacted = true;
+    stage.classList.toggle("locked", locked);
+    lock.setAttribute("aria-pressed", String(locked));
+    lock.title = locked ? "Unlock the view to orbit and zoom" : "Lock the view to point at the map";
+    liftPointer();
+    syncCameraInput();
+  });
+  stage.addEventListener("pointerdown", (event) => {
+    if (!locked || !event.isPrimary || event.button !== 0) return;
+    pointingId = event.pointerId;
+    stage.setPointerCapture(pointingId);
+    movePointer(event);
+    pointer.classList.add("pointing");
+  });
+  stage.addEventListener("pointermove", (event) => {
+    if (event.pointerId === pointingId) movePointer(event);
+  });
+  for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    stage.addEventListener(name, (event) => {
+      if (event.pointerId === pointingId) liftPointer();
+    });
+  }
+  stage.addEventListener("wheel", (event) => {
+    if (locked) event.preventDefault();
+  }, { passive: false });
+  window.addEventListener("blur", liftPointer);
+  function openSheet(dialog, focusTarget) {
+    liftPointer();
+    dialog.showModal();
+    syncCameraInput();
+    focusTarget.focus({ preventScroll: true });
+  }
+  for (const [dialog, opener] of [[qrDialog, share], [rulesDialog, rules]]) {
+    dialog.querySelector(".dialog-close").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => {
+      syncCameraInput();
+      opener.focus({ preventScroll: true });
+    });
+  }
   var targetURL = course.shareUrl;
   var address = document.querySelector("#address");
   address.textContent = new URL(targetURL).host + new URL(targetURL).pathname.replace(/\/$/, "");
@@ -661,15 +831,44 @@ dialog::backdrop {background:white}
       ink.setAttribute("d", paths.join(""));
       image.append(ink);
     }
-    orbit.enabled = false;
-    dialog.showModal();
-    close.focus();
+    openSheet(qrDialog, document.querySelector("#close"));
   }
   share.addEventListener("click", showQR);
-  close.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => {
-    orbit.enabled = true;
-    share.focus();
+  var stageTabs = Array.from(rulesDialog.querySelectorAll('[role="tab"]'));
+  var lesson = rulesDialog.querySelector(".stage-lesson");
+  var demo = lesson.querySelector(".stage-demo");
+  function replayStage() {
+    for (const animation of demo.getAnimations({ subtree: true })) {
+      animation.currentTime = 0;
+      animation.play();
+    }
+  }
+  function chooseStage(tab) {
+    lesson.dataset.stage = tab.dataset.stage;
+    document.querySelector("#spoken-stage").textContent = tab.textContent;
+    for (const option of stageTabs) {
+      const selected = option === tab;
+      option.setAttribute("aria-selected", String(selected));
+      option.tabIndex = selected ? 0 : -1;
+      document.getElementById(option.getAttribute("aria-controls")).hidden = !selected;
+    }
+    replayStage();
+  }
+  for (const [index, tab] of stageTabs.entries()) {
+    tab.addEventListener("click", () => chooseStage(tab));
+    tab.addEventListener("keydown", (event) => {
+      const count = stageTabs.length;
+      const next = { ArrowRight: (index + 1) % count, ArrowLeft: (index + count - 1) % count, Home: 0, End: count - 1 }[event.key];
+      if (next === void 0 || event.altKey || event.ctrlKey || event.metaKey) return;
+      event.preventDefault();
+      stageTabs[next].focus();
+      chooseStage(stageTabs[next]);
+    });
+  }
+  demo.querySelector(".replay").addEventListener("click", replayStage);
+  rules.addEventListener("click", () => {
+    openSheet(rulesDialog, stageTabs.find((tab) => tab.tabIndex === 0));
+    replayStage();
   });
 })();
 

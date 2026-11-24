@@ -1,6 +1,6 @@
 /* Only the public player document belongs in this cache. Never cache account or take data. */
 "use strict";
-const BUILD = "f3f9c4cacb676f1ae27633a8a1ba5a24268b4776ab5e3e744c3a533d15b6320a", SHA = "5d2aa675afb055afb956a49d4890ff31837bbaf9c066af332d24a68e83aa2e09", BYTES = 11684085;
+const BUILD = "e0468720b511100db4e736fe80017e2178aff2395d2d6125b0fefc749c7cee3d", SHA = "f458ba5a95157b4e78f6104424d849c3c12c234932519052f50f2cc934c2ba25", BYTES = 11691205;
 const scope = new URL(self.registration.scope);
 const shell = new URL("index.html", scope).href;
 const prefix = "melete:offline-player:v1:" + encodeURIComponent(scope.pathname) + ":";

@@ -3,7 +3,7 @@
   "kind": "melete-player",
   "nativeProtocol": 1,
   "player": "index.html",
-  "bytes": 11691744,
-  "sha256": "72290873209885193095c728bd51953dfaf27fc992199766ffb4447a9fb01166",
-  "sourceCommit": "4cf384abbfec10e0b0d0e203dbd8225cefadfa73"
+  "bytes": 11691648,
+  "sha256": "b8bb88d3a8dec5dfae8e602358499e8be35b57bb933778e86cc9d08a52924576",
+  "sourceCommit": "60f125d61fee78eb736265e5d54423c99471e1b6"
 }

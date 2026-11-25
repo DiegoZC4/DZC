@@ -5355,18 +5355,78 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       }
     });
 
-    function readingViewport(element) {
+// Both read-alongs inline this policy; each supplies its own unobscured viewport.
+const narrationPaging = (() => {
+  let tail = null;
+  const bounds = (word, highlight) =>
+    (highlight?.classList.contains('visible') ? highlight : word).getBoundingClientRect();
+
+  function needsTurn(word, viewport, highlight) {
+    if (!word) return false;
+    const row = bounds(word, highlight);
+    if (!row.height) return false;
+    const room = viewport.bottom - viewport.top;
+    if (row.height >= room - 1) return Math.abs(row.top - viewport.top) > 1;
+    return row.bottom >= viewport.bottom - 0.5 || row.top < viewport.top - 0.5;
+  }
+
+  function naturalMax() {
+    const root = document.scrollingElement;
+    return Math.max(0, root.scrollHeight - root.clientHeight - (tail?.offsetHeight || 0));
+  }
+
+  function releaseTail() {
+    if (tail && window.scrollY <= naturalMax()) {
+      tail.remove();
+      tail = null;
+    }
+  }
+  document.addEventListener('scrollend', releaseTail);
+
+  function land(word, viewport, behavior = 'instant', highlight) {
+    const row = bounds(word, highlight);
+    if (!row.height) return;
+    const block = word.closest('p,li,blockquote,pre,h1,h2,h3,h4,h5,h6') || word;
+    const pitch = parseFloat(getComputedStyle(block).lineHeight) || row.height;
+    const gap = Math.min(pitch, Math.max(0, viewport.bottom - viewport.top - row.height - 1));
+    const top = Math.max(0, window.scrollY + row.top - viewport.top - gap);
+    if (Math.abs(top - window.scrollY) <= .5) return;
+
+    // At the very end the browser would clamp the last lines halfway down.
+    // Reserve only the missing space, never a blank screen between chapters.
+    const extra = Math.ceil(top - naturalMax());
+    if (extra > 0) {
+      if (!tail) {
+        tail = document.createElement('div');
+        tail.setAttribute('aria-hidden', 'true');
+        tail.style.overflowAnchor = 'none';
+        document.body.append(tail);
+      }
+      tail.style.height = extra + 'px';
+    } else {
+      releaseTail();
+    }
+    const smooth = behavior === 'smooth' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({top, behavior:smooth ? 'smooth' : 'instant'});
+  }
+  return {needsTurn, land};
+})();
+
+    function readingViewport(element, bottomInset = 0) {
       const dock = element.closest('.track')?.querySelector('.player-dock');
       const chapter = element.closest('.chapter');
       const summary = chapter?.querySelector('.reader-toggle[aria-expanded="true"]')
         ? chapter.querySelector('.chapter-summary') : null;
-      const bottom = window.innerHeight - 20;
-      return { top: Math.min(bottom - 40, (dock?.offsetHeight || 0) + (summary?.offsetHeight || 0)), bottom };
+      const visual = window.visualViewport;
+      const start = visual?.offsetTop || 0;
+      const bottom = Math.max(start + 1, start + (visual?.height || window.innerHeight) - bottomInset);
+      const sticky = (dock?.offsetHeight || 0) + (summary?.offsetHeight || 0);
+      return { top: Math.max(start, Math.min(bottom - 1, sticky)), bottom };
     }
 
     function scrollReaderTargetIntoView(element, behavior) {
       const bounds = element.getBoundingClientRect();
-      const viewport = readingViewport(element);
+      const viewport = readingViewport(element, 20); // Search results stay centered.
       window.scrollBy({ top: (bounds.top + bounds.bottom - viewport.top - viewport.bottom) / 2, behavior });
     }
 
@@ -5379,10 +5439,10 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       return null;
     }
 
-    function outsideReadingBand(element) {
+    function outsideManualFollowBand(element) {
       if (!element) return false;
       const bounds = element.getBoundingClientRect();
-      const viewport = readingViewport(element);
+      const viewport = readingViewport(element, 20);
       const height = viewport.bottom - viewport.top;
       return bounds.top < viewport.top + height * .15 || bounds.bottom > viewport.top + height * .75;
     }
@@ -5429,7 +5489,7 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       reader._userDetached = false;
       automaticScrollUntil = Date.now() + (behavior === 'smooth' ? 800 : 300);
       hideNarrationReturn();
-      scrollReaderTargetIntoView(target, behavior);
+      narrationPaging.land(target, readingViewport(target), behavior, readerIsOpen(reader) ? reader._rowHighlight : null);
       return true;
     }
 
@@ -5459,7 +5519,8 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       if (!allowScroll || document.visibilityState === 'hidden') return;
       // Chapter audio can start seconds before its first timestamp. Follow the
       // text opening during that gap, without highlighting a word prematurely.
-      if (forceScroll || outsideReadingBand(narrationTarget(reader))) {
+      const target = narrationTarget(reader);
+      if (target && (forceScroll || narrationPaging.needsTurn(target, readingViewport(target), reader._rowHighlight))) {
         scrollToNarration(reader, 'auto');
       }
     }
@@ -5511,10 +5572,8 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
         openReaderAtPosition(audio, audio.currentTime, true);
         return;
       }
-      chapter?.scrollIntoView({
-        block: 'center',
-        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-      });
+      const heading = chapter?.querySelector('.chapter-summary');
+      if (heading) narrationPaging.land(heading, readingViewport(heading), 'smooth');
     }
 
     function momentUrl(audio) {
@@ -5718,7 +5777,7 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
           hideNarrationReturn();
           return;
         }
-        if (readerIsOpen(reader)) reader._userDetached = outsideReadingBand(narrationTarget(reader));
+        if (readerIsOpen(reader)) reader._userDetached = outsideManualFollowBand(narrationTarget(reader));
         updateNarrationReturn(reader);
       });
     }, { passive: true });
@@ -5729,7 +5788,7 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
       recordUsage('return', { w: usageWeek(reader), c: usageChapter(reader) });
       const audio = document.getElementById(reader.dataset.audio);
       if (!audio) return;
-      // Reuse the reflow guard and immediate centering used by play/resume.
+      // Reuse the reflow guard and line placement used by play/resume.
       // A long smooth return can outlive the guard and mark itself detached.
       openReaderAtPosition(audio, audio.currentTime, true);
     });

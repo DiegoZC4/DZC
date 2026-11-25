@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try { if (window.localStorage) history.scrollRestoration = 'manual'; } catch {}</script>
   <meta name="dzc-annotations" content="sequences">
   <link rel="stylesheet" href="/account/site-account.css?v=20261023-1">
   <script type="module" src="/account/site-account.js?v=20261023-1"></script>
@@ -383,27 +384,6 @@
       gap: 4px;
       padding-inline: 2px;
     }
-    .current-chapter-jump {
-      display: block;
-      min-width: 0;
-      min-height: 25px;
-      padding: 2px 3px;
-      border: 0;
-      border-radius: 3px;
-      color: var(--muted);
-      background: transparent;
-      font-size: 14px;
-      font-weight: 700;
-      /* Long reading titles wrap instead of truncating. text-wrap: balance
-         evens the lines so a two-line title does not leave one word stranded;
-         browsers without it fall back to ordinary wrapping. */
-      line-height: 1.25;
-      text-align: left;
-      text-wrap: balance;
-      overflow-wrap: break-word;
-    }
-    .current-chapter-jump:hover { color: var(--ink); background: var(--soft); }
-    .current-chapter-title { display: block; min-width: 0; }
     .player-status {
       display: inline-flex;
       align-items: center;
@@ -735,6 +715,26 @@
       .skip-button { width: 48px; min-width: 48px; min-height: 48px; }
       .drag-number-value { min-width: 54px; min-height: 48px; padding-inline: 4px; }
     }
+    .custom-player { container: readalong-dock / inline-size; }
+    .playback-controls .player-context { grid-area: 1 / 1; }
+    .playback-controls .transport { grid-area: 1 / 2; }
+    .playback-controls .player-actions { grid-area: 1 / 3; }
+    .player-context:has(.player-status:empty):has(.retry-audio[hidden]) { display: none; }
+    @container readalong-dock (max-width: 40rem) {
+      .playback-controls {
+        --key-width: clamp(28px, calc(14.2857cqi - 2px), 54px);
+        display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px;
+      }
+      .playback-controls .transport, .playback-controls .player-actions { gap: 2px; }
+      .playback-controls .player-context { order: 1; flex: 0 0 100%; }
+      .playback-controls .transport > button, .playback-controls .player-actions > button {
+        width: var(--key-width); min-width: 0; min-height: 44px; padding-inline: 0;
+      }
+      .playback-controls .play-toggle { height: var(--key-width); }
+      .playback-controls .skip-icon { width: min(100%, 48px); }
+      .playback-controls .offline-copy:not([hidden]) { flex-direction: column; gap: 0; }
+    }
+
   </style>
 </head>
 <body>
@@ -807,9 +807,6 @@ https://danwahl.net/ssc-podcast/ethnic-tension-and-meaningless-arguments/</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-108" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Sneaking in Connotations</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-108" hidden>Retry</button>
           </div>
@@ -1198,9 +1195,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-107" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Taboo Your Words</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-107" hidden>Retry</button>
           </div>
@@ -1332,9 +1326,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-106" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Disputing Definitions</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-106" hidden>Retry</button>
           </div>
@@ -1464,9 +1455,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-105" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Disguised Queries</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-105" hidden>Retry</button>
           </div>
@@ -1592,9 +1580,6 @@ https://www.lesswrong.com/posts/895quRDaK6gR2rM82/diseased-thinking-dissolving-q
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-104" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Words as Hidden Inferences</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-104" hidden>Retry</button>
           </div>
@@ -1740,9 +1725,6 @@ https://sscpodcast.libsyn.com/the-categories-were-made-for-man-not-man-for-the-c
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-103" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Anthropomorphic Optimism</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-103" hidden>Retry</button>
           </div>
@@ -1876,9 +1858,6 @@ https://www.buzzsprout.com/2034731/14292300</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-102" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Terminal Values and Instrumental Values</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-102" hidden>Retry</button>
           </div>
@@ -1999,9 +1978,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-101" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Ghosts in the Machine</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-101" hidden>Retry</button>
           </div>
@@ -2123,9 +2099,6 @@ https://sscpodcast.libsyn.com/yudkowsky-contra-christiano-on-ai-takeoff-speeds</
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-100" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Belief in Intelligence</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-100" hidden>Retry</button>
           </div>
@@ -2247,9 +2220,6 @@ https://sscpodcast.libsyn.com/classic-the-goddess-of-everything-else</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-99" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">An Especially Elegant Evpsych Experiment</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-99" hidden>Retry</button>
           </div>
@@ -2370,9 +2340,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-98" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">The Tragedy of Group Selectionism</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-98" hidden>Retry</button>
           </div>
@@ -2505,9 +2472,6 @@ https://sscpodcast.libsyn.com/studies-on-slack</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-97" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Evolutions Are Stupid (But Work Anyway)</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-97" hidden>Retry</button>
           </div>
@@ -2627,9 +2591,6 @@ https://sscpodcast.libsyn.com/meditations-on-moloch</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-96" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">An Alien God</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-96" hidden>Retry</button>
           </div>
@@ -2735,9 +2696,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-95" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Minds: An Introduction</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-95" hidden>Retry</button>
           </div>
@@ -2848,9 +2806,6 @@ http://secondenumerations.blogspot.com/2017/04/episode-10-crony-beliefs.html</pr
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-94" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Leave a Line of Retreat</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-94" hidden>Retry</button>
           </div>
@@ -2977,9 +2932,6 @@ https://podcasts.apple.com/us/podcast/rationality-from-ai-to-zombies/id129982669
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-93" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">The Importance of Saying “Oops”</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-93" hidden>Retry</button>
           </div>
@@ -3147,9 +3099,6 @@ https://podtail.com/en/podcast/unsong-audiobook-version/asches-to-asches/</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-92" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Asch’s Conformity Experiment</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-92" hidden>Retry</button>
           </div>
@@ -3284,9 +3233,6 @@ https://nulliusinverba.podbean.com/e/cargo-cult-science/</pre>
         </div>
         <div class="playback-controls" role="group" aria-label="Playback controls">
           <div class="player-context">
-            <button class="current-chapter-jump" type="button" data-audio="audio-lsrg-90" aria-label="Open current reading" title="Open current reading">
-              <span class="current-chapter-title">Guardians of the Truth</span>
-            </button>
             <span class="player-status" role="status" aria-live="polite"></span>
             <button class="retry-audio" type="button" data-audio="audio-lsrg-90" hidden>Retry</button>
           </div>
@@ -3604,16 +3550,15 @@ for(const name of ['online','offline']) addEventListener(name,()=>recordUsage('c
     }
 
     function openLinkedWeek(scroll = false) {
-      const { id } = audioLinkState();
+      const { id, seconds } = audioLinkState();
       if (!id) return;
       const target = document.getElementById(id);
       const week = target?.closest('.week');
       if (!week) return;
       if (week.matches('details')) week.open = true;
-      if (scroll) requestAnimationFrame(() => week.scrollIntoView({ block: 'start' }));
+      if (scroll && seconds === null) requestAnimationFrame(() => week.scrollIntoView({ block: 'start' }));
     }
 
-    openLinkedWeek(Boolean(window.location.hash));
     window.addEventListener('hashchange', () => {
       openLinkedWeek(true);
       if (audioPlayersReady) applyLinkedMoment(true);
@@ -4434,13 +4379,6 @@ document.querySelector('#copy-playback-diagnostics')?.addEventListener('click', 
         if (isCurrent) summary.setAttribute('aria-current', 'true');
         else summary.removeAttribute('aria-current');
       });
-      const player = audio.closest('.player-dock').querySelector('.custom-player');
-      const jump = player.querySelector('.current-chapter-jump');
-      if (currentChapter) {
-        jump.querySelector('.current-chapter-title').textContent = currentChapter.dataset.title;
-        jump.setAttribute('aria-label', `Open ${currentChapter.dataset.title} at the current narration point`);
-        jump.title = `Open ${currentChapter.dataset.title}`;
-      }
       if (activeAudio === audio && currentChapter) updateMediaSessionMetadata(audio, currentChapter);
       return currentChapter;
     }
@@ -5496,7 +5434,7 @@ const narrationPaging = (() => {
     function syncReader(reader, audio, forceScroll = false, allowScroll = true) {
       if (!audioControlsEnabled()) return;
       const entries = reader._timingEntries || [];
-      const entry = currentEntry(entries, audio.currentTime * 1000);
+      const entry = currentEntry(entries, (audio._pendingPosition ?? audio.currentTime) * 1000);
       const word = entry?.word || null;
       if (word !== reader._currentWord) {
         if (reader._currentWord) {
@@ -5589,7 +5527,7 @@ const narrationPaging = (() => {
       const reader = chapterAtTime(readers, position);
       if (!reader) return;
       // Collapsing a long reading changes the document's scroll position even
-      // before scrollIntoView runs. Do not treat that reflow as user detachment.
+      // before the narration scroll runs. Do not treat that reflow as user detachment.
       automaticScrollUntil = Date.now() + 300;
       readers.forEach((other) => {
         if (other !== reader) setReaderOpen(other, false);
@@ -5597,7 +5535,12 @@ const narrationPaging = (() => {
       reader._userDetached = false;
       setReaderOpen(reader, true);
       loadReader(reader).then(() => {
-        if (!readerIsOpen(reader) || !chapterContainsTime(reader, audio.currentTime)) return;
+        if (!readerIsOpen(reader) || !chapterContainsTime(reader, audio._pendingPosition ?? audio.currentTime)) return;
+        if (!audioControlsEnabled() && scrollToCurrent) {
+          const target = currentEntry(reader._timingEntries, position * 1000)?.word || reader._allWords?.[0];
+          if (target) narrationPaging.land(target, readingViewport(target), 'instant');
+          return;
+        }
         syncReader(reader, audio, scrollToCurrent, scrollToCurrent);
       }).catch(console.error);
     }
@@ -5612,20 +5555,15 @@ const narrationPaging = (() => {
       const duration = Number(player.dataset.duration);
       const position = Math.min(duration, Math.max(0, seconds));
       activeAudio = audio;
-      updateCustomPlayer(audio, position);
-      const apply = () => {
-        if (!audioControlsEnabled()) return;
+      if (audioControlsEnabled() && audio.readyState > 0) {
         seekAudioTo(audio, position, true);
-        openReaderAtPosition(audio, position, scrollToCurrent);
-      };
-      if (!audioControlsEnabled()) {
+      } else {
         audio._pendingPosition = position;
-        audio._textOnlyPosition = position;
-        openReaderAtPosition(audio, position, false);
-        return true;
+        if (!audioControlsEnabled()) audio._textOnlyPosition = position;
+        else savePlaybackPosition(audio, position, true);
+        updateCustomPlayer(audio, position);
       }
-      if (audio.readyState > 0) apply();
-      else audio.addEventListener('loadedmetadata', apply, { once: true });
+      openReaderAtPosition(audio, position, scrollToCurrent);
       return true;
     }
 
@@ -5636,18 +5574,21 @@ const narrationPaging = (() => {
       const fallbackDuration = Number(player.dataset.duration);
       const position = Math.min(stored, fallbackDuration);
       updateCustomPlayer(audio, position);
-      openReaderAtPosition(audio, position);
       if (audio.readyState > 0) audio.currentTime = position;
       else audio._pendingPosition = position;
     }
 
     function syncAudio(audio, forceScroll = false, allowScroll = true) {
-      if (!audioControlsEnabled()) return;
+      if (!audioControlsEnabled() || document.visibilityState === 'hidden') return;
       const track = audio.closest('.track');
+      if (track.closest('details.week:not([open])')) return;
       const readers = [...track.querySelectorAll('.reader')];
       const openReader = readers.find(readerIsOpen);
       if (!openReader) return;
-      const timedReader = chapterAtTime(readers, audio.currentTime);
+      const position = audio._pendingPosition ?? audio.currentTime;
+      const timedReader = chapterAtTime(readers, position);
+      const passive = audio.paused && !audio._playRequested && !audio._isSeeking && !forceScroll;
+      if (passive && timedReader !== openReader) return;
       if (timedReader && timedReader !== openReader) {
         if (openReader._userDetached) {
           timedReader._userDetached = true;
@@ -5657,10 +5598,10 @@ const narrationPaging = (() => {
           }).catch(console.error);
           return;
         }
-        openReaderAtPosition(audio, audio.currentTime, allowScroll);
+        openReaderAtPosition(audio, position, allowScroll);
         return;
       }
-      syncReader(openReader, audio, forceScroll, allowScroll);
+      syncReader(openReader, audio, forceScroll, allowScroll && !passive);
     }
 
     function startSyncTimer(audio) {
@@ -5761,7 +5702,7 @@ const narrationPaging = (() => {
       )) || (activeAudio && !activeAudio.ended ? activeAudio : null);
       if (!audio) return null;
       const readers = [...audio.closest('.track').querySelectorAll('.reader')];
-      const timedReader = chapterAtTime(readers, audio.currentTime);
+      const timedReader = chapterAtTime(readers, audio._pendingPosition ?? audio.currentTime);
       if (timedReader?._initialized) return timedReader;
       return readers.find(readerIsOpen) || null;
     }
@@ -5790,7 +5731,7 @@ const narrationPaging = (() => {
       if (!audio) return;
       // Reuse the reflow guard and line placement used by play/resume.
       // A long smooth return can outlive the guard and mark itself detached.
-      openReaderAtPosition(audio, audio.currentTime, true);
+      openReaderAtPosition(audio, audio._pendingPosition ?? audio.currentTime, true);
     });
 
     function playbackAudio() {
@@ -5927,17 +5868,6 @@ const narrationPaging = (() => {
       player.querySelector('.play-toggle').addEventListener('click', () => {
         toggleAudioPlayback(audio);
       });
-      player.querySelector('.current-chapter-jump').addEventListener('click', () => {
-        const currentReader = chapterAtTime(
-          [...audio.closest('.track').querySelectorAll('.reader')],
-          audio.currentTime
-        );
-        recordUsage('readerjump', {
-          w: usageWeek(audio),
-          c: currentReader ? usageChapter(currentReader) : ''
-        });
-        openCurrentNarration(audio);
-      });
       player.querySelector('.duration-time').addEventListener('click', (event) => {
         event.currentTarget.dataset.mode = event.currentTarget.dataset.mode === 'remaining'
           ? 'duration'
@@ -6001,7 +5931,7 @@ const narrationPaging = (() => {
         clearTimeout(audio._seekFollowTimer);
         audio._followScrollBlocked = false;
         updateCustomPlayer(audio);
-        openReaderAtPosition(audio, audio.currentTime, true);
+        if (!document.hidden) openReaderAtPosition(audio, audio._pendingPosition ?? audio.currentTime, true);
         startSyncTimer(audio);
         requestOfflineCopy(audio);
       });
@@ -6060,13 +5990,7 @@ const narrationPaging = (() => {
         syncAudio(audio, false, !audio._isSeeking && !audio._followScrollBlocked);
         recordPlaybackProgress(audio);
       });
-      const linkedState = audioLinkState();
-      if (
-        linkedState.seconds === null
-        || linkedState.id !== audio.closest('.track').id
-      ) {
-        restorePlaybackPosition(audio);
-      }
+      restorePlaybackPosition(audio);
     });
 
     audioPlayersReady = true;
@@ -6119,7 +6043,139 @@ applyAudioControlsPreference();
 
     setupOfflineCache();
     setupAutoDownload();
-    applyLinkedMoment(Boolean(window.location.hash));
+    function setupReaderView() {
+      const key = 'sequencesAudio.view.v1' + (location.pathname.endsWith('-preview.html') ? '.preview' : '');
+      const latest = document.querySelector('.current-week .track');
+      if (!latest) return;
+      const readers = [...document.querySelectorAll('.reader')];
+      const archives = [...document.querySelectorAll('details.week')];
+      const weekId = week => week.querySelector('.track').id;
+      const inOpenWeek = reader => !reader.closest('details.week:not([open])');
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(key)); } catch {}
+      const restored = stored && stored.latest === latest.id && Array.isArray(stored.weeks)
+        && Array.isArray(stored.readers) && Array.isArray(stored.detached) && Number.isFinite(stored.y);
+      const navigation = performance.getEntriesByType('navigation')[0]?.type;
+      const sameVisit = navigation === 'reload' || navigation === 'back_forward';
+      const link = audioLinkState();
+      const linked = Boolean(link.id && document.getElementById(link.id)?.matches('.track'));
+      const useView = restored && (!linked || (sameVisit && stored.hash === location.hash));
+      let interacted = false;
+      let dirty = false;
+      let timer = 0;
+      const wake = () => { interacted = true; };
+      for (const type of ['pointerdown', 'wheel', 'keydown', 'touchstart', 'hashchange']) {
+        window.addEventListener(type, wake, { capture: true, passive: true });
+      }
+
+      function visibleAnchor(open) {
+        if (!window.scrollY) return null;
+        for (const reader of open) {
+          if (!inOpenWeek(reader)) continue;
+          const words = reader._allWords;
+          if (!words?.length) continue;
+          const box = reader.querySelector('.reader-body').getBoundingClientRect();
+          const { top } = readingViewport(reader);
+          if (box.top > top + 1 || box.bottom <= top) continue;
+          let left = 0, right = words.length;
+          while (left < right) {
+            const mid = (left + right) >>> 1;
+            if (words[mid].getBoundingClientRect().bottom <= top) left = mid + 1;
+            else right = mid;
+          }
+          const word = words[left];
+          if (word) return { reader: reader.id, word: word.dataset.w, dy: Math.round(word.getBoundingClientRect().top - top) };
+        }
+        return null;
+      }
+
+      function save() {
+        clearTimeout(timer);
+        timer = 0;
+        if (!dirty) return;
+        dirty = false;
+        const open = readers.filter(reader => !reader.hidden);
+        const snapshot = {
+          latest: latest.id, hash: location.hash, weeks: archives.filter(week => week.open).map(weekId),
+          readers: open.map(reader => reader.id), detached: open.filter(reader => reader._userDetached).map(reader => reader.id),
+          active: activeAudio?.id || null, y: Math.round(scrollY), anchor: visibleAnchor(open)
+        };
+        try { localStorage.setItem(key, JSON.stringify(snapshot)); } catch {}
+      }
+      function schedule() {
+        dirty = true;
+        if (!timer) timer = setTimeout(save, 180);
+      }
+
+      if (useView) {
+        for (const week of archives) week.open = stored.weeks.includes(weekId(week));
+        for (const reader of readers) {
+          if (!stored.readers.includes(reader.id)) continue;
+          setReaderOpen(reader, true);
+          if (inOpenWeek(reader)) loadReader(reader).catch(console.error);
+          reader._userDetached = stored.detached.includes(reader.id);
+        }
+        const audio = typeof stored.active === 'string' && document.getElementById(stored.active);
+        if (audio?.matches?.('.track audio')) {
+          activeAudio = audio;
+          const reader = readers.find(item => !item.hidden && inOpenWeek(item) && item.dataset.audio === audio.id);
+          if (reader && chapterContainsTime(reader, audio._pendingPosition ?? audio.currentTime)) syncReader(reader, audio, false, false);
+        }
+        const anchor = stored.anchor;
+        const reader = readers.find(item => item.id === anchor?.reader && !item.hidden && inOpenWeek(item));
+        const word = reader?._allWords?.find(item => item.dataset.w === anchor.word);
+        let placed = false;
+        function place() {
+          if (interacted || document.hidden) return;
+          placed = true;
+          automaticScrollUntil = Date.now() + 350;
+          const top = word && Number.isFinite(anchor.dy)
+            ? scrollY + word.getBoundingClientRect().top - readingViewport(word).top - anchor.dy : stored.y;
+          window.scrollTo({ top, behavior: 'instant' });
+        }
+        place();
+        requestAnimationFrame(place);
+        document.fonts?.ready.then(place);
+        if (!placed) {
+          const firstVisible = () => {
+            if (document.hidden) return;
+            document.removeEventListener('visibilitychange', firstVisible);
+            if (!placed) place();
+          };
+          document.addEventListener('visibilitychange', firstVisible);
+        }
+      } else if (linked) {
+        openLinkedWeek(true);
+        applyLinkedMoment(true);
+      } else if (!stored && audioControlsEnabled()) {
+        // Migrate only the latest week's old audio-only bookmark, not every archive.
+        const audio = latest.querySelector('audio');
+        const position = savedPlaybackPosition(audio);
+        if (position >= 1) {
+          activeAudio = audio;
+          openReaderAtPosition(audio, position, true);
+        }
+      }
+
+      const changes = new MutationObserver(schedule);
+      readers.forEach(reader => changes.observe(reader, { attributes: true, attributeFilter: ['hidden'] }));
+      archives.forEach(week => {
+        changes.observe(week, { attributes: true, attributeFilter: ['open'] });
+        week.addEventListener('toggle', () => {
+          if (week.open) week.querySelectorAll('.reader:not([hidden])').forEach(reader => loadReader(reader).catch(console.error));
+        });
+      });
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('hashchange', schedule);
+      function flush() {
+        if (changes.takeRecords().length || interacted) dirty = true;
+        save();
+      }
+      document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+      window.addEventListener('pagehide', flush);
+    }
+
+    setupReaderView();
 
     document.querySelectorAll('details.week').forEach((week) => {
       week.addEventListener('toggle', () => {
@@ -6175,9 +6231,9 @@ applyAudioControlsPreference();
 
     function resyncVisibleReaders() {
       if (document.visibilityState === 'hidden') return;
-      document.querySelectorAll('audio').forEach((audio) => (
-        syncAudio(audio, true, !audio._followScrollBlocked)
-      ));
+      for (const audio of document.querySelectorAll('audio')) {
+        if (!audio.paused && !audio.ended) syncAudio(audio, false, !audio._followScrollBlocked);
+      }
       if (activeAudio) {
         refreshOfflineCopy(activeAudio).catch(() => {});
         if (offlineCopyState(activeAudio).wanted) requestOfflineCopy(activeAudio);

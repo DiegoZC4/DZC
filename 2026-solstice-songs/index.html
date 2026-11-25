@@ -19,7 +19,7 @@
   <script defer src="shared/take_pitch.js?v=12a39ea5792d"></script>
   <script defer src="shared/live_pitch.js?v=22db73490ab4"></script>
   <script defer src="full_practice_input.js?v=a8ef0ccd95b1"></script>
-  <script defer src="full_practice_loop.js?v=60b8d5810e78"></script>
+  <script defer src="full_practice_loop.js?v=e2cf2902feae"></script>
   <script defer src="full_practice_pitch.js?v=546875b08614"></script>
   <script defer src="full_practice_range_art.js?v=0cb7a086b80f"></script>
   <script defer src="full_practice_range.js?v=272c1d944a69"></script>
@@ -34,7 +34,8 @@
   <script defer src="vendor/settings-help.js?v=535304bbce6f"></script>
   
   
-<link rel="stylesheet" href="full-practice.css?v=50dba10c305b"><script defer src="full_practice_audio.js?v=dd29938a2bbc"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=50946c891635"></script><script defer src="full_practice_click.js?v=74b13e9a8f6b"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=88fdd0b3df2f"></script><script defer src="full_practice_voicings.js?v=1690d3c81c34"></script><script defer src="full_practice_lyric_follow.js?v=d1772a384808"></script><script defer src="full-practice.js?v=6a3266fe9d58"></script></head>
+<script defer src="full_practice_keys.js?v=a45746ade2b1"></script><script defer src="full_practice_stream.js?v=50817dc3238d"></script>
+<link rel="stylesheet" href="full-practice.css?v=113290884944"><script defer src="full_practice_audio.js?v=02ada47eed79"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=c223dd5e8d40"></script><script defer src="full_practice_click.js?v=3bb0e4c17ecc"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=02fec25c30e3"></script><script defer src="full_practice_entrances.js?v=bdb2ebd83002"></script><script defer src="full_practice_voicings.js?v=7494b0f6fe5e"></script><script defer src="full_practice_lyric_follow.js?v=f67fd014c4bd"></script><script defer src="full-practice.js?v=6959b9fa4613"></script></head>
 <body>
   <div class="workspace" id="practiceView">
     <aside aria-label="Program songs"><h1 class="sidebar-title">2026 Solstice Songs</h1><div id="songList"></div></aside>
@@ -98,13 +99,23 @@
           </div>
         </div>
         <div class="full-presets backing-controls"><button id="all">All stems</button><button id="reharm">Vocals + drums</button><button id="noVocals">Band only</button>
-          <div class="pulse-controls" role="group" aria-label="Metronome and count-in"><button id="metronome" disabled aria-pressed="false" title="Continue the click during playback and recording">Click</button><button id="clickLevel" class="scale-number" aria-label="Click volume"></button>
-            <label for="countInBeats">Count-in</label><select id="countInBeats" title="Preparatory beats before recording"><option value="0">Off</option><option value="2">2 beats</option><option value="3">3 beats</option><option value="4" selected>4 beats</option><option value="8">8 beats</option></select>
+          <div class="pulse-controls" role="group" aria-label="Metronome and count-in">
+            <button type="button" id="metronome" class="setting-toggle" disabled aria-label="Metronome" aria-pressed="false" title="Metronome">
+              <svg aria-hidden="true" viewBox="0 0 314 314" focusable="false"><path d="M281.853,46.631c-0.39-2.035-1.66-3.794-3.47-4.802l-11.257-6.271l5.297-9.511c1.881-3.378,0.668-7.641-2.709-9.521c-3.38-1.881-7.641-0.667-9.521,2.709l-5.297,9.511l-11.257-6.269c-1.81-1.008-3.975-1.162-5.908-0.422c-1.936,0.74-3.442,2.3-4.117,4.259l-13.806,40.109c-1.103,3.207,0.25,6.743,3.213,8.394l4.741,2.642l-23.115,41.501L184.592,17.11C182.703,7.516,173.563,0,163.783,0h-56.052c-9.778,0-18.918,7.516-20.809,17.11L46.102,224.425c-0.002,0.012-0.004,0.023-0.006,0.035l-13.729,69.725c-0.998,5.067,0.205,10.132,3.3,13.895C38.76,311.842,43.496,314,48.66,314h174.195c5.163,0,9.898-2.158,12.993-5.92c3.095-3.763,4.298-8.827,3.301-13.896l-13.732-69.741c-0.001-0.002-0.001-0.004-0.001-0.004l-16.584-84.225l31.16-55.944l4.742,2.642c1.072,0.598,2.243,0.885,3.402,0.885c2.046,0,4.056-0.896,5.425-2.571l26.836-32.853C281.708,50.769,282.241,48.665,281.853,46.631z M100.659,19.816c0.6-3.044,3.971-5.816,7.072-5.816h56.052c3.103,0,6.473,2.771,7.072,5.815l23.249,118.069L164,191.933c-6.17-2.645-13.121-4.627-21.242-5.363v-14.92h10.96c3.866,0,7-3.134,7-7s-3.134-7-7-7h-10.96v-41.211h10.96c3.866,0,7-3.134,7-7c0-3.866-3.134-7-7-7h-10.96v-41.21h10.96c3.866,0,7-3.134,7-7s-3.134-7-7-7h-10.96V34.938c0-3.866-3.134-7-7-7c-3.866,0-7,3.134-7,7v12.291h-10.96c-3.866,0-7,3.134-7,7s3.134,7,7,7h10.96v41.21h-10.96c-3.866,0-7,3.134-7,7c0,3.866,3.134,7,7,7h10.96v41.211h-10.96c-3.866,0-7,3.134-7,7s3.134,7,7,7h10.96v14.92c-19.447,1.763-32.189,10.688-43.564,18.666c-7.894,5.536-14.975,10.493-23.52,12.573L100.659,19.816z M225.036,299.188c-0.432,0.523-1.206,0.813-2.181,0.813H48.66c-0.976,0-1.75-0.289-2.181-0.814c-0.432-0.524-0.565-1.34-0.377-2.297l12.675-64.372c14.147-1.593,24.455-8.807,34.455-15.82c12.059-8.457,23.448-16.444,42.525-16.444c19.077,0,30.466,7.987,42.524,16.444c10.001,7.014,20.308,14.228,34.456,15.82l12.675,64.371C225.602,297.846,225.468,298.662,225.036,299.188z M209.842,217.809c-8.545-2.08-15.627-7.037-23.521-12.574c-3.175-2.227-6.456-4.527-9.959-6.726l21.928-39.367L209.842,217.809z M246.427,71.829l-11.474-6.392l9.177-26.662l20.136,11.216L246.427,71.829z"></path></svg>
+            </button><button id="clickLevel" class="scale-number" aria-label="Click volume"></button>
+            <span id="countInControls" role="group" aria-label="Count-in settings"><button type="button" class="setting-toggle" id="countIn" aria-pressed="true">Count-in</button><button type="button" class="scale-number" id="countInBeats" aria-label="Count-in length">4 beats</button></span>
           </div><span id="clickQuality" class="full-note"></span><button id="melody" disabled title="Full-song melody has not been transcribed">MIDI</button></div>
+        <div class="keyboard-patches" role="group" aria-label="Live keyboard">
+          <label for="keysRoute">Keys</label><select id="keysRoute" aria-label="Keyboard output"><option value="off">Off</option><option value="browser">Browser</option><option value="logic">Logic Pro</option></select>
+          <select id="keysPatch" aria-label="Song keyboard patch" disabled></select>
+          <button type="button" class="icon" id="keysPreview" aria-label="Audition keyboard patch" disabled><i data-lucide="piano"></i></button>
+          <button type="button" id="keysConnect" hidden>Connect MIDI</button><select id="keysInput" aria-label="MIDI keyboard input" hidden></select>
+          <output id="keysStatus" role="status" hidden></output>
+        </div>
         <div class="rehearsal-layout"><div class="rehearsal-mix">
         <section id="harmonyPractice" class="harmony-practice" aria-labelledby="harmonyHeading" hidden>
           <div class="harmony-heading"><h2 id="harmonyHeading">Your part</h2>
-            <label class="sing-choice"><input id="harmonySing" type="checkbox">Sing</label>
+            <button type="button" class="setting-toggle" id="harmonySing" aria-pressed="false">Sing</button>
             <button id="clearHarmony" class="icon" type="button" aria-label="Clear pitch contour" data-help="Erase this pass's pitch contour and statistics; recorded tracks stay untouched."><i data-lucide="eraser"></i></button>
             <select id="harmonyPhrase" aria-label="Jump to harmony phrase"></select>
             <button id="followHarmony" class="icon" type="button" aria-label="Follow harmony playhead" data-help="Return to the current playback position."><i data-lucide="locate-fixed"></i></button>
@@ -119,6 +130,10 @@
             <div id="harmonyStage" class="harmony-stage"><svg id="harmonyScore" aria-label="User-supplied harmony notes"></svg><canvas id="harmonyTrace" aria-label="Live microphone pitch contour"></canvas><div id="harmonyCursor" class="harmony-cursor"></div></div>
           </div>
         </section>
+        <div id="vocalEdges" class="vocal-edges" role="group" aria-label="Intro and outro" hidden>
+          <button id="includeIntro" type="button" class="setting-toggle" aria-pressed="true">Intro</button>
+          <button id="includeOutro" type="button" class="setting-toggle" aria-pressed="true">Outro</button>
+        </div>
         <div id="mixer" class="full-mixer">
           <div id="measureRulerRow" class="measure-ruler-row" hidden><span>Measures</span><svg id="measureRuler" role="img" aria-label="Recording measure map"></svg></div>
           <div id="stems" aria-label="Reference stems"></div>
@@ -138,23 +153,25 @@
             <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view"><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lead" aria-selected="true" aria-controls="leadBody">Lead sheet</button><button type="button" role="tab" data-view="lyrics" aria-selected="false" aria-controls="lyricBody" tabindex="-1">Lyrics</button><button type="button" role="tab" data-view="chart" aria-selected="false" aria-controls="chartBody" tabindex="-1">Chord chart</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1" hidden>Tabs</button></div>
             <button id="openChartReader" class="icon" type="button" aria-haspopup="dialog" aria-controls="chartReader" title="Fullscreen chord charts" aria-label="Fullscreen chord charts"><i data-lucide="maximize-2"></i></button>
             <div id="chordPitchControls" class="chord-pitch-controls" role="group" aria-label="Written chord pitch">
-              <label class="concert-choice" title="Show sounding chords instead of guitar shapes"><input type="checkbox" id="concertPitch" checked>Concert pitch</label>
+              <button type="button" class="setting-toggle" id="concertPitch" aria-pressed="true" title="Show sounding chords instead of guitar shapes">Concert pitch</button>
               <div id="capoChoice"><label for="capoFret">Capo</label><button id="capoFret" type="button" class="scale-number" aria-label="Capo fret" title="Drag to choose a fret; click for +1. Changes chord shapes, not audio." disabled>0</button>
                 <button id="keepShapes" type="button" aria-pressed="false" title="Keep guitar shapes when transposing the recording" disabled>Keep shapes</button></div>
             </div>
             <div id="lyricDisplay" class="lyric-display" role="group" aria-label="Lyric display" hidden>
-              <label title="Color harmony, unison and soloist-only lyrics"><input id="lyricHarmony" type="checkbox" checked aria-controls="lyricBody leadBody lyricLegend">Harmony</label>
-              <label title="Show chord symbols and instrumental bars"><input id="lyricChords" type="checkbox" checked aria-controls="lyricBody lyricLegend">Chords</label>
+              <button type="button" class="setting-toggle" id="lyricHarmony" aria-pressed="true" aria-controls="lyricBody leadBody lyricLegend" title="Color harmony, unison and soloist-only lyrics">Harmony</button>
+              <button type="button" class="setting-toggle" id="lyricChords" aria-pressed="true" aria-controls="lyricBody lyricLegend" title="Show chord symbols and instrumental bars">Chords</button>
             </div>
             <span id="lyricSource"></span>
           </div>
           <div id="leadDisplay" class="lyric-display lead-display" role="group" aria-label="Lead sheet display" hidden>
-            <label><input id="leadNumbers" type="checkbox" checked aria-controls="leadBody">Bar numbers</label>
-            <div class="lead-layer"><label><input id="leadChords" type="checkbox" checked aria-controls="leadBody">Chords</label>
+            <button type="button" class="setting-toggle" id="leadCompact" aria-pressed="true" aria-controls="leadBody" title="Stack verses that share the same music">Compact</button>
+            <button type="button" class="setting-toggle" id="leadNumbers" aria-pressed="true" aria-controls="leadBody">Bar numbers</button>
+            <div class="lead-layer"><button type="button" class="setting-toggle" id="leadChords" aria-pressed="true" aria-controls="leadBody">Chords</button>
               <button id="leadChordSize" type="button" class="scale-number" aria-label="Chord font size" title="Chord size: drag, scroll, or click for +1 px.">16 px</button></div>
-            <div class="lead-layer"><label><input id="leadLyrics" type="checkbox" checked aria-controls="leadBody">Lyrics</label>
+            <div class="lead-layer"><button type="button" class="setting-toggle" id="leadLyrics" aria-pressed="true" aria-controls="leadBody">Lyrics</button>
               <button id="leadLyricSize" type="button" class="scale-number" aria-label="Lyric font size" title="Lyric size: drag, scroll, or click for +1 px.">13 px</button></div>
-            <label title="Red: harmony; blue: unison; muted: soloist only"><input id="leadHarmony" type="checkbox" checked aria-controls="leadBody">Harmony colors</label>
+            <button type="button" class="setting-toggle" id="leadHarmony" aria-pressed="true" aria-controls="leadBody" title="Red: harmony; blue: unison; muted: soloist only">Harmony colors</button>
+            <button type="button" id="leadAnnotate" aria-haspopup="dialog" aria-controls="entranceEditor" title="Annotate instrument entrances" disabled><i data-lucide="pencil"></i>Annotate</button>
           </div>
           <div id="lyricLegend" class="lyric-legend" aria-label="Backing vocal cues and chord key" hidden></div>
           <div id="lyricBody" tabindex="0" role="region" aria-label="Song lyrics"></div>
@@ -164,7 +181,7 @@
           <button id="lyricReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to recording lyrics"><i data-lucide="arrow-up"></i></button>
         <div id="guitarTab" class="guitar-tab" aria-label="Guitar tablature" hidden>
           <div class="lyric-heading">
-            <label class="tab-fingers-choice" title="Picking hand: t = thumb, i = index, m = middle, r = ring"><input type="checkbox" id="tabFingers" checked>Fingering</label>
+            <button type="button" class="setting-toggle tab-fingers-choice" id="tabFingers" aria-pressed="true" title="Picking hand: t = thumb, i = index, m = middle, r = ring">Fingering</button>
             <span id="tabTuning"></span>
             <a id="tabPdf" download hidden title="Download printable tab" aria-label="Download printable tab"><i data-lucide="file-down"></i></a>
           </div>
@@ -191,6 +208,16 @@
       <div id="readerTransport" hidden>
         <div class="reader-scrub"><output id="readerTime">0:00</output><input id="readerSeek" type="range" min="0" max="1" value="0" step="any" aria-label="Recording position"></div>
       </div>
+    </div>
+  </dialog>
+  <dialog id="entranceEditor" aria-labelledby="entranceTitle">
+    <div class="entrance-heading"><h3 id="entranceTitle">Instrument entrances</h3><button type="button" id="entranceClose" aria-label="Close entrance editor"><i data-lucide="x"></i></button></div>
+    <div class="entrance-fields"><label>Measure <select id="entranceMeasure"></select></label><label>Beat <select id="entranceBeat"></select></label></div>
+    <div id="entranceChoices" class="entrance-choices" role="group" aria-label="Instruments entering"></div>
+    <div class="entrance-tools"><output id="entranceStatus" role="status"></output>
+      <button type="button" id="entranceImport" aria-label="Import entrance cues" title="Import cues for this recording"><i data-lucide="upload"></i></button>
+      <button type="button" id="entranceExport" aria-label="Download entrance cues" title="Download cues for this recording"><i data-lucide="download"></i></button>
+      <input id="entranceFile" type="file" accept=".json,application/json" hidden>
     </div>
   </dialog>
   <dialog id="clipDownload" aria-labelledby="clipDialogLabel"><form method="dialog">

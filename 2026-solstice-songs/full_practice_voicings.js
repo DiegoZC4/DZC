@@ -82,8 +82,8 @@ function taylorGrip(chord,intro=false){
  return taylorFrets[name]||guitar(name===chord.symbol?chord:parse(name));
 }
 function taylorIntro(target){
- const bar=target.closest('.sheet-bar');
- return bar?Number(bar.dataset.bar)<=8:target.closest('.lyric-bars')?.dataset.barGroup==='Intro';
+ const bar=target.closest('.sheet-bar,.lead-bar');
+ return bar?Number(bar.dataset.bar??bar.dataset.measure)<=4:target.closest('.lyric-bars')?.dataset.barGroup==='Intro';
 }
 const taylorDisplaySymbol=(s,target)=>s?taylorGuitarSymbol(s,taylorIntro(target)):s;
 function piano(chord){

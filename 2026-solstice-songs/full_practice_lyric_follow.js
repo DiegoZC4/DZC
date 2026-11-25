@@ -11,6 +11,7 @@ function scrollDelta(rect,top,bottom,center=false){
 class Follower{
  constructor(body,button){
   this.body=body;this.button=button;this.win=body.ownerDocument.defaultView;
+  this.main=body.closest?.('main');
   this.rows=[];this.active=false;this.detached=false;this.target=null;this.automaticUntil=0;this.manualUntil=0;this.lastCheck=0;
   const now=()=>this.win.performance.now();
   this.intent=()=>{
@@ -18,13 +19,14 @@ class Follower{
    this.detached=true;this.automaticUntil=0;this.manualUntil=now()+180;
    // A real gesture interrupts an in-flight programmatic scroll immediately.
    body.scrollTo({top:body.scrollTop,behavior:'instant'});
-   this.win.scrollTo({top:this.win.scrollY,behavior:'instant'});
+   const outer=this.outer();outer.scrollTo({top:outer===this.win?outer.scrollY:outer.scrollTop,behavior:'instant'});
   };
   const scroll=()=>{
    if(!this.active||now()<this.automaticUntil)return;
    this.manualUntil=now()+180;this.detached=!!this.direction();this.updateReturn();
   };
   body.addEventListener('scroll',scroll,{passive:true});
+  this.main?.addEventListener('scroll',()=>{if(this.outer()===this.main)scroll();},{passive:true});
   this.win.addEventListener('scroll',scroll,{passive:true});
   this.win.addEventListener('wheel',e=>{
    if(e.deltaY&&!e.defaultPrevented&&!e.ctrlKey)this.intent();
@@ -41,10 +43,10 @@ class Follower{
   button.onclick=()=>{if(this.active&&this.target){this.detached=false;this.manualUntil=0;this.pan(true,true);this.hideReturn();}};
  }
  nested(){return /auto|scroll/.test(this.win.getComputedStyle(this.body).overflowY)&&this.body.scrollHeight>this.body.clientHeight+1;}
+ outer(){return this.main?.contains(this.body)&&/auto|scroll/.test(this.win.getComputedStyle(this.main).overflowY)?this.main:this.win;}
  bounds(){
-  const box=this.body.getBoundingClientRect();
-  return this.nested()?{top:Math.max(12,box.top),bottom:Math.min(this.win.innerHeight-12,box.bottom)}:
-   {top:12,bottom:this.win.innerHeight-12};
+  const owner=this.nested()?this.body:this.outer(),box=owner===this.win?null:owner.getBoundingClientRect();
+  return {top:Math.max(12,box?.top??0),bottom:Math.min(this.win.innerHeight-12,box?.bottom??this.win.innerHeight)};
  }
  direction(){
   if(!this.target)return null;
@@ -70,12 +72,12 @@ class Follower{
   const behavior=this.win.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
   if(nested&&bottom-top<80){
    this.automaticUntil=this.win.performance.now()+800;
-   this.win.scrollBy({top:box.top-24,behavior});top=box.top;bottom=box.bottom;
+   this.outer().scrollBy({top:box.top-24,behavior});top=box.top;bottom=box.bottom;
   }
   const amount=scrollDelta(rect,top,bottom,center);
   if(Math.abs(amount)>1){
    this.automaticUntil=this.win.performance.now()+800;
-   (nested?this.body:this.win).scrollBy({top:amount,behavior});
+   (nested?this.body:this.outer()).scrollBy({top:amount,behavior});
   }
  }
  reset(rows=[]){

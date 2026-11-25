@@ -53,3 +53,5 @@ cbd821c4555624b832620767f413c01055d9d13c94bdc07e7a6970e4a0ecfb9c  vendor/bravoh-
 
 No choir repertoire, recordings, private scores or arrangement exports are
 distributed here. The small MusicXML fixtures are synthetic software tests.
+
+Rehearsal audio streaming: [decoder sources and licenses](vendor/LICENSE-stream-decoders.md).

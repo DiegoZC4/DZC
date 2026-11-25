@@ -47,6 +47,22 @@ function whole(state,bars,duration){
  return mode(state,bars)==='time'?{...state,mode:'time',start:0,end:duration,enabled:true}:
   {...state,start:1,end:bars.length,enabled:true};
 }
+// Taylor's former numbered bars were dotted beats. Preserve the recording
+// interval, using time mode only when an old endpoint bisects a new bar.
+function pairLegacyBars(stored,pulses,duration){
+ if(!stored||stored.barRevision===2)return stored;
+ const seconds=(n,end)=>n==null?null:(end&&n===pulses.length?duration:pulses[n-(end?0:1)]);
+ function convert(s){
+  if([s.start,s.end].some(n=>n!=null&&(!Number.isInteger(n)||n<1||n>pulses.length)))return null;
+  if((s.start==null||s.start%2===1)&&(s.end==null||s.end%2===0))
+   return {mode:'bars',start:s.start==null?null:(s.start+1)/2,end:s.end==null?null:s.end/2};
+  return {mode:'time',start:seconds(s.start,false),end:seconds(s.end,true)};
+ }
+ const saved={...stored.saved},alt=saved.bars&&convert(saved.bars);
+ if(alt?.mode==='bars')saved.bars={start:alt.start,end:alt.end};else delete saved.bars;
+ const current=stored.mode==='time'?stored:convert(stored);
+ return current?{...stored,...current,saved,barRevision:2}:null;
+}
 function restore(stored,bars,duration,sourceVersion){
  if(!stored||stored.sourceVersion!==sourceVersion||!(duration>0))return null;
  const unit=mode(stored,bars);
@@ -87,6 +103,6 @@ function bindPoint(button,activate,clear){
  button.addEventListener('contextmenu',e=>e.preventDefault());
  button.addEventListener('keydown',e=>{if((e.shiftKey&&e.key==='Enter')||e.key==='Delete'||e.key==='Backspace'){e.preventDefault();if(!e.repeat)clear();}});
 }
-const api={measures,at,range,point,mode,timePoint,whole,restore,switchMode,timeLabel,position,cycle,bindPoint};
+const api={measures,at,range,point,mode,timePoint,whole,restore,pairLegacyBars,switchMode,timeLabel,position,cycle,bindPoint};
 root.MeleteFullPracticeLoop=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

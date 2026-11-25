@@ -22,7 +22,7 @@ function pulseGrid(map,duration){
  return {times,head,tail,aligned,accents:times.map(t=>downbeats.has(Math.round(t*100000)))};
 }
 function countPlan(grid,target,rate,count){
- if(!Number.isFinite(target)||target<0||!Number.isFinite(rate)||rate<=0||![0,2,3,4,8].includes(count))throw Error('Invalid recording count-in');
+ if(!Number.isFinite(target)||target<0||!Number.isFinite(rate)||rate<=0||!Number.isInteger(count)||count<0||count>8)throw Error('Invalid recording count-in');
  if(!count)return {from:target,duration:0,beats:[]};
  const {times,head,tail}=grid,first=times[0]??0;
  let next=times.findIndex(t=>t>=target-1e-8);

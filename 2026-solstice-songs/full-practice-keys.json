@@ -1,0 +1,37 @@
+{
+  "songs": {
+    "the-circle":[0,16],
+    "hymn-to-breaking-strain":[1,6],
+    "bold-orion":[0,18,16],
+    "who-by-fire":[3,0],
+    "no-one-survives":[4,20,21],
+    "auld-lang-syne":[5,21,22],
+    "songs-stay-sung":[6,0],
+    "ballad-of-smallpox-gone":[7,23],
+    "here-comes-the-sun":[8,24],
+    "a-toast-for-unknown-heroes":[9,25],
+    "brighter-than-today":[10,21],
+    "song-of-the-artesian-water":[11,0,16]
+  },
+  "patches": {
+    "0":{"label":"No keys","name":"Tacit","zones":[]},
+    "1":{"label":"Wurli-style EP","name":"Strain Reed EP","zones":[{"gm":4,"filter":-550}]},
+    "3":{"label":"Solo clarinet","name":"Fire Clarinet","zones":[{"gm":71,"lo":55,"hi":74}]},
+    "4":{"label":"Muted piano / vibes","name":"Survives Piano Vibes","zones":[{"gm":0,"hi":71,"filter":-1250,"atten":28},{"gm":11,"bank":11,"lo":72}]},
+    "5":{"label":"Mellow piano / accordion","name":"Auld Piano Accordion","zones":[{"gm":0,"hi":71,"filter":-600},{"gm":21,"lo":72}]},
+    "6":{"label":"Reed organ","name":"Stay Reed Organ","zones":[{"gm":20,"lo":48,"hi":83}]},
+    "7":{"label":"Dry clavinet","name":"Smallpox Clavinet","zones":[{"gm":7,"lo":48,"hi":95,"dry":true}]},
+    "8":{"label":"Soft organ / sine lead","name":"Sun Organ Sine","zones":[{"gm":16,"hi":71,"atten":45},{"gm":80,"bank":8,"lo":72,"mono":true}]},
+    "9":{"label":"Drawbar / muted trumpet","name":"Toast Organ Trumpet","zones":[{"gm":16,"hi":71,"atten":45},{"gm":59,"lo":72}]},
+    "10":{"label":"Grand / warm organ","name":"Brighter Piano Organ","zones":[{"gm":0,"hi":75},{"gm":16,"bank":8,"lo":76,"filter":-500,"atten":30}]},
+    "11":{"label":"Tack piano / harmonica","name":"Artesian Tack Harp","zones":[{"gm":3,"hi":71},{"gm":22,"lo":72}]},
+    "16":{"label":"Fiddle guide","name":"Fiddle Guide","zones":[{"gm":40}]},
+    "18":{"label":"Steel guitar swell","name":"Orion Steel Swell","zones":[{"gm":26,"bank":8,"lo":55,"attack":-2700}]},
+    "20":{"label":"Vibes only","name":"Motor Off Vibes","zones":[{"gm":11,"bank":11}]},
+    "21":{"label":"Grand piano","name":"Full Grand","zones":[{"gm":0}]},
+    "22":{"label":"Tine piano","name":"Warm Tine Piano","zones":[{"gm":4}]},
+    "23":{"label":"Wood marimba","name":"Wood Marimba","zones":[{"gm":12}]},
+    "24":{"label":"Flute","name":"Flute Answer","zones":[{"gm":73}]},
+    "25":{"label":"Concertina-style reed","name":"Concertina Reed","zones":[{"gm":23}]}
+  }
+}

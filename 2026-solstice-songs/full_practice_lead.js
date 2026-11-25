@@ -30,7 +30,7 @@ function repeatedTitle(passes){
  }
  return [...new Set(titles)].join(' / ')+(titles.length>1&&titles.every(t=>t===first)?' ×'+titles.length:'');
 }
-function printedForm(sheet,entry,compact=true){
+function printedForm(sheet,entry){
  const sections=[],sigs=[];let meter='4/4',held=null;
  const voltas=sheet.bars.some(b=>b.cues?.includes('1.'));
  for(const [i,b] of sheet.bars.entries()){
@@ -52,10 +52,10 @@ function printedForm(sheet,entry,compact=true){
  for(const s of sections)totals.set(s.label,1+(totals.get(s.label)||0));
  for(const s of sections){
   const ord=(ordinals.get(s.label)||0)+1;ordinals.set(s.label,ord);
-  if(compact&&totals.get(s.label)>1)s.display=s.label+' '+ord;
+  if(totals.get(s.label)>1)s.display=s.label+' '+ord;
   // Don't fragment a whole verse just to save two bars. Short matching forms
   // may still collapse in full; authored voltas keep their exact boundaries.
-  const group=compact&&s.family&&groups.find(g=>g[0].family===s.family&&g.every(p=>{
+  const group=s.family&&groups.find(g=>g[0].family===s.family&&g.every(p=>{
    const n=Math.min(s.indices.length,p.indices.length);
    for(let i=0;i<Math.min(4,n);i++)if(sigs[s.indices[i]]!==sigs[p.indices[i]])return false;
    return n>=4||n===s.indices.length&&n===p.indices.length;
@@ -220,7 +220,7 @@ function fit(body){
  }
  verticalLanes(layout);
 }
-function render(body,sheet,entry,seek,seekSection=seek,compact=true){
+function render(body,sheet,entry,seek,seekSection=seek){
  const doc=body.ownerDocument,frag=doc.createDocumentFragment(),rows=[],layout=[],bindings=[];
  const el=(name,cls,text)=>{const n=doc.createElement(name);n.className=cls;if(text!=null)n.textContent=text;return n;};
  const button=(text,cls,t,label)=>{
@@ -230,7 +230,7 @@ function render(body,sheet,entry,seek,seekSection=seek,compact=true){
  const overview=el('div','lead-overview'),caption=el('div','lead-caption'),key=el('span','',sheet.key);key.dataset.sheetKey=sheet.key;
  const nav=el('nav','lead-form'),list=el('ol',''),items=[];nav.setAttribute('aria-label','Song form');nav.append(list);
  caption.append(key,el('span','',sheet.bars.some(b=>b.bandChords)?'Band arrangement':sheet.status));overview.append(nav,caption);frag.append(overview);
- const form=printedForm(sheet,entry,compact),boxes=[],headings=new Map();
+ const form=printedForm(sheet,entry),boxes=[],headings=new Map();
  for(const [i,bar] of sheet.bars.entries()){
   const first=bar.pickupAt??0,duration=bar.beats-first;
   if(bar.meter)den=Number(bar.meter.split('/')[1]);

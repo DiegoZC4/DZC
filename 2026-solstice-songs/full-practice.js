@@ -63,7 +63,6 @@ function syncLyricDisplay(){
  C.display($('lyricSheet'),{harmony,chords});
  const lead=$('leadBody');
  const lyrics=prefs.leadLyrics!==false,numbers=prefs.leadNumbers!==false;
- setPressed('leadCompact',prefs.leadCompact!==false);
  setPressed('leadNumbers',numbers);setPressed('leadLyrics',lyrics);setPressed('leadChords',chords);setPressed('leadHarmony',harmony);
  $('leadChordSize').disabled=!chords;$('leadLyricSize').disabled=!lyrics;$('leadHarmony').disabled=!lyrics;
  $('leadHarmony').hidden=!hasRoles;
@@ -109,7 +108,7 @@ async function showLead(selected,token){
   if(run!==leadRun||token!==revision)return;
   const sheet=book.version===1&&book.recordings?.[sheetKey(selected)];
   if(!MeleteFullPracticeLead.matches(sheet,selected,entry))throw Error();
-  leadFollow.reset(MeleteFullPracticeLead.render(body,sheet,entry,t=>lyricJump(t,token,{preload:!reader.open}),t=>lyricJump(t,token,{preload:false}),prefs.leadCompact!==false));
+  leadFollow.reset(MeleteFullPracticeLead.render(body,sheet,entry,t=>lyricJump(t,token,{preload:!reader.open}),t=>lyricJump(t,token,{preload:false})));
   entrances.mount(sheet,sheetKey(selected));
   body.setAttribute('aria-label',selected.title+' lead sheet, '+sheet.status);
   transposeLead();voicings.focusable(body);syncCapo();highlightLyrics(position());
@@ -382,6 +381,7 @@ try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');prefs={...prefs,...JSON.pa
 // The old length menu stored Off as zero. Keep that choice on upgrade.
 if(typeof prefs.countIn!=='boolean')prefs.countIn=prefs.countInBeats!==0;
 delete prefs.countInBeats;
+delete prefs.leadCompact;
 setPressed('countIn',prefs.countIn);
 const defaultCount=()=>song?.id==='auld-lang-syne'?2:4;
 const beatLabel=n=>n+(n===1?' beat':' beats');
@@ -489,7 +489,6 @@ function renderRuler(){
 function status(text='',error=false){$('status').textContent=text;$('status').classList.toggle('error',error);
  $('readerError').textContent=error?text:'';$('readerError').hidden=!error;}
 function persist(){if(song)saved[song.id]=[...mix,...(saved[song.id]||[]).filter(s=>!mix.some(v=>v.id===s.id))];try{localStorage.setItem(KEY,JSON.stringify(saved));localStorage.setItem(PREF,JSON.stringify(prefs));}catch{}}
-bindToggle('leadCompact',on=>{prefs.leadCompact=on;persist();if(song)void showLead(song,revision);});
 for(const [id,key] of Object.entries({lyricHarmony:'lyricHarmony',lyricChords:'lyricChords',leadNumbers:'leadNumbers',leadChords:'lyricChords',leadLyrics:'leadLyrics',leadHarmony:'lyricHarmony'}))
  bindToggle(id,on=>{prefs[key]=on;syncLyricDisplay();persist();});
 for(const [id,css,initial] of [['leadChordSize','--lead-chord-size',16],['leadLyricSize','--lead-lyric-size',13]]){

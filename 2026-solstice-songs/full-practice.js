@@ -22,22 +22,20 @@ const T=MeleteFullPracticeTracks;
 let loading=false,busy=false,recording=false,finishing=false,revision=0,playToken=0,abort,checkInput=null;
 let lanes=[],layerAudio=null,targetId=null,soloId=null,libraryReady=false,libraryError='',loadEpoch=0,undoTimer=null,downloadSelection=null;
 let pendingTrackEdits=0;
-let lyricRequest,referenceCueRequest,pendingLyric=null,lyricSections=[],currentStanza=null;
-let lyricChart=null,updateChord=null;
+let lyricRequest,referenceCueRequest,pendingLyric=null,lyricChart=null;
 const C=MeleteFullPracticeChart;
 const taylorShapes=()=>song?.id==='auld-lang-syne'&&song.referenceId==='james-taylor';
 const shapeFormatter=()=>taylorShapes()&&prefs.concertPitch===false?MeleteFullPracticeVoicings.taylorDisplaySymbol:undefined;
 const pitchDisplay=(key,concert=prefs.concertPitch!==false)=>C.pitchDisplay(song.id,key,shift(),concert,config().guitarCapos?.[song.url],song.referenceId);
 const voicings=MeleteFullPracticeVoicings.bind({tip:$('chordShapeTip'),enabled:taylorShapes,shapeFor(raw,el){
- const key=el.closest('#chartBody,#leadBody')?.dataset.key||lyricChart?.key||'D',d=pitchDisplay(key,false);
+ const key=$('leadBody').dataset.key||'D',d=pitchDisplay(key,false);
  return {symbol:C.transposeChord(raw,d.shift,key),capo:d.fret};
 }});
-const lyricFollow=new MeleteFullPracticeLyricFollow.Follower($('lyricBody'),$('lyricReturn'));
 const leadFollow=new MeleteFullPracticeLyricFollow.Follower($('leadBody'),$('leadReturn'));
 const entrances=MeleteFullPracticeEntrances.bind({body:$('leadBody'),position:()=>position(),fit:()=>MeleteFullPracticeLead.fit($('leadBody'))});
-let leadRequest,leadRun=0,readerView='chart';
+let leadRequest,leadRun=0;
 function displayedChartKey(){
- return lyricView==='lead'?$('leadBody').dataset.key:lyricView==='chart'?$('chartBody').dataset.key:lyricChart?.key;
+ return lyricView==='lead'?$('leadBody').dataset.key:tabPart?.recordingKeys?.[song?.referenceId||'playlist']||tabPart?.key;
 }
 function syncCapo(){
  const key=displayedChartKey(),d=song&&key?pitchDisplay(key):null,keep=$('keepShapes');
@@ -49,18 +47,12 @@ function syncCapo(){
 }
 function transposeLyrics(){
  voicings.hide();
- if(lyricChart){const d=pitchDisplay(lyricChart.key),format=shapeFormatter();C.transpose($('lyricBody'),d.shift,lyricChart.key,d.label,format);C.transpose($('lyricLegend'),d.shift,lyricChart.key,d.label,format);}
- transposeSheet();transposeLead();syncCapo();if(lyricView==='tabs'&&tabPart)drawTab();
+ transposeLead();syncCapo();if(lyricView==='tabs'&&tabPart)drawTab();
 }
-function transposeSheet(){const sheet=$('chartBody');if(sheet.dataset.key){const d=pitchDisplay(sheet.dataset.key);C.sheetTranspose(sheet,d.shift,sheet.dataset.key,d.label,shapeFormatter());}}
 function transposeLead(){const body=$('leadBody');if(body.dataset.key){const d=pitchDisplay(body.dataset.key);C.sheetTranspose(body,d.shift,body.dataset.key,d.label,shapeFormatter());MeleteFullPracticeLead.fit(body);}}
 function syncLyricDisplay(){
  const harmony=prefs.lyricHarmony!==false,chords=prefs.lyricChords!==false;
- setPressed('lyricHarmony',harmony);setPressed('lyricChords',chords);
  const hasRoles=C.hasRoles(lyricChart);
- $('lyricHarmony').hidden=!hasRoles;
- $('lyricDisplay').hidden=!lyricChart;$('lyricLegend').hidden=!lyricChart||(!(harmony&&hasRoles)&&!chords);
- C.display($('lyricSheet'),{harmony,chords});
  const lead=$('leadBody');
  const lyrics=prefs.leadLyrics!==false,numbers=prefs.leadNumbers!==false;
  setPressed('leadNumbers',numbers);setPressed('leadLyrics',lyrics);setPressed('leadChords',chords);setPressed('leadHarmony',harmony);
@@ -69,36 +61,15 @@ function syncLyricDisplay(){
  Object.assign(lead.dataset,{harmony:String(harmony),chords:String(chords),lyrics:String(lyrics),numbers:String(numbers)});
  MeleteFullPracticeLead.fit(lead);
 }
-/* Lyrics / Chord chart view. Charts come from full-practice-charts.json, bound to the recording
-   each was checked against; any other recording shows an honest "no chart" state. */
-let lyricView=null,sheetRequest=null,sheetRun=0;
+let lyricView=null,preferredView=null;
 const reader=$('chartReader');
-const loopHome=document.createComment('practice loop controls');$('loopDock').before(loopHome);
-const countHome=document.createComment('count-in controls');$('countInControls').before(countHome);
-const edgesHome=document.createComment('arrangement cues');$('vocalEdges').before(edgesHome);
-const pitchHome=document.createComment('written chord controls');$('chordPitchControls').before(pitchHome);
-const leadDisplayHome=document.createComment('lead sheet display');$('leadDisplay').before(leadDisplayHome);
-let readerReturnView='lyrics',readerNative=false,deferredAudio=null,readerExitUrl=null;
+// The same controls and music move into the reader so their settings and listeners stay shared.
+const readerHomes=new Map(['lyricView','leadDisplay','tabDisplay','leadBody','leadReturn','guitarTab',
+ 'loopDock','countInControls','vocalEdges','chordPitchControls'].map(id=>{
+ const home=document.createComment(id);$(id).before(home);return [id,home];
+}));
+let readerNative=false,deferredAudio=null,readerExitUrl=null;
 const sheetKey=s=>s.id+'/'+(s.referenceId||'playlist');
-function chartData(){
- return sheetRequest??=fetch('full-practice-charts.json',{cache:'no-store'})
-  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-  .catch(e=>{sheetRequest=null;throw e;});
-}
-async function showChart(selected,token){
- const body=$('chartBody'),run=++sheetRun;
- body.dataset.for=sheetKey(selected);delete body.dataset.key;
- body.setAttribute('aria-label',selected.title+' chord chart');body.setAttribute('aria-busy','true');body.textContent='Loading chord chart…';
- try{
-  const data=await chartData();if(run!==sheetRun||token!==revision)return;
-  const select=$('referenceRecording'),recordings=Object.fromEntries([...select.options].map(o=>[o.value,o.text]));
-  C.sheet(body,C.sheetFor(data,selected.id,selected.referenceId||'playlist'),{recordings,disabled:select.disabled,
-   choose:ref=>{if(!select.disabled)void choose(selected.id,ref);}});
-  body.scrollTop=0;transposeSheet();voicings.focusable(body);
- }catch{
-  if(run===sheetRun){body.textContent='Chord charts unavailable.';delete body.dataset.for;}
- }finally{if(run===sheetRun){body.removeAttribute('aria-busy');syncCapo();}}
-}
 async function showLead(selected,token){
  const body=$('leadBody'),run=++leadRun;
  body.dataset.for=sheetKey(selected);body.setAttribute('aria-busy','true');body.textContent='Loading lead sheet…';
@@ -106,6 +77,7 @@ async function showLead(selected,token){
  try{
   const [book,entry]=await Promise.all([leadRequest,lyricsFor(selected)]);
   if(run!==leadRun||token!==revision)return;
+  lyricChart=entry?.performance||null;syncLyricDisplay();
   const sheet=book.version===1&&book.recordings?.[sheetKey(selected)];
   if(!MeleteFullPracticeLead.matches(sheet,selected,entry))throw Error();
   leadFollow.reset(MeleteFullPracticeLead.render(body,sheet,entry,t=>lyricJump(t,token,{preload:!reader.open}),t=>lyricJump(t,token,{preload:false})));
@@ -116,37 +88,34 @@ async function showLead(selected,token){
  finally{if(run===leadRun)body.removeAttribute('aria-busy');}
 }
 function resetChart(selected,token){
- const body=$('chartBody');sheetRun++;delete body.dataset.for;delete body.dataset.key;body.replaceChildren();body.removeAttribute('aria-busy');
- const params=new URL(location.href).searchParams;
+ pendingLyric=null;lyricChart=null;
  const lead=$('leadBody');leadRun++;entrances.clear();leadFollow.reset();lead.replaceChildren();delete lead.dataset.for;delete lead.dataset.key;lead.removeAttribute('aria-busy');
- const asked=token===1?(params.get('view')||(params.get('part')==='guitar'?'tabs':params.get('reader')==='1'?'chart':null)):null;
- if(asked)preferredView=asked;
- setLyricView(reader.open?readerView:preferredView||prefs.lyricView||(prefs.tabSongs?.[selected.id]?'tabs':'lead'));
+ const params=new URL(location.href).searchParams;
+ if(token===1)preferredView=params.get('view')||(params.get('part')==='guitar'?'tabs':null);
+ setLyricView(preferredView||prefs.lyricView||(prefs.tabSongs?.[selected.id]?'tabs':'lead'));
  if(token===1&&params.get('reader')==='1')openReader(false);
 }
-let preferredView=null;
-function viewOptions(){return tabPart?['lead','lyrics','chart','tabs']:['lead','lyrics','chart'];}
+function viewOptions(){return tabPart?['lead','tabs']:['lead'];}
 function setLyricView(view,remember=false){
  voicings.hide();
- const was=lyricView;lyricView=viewOptions().includes(view)?view:'lyrics';
- const chart=lyricView==='chart',tabs=lyricView==='tabs',lead=lyricView==='lead',name=lead?'Lead sheet':chart?'Chord chart':tabs?'Tabs':'Lyrics';
- $('lyricSheet').dataset.view=lyricView;$('lyricBody').hidden=lyricView!=='lyrics';$('leadBody').hidden=!lead;$('chartBody').hidden=!chart;$('guitarTab').hidden=!tabs;
- $('leadDisplay').hidden=!lead;
- if(was==='lead'&&!lead)leadFollow.update(0,false);
- if(was==='lyrics'&&lyricView!=='lyrics')lyricFollow.update(0,false);
- $('lyricHeading').textContent=name;
+ const was=lyricView;
+ lyricView=view==='tabs'&&tabPart?'tabs':'lead'; // Retired Lyrics/Chord chart links open the lead sheet.
+ const tabs=lyricView==='tabs',name=tabs?'Tabs':'Lead sheet';
+ $('lyricSheet').dataset.view=reader.dataset.view=lyricView;
+ $('leadBody').hidden=$('leadDisplay').hidden=tabs;$('guitarTab').hidden=$('tabDisplay').hidden=!tabs;
+ if(was==='lead'&&tabs)leadFollow.update(0,false);
+ $('lyricHeading').textContent=name;$('lyricHeading').classList.toggle('sr-only',!!tabPart);
+ $('lyricView').hidden=!tabPart;
  for(const button of $('lyricView').querySelectorAll('button')){
-  button.hidden=!viewOptions().includes(button.dataset.view);
   const on=button.dataset.view===lyricView;
   button.setAttribute('aria-selected',String(on));button.classList.toggle('is-active',on);button.tabIndex=on?0:-1;
  }
  syncViewPill();
  const jump=$('jumpLyrics'),label=[...jump.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());
- if(label)label.textContent=chart?'Chart':name;jump.title='Jump to '+name.toLowerCase();
- if(chart){
-  if(song&&$('chartBody').dataset.for!==sheetKey(song))void showChart(song,revision);else C.sheetFit($('chartBody'));
- }else if(lead){if(song&&$('leadBody').dataset.for!==sheetKey(song))void showLead(song,revision);else{MeleteFullPracticeLead.fit($('leadBody'));highlightLyrics(position());}}
- else if(tabs)drawTab();else if(was!=='lyrics')highlightLyrics(position());
+ if(label)label.textContent=name;jump.title='Jump to '+name.toLowerCase();
+ if(tabs)drawTab();
+ else if(song&&$('leadBody').dataset.for!==sheetKey(song))void showLead(song,revision);
+ else{refitLead();highlightLyrics(position());}
  syncCapo();
  if(remember){preferredView=prefs.lyricView=lyricView;persist();}
  const url=new URL(location.href);
@@ -158,7 +127,7 @@ function syncViewPill(){
  if(!active||!pill.offsetParent)return;
  thumb.style.width=`${active.offsetWidth}px`;thumb.style.transform=`translateX(${active.offsetLeft}px)`;
 }
-$('lyricView').onclick=e=>{const views=viewOptions(),next=views.length===2?views[1-views.indexOf(lyricView)]:e.target.closest('button')?.dataset.view;if(next)setLyricView(next,true);};
+$('lyricView').onclick=()=>{if(tabPart)setLyricView(lyricView==='lead'?'tabs':'lead',true);};
 $('lyricView').onkeydown=e=>{
  if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
  e.preventDefault();const views=viewOptions(),i=views.indexOf(lyricView);
@@ -166,7 +135,6 @@ $('lyricView').onkeydown=e=>{
  $('lyricView').querySelector('[aria-selected="true"]').focus({preventScroll:true});
 };
 new ResizeObserver(syncViewPill).observe($('lyricView'));
-new ResizeObserver(()=>{if(lyricView==='chart')C.sheetFit($('chartBody'));}).observe($('chartBody'));
 const leadBody=$('leadBody'),refitLead=()=>MeleteFullPracticeLead.fit(leadBody);
 let leadPaneWidth=-1;
 new ResizeObserver(([entry])=>{
@@ -195,14 +163,14 @@ function openReader(native){
  if(reader.open||!song)return;
  rangeControl.cancel();
  if(native)history.pushState({...history.state,chartReaderEntry:true},'',location.href);
- readerReturnView=lyricView;readerView=lyricView==='lead'?'lead':'chart';setLyricView(readerView);
- $('readerContent').append($(readerView==='lead'?'leadBody':'chartBody'));if(readerView==='lead')$('readerContent').append($('leadReturn'));
- if(readerView==='lead')$('readerContent').before($('leadDisplay'));
- $('readerTransport').append($('loopDock'),$('countInControls'),$('vocalEdges'));$('readerOptions').append($('chordPitchControls'));reader.showModal();readerControls();
+ $('readerViewTools').append($('lyricView'),$('leadDisplay'),$('tabDisplay'));
+ $('readerContent').append($('leadBody'),$('leadReturn'),$('guitarTab'));
+ $('readerTransport').append($('loopDock'),$('countInControls'),$('vocalEdges'));$('readerOptions').append($('chordPitchControls'));
+ reader.showModal();readerControls();syncViewPill();
  $('readerError').textContent=$('status').classList.contains('error')?$('status').textContent:'';
  $('readerError').hidden=!$('readerError').textContent;
  const url=new URL(location.href);url.searchParams.set('reader','1');history.replaceState(history.state,'',url);
- $('readerClose').focus({preventScroll:true});if(readerView==='lead')refitLead();else C.sheetFit($('chartBody'));
+ $('readerClose').focus({preventScroll:true});if(lyricView==='lead')refitLead();else fitTab();
  if(native&&document.fullscreenEnabled&&!document.fullscreenElement)
   $('readerPanel').requestFullscreen?.().catch(()=>{}); // The dialog also fills the viewport on iOS.
 }
@@ -224,12 +192,12 @@ reader.onclose=()=>{if(!reader.open)finishReaderClose();};
 function finishReaderClose(){
  if(!$('readerContent').childElementCount)return;
  if(document.fullscreenElement===$('readerPanel'))void document.exitFullscreen().catch(()=>{});
- readerNative=false;if(readerView==='lead')$('lyricBody').after($('leadBody'),$('leadReturn'));else $('lyricSheet').insertBefore($('chartBody'),$('lyricReturn'));
- loopHome.after($('loopDock'));countHome.after($('countInControls'));edgesHome.after($('vocalEdges'));pitchHome.after($('chordPitchControls'));
- leadDisplayHome.after($('leadDisplay'));
- setLyricView(readerReturnView);$('openChartReader').focus({preventScroll:true});
+ readerNative=false;
+ for(const [id,home] of readerHomes)home.after($(id));
+ if(lyricView==='lead')refitLead();else fitTab();
+ syncViewPill();$('openChartReader').focus({preventScroll:true});
  const url=new URL(location.href),pop=history.state?.chartReaderEntry&&url.searchParams.has('reader');
- url.searchParams.delete('reader');url.hash=song.id;
+ url.searchParams.delete('reader');url.searchParams.set('view',lyricView);url.hash=song.id;
  if(song.referenceId)url.searchParams.set('ref',song.referenceId);else url.searchParams.delete('ref');
  if(pop){readerExitUrl=url.href;history.back();}else history.replaceState(history.state,'',url);
  void resumeAudioLoad();
@@ -239,6 +207,8 @@ window.addEventListener('popstate',()=>{
  const url=new URL(location.href);
  if(reader.open&&!url.searchParams.has('reader'))closeReader();
  else if(!reader.open&&url.searchParams.get('reader')==='1'&&song){
+  preferredView=url.searchParams.get('view')||preferredView;
+  setLyricView(preferredView||lyricView);
   openReader(false);
   if(url.hash.slice(1)!==song.id||(url.searchParams.get('ref')||'playlist')!==(song.referenceId||'playlist'))
    void choose(url.hash.slice(1),url.searchParams.get('ref')||'playlist');
@@ -254,7 +224,6 @@ $('readerSong').onchange=e=>void choose(e.target.value);$('readerRef').onchange=
 $('readerPlay').onclick=()=>void readerPlayback();
 $('readerSeek').oninput=e=>{$('readerTime').textContent=clock(Number(e.target.value));};
 $('readerSeek').onchange=e=>seek(Number(e.target.value));
-function cueSecond(t){return Math.max(0,t-.15);} // Leave the singer's first consonant intact.
 function lyricJump(t,token,{preload=true}={}){
  if(token!==revision||locked())return;
  if(deferredAudio||loading){
@@ -270,18 +239,6 @@ function highlightLyrics(t){
   MeleteFullPracticeLead.markForm($('leadBody'),pendingLyric?.token===revision?pendingLyric.t:t);
   leadFollow.update(t,playing,!recording);return;
  }
- if(!$('guitarTab').hidden||lyricView==='chart')return;
- updateChord?.(t);
- lyricFollow.update(t,playing&&(recording||!!lyricChart?.clocked),!recording);
- const active=lyricSections.findLast(row=>row.at<=t)?.el||null;
- if(active===currentStanza)return;
- currentStanza?.removeAttribute('aria-current');active?.setAttribute('aria-current','location');currentStanza=active;
-}
-function cueButton(text,t,label,token){
- const button=document.createElement('button');button.type='button';button.className='lyric-seek';
- button.dataset.time=String(t);button.textContent=text;button.title='Jump to '+label+' at '+clock(t);
- button.setAttribute('aria-label',text+'; '+button.title);
- button.onclick=()=>lyricJump(t,token);return button;
 }
 function referenceCues(selected){
  referenceCueRequest??=fetch('full-practice-reference-cues.json').then(r=>{
@@ -299,75 +256,7 @@ function lyricsFor(selected){
  }).catch(e=>{lyricRequest=null;throw e;});
  return lyricRequest.then(rows=>rows[selected.id]);
 }
-async function showLyrics(selected, token){
- const body=$('lyricBody'),source=$('lyricSource');
- pendingLyric=null;lyricSections=[];currentStanza=null;
- lyricFollow.reset();updateChord=null;
- lyricChart=null;C.legend($('lyricLegend'),null);syncLyricDisplay();
- body.textContent='Loading lyrics...';body.setAttribute('aria-busy','true');source.replaceChildren();
- body.setAttribute('aria-label',selected.title+' lyrics');
- try{
-  const entry=await lyricsFor(selected);
-  if(token!==revision)return;
-  if(!entry?.sections?.length)throw new Error('No lyrics');
-  const content=document.createDocumentFragment(),stem=selected.tracks.find(t=>t.id==='vocals'),followRows=[];
-  const cues=stem?.playback?.sha256&&entry.timing?.vocalSha256===stem.playback.sha256?entry.timing.lines:null;
-  lyricChart=entry.performance||null;C.legend($('lyricLegend'),lyricChart);
-  const makeSeek=(text,t,label)=>cueButton(text,t,label,token);
-  if(lyricChart)C.bars(content,lyricChart.before,makeSeek);
-  for(const [i,{label,lines}] of entry.sections.entries()){
-   const stanza=document.createElement('section'),heading=document.createElement('h3');
-   const chart=lyricChart?.sections[i];if(chart?.noteTitle)heading.title=chart.noteTitle;
-   stanza.className='lyric-stanza';const row=cues?.[i],timed=row?.length===lines.length&&Number.isFinite(row[0]);
-   if(timed){
-    const at=cueSecond(row[0]),button=cueButton(label,at,label,token),time=document.createElement('span');
-    time.textContent=clock(at);time.className='lyric-stamp';button.append(time);heading.append(button);
-    lyricSections.push({at,el:stanza});
-   }else heading.textContent=label;
-   stanza.append(heading);
-   C.bars(stanza,chart?.before,makeSeek);
-   for(const [j,line] of lines.entries()){
-    const p=document.createElement('p');p.dataset.lyric=line;const detail=chart?.lines[j];
-    if(timed){
-     const exact=Number.isFinite(row[j]),at=cueSecond(exact?row[j]:row[0]);
-     const button=cueButton(line,at,exact?label+', line '+(j+1):'start of '+label,token);
-     C.line(button,line,detail);p.append(button);
-     if(exact)followRows.push({at:lyricChart?.clocked?row[j]:at,el:p});
-    }else C.line(p,line,detail);
-    stanza.append(p);
-    C.bars(stanza,detail?.after,makeSeek);
-   }
-   C.bars(stanza,chart?.after,makeSeek);
-   content.append(stanza);
-  }
-  if(entry.url){
-   const a=document.createElement('a');a.href=entry.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=entry.source;source.append(a);
-  }else source.textContent=entry.source;
-  if(lyricChart?.clocked){
-   for(const row of content.querySelectorAll('.lyric-bars')){
-    const first=row.querySelector('[data-chord-time]');if(first)followRows.push({at:Number(first.dataset.chordTime),el:row});
-   }
-   followRows.sort((a,b)=>a.at-b.at);
-   updateChord=C.chordClock(content);
-  }
-  body.replaceChildren(content);body.scrollTop=0;lyricFollow.reset(followRows);transposeLyrics();syncLyricDisplay();syncLyricLock();highlightLyrics(position());
- }catch{
-  if(token===revision)body.textContent='Lyrics unavailable for this song.';
- }finally{if(token===revision)body.removeAttribute('aria-busy');}
-}
-$('jumpLyrics').onclick=()=>{$('lyricSheet').scrollIntoView({block:'start'});$(lyricView==='lead'?'leadBody':lyricView==='chart'?'chartBody':lyricView==='tabs'?'tabBody':'lyricBody').focus({preventScroll:true});};
-let lyricTouch=null,lyricDragged=false;
-$('lyricBody').addEventListener('pointerdown',e=>{lyricTouch=[e.clientX,e.clientY];lyricDragged=false;});
-$('lyricBody').addEventListener('pointermove',e=>{
- if(lyricTouch&&Math.hypot(e.clientX-lyricTouch[0],e.clientY-lyricTouch[1])>8)lyricDragged=true;
-});
-$('lyricBody').addEventListener('pointerup',()=>{lyricTouch=null;});
-$('lyricBody').addEventListener('pointercancel',()=>{lyricTouch=null;lyricDragged=true;});
-$('lyricBody').addEventListener('click',e=>{
- if(e.detail&&lyricDragged){e.preventDefault();e.stopPropagation();}
- lyricDragged=false;
-},true);
-function syncLyricLock(){$('lyricBody').querySelectorAll('button').forEach(b=>b.disabled=locked()||(!loading&&!duration()));}
+$('jumpLyrics').onclick=()=>{$('lyricSheet').scrollIntoView({block:'start'});$(lyricView==='tabs'?'tabBody':'leadBody').focus({preventScroll:true});};
 const localRows=new Map();
 const audibleStems=()=>soloId?mix.map(m=>({...m,on:soloId==='stem:'+m.id})):mix;
 const audibleLanes=()=>soloId?lanes.map(l=>({...l,on:soloId===l.id})):lanes;
@@ -489,7 +378,7 @@ function renderRuler(){
 function status(text='',error=false){$('status').textContent=text;$('status').classList.toggle('error',error);
  $('readerError').textContent=error?text:'';$('readerError').hidden=!error;}
 function persist(){if(song)saved[song.id]=[...mix,...(saved[song.id]||[]).filter(s=>!mix.some(v=>v.id===s.id))];try{localStorage.setItem(KEY,JSON.stringify(saved));localStorage.setItem(PREF,JSON.stringify(prefs));}catch{}}
-for(const [id,key] of Object.entries({lyricHarmony:'lyricHarmony',lyricChords:'lyricChords',leadNumbers:'leadNumbers',leadChords:'lyricChords',leadLyrics:'leadLyrics',leadHarmony:'lyricHarmony'}))
+for(const [id,key] of Object.entries({leadNumbers:'leadNumbers',leadChords:'lyricChords',leadLyrics:'leadLyrics',leadHarmony:'lyricHarmony'}))
  bindToggle(id,on=>{prefs[key]=on;syncLyricDisplay();persist();});
 for(const [id,css,initial] of [['leadChordSize','--lead-chord-size',16],['leadLyricSize','--lead-lyric-size',13]]){
  const number=MeleteDragNumber($(id),{values:Array.from({length:31},(_,i)=>10+i),defaultValue:initial,clickStep:1,pixelsPerStep:6,format:v=>v+' px',aria:v=>v+' pixels'});
@@ -604,13 +493,11 @@ function update(){
  readerControls();
  $('checkMicrophone').disabled=hold;document.querySelectorAll('#songList button').forEach(b=>b.disabled=locked());
  $('referenceRecording').disabled=locked();$('referenceRecording').setAttribute('aria-busy',String(loading));
- for(const button of $('chartBody').querySelectorAll('.sheet-switch'))button.disabled=locked();
  $('harmonySing').disabled=blocked||!ready||!pitchView.notes.length;
  $('harmonyPhrase').disabled=hold||!ready;$('micDevice').disabled=hold||!!singInput;
  for(const id of ['all','reharm','noVocals'])$(id).disabled=loading||!ready;
  $('metronome').disabled=loading||!clickTrack?.times.length||clickTrack.unavailable;$('metronome').setAttribute('aria-pressed',String(prefs.click));$('clickLevel').disabled=loading||!ready;
  $('undoDelete').disabled=hold;$('recovery').hidden=!recorder.recovery();
- syncLyricLock();
  for(const [id,row] of localRows){
   const target=id===targetId,rolling=recording&&target;
   row.classList.toggle('is-target',target);row.classList.toggle('is-recording',rolling);
@@ -778,15 +665,21 @@ function selectRecording(base,requested){
  return selected;
 }
 let tabPart=null;
+const tabBody=$('tabBody'),tabSize=MeleteDragNumber($('tabSize'),{values:Array.from({length:23},(_,i)=>10+i),
+ defaultValue:15,clickStep:1,pixelsPerStep:6,format:v=>v+' px',aria:v=>v+' pixels'});
+tabSize.setValue(Number(prefs.tabSize)||15,false);
+function fitTab(){if(lyricView==='tabs'&&tabPart)MeleteFullPracticeTab.fit(tabBody,tabSize.value());}
+new ResizeObserver(fitTab).observe(tabBody);
+$('tabSize').oninput=()=>{prefs.tabSize=tabSize.value();fitTab();persist();};
 function drawTab(){
  if(!tabPart)return;
  const fingers=prefs.tabFingers!==false;
  setPressed('tabFingers',fingers);
  $('tabFingers').hidden=tabPart.hasFingers===false;
  // This tab is an authored fingering, not a chord sheet that can be revoiced for another capo.
- const d=C.tabPitch(lyricChart?.key||tabPart.recordingKeys?.[song.referenceId||'playlist']||tabPart.key,tabPart.key,shift(),prefs.concertPitch!==false);
+ const d=C.tabPitch(tabPart.recordingKeys?.[song.referenceId||'playlist']||tabPart.key,tabPart.key,shift(),prefs.concertPitch!==false);
  $('tabTuning').textContent=d.label;
- MeleteFullPracticeTab.render($('tabBody'),tabPart,fingers&&tabPart.hasFingers!==false,name=>C.transposeChord(name,d.shift,tabPart.key));
+ MeleteFullPracticeTab.render(tabBody,tabPart,fingers&&tabPart.hasFingers!==false,name=>C.transposeChord(name,d.shift,tabPart.key),tabSize.value());
 }
 bindToggle('tabFingers',on=>{
  if(!tabPart)return;prefs.tabFingers=on;persist();drawTab();
@@ -854,7 +747,7 @@ async function choose(id,requested){
  $('note').textContent=song.note||'';$('stems').replaceChildren();$('layers').replaceChildren();
  restoreControls();renderSongs();loading=true;status('Loading '+($('referenceRecording').selectedOptions[0]?.text||song.title)+'…');update();const library=loadTracks();
  bars=[];loopState={};pitchView.setMeasures([]);syncLoop();
- void showLyrics(song,token);resetChart(song,token);
+ resetChart(song,token);
  void loadHarmony(song,token);
  if(!song.tracks.length){loading=false;status('No intended full recording found yet.');update();await library;return;}
  // A musician browsing charts need not download six stems on every swipe through the songs.
@@ -1116,7 +1009,7 @@ function playbackKey(e){
   ['TEXTAREA','SELECT'].includes(target.tagName)||(target.tagName==='INPUT'&&!choice))return;
  const consume=()=>{e.preventDefault();e.stopPropagation();};
  if(e.code==='Space'||key==='k'){
-  if((choice||target.closest('.setting-toggle,#countInBeats,#keepShapes,#leadDisplay,.lead-form-step'))&&e.code==='Space')return;
+  if((choice||target.closest('.setting-toggle,.scale-number,#lyricView,#countInBeats,#keepShapes,#leadDisplay,.lead-form-step'))&&e.code==='Space')return;
   consume();if(!e.repeat)void play({countIn:true});return;
  }
  if(key==='r'){consume();if(!e.repeat&&!$('record').disabled)void startRecord();return;}

@@ -131,15 +131,15 @@ button.setting-toggle[hidden]{display:none}
 .lyric-return{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));z-index:19;width:42px;height:42px;min-height:0;padding:0;border-radius:50%;transform:translateX(-50%);backdrop-filter:blur(9px);box-shadow:0 5px 18px #0003;background:color-mix(in srgb,var(--lyric-paper,#fafcfb) 94%,transparent)}
 .lyric-return svg{width:20px;height:20px}.lyric-return[data-direction=down] svg{transform:rotate(180deg)}
 .guitar-tab[hidden],#lyricSheet[hidden]{display:none}
-.guitar-tab{container-type:inline-size;max-width:none}
-.guitar-tab .lyric-heading{justify-content:flex-start;align-items:center}
-.tab-fingers-choice{margin-left:auto}
-#tabBody{padding:1px 6px 8px 0}
+.guitar-tab{min-width:0;max-width:100%}
+#tabDisplay{justify-content:flex-start;align-items:center;gap:4px 7px;min-width:0}
+#tabDisplay label,#tabTuning{color:var(--muted);font-size:12px}
+#tabSize{width:48px;min-width:48px;min-height:26px;height:26px;padding:2px 5px;cursor:ns-resize;touch-action:none;user-select:none;font:600 12px/1 system-ui;font-variant-numeric:tabular-nums}
+#tabBody{min-width:0;overflow-x:auto;padding:1px 0 8px}
 #tabBody:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 #tabBody h3{font-size:13px;margin:14px 0 4px}
-.tab-systems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
-.tab-systems svg{display:block;width:100%;max-width:540px}
-@container(max-width:710px){.tab-systems{grid-template-columns:minmax(0,1fr)}}
+.tab-systems{display:grid;grid-template-columns:repeat(var(--tab-cols,1),var(--tab-cell,100%));gap:8px var(--tab-gap,8px)}
+.tab-systems svg{display:block;width:100%;height:auto}
 .tab-systems text{font-family:system-ui,sans-serif;fill:currentColor}
 .tab-number,.tab-string-label{font-size:12px}
 .tab-systems :is(.tab-number,.tab-string-label,.tab-optional,.tab-finger){fill:var(--muted)}
@@ -208,7 +208,7 @@ body[data-chord-shapes] :is(.lyric-chord:not([data-chord=""]),.sheet-name){curso
 @media(max-width:600px){.full-mixer{--names:146px}.mixer-stem .track-controls{grid-template-columns:minmax(0,1fr) 37px 19px}.mixer-stem .track-controls>button:first-child{font-size:11px;gap:2px}.mixer-stem .track-level,.local-track .track-level{width:37px;font-size:11px}.local-track .local-controls{grid-template-columns:23px minmax(0,1fr) 37px}.track-tools{gap:4px}}
 /* Chord chart view (iReal-style): bars, barlines and repeats from full-practice-charts.json */
 .lyric-heading .lyric-view{margin:0 auto 0 0}
-#lyricSheet:not([data-view=lyrics]) :is(#lyricDisplay,#lyricLegend,#lyricSource,.lyric-return){display:none}
+#lyricSheet[data-view=tabs] #leadReturn,#chartReader[data-view=tabs] #leadReturn{display:none}
 #lyricView button[hidden],.tab-fingers-choice[hidden],#tabPdf[hidden]{display:none}
 .chord-pitch-controls,#capoChoice{display:inline-flex;align-items:center;white-space:nowrap}
 .chord-pitch-controls{align-self:center;gap:10px;flex:none}
@@ -412,7 +412,15 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-display[hidden],.lead-display [hidden]{display:none}
 .lead-display .lead-layer{display:inline-flex;align-items:center;gap:4px}
 .lead-display .scale-number{font:600 12px/1 system-ui;font-variant-numeric:tabular-nums;min-width:43px;height:25px;min-height:25px;padding:2px 5px}
-#readerPanel>.lead-display{flex:none;margin:0;padding:3px max(6px,env(safe-area-inset-left));border-bottom:1px solid var(--line)}
+#readerViewTools{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;padding:4px max(6px,env(safe-area-inset-right)) 4px max(6px,env(safe-area-inset-left));border-bottom:1px solid var(--line)}
+#readerViewTools :is(#lyricView,#leadDisplay){margin:0}
+#readerViewTools #tabDisplay{flex:1 1 auto;margin:0;border:0;padding:0}
+#readerViewTools #lyricView{background:#242424;color:#ddd;border-color:#666}
+#readerViewTools #lyricView button{background:transparent;color:inherit}
+#readerViewTools #lyricView button[aria-selected=true]{color:#161616}
+#readerViewTools #lyricView .pill-thumb{background:#eee}
+#readerContent #guitarTab{display:flex;flex:1;min-height:0;flex-direction:column}
+#readerContent #tabBody{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 max(3px,env(safe-area-inset-right)) 12px max(3px,env(safe-area-inset-left))}
 #readerContent #leadBody{--lead-fill-lines:1;width:100%;min-width:0;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:0 0 12px}
 @media(max-width:1110px),(pointer:coarse) and (hover:none){
  .rehearsal-layout:has(#lyricSheet[data-view=lead]){grid-template-columns:minmax(0,1fr)}

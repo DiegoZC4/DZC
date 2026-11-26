@@ -23,7 +23,7 @@
   <script defer src="full_practice_pitch.js?v=546875b08614"></script>
   <script defer src="full_practice_range_art.js?v=0cb7a086b80f"></script>
   <script defer src="full_practice_range.js?v=272c1d944a69"></script>
-  <script defer src="full_practice_tab.js?v=31cfa48b91e0"></script>
+  <script defer src="full_practice_tab.js?v=cdbb1894a4df"></script>
   
   
   
@@ -35,7 +35,7 @@
   
   
 <script defer src="full_practice_keys.js?v=a45746ade2b1"></script><script defer src="full_practice_stream.js?v=50817dc3238d"></script>
-<link rel="stylesheet" href="full-practice.css?v=113290884944"><script defer src="full_practice_audio.js?v=02ada47eed79"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=c223dd5e8d40"></script><script defer src="full_practice_click.js?v=3bb0e4c17ecc"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=8e00ab01601c"></script><script defer src="full_practice_entrances.js?v=bdb2ebd83002"></script><script defer src="full_practice_voicings.js?v=7494b0f6fe5e"></script><script defer src="full_practice_lyric_follow.js?v=f67fd014c4bd"></script><script defer src="full-practice.js?v=cf18403c5410"></script></head>
+<link rel="stylesheet" href="full-practice.css?v=ae3dbfbf0cda"><script defer src="full_practice_audio.js?v=02ada47eed79"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=c223dd5e8d40"></script><script defer src="full_practice_click.js?v=3bb0e4c17ecc"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=8e00ab01601c"></script><script defer src="full_practice_entrances.js?v=bdb2ebd83002"></script><script defer src="full_practice_voicings.js?v=7494b0f6fe5e"></script><script defer src="full_practice_lyric_follow.js?v=f67fd014c4bd"></script><script defer src="full-practice.js?v=5a14f26a2ca3"></script></head>
 <body>
   <div class="workspace" id="practiceView">
     <aside aria-label="Program songs"><h1 class="sidebar-title">2026 Solstice Songs</h1><div id="songList"></div></aside>
@@ -149,19 +149,14 @@
         <div id="recovery" hidden><span>Unsaved recording</span><button id="downloadRecovery"><i data-lucide="download"></i>Download recovery</button><button id="retryRecovery"><i data-lucide="refresh-cw"></i>Retry save</button></div>
         </div>
         <section id="lyricSheet" class="lyric-sheet" aria-labelledby="lyricHeading">
-          <div class="lyric-heading"><h2 id="lyricHeading" class="sr-only">Lyrics</h2>
-            <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view"><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lead" aria-selected="true" aria-controls="leadBody">Lead sheet</button><button type="button" role="tab" data-view="lyrics" aria-selected="false" aria-controls="lyricBody" tabindex="-1">Lyrics</button><button type="button" role="tab" data-view="chart" aria-selected="false" aria-controls="chartBody" tabindex="-1">Chord chart</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1" hidden>Tabs</button></div>
-            <button id="openChartReader" class="icon" type="button" aria-haspopup="dialog" aria-controls="chartReader" title="Fullscreen chord charts" aria-label="Fullscreen chord charts"><i data-lucide="maximize-2"></i></button>
+          <div class="lyric-heading"><h2 id="lyricHeading">Lead sheet</h2>
+            <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view" hidden><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lead" aria-selected="true" aria-controls="leadBody">Lead sheet</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1">Tabs</button></div>
+            <button id="openChartReader" class="icon" type="button" aria-haspopup="dialog" aria-controls="chartReader" title="Fullscreen reader" aria-label="Fullscreen reader"><i data-lucide="maximize-2"></i></button>
             <div id="chordPitchControls" class="chord-pitch-controls" role="group" aria-label="Written chord pitch">
               <button type="button" class="setting-toggle" id="concertPitch" aria-pressed="true" title="Show sounding chords instead of guitar shapes">Concert pitch</button>
               <div id="capoChoice"><label for="capoFret">Capo</label><button id="capoFret" type="button" class="scale-number" aria-label="Capo fret" title="Drag to choose a fret; click for +1. Changes chord shapes, not audio." disabled>0</button>
                 <button id="keepShapes" type="button" aria-pressed="false" title="Keep guitar shapes when transposing the recording" disabled>Keep shapes</button></div>
             </div>
-            <div id="lyricDisplay" class="lyric-display" role="group" aria-label="Lyric display" hidden>
-              <button type="button" class="setting-toggle" id="lyricHarmony" aria-pressed="true" aria-controls="lyricBody leadBody lyricLegend" title="Color harmony, unison and soloist-only lyrics">Harmony</button>
-              <button type="button" class="setting-toggle" id="lyricChords" aria-pressed="true" aria-controls="lyricBody lyricLegend" title="Show chord symbols and instrumental bars">Chords</button>
-            </div>
-            <span id="lyricSource"></span>
           </div>
           <div id="leadDisplay" class="lyric-display lead-display" role="group" aria-label="Lead sheet display" hidden>
             <button type="button" class="setting-toggle" id="leadNumbers" aria-pressed="true" aria-controls="leadBody">Bar numbers</button>
@@ -172,14 +167,11 @@
             <button type="button" class="setting-toggle" id="leadHarmony" aria-pressed="true" aria-controls="leadBody" title="Red: harmony; blue: unison; muted: soloist only">Harmony colors</button>
             <button type="button" id="leadAnnotate" aria-haspopup="dialog" aria-controls="entranceEditor" title="Annotate instrument entrances" disabled><i data-lucide="pencil"></i>Annotate</button>
           </div>
-          <div id="lyricLegend" class="lyric-legend" aria-label="Backing vocal cues and chord key" hidden></div>
-          <div id="lyricBody" tabindex="0" role="region" aria-label="Song lyrics"></div>
           <div id="leadBody" class="lead-sheet" tabindex="0" role="region" aria-label="Lead sheet" hidden></div>
           <button id="leadReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to current measure"><i data-lucide="arrow-up"></i></button>
-          <div id="chartBody" class="chord-sheet" tabindex="0" role="region" aria-label="Chord chart" hidden></div>
-          <button id="lyricReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to recording lyrics"><i data-lucide="arrow-up"></i></button>
         <div id="guitarTab" class="guitar-tab" aria-label="Guitar tablature" hidden>
-          <div class="lyric-heading">
+          <div id="tabDisplay" class="lyric-heading" hidden>
+            <label for="tabSize">Tab size</label><button id="tabSize" type="button" class="scale-number" aria-label="Tab font size" title="Fret size: drag vertically, scroll, or click for +1 px.">15 px</button>
             <button type="button" class="setting-toggle tab-fingers-choice" id="tabFingers" aria-pressed="true" title="Picking hand: t = thumb, i = index, m = middle, r = ring">Fingering</button>
             <span id="tabTuning"></span>
             <a id="tabPdf" download hidden title="Download printable tab" aria-label="Download printable tab"><i data-lucide="file-down"></i></a>
@@ -192,9 +184,9 @@
     </main>
   </div>
   <div id="status" role="status" aria-live="polite"></div>
-  <dialog id="chartReader" aria-label="Fullscreen chord charts">
+  <dialog id="chartReader" aria-label="Fullscreen music reader">
     <div id="readerPanel">
-      <nav class="reader-nav" aria-label="Chord chart navigation">
+      <nav class="reader-nav" aria-label="Song navigation">
         <button id="readerPrev" type="button" aria-label="Previous song" title="Previous song"><i data-lucide="chevron-left"></i></button>
         <select id="readerSong" aria-label="Song"></select>
         <button id="readerNext" type="button" aria-label="Next song" title="Next song"><i data-lucide="chevron-right"></i></button>
@@ -202,6 +194,7 @@
         <button id="readerPlay" type="button" aria-label="Play recording" title="Play recording"><i data-lucide="play"></i></button>
         <button id="readerClose" type="button" aria-label="Close fullscreen charts" title="Close fullscreen charts"><i data-lucide="minimize-2"></i></button>
       </nav>
+      <div id="readerViewTools"></div>
       <div id="readerContent"></div>
       <p id="readerError" role="status" hidden></p>
       <div id="readerTransport" hidden>

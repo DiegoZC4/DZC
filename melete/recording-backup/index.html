@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Melete recording backup</title>
+<style>
+  :root{color-scheme:light dark;font:16px system-ui} main{max-width:32rem;margin:12vh auto;padding:1rem}
+  h1{font-size:1.5rem}button{font:inherit;padding:.5rem .9rem;cursor:pointer}output{display:block;margin-top:1rem}
+</style>
+<main><h1>Melete recording backup</h1>
+<button type="button" id="backup">Download recording library</button>
+<output id="result" role="status"></output></main>
+<script src="./library_archive.js"></script>
+<script>
+document.getElementById('backup').onclick=async function(){
+  const out=document.getElementById('result'), archive=MeleteLibraryArchive;
+  this.disabled=true; out.textContent='Preparing backup...';
+  try {
+    const db=await archive.open();let data;
+    try{data=await archive.snapshot(db,{recordingsOnly:true});}finally{db.close();}
+    const file=archive.pack(data),sha=await archive.hash(file),link=document.createElement('a');
+    link.href=URL.createObjectURL(file);link.download='melete-recordings-'+location.hostname+'-'+sha.slice(0,16)+'.melete';
+    link.click();setTimeout(()=>URL.revokeObjectURL(link.href),60000);
+    out.textContent=data.stores.takes.length+' source recordings; '+file.size+' bytes. SHA-256: '+sha;
+  }catch(error){out.textContent=error.message;}finally{this.disabled=false;}
+};
+</script>
+</html>

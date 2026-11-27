@@ -228,6 +228,19 @@
         "seconds": 189.765,
         "evidence": "stem"
       }
+    },
+    "https://www.youtube.com/watch?v=65Yvo46wqY0": {
+      "vocalSha256": "046ad2fb61f16efdde86e5b084bd5917b6e51741e4851d3dcbb44ed93e570d34",
+      "low": {
+        "midi": 49,
+        "seconds": 115.925,
+        "evidence": "stem"
+      },
+      "high": {
+        "midi": 65,
+        "seconds": 144.985,
+        "evidence": "stem"
+      }
     }
   }
 }

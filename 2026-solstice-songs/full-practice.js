@@ -94,7 +94,7 @@ async function showSinger(selected,token){
   const matched=edition.vocal===selected.tracks.find(t=>t.id==='vocals')?.playback?.sha256;
   singerFollow.reset(Singer.render(singerBody,edition,t=>lyricJump(Math.max(0,t-.15),token,{preload:!reader.open}),matched));
   $('audienceCue').textContent=Singer.audience[edition.mode];
-  $('copySongLyrics').disabled=$('downloadAllLyrics').disabled=false;
+  $('downloadAllLyrics').disabled=false;$('copySongLyrics').disabled=!!edition.externalLyrics;
   singerBody.setAttribute('aria-label',selected.title+' lyrics');
   highlightLyrics(position());
  }catch{
@@ -750,7 +750,7 @@ function draw(){
 const rehearsalNames={
  'the-circle':'Circle','autumn':'Autumn','the-seed':'Seed','hymn-to-breaking-strain':'Strain','bold-orion':'Orion','who-by-fire':'Fire',
  'no-one-survives':'Survives','auld-lang-syne':'Auld','songs-stay-sung':'Stay','ballad-of-smallpox-gone':'Smallpox',
- 'here-comes-the-sun':'Sun','a-toast-for-unknown-heroes':'Heroes','brighter-than-today':'Brighter','song-of-the-artesian-water':'Artesian'
+ 'here-comes-the-sun':'Sun','a-toast-for-unknown-heroes':'Heroes','brighter-than-today':'Brighter','song-of-the-artesian-water':'Artesian','losing-it':'Losing It'
 };
 // These follow a song in the live program; they are not playable catalog entries.
 const stageBreaks={

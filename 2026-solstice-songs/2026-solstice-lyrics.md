@@ -702,3 +702,8 @@ bringing gladness in its going;
 Through the droughty days of summer  
 it is flowing, ever flowing-  
 It is flowing, ever flowing, further down.
+
+# Losing It
+<!-- Section cues. -->
+
+[Official lyrics](https://www.rush.com/songs/losing-it/)

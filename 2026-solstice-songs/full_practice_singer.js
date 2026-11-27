@@ -1,7 +1,7 @@
 /* One paragraph per slide; the same markup is used for the reader and rich copy. */
 (function(root){
 'use strict';
-const audience={mixed:'Sing along on bold lines',all:'Sing along throughout',solo:'Solo throughout'};
+const audience={mixed:'Sing along on bold lines',all:'Sing along throughout',solo:'Solo throughout',reference:'Section cues'};
 const escape=text=>text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 const md=text=>text.replace(/[\\*_`<>\[\]]/g,'\\$&');
 function slideText(slide,format){
@@ -12,6 +12,7 @@ function slideText(slide,format){
  })).join(format==='html'?'<br>':format==='md'?'  \n':'\n');
 }
 function songText(edition,format){
+ if(edition.externalLyrics)return format==='md'?'[Official lyrics]('+edition.externalLyrics+')':edition.externalLyrics;
  return edition.slides.map(s=>format==='html'?'<p>'+slideText(s,format)+'</p>':slideText(s,format)).join('\n\n');
 }
 function setMarkdown(book,choices={}){
@@ -23,6 +24,18 @@ function setMarkdown(book,choices={}){
 }
 function render(body,edition,seek,clockMatches){
  const doc=body.ownerDocument,fragment=doc.createDocumentFragment(),rows=[];
+ if(edition.externalLyrics){
+  const link=doc.createElement('a');link.href=edition.externalLyrics;link.textContent='Official lyrics';
+  link.target='_blank';link.rel='noopener noreferrer';fragment.append(link);
+  for(const [title,t] of edition.sections){
+   const p=doc.createElement('p'),b=doc.createElement('button');b.type='button';b.className='singer-line';
+   b.textContent=Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+'  '+title;
+   b.disabled=!clockMatches;
+   if(clockMatches){b.dataset.time=t;b.onclick=()=>seek(t);rows.push({at:t,el:b});}
+   p.append(b);fragment.append(p);
+  }
+  body.replaceChildren(fragment);body.scrollTop=0;return rows;
+ }
  if(clockMatches)for(const at of [0,...edition.gaps])rows.push({at,el:null});
  for(const slide of edition.slides){
   const p=doc.createElement('p');p.className='singer-slide';

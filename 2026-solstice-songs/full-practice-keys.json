@@ -15,7 +15,8 @@
     "here-comes-the-sun":[8,24],
     "a-toast-for-unknown-heroes":[27,9,25],
     "brighter-than-today":[10,21],
-    "song-of-the-artesian-water":[11,0,16]
+    "song-of-the-artesian-water":[11,0,16],
+    "losing-it":[26,21,0]
   },
   "patches": {
     "0":{"label":"No keys","name":"Tacit","zones":[]},

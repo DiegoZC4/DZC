@@ -1,11 +1,41 @@
-/* Only the public player document belongs in this cache. Never cache account or take data. */
+/* Cache only the checked release document and its immutable reference MP3s. */
 "use strict";
-const BUILD = "7e433f1c30b65f2f8482499cc7a56fd04579bd82c7de1b4121834336d6d8b079", SHA = "9d2304e67b59e6b6b42c9fcfacd0d0c2591ddcaba5ab4227acab5b8ad2392687", BYTES = 11695480;
+const BUILD = "a5969abf87b87abdbcbfde6e654b7291ba2577a361f74efbfe952c1f4fa69a4c", SHA = "2ee266553d0e8fc1e39bc35580160f54585eb93eea67cd01f82cfa0a71366845", BYTES = 3589812;
 const scope = new URL(self.registration.scope);
 const shell = new URL("index.html", scope).href;
 const prefix = "melete:offline-player:v1:" + encodeURIComponent(scope.pathname) + ":";
 const cacheName = prefix + SHA;
+const mediaName = "melete:reference-mp3:v1:" + encodeURIComponent(scope.pathname);
+const media = [{"mp3":"9b89a1150a2ac5773d3c03c95e3bbc0d8c26fbc9a4fa6f35c4dba4e4787c3d58","bytes":4020340},{"mp3":"d83d2353666babe14ac9fd8f795006c94b34e679b49d33e47a14684bc4903609","bytes":2289049}];
+const mediaURL = ref => new URL("media/" + ref.mp3 + ".mp3", scope).href;
+const pendingMedia = new Map();
 let installingCopy;
+
+const hashOf = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+  byte => byte.toString(16).padStart(2,"0")).join("");
+const validRef = r => r && /^[a-f0-9]{64}$/.test(r.mp3) && Number.isSafeInteger(r.bytes) &&
+  r.bytes > 0 && r.bytes <= 128*1024*1024;
+async function ensureMedia(refs) {
+  if (!refs.length) return;
+  const cache = await caches.open(mediaName);
+  for (const ref of refs) {
+    const url = mediaURL(ref);
+    if (await cache.match(url)) continue;
+    if (!pendingMedia.has(url)) pendingMedia.set(url, (async () => {
+      const ctl = new AbortController(), timer = setTimeout(()=>ctl.abort(), 30000);
+      try {
+        const r = await fetch(url, {credentials:"same-origin",redirect:"error",cache:"no-store",signal:ctl.signal});
+        if (r.status!==200) throw Error("Reference recording unavailable");
+        const b = await r.arrayBuffer();
+        if (b.byteLength!==ref.bytes || await hashOf(b)!==ref.mp3) throw Error("Invalid reference recording");
+        await cache.put(url, new Response(b,{headers:{"Content-Type":"audio/mpeg","Content-Length":String(b.byteLength)}}));
+      } finally { clearTimeout(timer); }
+    })().finally(()=>pendingMedia.delete(url)));
+    await pendingMedia.get(url);
+  }
+}
+const complete = async () => Boolean(await saved()) &&
+  (await Promise.all(media.map(ref=>caches.match(mediaURL(ref),{cacheName:mediaName})))).every(Boolean);
 
 async function verifiedDocument(digest, size, signal) {
     const response = await fetch(shell, {cache:"no-store", credentials:"same-origin", redirect:"error", signal});
@@ -13,15 +43,15 @@ async function verifiedDocument(digest, size, signal) {
       throw Error("Expected the public Melete player");
     const bytes = await response.clone().arrayBuffer();
     if (bytes.byteLength !== size) throw Error("Incomplete player download");
-    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-      byte => byte.toString(16).padStart(2,"0")).join("");
-    if (hash !== digest) throw Error("Player revision does not match the release");
+    if (await hashOf(bytes) !== digest) throw Error("Player revision does not match the release");
     return response;
 }
 function restoreCopy() {
-  if (!installingCopy) installingCopy = verifiedDocument(SHA,BYTES)
-    .then(async response=>(await caches.open(cacheName)).put(shell,response))
-    .finally(() => { installingCopy = null; });
+  if (!installingCopy) installingCopy = (async () => {
+    const hit = await saved(), response = hit || await verifiedDocument(SHA,BYTES);
+    await ensureMedia(media);
+    if (!hit) await (await caches.open(cacheName)).put(shell,response);
+  })().finally(() => { installingCopy = null; });
   return installingCopy;
 }
 const saved = () => caches.match(shell, {cacheName});
@@ -33,25 +63,50 @@ async function freshCopy() {
   try {
     const response=await fetch(new URL("release.json",scope),{cache:"no-store",credentials:"same-origin",redirect:"error",signal:ctl.signal});
     if (!response.ok) return;
-    const info=await response.json();
-    if (info?.schema!==1 || info.kind!=="melete-player" || info.player!=="index.html" ||
-        info.nativeProtocol!==1 || info.sha256===SHA || !/^[0-9a-f]{64}$/.test(info.sha256) ||
+    const release=await response.json(), info=release?.hosted || release;
+    if (release?.schema!==1 || release.kind!=="melete-player" || info.player!=="index.html" ||
+        release.nativeProtocol!==1 || info.sha256===SHA || !/^[0-9a-f]{64}$/.test(info.sha256) ||
         !Number.isSafeInteger(info.bytes) || info.bytes<=0 || info.bytes>128*1024*1024) return;
+    const refs=info.media ?? [];
+    if (!Array.isArray(refs) || refs.length>1024 || !refs.every(validRef)) return;
     clearTimeout(timer);timer=setTimeout(()=>ctl.abort(),4000);
-    return await caches.match(shell,{cacheName:prefix+info.sha256}) ||
-      await verifiedDocument(info.sha256,info.bytes,ctl.signal);
+    const hit=await caches.match(shell,{cacheName:prefix+info.sha256});
+    const next=hit || await verifiedDocument(info.sha256,info.bytes,ctl.signal);
+    // An install can keep fetching a new recording; navigation with a working
+    // copy must not wait out the longer per-MP3 download timeout.
+    await new Promise((resolve,reject)=>{
+      const abort=()=>reject(Error("Offline update timed out"));
+      if (ctl.signal.aborted) { abort(); return; }
+      ctl.signal.addEventListener("abort",abort,{once:true});
+      ensureMedia(refs).then(resolve,reject).finally(()=>ctl.signal.removeEventListener("abort",abort));
+    });
+    if (!hit) await (await caches.open(prefix+info.sha256)).put(shell,next.clone());
+    return next;
   } finally {clearTimeout(timer);}
 }
 self.addEventListener("install", event => event.waitUntil(restoreCopy().then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil((async () => {
   // The self-contained document stays alive during a take. Only a subsequent
   // navigation gets the new shell, even when several old tabs remain open.
-  if (!await saved()) await restoreCopy();
+  if (!await complete()) await restoreCopy();
   for (const key of await caches.keys()) if (key.startsWith(prefix) && key !== cacheName) await caches.delete(key);
   await self.clients.claim();
 })()));
 self.addEventListener("fetch", event => {
   const req = event.request, url = new URL(req.url);
+  if (req.method==="GET" && url.origin===scope.origin && !url.search &&
+      url.pathname.startsWith(scope.pathname+"media/") &&
+      /^[a-f0-9]{64}\.mp3$/.test(url.pathname.slice((scope.pathname+"media/").length))) {
+    event.respondWith((async()=>{
+      const hit=await caches.match(url.href,{cacheName:mediaName});
+      if (hit) return hit;
+      const ref=media.find(r=>mediaURL(r)===url.href);
+      if (!ref) return fetch(req);
+      await ensureMedia([ref]);
+      return caches.match(url.href,{cacheName:mediaName});
+    })());
+    return;
+  }
   if (req.method !== "GET" || req.mode !== "navigate" || url.origin !== scope.origin ||
       (url.pathname !== scope.pathname && url.pathname !== new URL(shell).pathname)) return;
   event.respondWith((async () => {
@@ -73,8 +128,8 @@ self.addEventListener("message", event => {
   event.waitUntil((async () => {
     let ready = false;
     try {
-      ready = Boolean(await saved());
-      if (!ready && event.data.repair) { await restoreCopy(); ready = Boolean(await saved()); }
+      ready = await complete();
+      if (!ready && event.data.repair) { await restoreCopy(); ready = await complete(); }
     } catch {}
     event.ports[0].postMessage({build:BUILD, ready, sha256:SHA, navigationManifest:1});
   })());

@@ -2,8 +2,23 @@
   "schema": 1,
   "kind": "melete-player",
   "nativeProtocol": 1,
-  "player": "index.html",
-  "bytes": 11695480,
-  "sha256": "9d2304e67b59e6b6b42c9fcfacd0d0c2591ddcaba5ab4227acab5b8ad2392687",
-  "sourceCommit": "4ccc05259210e38d867b07ef3f209dbcc1e5b2df"
+  "player": "melete-portable.html",
+  "bytes": 12027757,
+  "sha256": "2dc59a7bb2e01b0879a6a944788d350f3cafd07ad6bbfd60921dbf7e0939b57e",
+  "hosted": {
+    "player": "index.html",
+    "bytes": 3589812,
+    "sha256": "2ee266553d0e8fc1e39bc35580160f54585eb93eea67cd01f82cfa0a71366845",
+    "media": [
+      {
+        "mp3": "9b89a1150a2ac5773d3c03c95e3bbc0d8c26fbc9a4fa6f35c4dba4e4787c3d58",
+        "bytes": 4020340
+      },
+      {
+        "mp3": "d83d2353666babe14ac9fd8f795006c94b34e679b49d33e47a14684bc4903609",
+        "bytes": 2289049
+      }
+    ]
+  },
+  "sourceCommit": "6d0b7a81e29a1f32c73a4efb9b9b4fd18acfeefa"
 }

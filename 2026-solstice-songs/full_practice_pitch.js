@@ -2,9 +2,10 @@
 (function(root,factory){const common=typeof module==='object'&&module.exports;
  const api=factory(common?require('../template/take_pitch.js'):root.MeleteTakePitch,
   common?require('../template/microphone_check.js'):root.MeleteMicrophoneCheck,
-  common?require('./full_practice_loop.js'):root.MeleteFullPracticeLoop);
+  common?require('./full_practice_loop.js'):root.MeleteFullPracticeLoop,
+  common?require('./full_practice_pitch_rows.js'):root.MeleteFullPracticePitchRows);
  if(common)module.exports=api;else root.MeleteFullPracticePitch=api;
-})(globalThis,function(grade,mic,loops){
+})(globalThis,function(grade,mic,loops,partRows){
  'use strict';
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  function phraseRole(data,index,chart){
@@ -16,6 +17,13 @@
  function expand(data,hash,shift=0,chart=null){
   if(!data||data.vocalSha256!==hash)return [];
   const notes=[];
+  if(data.kind==='bass'){
+   for(const [start,end,pitch,lyric,phrase,slurToNext] of data.notes){
+    if(!(end>start&&start>=(notes.at(-1)?.end||0)&&end<=data.seconds&&Number.isInteger(pitch)&&pitch>=0&&pitch<=127))throw Error('Invalid bass staff');
+    notes.push({start,end,pitch:pitch+shift,lyric,phrase,slurToNext,role:'bass'});
+   }
+   return notes;
+  }
   for(const [p,phrase] of data.phrases.entries()){
    const role=phraseRole(data,p,chart);if(role==='solo')continue;
    const patternName=data.rolePatterns?.[phrase.pattern]?.[role]||phrase.pattern;
@@ -134,11 +142,12 @@
  const name=p=>['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][((p%12)+12)%12]+(Math.floor(p/12)-1);
  const clock=t=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
  class View{
-  constructor({root,viewport,stage,score,canvas,cursor,phrases,stats,seek,preview=()=>{},canPreview=()=>true}){
-   Object.assign(this,{root,viewport,stage,score,canvas,cursor,phrases,stats,seek,preview,canPreview});this.trace=new Trace();this.notes=[];this.bars=[];this.beats=[];this.loop=null;this.scale=100;this.stretch=100;this.shift=0;this.time=0;this.lastPaint=0;this.manual=false;
-   viewport.addEventListener('scroll',()=>{this.cancelPreview();this.dirty=true;if(!this.scrollPaint)this.scrollPaint=requestAnimationFrame(()=>{this.scrollPaint=null;this.paintTrace();});});
+  constructor({root,viewport,stage,score,canvas,cursor,phrases,stats,seek,preview=()=>{},canPreview=()=>true,chordName=s=>s}){
+   Object.assign(this,{root,viewport,stage,score,canvas,cursor,phrases,stats,seek,preview,canPreview,chordName});this.trace=new Trace();this.notes=[];this.bars=[];this.beats=[];this.loop=null;this.scale=100;this.stretch=100;this.shift=0;this.time=0;this.lastPaint=0;this.manual=false;
+   viewport.addEventListener('scroll',()=>{this.cancelPreview();if(this.wrapped)return;this.dirty=true;if(!this.scrollPaint)this.scrollPaint=requestAnimationFrame(()=>{this.scrollPaint=null;this.paintTrace();});});
    window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>this.paintTrace());
    viewport.addEventListener('wheel',()=>{this.manual=true;},{passive:true});
+   viewport.addEventListener('touchmove',()=>{this.manual=true;},{passive:true});
    viewport.addEventListener('pointerdown',e=>this.press(e));
    viewport.addEventListener('pointermove',e=>{if(!this.gesture&&e.pointerType!=='touch')this.highlight(this.canPreview()?this.noteAt(e):null,false);});
    viewport.addEventListener('pointerleave',()=>{if(!this.gesture)this.highlight(null,false);});
@@ -147,13 +156,25 @@
    viewport.addEventListener('blur',()=>this.cancelPreview());
    window.addEventListener('blur',()=>this.cancelPreview());
    document.addEventListener('visibilitychange',()=>{if(document.hidden)this.cancelPreview();});
-   phrases.onchange=()=>{const p=this.data?.phrases[Number(phrases.value)];if(p)seek(Math.max(0,p.times[0]-.8));};
-   this.resize=new ResizeObserver(()=>{if(this.data)this.render();});this.resize.observe(viewport);
+   phrases.onchange=()=>{const p=phrases.value!==''&&this.data?.phrases[Number(phrases.value)];if(p)seek(Math.max(0,p.times[0]-.8));};
+   this.resize=new ResizeObserver(()=>{
+    if(!this.data||!viewport.clientWidth||this.renderWidth===viewport.clientWidth)return;
+    this.render();if(this.data.kind==='bass')this.move(this.time,false,!this.manual);
+   });this.resize.observe(viewport);
   }
   noteAt(e){
-   if(!this.data||!this.x)return null;const r=this.stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+   if(!this.data)return null;const r=this.stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+   if(this.wrapped){
+    const row=this.wrapped.atY(y),ink=e.target.closest?.('g[data-start]');
+    if(ink&&this.score.contains(ink))return this.notes.find(n=>n.start===Number(ink.dataset.start));
+    if(!row.range||y<row.pitchTop-9||y>row.pitchBottom+9)return null;
+    const n=nearest(row.notes.map(w=>w.n),x,y,{x:t=>row.x(this.wrapped.quarter(t)),y:row.y,left:row.x(row.q),right:row.x(row.z)});
+    return n&&x>=row.x(Math.max(row.q,this.wrapped.quarter(n.start)))-6&&x<=row.x(Math.min(row.z,this.wrapped.quarter(n.end)))+6?n:null;
+   }
+   if(!this.x)return null;
    if(y<this.top-12||y>this.bottom+10)return null;
-   return nearest(this.notes,x,y,{x:this.x,y:this.y,left:this.viewport.scrollLeft,right:this.viewport.scrollLeft+this.viewport.clientWidth});
+   const note=nearest(this.notes,x,y,{x:this.x,y:this.y,left:this.viewport.scrollLeft,right:this.viewport.scrollLeft+this.viewport.clientWidth});
+   return this.data.kind==='bass'&&note&&(x<this.x(note.start)-7||x>this.x(note.end)+7)?null:note;
   }
   highlight(note,held){
    this.hover=note;
@@ -165,7 +186,7 @@
   cancelPreview(){this.gesture?.abort();this.gesture=null;this.keyboard=false;this.preview(null);this.highlight(null,false);}
   press(e){
    if(e.button!==0||!this.data||!this.canPreview())return;
-   this.cancelPreview();const bar=this.bars[Number(e.target.closest?.('[data-measure]')?.dataset.measure)-1];
+   this.cancelPreview();const bar=(this.data.bars||this.bars).find(b=>b.number===Number(e.target.closest?.('[data-measure]')?.dataset.measure));
    const initial=bar?null:this.noteAt(e),controller=new AbortController(),started=e.timeStamp,x=e.clientX,y=e.clientY;
    this.gesture=controller;let held=initial,moved=false;
    if(initial){this.highlight(initial,true);this.preview(initial);}
@@ -176,13 +197,17 @@
     if(initial){const n=this.noteAt(next);if(n!==held){held=n;this.highlight(n,true);this.preview(n);}}
    },{signal:controller.signal});
    window.addEventListener('pointerup',next=>{if(next.pointerId!==e.pointerId)return;const tap=!moved&&next.timeStamp-started<250;finish();
-    if(tap){const r=this.stage.getBoundingClientRect();this.seek(bar?bar.start:initial?initial.start:clamp((next.clientX-r.left-40)/this.pps,0,this.data.seconds));}
+    if(tap){const r=this.stage.getBoundingClientRect(),row=this.wrapped?.atY(next.clientY-r.top);
+     this.seek(bar?(row?Math.max(row.start,bar.start):bar.start):initial?(row?Math.max(row.start,initial.start):initial.start):
+      row?this.wrapped.timeAt(row,next.clientX-r.left):clamp((next.clientX-r.left-40)/this.pps,0,this.data.seconds));}
    },{signal:controller.signal});
    for(const event of ['pointercancel','lostpointercapture'])window.addEventListener(event,finish,{signal:controller.signal});
    this.viewport.addEventListener('contextmenu',event=>event.preventDefault(),{signal:controller.signal});
   }
   setData(data,hash,chart=null){
    this.cancelPreview();this.data=data;this.hash=hash;this.chart=chart;this.shift=0;this.notes=expand(data,hash,0,chart);this.root.hidden=!this.notes.length;this.trace.reset(0);
+   this.wrapped=null;this.loopLayer=null;this.x=null;this.y=null;this.followed=null;
+   this.viewport.toggleAttribute('data-wrapped',data?.kind==='bass');
    this.phrases.replaceChildren();
    if(!this.notes.length){this.data=null;return;}
    this.phrases.append(new Option('Jump to vocal entry',''));
@@ -193,6 +218,15 @@
   setMeasures(bars,beats=[]){this.bars=bars;this.beats=beats;if(this.data)this.render();}
   setLoop(range,enabled){
    this.loop=range?{...range,enabled}:null;
+   if(this.wrapped){
+    for(const r of this.wrapped.rows){
+     r.loop.replaceChildren();if(!range||range.end<=r.start||range.start>=r.end)continue;
+     const x=t=>r.x(this.wrapped.quarter(t)),a=x(Math.max(r.start,range.start)),b=x(Math.min(r.end,range.end));
+     const top=r.top+18,end=(r.range?r.pitchBottom+6:r.bottom);
+     r.loop.append(svg('rect',{x:a,y:top,width:b-a,height:end-top,class:'practice-loop-band'+(enabled?'':' is-disabled')}));
+     for(const t of [range.start,range.end])if(t>=r.start&&t<=r.end)r.loop.append(svg('line',{x1:x(t),x2:x(t),y1:top,y2:end,class:'practice-loop-edge',opacity:enabled?1:.35}));
+    }return;
+   }
    if(!this.loopLayer||!this.x)return;
    this.loopLayer.replaceChildren();if(!range)return;
    const {start,end}=range;
@@ -204,17 +238,120 @@
    if(!this.data)return;
    this.notes=expand(this.data,this.hash,shift,this.chart);if(keyChanged)this.clear(this.time);this.render();this.move(this.time,false,true);
   }
-  begin(from){this.trace.reset(from);this.manual=false;this.dirty=true;this.paintStats();}
+  begin(from){this.trace.reset(from);this.manual=false;this.followed=null;this.dirty=true;this.paintStats();}
   clear(from=this.time){this.trace.reset(from);this.dirty=true;this.paintTrace();this.paintStats();}
   observe(frame){if(this.trace.append(frame))this.dirty=true;}
+  partScroller(){
+   if(getComputedStyle(this.viewport).overflowY==='auto')return this.viewport;
+   return this.viewport.closest('main');
+  }
+  followRow(r,force){
+   const owner=this.partScroller();if(!owner)return;
+   const rect=owner.getBoundingClientRect(),stage=this.stage.getBoundingClientRect();
+   if(owner!==this.viewport&&(stage.top>=rect.bottom||stage.bottom<=rect.top))return;
+   const a=stage.top+r.top-rect.top,b=stage.top+r.bottom-rect.top,h=owner.clientHeight;
+   if(a<0||b>h)owner.scrollTop+=a-Math.max(0,(h-(r.bottom-r.top))*(force ? .18 : .10));
+  }
+  renderPart(){
+   const owner=this.partScroller(),old=this.wrapped,offset=owner?owner.getBoundingClientRect().top-this.stage.getBoundingClientRect().top:0;
+   const bookmark=old&&this.manual&&offset>=0&&offset<old.height?old.atY(offset).start:null;
+   const ctx=document.createElement('canvas').getContext('2d'),cache=new Map();
+   const measure=(text,kind)=>{
+    const key=kind+':'+text;if(!cache.has(key)){ctx.font=kind==='lyric'?'italic 14px Georgia,serif':'700 15px system-ui';
+     cache.set(key,ctx.measureText(text).width);}return cache.get(key);
+   };
+   const part=this.wrapped=partRows.layout(this.data,this.notes,{width:this.renderWidth,stretch:this.stretch,
+    scale:this.scale,shift:this.shift,chordName:this.chordName,measure});
+   const pitchName=p=>this.chordName(name(p-this.shift).replace(/-?\d+$/,''),this.shift,this.data.key)+(Math.floor(p/12)-1);
+   const content=document.createDocumentFragment(),ruler=this.data.bars;
+   for(const r of part.rows){
+    const a=r.segments[0].bar.number,b=r.segments.at(-1).bar.number,endX=r.x(r.z);
+    const g=svg('g',{class:'pitch-system','data-first':a,'data-last':b,'data-start-time':r.start,'data-end-time':r.end,
+     'aria-label':a===b?'Measure '+a:`Measures ${a} to ${b}`});
+    if(r.range){
+     g.dataset.low=r.range.lo;g.dataset.high=r.range.hi;
+     for(const {p,degree} of r.range.guides)g.append(svg('line',{x1:part.left,x2:endX,y1:r.y(p),y2:r.y(p),class:'pitch-guide degree-'+degree,'data-pitch-guide':p}));
+     g.append(svg('text',{x:part.left-5,y:r.y(r.range.ref)+3,'text-anchor':'end',class:'pitch-reference'},pitchName(r.range.ref)));
+    }
+    const edgeBottom=r.range?r.pitchBottom+6:r.bottom;
+    r.loop=svg('g',{});g.append(r.loop);
+    for(const [j,s] of r.segments.entries()){
+     const bar=s.bar,x=r.x(s.q),continuation=s.q>bar.q+.00001;
+     const mark=svg('g',{'data-measure':bar.number});
+     mark.append(svg('line',{x1:x,x2:x,y1:r.top+16,y2:edgeBottom,class:'pitch-barline'}));
+     mark.append(svg('text',{x:x+3,y:r.top+12,class:'pitch-measure'},bar.number+(continuation?' (cont.)':'')));
+     if(!continuation&&(!j||ruler[bar.number-2]?.meter!==bar.meter))
+      mark.append(svg('text',{x:x+24,y:r.top+12,class:'pitch-meter'},bar.meter));
+     mark.append(svg('rect',{x,y:r.top,width:r.x(s.z)-x,height:18,class:'pitch-measure-hit'}));
+     mark.append(svg('title',{},`Measure ${bar.number}, ${bar.meter}, ${clock(part.seconds(s.q))}`));g.append(mark);
+    }
+    g.append(svg('line',{x1:endX,x2:endX,y1:r.top+16,y2:edgeBottom,class:'pitch-barline'}));
+    if(r.carried)g.append(svg('text',{x:part.left-5,y:r.top+31,'text-anchor':'end',class:'pitch-carried'},r.carried.text));
+    for(const c of r.chords)g.append(svg('text',{x:r.x(c.q)+2,y:r.top+32,class:'pitch-chord','data-time':c.t,'data-chord':c.raw},c.text));
+    const lyrics=new Map(r.lyrics.map(l=>[l.n,l]));
+    for(const [j,w] of r.notes.entries()){
+     const n=w.n,x=r.x(Math.max(w.q,r.q)),end=r.x(Math.min(w.z,r.z)),y=r.y(n.pitch);
+     const group=svg('g',{'data-start':n.start,'data-pitch':n.pitch,'data-role':n.role});
+     group.append(svg('rect',{x,y:y-3.5,width:Math.max(.8,end-x-(w.z<=r.z?1:0)),height:7,class:'harmony-note'}));
+     group.append(svg('title',{},`${n.lyric||'melisma'}: ${pitchName(n.pitch)}, ${clock(n.start)}`));
+     const next=r.notes[j+1];
+     if(n.slurToNext&&next?.n.phrase===n.phrase&&Math.abs(next.q-w.z)<.0001){
+      const y2=r.y(next.pitch);
+      group.append(svg('path',{d:`M ${end-3} ${y} C ${end+2} ${y}, ${end-2} ${y2}, ${end+3} ${y2}`,class:'harmony-slur'}));
+     }
+     const l=lyrics.get(n);
+     if(l)group.append(svg('text',{x:r.x(l.q)-l.before,y:r.base,class:'harmony-lyric'},n.lyric));
+     g.append(group);
+    }
+    r.trace=svg('g',{class:'pitch-system-trace','aria-hidden':'true'});r.paths=new Map();g.append(r.trace);content.append(g);
+   }
+   this.score.replaceChildren(content);this.width=part.width;this.height=part.height;
+   this.score.setAttribute('width',part.width);this.score.setAttribute('height',part.height);
+   this.score.setAttribute('aria-label','Bass part with concert chords, wrapped by measure');
+   this.stage.style.width=part.width+'px';this.stage.style.height=part.height+'px';
+   this.setLoop(this.loop,this.loop?.enabled);this.paintPartTrace();this.followed=null;
+   if(bookmark!==null&&owner)owner.scrollTop+=part.atTime(bookmark).top-offset;
+   this.move(this.time,false);
+  }
+  paintPartTrace(){
+   const part=this.wrapped,frames=this.trace.frames;
+   if(part.frames!==frames){
+    part.frames=frames;part.painted=0;part.prev=null;
+    for(const r of part.rows){r.trace.replaceChildren();r.paths.clear();}
+   }
+   const dirty=new Set();
+   for(;part.painted<frames.length;part.painted++){
+    const f=frames[part.painted],t=(f.start+f.end)/2,r=part.atTime(t),p=f.cents/100;
+    if(!Number.isFinite(f.cents)||!r.range||t<r.start||t>=r.end||p<r.range.lo-.5||p>r.range.hi+.5){part.prev=null;continue;}
+    const x=r.x(part.quarter(t)).toFixed(2),y=r.y(p).toFixed(2),n=target(this.notes,t);
+    const color=errorColor(n?grade.octaveError(f.cents-100*n.pitch):100);
+    let path=r.paths.get(color);
+    if(!path){
+     path={el:svg('path',{stroke:color}),d:''};r.trace.append(path.el);r.paths.set(color,path);
+    }
+    const prev=part.prev;
+    path.d+=prev&&prev.r===r&&f.start-prev.end<.05&&Math.abs(prev.pitch-p)<5?
+     (prev.path===path?'':`M${prev.x} ${prev.y}`)+`L${x} ${y}`:`M${x} ${y}l0 .1`;
+    part.prev={r,path,x,y,end:f.end,pitch:p};dirty.add(path);
+   }
+   for(const p of dirty)p.el.setAttribute('d',p.d);
+  }
   render(){
    if(!this.data)return;
    this.cancelPreview();
+   this.renderWidth=this.viewport.clientWidth;
+   if(this.data.kind==='bass'){if(this.renderWidth)this.renderPart();return;}
+   this.score.setAttribute('aria-label','Harmony pitchbars');
    const minNote=Math.min(...this.notes.map(n=>n.pitch)),maxNote=Math.max(...this.notes.map(n=>n.pitch));
    // This reference lane stays bounded by its written part, never microphone errors.
    this.low=minNote;this.high=maxNote;
-   this.step=12*this.scale/100;this.top=28;this.bottom=this.top+(this.high-this.low)*this.step;
+   const chords=this.data.chords||[];
+   this.step=12*this.scale/100;this.top=chords.length?57:28;this.bottom=this.top+(this.high-this.low)*this.step;
    const shortest=Math.min(...this.notes.map(n=>n.end-n.start));this.pps=16/shortest*this.stretch/100;
+   if(chords.length>1){
+    const measure=document.createElement('canvas').getContext('2d');measure.font='bold 15px system-ui';
+    for(let i=1;i<chords.length;i++)this.pps=Math.max(this.pps,(measure.measureText(this.chordName(chords[i-1][1],this.shift,this.data.key)).width+6)/(chords[i][0]-chords[i-1][0]));
+   }
    this.width=Math.max(this.viewport.clientWidth,80+this.data.seconds*this.pps);
    const y=p=>this.top+(this.high-p)*this.step,x=t=>40+t*this.pps;this.y=y;this.x=x;
    const content=document.createDocumentFragment();
@@ -223,17 +360,19 @@
     if([0,4,7].includes(degree))content.append(svg('line',{x1:0,y1:y(p),x2:this.width,y2:y(p),class:`pitch-guide degree-${degree}`}));
    }
    this.loopLayer=svg('g',{});content.append(this.loopLayer);
-   for(const t of this.beats)content.append(svg('line',{x1:x(t),x2:x(t),y1:24,y2:this.bottom+10,class:'pitch-beatline'}));
-   if(this.bars.length){
-    for(const [i,b] of this.bars.entries()){
+   for(const t of this.data.bars?[]:this.beats)content.append(svg('line',{x1:x(t),x2:x(t),y1:24,y2:this.bottom+10,class:'pitch-beatline'}));
+   const ruler=this.data.bars||this.bars;
+   if(ruler.length){
+    for(const [i,b] of ruler.entries()){
      const g=svg('g',{'data-measure':b.number});
      g.append(svg('line',{x1:x(b.start),x2:x(b.start),y1:23,y2:this.bottom+10,class:'pitch-barline'}));
      g.append(svg('text',{x:x(b.start)+4,y:14,class:'pitch-measure'},b.number));
-     if(!i||b.meter!==this.bars[i-1].meter)g.append(svg('text',{x:x(b.start)+25,y:14,class:'pitch-meter'},b.meter));
+     if(!i||b.meter!==ruler[i-1].meter)g.append(svg('text',{x:x(b.start)+25,y:14,class:'pitch-meter'},b.meter));
      g.append(svg('rect',{x:x(b.start),y:0,width:(b.end-b.start)*this.pps,height:23,class:'pitch-measure-hit'}));
      g.append(svg('title',{},`Measure ${b.number}, ${b.meter}, ${clock(b.start)}; select measure`));content.append(g);
     }
    }else for(let t=0;t<=this.data.seconds;t+=2)content.append(svg('text',{x:x(t),y:14,class:'pitch-second'},clock(t)));
+   for(const [t,ch] of chords)content.append(svg('text',{x:x(t)+2,y:38,class:'pitch-chord','data-time':t,'data-chord':ch},this.chordName(ch,this.shift,this.data.key)));
    const measure=document.createElement('canvas').getContext('2d');measure.font='italic 14px Georgia';const ends=[];
    for(const [i,n] of this.notes.entries()){
     const group=svg('g',{'data-start':n.start,'data-pitch':n.pitch,'data-role':n.role});
@@ -255,18 +394,35 @@
    this.paintTrace();this.dirty=true;
   }
   move(time,playing,force=false){
-   this.time=time;if(!this.data)return;const x=this.x(time),v=this.viewport;
+   this.time=time;if(!this.data)return;const v=this.viewport;
+   if(this.data.kind==='bass'){
+    if(!this.wrapped||!v.clientWidth)return;
+    const r=this.wrapped.atTime(time),x=r.x(this.wrapped.quarter(time));
+    this.cursor.style.transform=`translate(${x}px,${r.top}px)`;
+    this.cursor.style.height=((r.range?r.pitchBottom+6:r.bottom)-r.top-20)+'px';
+    if(force)this.manual=false;
+    if(force||playing&&!this.manual&&r!==this.followed)this.followRow(r,force);
+    this.followed=r;
+   }else{
+   if(!this.x)return;const x=this.x(time);
    this.cursor.style.transform=`translateX(${x}px)`;
    if(force){this.manual=false;v.scrollLeft=clamp(x-80,0,this.width-v.clientWidth);}
    else if(playing&&!this.manual&&(x>v.scrollLeft+v.clientWidth*.82||x<v.scrollLeft+35))v.scrollLeft=clamp(x-v.clientWidth*.22,0,this.width-v.clientWidth);
+   }
    const now=performance.now();if(force||this.dirty&&now-this.lastPaint>70){this.paintTrace();this.lastPaint=now;}
    if(now-(this.lastStats||0)>300){this.paintStats();this.lastStats=now;}
   }
   paintTrace(){
+   if(this.wrapped){this.paintPartTrace();this.dirty=false;return;}
    if(!this.data||!this.y)return;this.dirty=false;
    const dpr=Math.min(2,window.devicePixelRatio||1),w=this.viewport.clientWidth,h=this.height,left=this.viewport.scrollLeft,c=this.canvas.getContext('2d');
    this.canvas.width=Math.ceil(w*dpr);this.canvas.height=Math.ceil(h*dpr);this.canvas.style.width=w+'px';this.canvas.style.height=h+'px';this.canvas.style.left=left+'px';c.scale(dpr,dpr);
    const style=getComputedStyle(this.root);c.fillStyle=style.getPropertyValue('--bg');c.fillRect(0,18,36,this.bottom-10);c.fillStyle=style.getPropertyValue('--muted');c.font='11px system-ui';
+   const carried=this.data.chords?.findLast(([t])=>this.x(t)+2<left+36);
+   if(carried){
+    c.save();c.beginPath();c.rect(0,20,36,22);c.clip();c.font='600 12px system-ui';
+    c.fillText(this.chordName(carried[1],this.shift,this.data.key),3,38);c.restore();
+   }
    for(let p=this.low;p<=this.high;p++)if(((p-this.data.tonic-this.shift)%12+12)%12===0)c.fillText(name(p),3,this.y(p)+3);
    // Preserve raw outliers for scoring, but don't paint them over lyrics or the ruler.
    c.save();c.beginPath();c.rect(36,this.top-5,Math.max(0,w-36),this.bottom-this.top+10);c.clip();

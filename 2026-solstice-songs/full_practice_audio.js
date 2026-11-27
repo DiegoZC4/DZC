@@ -1,6 +1,24 @@
 /* Full-length multistem adapter using the audition player's Signalsmith processor. */
 (function(root){'use strict';
 const CONTROL_HZ=1000,BUFFER_HZ=8000,CLOCK_RATIO=CONTROL_HZ/BUFFER_HZ;
+const isVocal=id=>['vocals','vocal','harmony-vocals'].includes(id);
+function vocalSplit(song,book){
+ const row=book?.[song.id+'/'+(song.referenceId||'playlist')],original=song.tracks.find(t=>t.id==='vocals');
+ return row&&original&&row.source===original.sha256&&row.clock===original.playback?.sha256&&
+  row.lanes?.length===2&&row.lanes.every((l,i)=>l.index.id===['vocals','harmony-vocals'][i]&&
+  l.index.frames===original.playback.frames&&l.index.start===0&&l.src.includes(l.index.digest.slice(0,16)))?row:null;
+}
+function mixerTracks(song,split){
+ return [...song.tracks.flatMap(t=>t.id!=='vocals'||!split?[t]:split.lanes.map(({label,src,index:x})=>({
+  id:x.id,label,sha256:x.digest,playback:{src,sha256:x.digest,frames:x.frames,sampleRate:24000,channels:x.channels}
+ }))),...(song.guides||[])];
+}
+function splitIndex(index,song){
+ const key=song.id+'/'+(song.referenceId||'playlist'),row=index?.recordings?.[key],split=song.vocalSplit;
+ if(!split||!row)return index;
+ if(!row.tracks.some(t=>t.id==='vocals'&&t.source===split.clock))return null;
+ return {...index,recordings:{[key]:{...row,tracks:row.tracks.flatMap(t=>t.id==='vocals'?split.lanes.map(l=>l.index):[t])}}};
+}
 function vocalEdges(rec){
  const e=rec?.vocalBoundaries,v=rec?.tracks?.find(t=>t.id==='vocals')?.playback;
  return e&&v&&e.vocalSha256===v.sha256&&[e.onset,e.entry,e.outro].every(Number.isFinite)&&
@@ -64,9 +82,9 @@ class Deck{
    control.start(at,offset*CLOCK_RATIO);if(!loop)control.stop(at+(duration-offset)/this.rate);this.nodes.push(control);
   }
   const growing=this.stream&&(!this.stream.complete||this.canFeed&&this.uploaded<this.stream.frames);
-  this.gains=this.buffers.map((buffer,i)=>{const g=this.context.createGain();g.gain.value=mix[i].on?mix[i].level:0;g.connect(['vocals','vocal'].includes(this.ids[i])?gate:band);
+  this.gains=this.buffers.map((buffer,i)=>{const g=this.context.createGain();g.gain.value=mix[i].on?mix[i].level:0;g.connect(isVocal(this.ids[i])?gate:band);
    if(growing&&!this.worklets[i])return g;
-   const n=this.worklets[i]||this.context.createBufferSource();n.connect(g);if(this.worklets[i]){void n.start({active:true,output:at,input:offset,rate:this.rate,semitones:this.semitones(this.ids[i]),formantSemitones:0,formantCompensation:this.ids[i]==='vocals'&&this.shift!==0,formantBaseHz:0,loopStart,loopEnd:loop?duration:0});}else{n.buffer=buffer;n.loop=loop;n.loopStart=loopStart;n.loopEnd=duration;n.start(at,offset);if(!loop)n.stop(at+(duration-offset)/this.rate);this.nodes.push(n);}return g;});
+   const n=this.worklets[i]||this.context.createBufferSource();n.connect(g);if(this.worklets[i]){void n.start({active:true,output:at,input:offset,rate:this.rate,semitones:this.semitones(this.ids[i]),formantSemitones:0,formantCompensation:isVocal(this.ids[i])&&this.shift!==0,formantBaseHz:0,loopStart,loopEnd:loop?duration:0});}else{n.buffer=buffer;n.loop=loop;n.loopStart=loopStart;n.loopEnd=duration;n.start(at,offset);if(!loop)n.stop(at+(duration-offset)/this.rate);this.nodes.push(n);}return g;});
   if(growing){this.job={at,offset,end:duration,loop,loopStart,next:offset};this.extend();}
  }
  clearLimit(){
@@ -104,5 +122,5 @@ class Deck{
  closeWorklets(){this.canFeed=false;this.uploaded=0;this.feeding=null;this.worklets.forEach(n=>{n.disconnect();n.port.close();});this.worklets=[];this.prepared=null;}
  clear(){this.token++;this.unlisten?.();this.unlisten=null;this.stream=null;this.stop();this.closeWorklets();this.buffers=[];this.envelope=null;}
 }
-root.MeleteFullPracticeAudio={Deck,vocalEdges,listenEnd};
+root.MeleteFullPracticeAudio={Deck,vocalEdges,listenEnd,isVocal,vocalSplit,mixerTracks,splitIndex};
 })(globalThis);

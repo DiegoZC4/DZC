@@ -1,15 +1,19 @@
 {
   "songs": {
     "the-circle":[0,16],
+    "autumn":[26],
+    "autumn":[26],
     "hymn-to-breaking-strain":[1,6],
     "bold-orion":[0,18,16],
     "who-by-fire":[3,0],
     "no-one-survives":[4,20,21],
     "auld-lang-syne":[5,21,22],
-    "songs-stay-sung":[6,0],
+    "songs-stay-sung":[26,0],
+    "the-seed":[26],
+    "the-seed":[26],
     "ballad-of-smallpox-gone":[7,23],
     "here-comes-the-sun":[8,24],
-    "a-toast-for-unknown-heroes":[9,25],
+    "a-toast-for-unknown-heroes":[27,9,25],
     "brighter-than-today":[10,21],
     "song-of-the-artesian-water":[11,0,16]
   },
@@ -32,6 +36,8 @@
     "22":{"label":"Tine piano","name":"Warm Tine Piano","zones":[{"gm":4}]},
     "23":{"label":"Wood marimba","name":"Wood Marimba","zones":[{"gm":12}]},
     "24":{"label":"Flute","name":"Flute Answer","zones":[{"gm":73}]},
-    "25":{"label":"Concertina-style reed","name":"Concertina Reed","zones":[{"gm":23}]}
+    "25":{"label":"Concertina-style reed","name":"Concertina Reed","zones":[{"gm":23}]},
+    "26":{"label":"Soft strings","name":"Stay Soft Strings","zones":[{"gm":48,"filter":-480,"dry":true}]},
+    "27":{"label":"Crystal bells","name":"Heroes Crystal Bells","previewNote":76,"zones":[{"gm":98,"filter":-220}]}
   }
 }

@@ -20,7 +20,8 @@
   <script defer src="shared/live_pitch.js?v=22db73490ab4"></script>
   <script defer src="full_practice_input.js?v=a8ef0ccd95b1"></script>
   <script defer src="full_practice_loop.js?v=e2cf2902feae"></script>
-  <script defer src="full_practice_pitch.js?v=546875b08614"></script>
+  <script defer src="full_practice_pitch_rows.js?v=56f4f083d3cb"></script>
+  <script defer src="full_practice_pitch.js?v=30797ab32731"></script>
   <script defer src="full_practice_range_art.js?v=0cb7a086b80f"></script>
   <script defer src="full_practice_range.js?v=272c1d944a69"></script>
   <script defer src="full_practice_tab.js?v=cdbb1894a4df"></script>
@@ -34,11 +35,11 @@
   <script defer src="vendor/settings-help.js?v=535304bbce6f"></script>
   
   
-<script defer src="full_practice_keys.js?v=a45746ade2b1"></script><script defer src="full_practice_stream.js?v=50817dc3238d"></script>
-<link rel="stylesheet" href="full-practice.css?v=ae3dbfbf0cda"><script defer src="full_practice_audio.js?v=02ada47eed79"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=c223dd5e8d40"></script><script defer src="full_practice_click.js?v=3bb0e4c17ecc"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=8e00ab01601c"></script><script defer src="full_practice_entrances.js?v=bdb2ebd83002"></script><script defer src="full_practice_voicings.js?v=7494b0f6fe5e"></script><script defer src="full_practice_lyric_follow.js?v=f67fd014c4bd"></script><script defer src="full-practice.js?v=5a14f26a2ca3"></script></head>
+<script defer src="full_practice_choir_cues.js?v=93e8b6496ab5"></script><script defer src="full_practice_keys.js?v=3b7a83d31cbc"></script><script defer src="full_practice_stream.js?v=50817dc3238d"></script>
+<link rel="stylesheet" href="full-practice.css?v=0e3737bb1304"><script defer src="full_practice_audio.js?v=be195b489dac"></script><script defer src="full_practice_recording.js?v=8f3e409d61fa"></script><script defer src="full_practice_tracks.js?v=89e1f57a7f25"></script><script defer src="full_practice_loader.js?v=c223dd5e8d40"></script><script defer src="full_practice_click.js?v=3bb0e4c17ecc"></script><script defer src="full_practice_chart.js?v=15f0a60ea69e"></script><script defer src="full_practice_lead.js?v=7ca99f8aebaf"></script><script defer src="full_practice_singer.js?v=15b8bb2dd24d"></script><script defer src="full_practice_entrances.js?v=4cd92f956541"></script><script defer src="full_practice_voicings.js?v=7494b0f6fe5e"></script><script defer src="full_practice_lyric_follow.js?v=f67fd014c4bd"></script><script defer src="full-practice.js?v=e1e507bab158"></script></head>
 <body>
   <div class="workspace" id="practiceView">
-    <aside aria-label="Program songs"><h1 class="sidebar-title">2026 Solstice Songs</h1><div id="songList"></div></aside>
+    <aside aria-label="Program running order"><h1 class="sidebar-title">2026 Solstice Songs</h1><div id="songList"></div></aside>
     <main>
       <p id="cutLabel" class="cut-label" hidden></p>
       <div id="pending" hidden></div>
@@ -69,6 +70,7 @@
           <label id="referenceChoice" for="referenceRecording" hidden>Recording <select id="referenceRecording" data-help="Switch performances, including stems, click and lyric cues. Your recorded tracks stay on this device."></select></label>
           <!-- YouTube: unchanged Simple Icons path, CC0; Google LLC trademark. -->
           <a id="source" class="icon source-link" target="_blank" rel="noopener noreferrer" hidden><svg class="youtube-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="7" width="9" height="10" fill="white"></rect><path fill="#ff0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg><i data-lucide="external-link"></i></a>
+          <nav id="performanceHistory" aria-label="Past Solstice performances" hidden></nav>
           <a id="songbook" class="song-resource" target="_blank" rel="noopener noreferrer" hidden><i data-lucide="book-open" aria-hidden="true"></i><span>Solstice songbook</span></a>
           <a id="songReference" class="song-resource" target="_blank" rel="noopener noreferrer" hidden></a>
           </div>
@@ -109,6 +111,7 @@
           <label for="keysRoute">Keys</label><select id="keysRoute" aria-label="Keyboard output"><option value="off">Off</option><option value="browser">Browser</option><option value="logic">Logic Pro</option></select>
           <select id="keysPatch" aria-label="Song keyboard patch" disabled></select>
           <button type="button" class="icon" id="keysPreview" aria-label="Audition keyboard patch" disabled><i data-lucide="piano"></i></button>
+          <span id="keysLevelGroup"><label for="keysLevel">Vol</label><button type="button" id="keysLevel" class="scale-number" aria-label="Keyboard patch volume" data-help="Keyboard patch volume only. Drag up or down; click to add 10%."></button></span>
           <button type="button" id="keysConnect" hidden>Connect MIDI</button><select id="keysInput" aria-label="MIDI keyboard input" hidden></select>
           <output id="keysStatus" role="status" hidden></output>
         </div>
@@ -150,7 +153,7 @@
         </div>
         <section id="lyricSheet" class="lyric-sheet" aria-labelledby="lyricHeading">
           <div class="lyric-heading"><h2 id="lyricHeading">Lead sheet</h2>
-            <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view" hidden><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lead" aria-selected="true" aria-controls="leadBody">Lead sheet</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1">Tabs</button></div>
+            <div id="lyricView" class="source-pill lyric-view" role="tablist" aria-label="Practice chart view"><span class="pill-thumb" aria-hidden="true"></span><button type="button" role="tab" data-view="lead" aria-selected="true" aria-controls="leadBody">Lead sheet</button><button type="button" role="tab" data-view="lyrics" aria-selected="false" aria-controls="lyricBody" tabindex="-1">Lyrics</button><button type="button" role="tab" data-view="bass" aria-selected="false" aria-controls="bassBody" tabindex="-1" hidden>Bass</button><button type="button" role="tab" data-view="tabs" aria-selected="false" aria-controls="guitarTab" tabindex="-1" hidden>Tabs</button></div>
             <button id="openChartReader" class="icon" type="button" aria-haspopup="dialog" aria-controls="chartReader" title="Fullscreen reader" aria-label="Fullscreen reader"><i data-lucide="maximize-2"></i></button>
             <div id="chordPitchControls" class="chord-pitch-controls" role="group" aria-label="Written chord pitch">
               <button type="button" class="setting-toggle" id="concertPitch" aria-pressed="true" title="Show sounding chords instead of guitar shapes">Concert pitch</button>
@@ -159,6 +162,7 @@
             </div>
           </div>
           <div id="leadDisplay" class="lyric-display lead-display" role="group" aria-label="Lead sheet display" hidden>
+            <button type="button" class="setting-toggle" id="leadCompact" aria-pressed="false" aria-controls="leadBody" title="Stack matching verses and choruses">Compact</button>
             <button type="button" class="setting-toggle" id="leadNumbers" aria-pressed="true" aria-controls="leadBody">Bar numbers</button>
             <div class="lead-layer"><button type="button" class="setting-toggle" id="leadChords" aria-pressed="true" aria-controls="leadBody">Chords</button>
               <button id="leadChordSize" type="button" class="scale-number" aria-label="Chord font size" title="Chord size: drag, scroll, or click for +1 px.">16 px</button></div>
@@ -168,7 +172,17 @@
             <button type="button" id="leadAnnotate" aria-haspopup="dialog" aria-controls="entranceEditor" title="Annotate instrument entrances" disabled><i data-lucide="pencil"></i>Annotate</button>
           </div>
           <div id="leadBody" class="lead-sheet" tabindex="0" role="region" aria-label="Lead sheet" hidden></div>
+          <div id="bassBody" role="region" aria-label="Bass vocal and concert-pitch strings chords" hidden><output id="bassState" role="status"></output></div>
           <button id="leadReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to current measure"><i data-lucide="arrow-up"></i></button>
+          <div id="singerTools" class="singer-tools" role="group" aria-label="Soloist lyrics" hidden>
+            <span id="audienceCue"></span>
+            <button type="button" id="singerSize" class="scale-number" aria-label="Soloist lyric size" title="Lyric size: drag, scroll, or click for +1 px.">20 px</button>
+            <button type="button" id="copySongLyrics" class="icon" title="Copy this song with slide breaks and bold" aria-label="Copy formatted song lyrics" disabled><i data-lucide="copy"></i></button>
+            <button type="button" id="downloadAllLyrics" class="icon" title="Download all songs as Markdown" aria-label="Download all songs as Markdown" disabled><i data-lucide="file-down"></i></button>
+            <output id="singerFeedback" class="sr-only" aria-live="polite"></output>
+          </div>
+          <div id="lyricBody" tabindex="0" role="region" aria-label="Soloist lyrics" hidden></div>
+          <button id="singerReturn" class="lyric-return" type="button" hidden tabindex="-1" aria-hidden="true" aria-label="Return to current lyric"><i data-lucide="arrow-up"></i></button>
         <div id="guitarTab" class="guitar-tab" aria-label="Guitar tablature" hidden>
           <div id="tabDisplay" class="lyric-heading" hidden>
             <label for="tabSize">Tab size</label><button id="tabSize" type="button" class="scale-number" aria-label="Tab font size" title="Fret size: drag vertically, scroll, or click for +1 px.">15 px</button>
@@ -184,6 +198,16 @@
     </main>
   </div>
   <div id="status" role="status" aria-live="polite"></div>
+  <template id="choirCueTemplate">
+    <div class="choir-cue">
+      <h2></h2><p>Buck &middot; Soft strings</p>
+      <button type="button" class="choir-chord">
+        <span class="cue-ink" aria-hidden="true"></span>
+        <span class="cue-caption"><i data-lucide="volume-2" aria-hidden="true"></i><span class="cue-notes"></span></span>
+      </button>
+      <output class="cue-error" role="status"></output>
+    </div>
+  </template>
   <dialog id="chartReader" aria-label="Fullscreen music reader">
     <div id="readerPanel">
       <nav class="reader-nav" aria-label="Song navigation">
@@ -196,6 +220,7 @@
       </nav>
       <div id="readerViewTools"></div>
       <div id="readerContent"></div>
+      <div id="readerRunningOrder" role="note" aria-label="After this song" hidden></div>
       <p id="readerError" role="status" hidden></p>
       <div id="readerTransport" hidden>
         <div class="reader-scrub"><output id="readerTime">0:00</output><input id="readerSeek" type="range" min="0" max="1" value="0" step="any" aria-label="Recording position"></div>

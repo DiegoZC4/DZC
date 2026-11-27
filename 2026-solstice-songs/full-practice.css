@@ -1,5 +1,12 @@
+#songList{position:relative}
 #songList .song-name{font-weight:400}
 #songList .song-name strong{font-weight:700}
+.program-cue{display:flex;align-items:baseline;gap:5px;min-width:0;color:var(--muted);line-height:1.3}
+.program-cue svg{align-self:flex-start;flex:none;width:13px;height:13px;margin-top:1px}
+#songList .program-cue{margin:2px 4px 5px 18px;font-size:12px}
+#readerRunningOrder{flex:none;display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:3px 10px;padding:4px max(10px,env(safe-area-inset-right)) 4px max(10px,env(safe-area-inset-left));border-top:1px solid var(--line);font-size:13px;line-height:1.3}
+#readerRunningOrder[hidden]{display:none}
+@media(max-width:800px){#songList .program-cue{flex:none;max-width:10rem;margin:0 3px}}
 .full-presets,.track-tools{display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap}
 .reference-tools,#referenceChoice{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;font-size:12px}
 .reference-tools{flex-wrap:wrap}
@@ -15,9 +22,19 @@
 #songParts button[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
 #referenceRecording{min-width:0;max-width:100%;height:32px;font:inherit}
 .reference-tools #source{width:32px;flex:0 0 32px}
+#performanceHistory{display:inline-flex;align-items:baseline;gap:7px;flex-wrap:wrap;max-width:100%;font-size:12px}
+#performanceHistory[hidden]{display:none}
+#performanceHistory a{color:inherit;text-underline-offset:3px;overflow-wrap:anywhere}
+#performanceHistory summary{color:var(--muted);cursor:pointer;padding-block:5px}
+#performanceHistory ul{list-style:none;border-inline-start:1px solid var(--line);padding:2px 0 2px 8px;margin:0 0 4px}
+#performanceHistory li{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;padding-block:3px}
+#performanceHistory small{color:var(--muted)}
 @media(max-width:600px){#player .transport-controls{column-gap:6px}}
 .pulse-controls,#countInControls{display:inline-flex;align-items:center;gap:5px}#countInBeats{min-width:6ch;font-variant-numeric:tabular-nums;white-space:nowrap}
 .keyboard-patches{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:4px 0 8px}.keyboard-patches label,.keyboard-patches output{font-size:12px}.keyboard-patches select{max-width:100%}.keyboard-patches [hidden]{display:none}
+#keysLevelGroup{display:inline-flex;align-items:center;gap:4px;font-size:12px}
+#keysLevel{width:54px;justify-content:center;cursor:ns-resize;touch-action:none;font-variant-numeric:tabular-nums}
+.choir-cue #keysLevelGroup{display:flex;width:max-content;margin-top:6px}
 .measure-loop{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .measure-loop>button{border:0;border-radius:0;height:32px;min-height:32px;padding:3px 5px;background:transparent}
 .measure-loop .loop-point{width:46px;min-width:46px;font-size:12px;font-variant-numeric:tabular-nums}
@@ -39,6 +56,16 @@
 .measure-ruler-row line,.pitch-barline{stroke:var(--muted);stroke-width:1;opacity:.5}
 .pitch-beatline{stroke:var(--muted);stroke-width:1;opacity:.12;stroke-dasharray:2 4}
 .pitch-measure{font:600 11px system-ui;fill:var(--ink)}
+.pitch-chord{font:700 15px system-ui;fill:var(--ink)}
+#bassBody{min-width:0;width:100%;max-width:100%}
+#bassBody .harmony-practice{border-block-start:0;margin:0}
+#bassState:empty{display:none}
+#readerContent #bassBody{overflow-y:auto}
+#readerContent #bassBody:not([hidden]),#readerContent #bassBody .harmony-practice{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+#readerContent #bassBody .harmony-viewport[data-wrapped]{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#readerContent #bassBody .harmony-practice{--bg:var(--page)}
+.harmony-stage [data-role=bass] .harmony-note{fill:var(--lyric-unison,#3976ae)}
+#readerContent :is(#bassBody,#guitarTab)[hidden]{display:none}
 .pitch-meter{font:10px system-ui;fill:var(--muted)}
 .practice-loop-band{fill:var(--accent);opacity:.1;pointer-events:none}
 .practice-loop-band.is-disabled{opacity:.035}
@@ -106,6 +133,11 @@ button.setting-toggle[hidden]{display:none}
 .harmony-viewport:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .harmony-stage{position:relative}
 .harmony-stage>svg{display:block;max-width:none}.harmony-stage>canvas{position:absolute;top:0;pointer-events:none}
+.harmony-viewport[data-wrapped]{overflow:clip;scrollbar-gutter:auto;touch-action:pan-y}
+.harmony-viewport[data-wrapped] .harmony-stage>canvas{display:none}
+.pitch-system-trace{fill:none;stroke-width:1.7;stroke-linecap:round;pointer-events:none}
+.pitch-reference,.pitch-carried{font:11px system-ui;fill:var(--muted)}
+.pitch-guide.degree-3{stroke-dasharray:4 3}
 .harmony-note{fill:#789eb7}.pitch-guide{stroke:var(--muted);opacity:.2}.pitch-guide.degree-0{opacity:.55}.pitch-guide.degree-4{stroke-dasharray:4 3}
 .harmony-slur{fill:none;stroke:var(--ink);stroke-width:1.2;pointer-events:none}
 .harmony-stage{user-select:none}.harmony-stage [data-role=harmony] .harmony-note{fill:var(--lyric-harmony,#c05359)}.harmony-stage [data-role=unison] .harmony-note{fill:var(--lyric-unison,#3976ae)}
@@ -119,6 +151,18 @@ button.setting-toggle[hidden]{display:none}
 .lyric-heading:has(.lyric-display:not([hidden])) #lyricSource{flex-basis:100%}
 #lyricBody{min-height:3em;padding:0 5px 8px 0}
 #lyricBody:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.singer-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 0;font-size:12px;color:var(--muted)}
+.singer-tools #audienceCue{margin-inline-end:auto}
+.singer-tools button{height:30px;min-height:30px}
+.singer-tools .scale-number{font-size:12px;font-variant-numeric:tabular-nums;cursor:ns-resize;touch-action:none}
+.singer-tools .icon{width:32px;padding:3px}
+#lyricBody .singer-slide{margin:0 auto 1em;max-width:58ch;font:400 var(--singer-size,20px)/1.48 system-ui,sans-serif;text-align:start;white-space:normal;overflow-wrap:break-word}
+#lyricBody .singer-slide:first-child{margin-top:.45em}
+.singer-line[role=button]{cursor:pointer;user-select:text;border-radius:2px}
+.singer-line[role=button]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.singer-line.is-recording-line{background:color-mix(in srgb,currentColor 12%,transparent)}
+.singer-line strong{font-weight:750}
+@media(hover:hover){.singer-line[role=button]:hover{text-decoration:underline;text-underline-offset:3px}}
 .lyric-stanza{margin:13px 0 0}.lyric-stanza h3{font-size:11px;line-height:1.35;font-weight:650;color:var(--muted);margin:0 0 3px}
 .lyric-stanza p{font-size:16px;line-height:1.45;font-weight:400;margin:0;overflow-wrap:anywhere;padding-inline-start:1em;text-indent:-1em}
 .lyric-stanza .lyric-seek{font:inherit;color:inherit;text-align:start;display:block;border:0;background:transparent;min-height:0;height:auto;border-radius:2px;padding:0;width:100%;white-space:normal}
@@ -329,14 +373,13 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-sheet:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lead-section{margin:16px 0 4px;font-size:13px;line-height:1.4;font-weight:700;color:var(--accent)}
 .lead-overview{display:flex;justify-content:space-between;align-items:baseline;gap:0 12px}
-.lead-caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;margin:0;color:var(--muted);font-size:11px}
-.lead-caption span{white-space:nowrap}
+.lead-unsynced{margin:4px 0 8px;padding-inline-start:8px;border-inline-start:2px solid var(--muted);font-size:var(--lead-lyric-size,13px)}
+.lead-unsynced strong{display:block;color:var(--muted);font-size:.92em}
+.lead-sheet[data-lyrics=false] .lead-unsynced{display:none}
 .lead-players{display:flex;flex-wrap:wrap;gap:2px 14px;margin:2px 3px 5px;font-size:12px;line-height:1.4}
 .lead-players div{display:flex;flex-wrap:wrap;gap:0 4px}.lead-players dt{font-weight:700}.lead-players dd{margin:0;color:var(--muted)}
-.lead-players dt .entrance-icon{width:14px;height:14px;margin-right:3px;vertical-align:text-bottom}
 .lead-prelude{list-style:none;margin:3px 3px 8px;padding:0;font-size:12px;line-height:1.5}
-.lead-prelude strong{margin-right:5px}.lead-prelude-icons{display:inline-flex;gap:1px;vertical-align:text-bottom;margin-right:4px}
-.lead-prelude-icons .entrance-icon{width:14px;height:14px}
+.lead-prelude summary{width:fit-content;cursor:pointer;color:inherit}
 @container(max-width:440px){.lead-overview{display:block}}
 .lead-form ol{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 4px;list-style:none;margin:0;padding:0}
 .lead-form li{display:inline-flex;align-items:center;gap:4px}
@@ -351,19 +394,49 @@ html:has(#chartReader[open]){overflow:hidden}
 .lead-number{padding:1px 0;font-size:10px;color:inherit}
 .lead-bar[data-pickup=true] .lead-meta{padding-inline:0}.lead-bar[data-pickup=true] .lead-number{font-size:9px}
 .lead-meter{font-size:10px;font-weight:650}
+.lead-meta:has(.lead-band-in){align-items:center;flex-wrap:wrap;column-gap:4px;row-gap:1px}
+.lead-band-in,.lead-band-entry{display:inline-flex;align-items:center;gap:2px;line-height:1;color:var(--sheet-ink)}
+.lead-band-in small,.lead-band-entry{font:650 9px/1 system-ui}
+.lead-band-in .entrance-icon{width:13px;height:13px}
 .lead-cue{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--muted);font:italic 11px/1.3 system-ui}
-.lead-music{display:grid;min-width:0;height:calc(var(--lead-chord-size,16px)*1.4 + 4px)}
+.lead-sheet[data-roadmap] .lead-bar{display:flex;flex-direction:column;justify-content:flex-end}
+.lead-meta:has(.lead-cue[data-by-pass]){flex-wrap:wrap;row-gap:0}
+.lead-cue[data-by-pass]{flex-basis:100%;white-space:normal}
+.lead-music{display:grid;min-width:0;height:calc(var(--lead-chord-size,16px)*1.4*var(--lead-chord-rows,1) + 4px)}
 .lead-slot{position:relative;min-width:0}
 .lead-tick{position:absolute;bottom:1px;block-size:3px;border-inline-start:1px solid var(--line);pointer-events:none}
 .lead-chord{display:block;width:max-content;padding:0 2px 0 var(--beat-inset);white-space:nowrap}
+.lead-harmony{width:max-content}
+.lead-chord-pass{font:650 0.7em/1 system-ui;color:var(--muted);margin-inline-end:2px}
+.lead-bar:has(.lead-lyrics[data-score-timed]) .lead-chord{padding-inline-end:0}
 .lead-chord .sheet-name{font-size:var(--lead-chord-size,16px);line-height:1.35;letter-spacing:0}
 .lead-lyrics{position:relative;height:calc(var(--lead-lyric-size,13px)*1.4 + 2px)}
 .lead-underlay{display:grid;grid-auto-rows:calc(var(--lead-lyric-size,13px)*1.4 + 2px)}
 .lead-underlay .lead-lyrics{grid-column:1}
 .lead-underlay:not(:empty){grid-template-rows:repeat(var(--lead-stanzas,1),calc(var(--lead-lyric-size,13px)*1.4 + 2px))}
-.lead-stanza{margin-right:2px;color:var(--muted);font:600 .72em/1 system-ui}
+.lead-lyrics[data-score-timed] .lead-words{transform-origin:left center}
+.lead-bar{padding-bottom:var(--bar-bottom,5px)}
+.lead-pass-grid{--pass-line:18px;width:max-content;margin:1px 0 5px;border-collapse:separate;border-spacing:0;white-space:nowrap;font:600 11px/1 system-ui;font-variant-numeric:tabular-nums}
+.lead-pass-grid th,.lead-pass-grid td{padding:0;text-align:center;vertical-align:middle;border:0}
+.lead-pass-grid thead th{height:16px;line-height:0}
+.lead-pass-grid thead .entrance-icon{width:14px;height:14px}
+.lead-pass-grid tbody :is(th,td){height:var(--pass-line);min-width:21px;position:relative;box-shadow:inset 0 -1px color-mix(in srgb,currentColor 12%,transparent)}
+.lead-pass-grid tbody tr{cursor:pointer}
+.lead-pass-grid tbody tr:is(:hover,:focus-within){background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.lead-pass-grid .lead-pass-label{padding:0 2px;min-width:13px;min-height:0;background:transparent;border:0;font:inherit;color:var(--muted)}
+.lead-check{display:inline-block;font:700 12px/1 system-ui;transform:translateY(calc(var(--jog,0)*var(--pass-line)))}
+.lead-pass-detail{position:fixed;inset:0;margin:auto;width:max-content;max-width:min(92vw,30rem);height:max-content;max-height:80dvh;overflow:auto;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:inherit;padding:12px 16px}
+.lead-pass-detail::backdrop{background:#0006}
+.lead-pass-detail h3{display:inline-block;font-size:15px;margin:0 35px 8px 0}
+.lead-pass-detail>button{position:absolute;top:4px;right:4px;background:none;border:none;font-size:20px;min-width:32px;min-height:32px}
+.lead-pass-detail dl{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin:3px 0;font-size:13px}
+.lead-pass-detail dt{font-weight:650}.lead-pass-detail dd{margin:0}
+.lead-pass-cues{list-style:none;margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line);font-size:13px;line-height:1.4}
+.lead-pass-cues li{display:grid;grid-template-columns:6em 1fr;gap:6px;margin:3px 0}.lead-pass-cues b{font-variant-numeric:tabular-nums}
 .lead-ending-rule{border-block-start:1px solid var(--bar-rule);height:18px}
+.lead-bar[data-ending-space]::before{content:"";display:block;height:18px;flex:none}
 .lead-volta{display:inline-block;vertical-align:top;border-inline-start:2px solid currentColor;padding:1px 4px;font:600 11px/1.4 system-ui;white-space:nowrap}
+.lead-variant{margin-inline-start:auto;padding-inline-end:2px;white-space:nowrap;font:650 10px/1.4 system-ui;color:var(--sheet-ink)}
 .lead-sheet[data-lyrics=false] .lead-underlay,.lead-bar[data-instrumental-row] .lead-underlay{display:none}
 .lead-bar[data-instrumental-row] .lead-lyrics{display:none}
 .lead-entrance-lane{height:var(--lead-entrance-height,0px)}
@@ -373,13 +446,7 @@ html:has(#chartReader[open]){overflow:hidden}
 .entrance-icon[data-part=guitar-diego]{color:var(--guitar-diego-ink,#ac2735)}
 .entrance-icon[data-part=guitar-mark]{color:var(--guitar-mark-ink,#205e9a)}
 @media(prefers-color-scheme:dark){:root{--guitar-diego-ink:#ffa198;--guitar-mark-ink:#91c9ff}}
-.lead-entrance .entrance-icon{width:13px;height:13px}
-.lead-entrance .cue-name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.lead-band-cue{position:absolute;display:block;width:max-content;max-width:calc(100% - 4px);min-height:0;height:auto;padding:1px 0;border:0;border-radius:2px;background:transparent;color:inherit;text-align:left;font:600 11px/1.25 system-ui}
-.lead-band-caption{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;white-space:normal}
-.lead-band-cue .entrance-icon{width:13px;height:13px;margin-right:1px;vertical-align:text-bottom}
-.lead-band-cue[aria-expanded=true] .lead-band-caption{display:block}
-.lead-band-cue:focus-visible{outline-offset:-1px}
+.lead-entrance svg{width:13px;height:13px;flex:none}
 #entranceEditor{width:min(335px,calc(100vw - 24px));padding:14px;background:var(--surface);color:inherit;border:1px solid var(--line);border-radius:6px}
 #entranceEditor::backdrop{background:rgba(0,0,0,.38)}
 .entrance-heading,.entrance-fields,.entrance-tools,.entrance-choices{display:flex;align-items:center;gap:7px}
@@ -422,9 +489,22 @@ html:has(#chartReader[open]){overflow:hidden}
 #readerContent #guitarTab{display:flex;flex:1;min-height:0;flex-direction:column}
 #readerContent #tabBody{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 max(3px,env(safe-area-inset-right)) 12px max(3px,env(safe-area-inset-left))}
 #readerContent #leadBody{--lead-fill-lines:1;width:100%;min-width:0;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:auto;padding:0 0 12px}
+#readerContent #lyricBody{width:100%;min-width:0;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding:2px max(14px,env(safe-area-inset-left)) 1em}
+#readerViewTools #singerTools{flex:1;padding:0}
+@media(max-width:600px){
+ #readerViewTools:has(#singerTools:not([hidden])){display:grid;grid-template-columns:1fr auto auto auto;column-gap:5px;row-gap:2px}
+ #readerViewTools #singerTools:not([hidden]){display:contents}
+ #readerViewTools:has(#singerTools:not([hidden])) #lyricView{grid-row:1;justify-self:start}
+ #readerViewTools #audienceCue{grid-row:2;grid-column:1/-1;margin:0}
+ #readerViewTools #singerTools button{grid-row:1;min-width:36px;height:36px}
+}
+#readerOptions:has(#readerRef[hidden]):has(#chordPitchControls[hidden]){display:none}
+#chartReader[data-view=lyrics] .reader-nav:has(#readerRef[hidden]){grid-template-columns:40px minmax(0,24rem) 40px 40px 40px}
+@media(max-width:650px){#chartReader[data-view=lyrics] .reader-nav:has(#readerRef[hidden]){grid-template-columns:44px minmax(0,1fr) repeat(3,44px)}}
 @media(max-width:1110px),(pointer:coarse) and (hover:none){
  .rehearsal-layout:has(#lyricSheet[data-view=lead]){grid-template-columns:minmax(0,1fr)}
  #lyricSheet[data-view=lead]{max-width:none;border-inline:0;padding-inline:0}
+ #lyricSheet[data-view=bass]{max-width:none;border-inline:0;padding-inline:0}
  #lyricSheet #leadBody{--lead-fill-lines:1;max-height:none;overflow:auto;scrollbar-gutter:auto;padding-inline:0}
 }
 @media screen{
@@ -440,10 +520,9 @@ html:has(#chartReader[open]){overflow:hidden}
  :where(#readerPanel:has(#leadBody)) button:enabled:hover{background-color:var(--hover)}
  #readerContent #leadBody{background:var(--page)}
  #readerContent .lead-form{padding-inline:2px}
- #readerContent .lead-caption{margin:0 3px 2px}
  #readerContent .lead-section{margin:6px 0 1px;line-height:1.2}
  #readerContent .lead-bars{row-gap:3px}
- #readerContent .lead-bar{padding-bottom:2px}
+ #readerContent .lead-bar{--bar-bottom:2px}
  #readerContent .lead-bar.is-recording-line{background:transparent;box-shadow:inset 1px 0 var(--bar-rule),inset -1px 0 var(--bar-rule),inset 0 -2px currentColor}
 }
 @media screen and (max-width:800px){
@@ -461,4 +540,21 @@ html:has(#chartReader[open]){overflow:hidden}
  #guitarTab{flex:1}
  #lyricSheet>.lyric-heading,#guitarTab>.lyric-heading,#leadDisplay,#lyricLegend{flex:none}
  #lyricSheet :is(#tabBody,#chartBody,#leadBody,#lyricBody){flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+ #lyricSheet #bassBody:not([hidden]),#lyricSheet #bassBody .harmony-practice{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+ #lyricSheet #bassBody .harmony-viewport[data-wrapped]{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 }
+body[data-pitch-cue] :is(#player>.toolbar,#player>.full-presets,.rehearsal-mix,#keysPreview,#readerViewTools,#readerOptions,#readerPlay,#readerTransport,#lyricView,#leadDisplay,#chordPitchControls){display:none}
+body[data-pitch-cue] .rehearsal-layout{display:block}
+body[data-pitch-cue] #lyricSheet{padding:0;border:0}
+body[data-pitch-cue] .lyric-heading{justify-content:flex-end}
+body[data-pitch-cue] #readerPanel .reader-nav{grid-template-columns:auto minmax(0,1fr) auto auto}
+.choir-cue{padding:12px 14px;color:inherit}
+.choir-cue h2{margin:0;font-size:20px;line-height:1.25}
+.choir-cue p,.cue-caption{font-size:14px;color:var(--muted)}
+.choir-cue p{margin:4px 0 12px}
+.choir-chord{display:inline-grid;width:min(218px,100%);height:auto;gap:8px;justify-items:start;padding:9px;background:transparent;color:inherit;border:1px solid transparent}
+.choir-chord:is(:hover,:focus-visible){border-color:var(--line)}
+.cue-ink,.cue-ink>svg{display:block;width:100%;height:auto;fill:currentColor}
+.cue-caption{display:inline-flex;align-items:center;gap:8px;white-space:pre;font-variant-numeric:tabular-nums}
+.cue-caption svg{width:16px;height:16px}
+.cue-error:not(:empty){display:block;color:var(--muted)}

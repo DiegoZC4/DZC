@@ -1,9 +1,9 @@
 /* One split-patch bank for the browser keyboard and Logic's DLSMusicDevice. */
 (function(root){'use strict';
 const asset='vendor/solstice-keys/',logicName='Logic Pro Virtual In';
-function bind({route,patch,preview,connect,input,message,saved,save}){
+function bind({route,patch,preview,connect,input,message,level=100,saved,save}){
  let book,bookTask,slug,program=0,mode='off',epoch=0,ctx,synth,synthTask,midi,accessTask,source,dest,portEpoch=0;
- let timers=[];
+ let timers=[],cueNotes=null,previewRequest=0,keysGain;
  const info=s=>{message.textContent=s;message.hidden=!s;};
  const noteName=n=>['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][n%12]+(Math.floor(n/12)-1);
  function describe(p){
@@ -15,6 +15,18 @@ function bind({route,patch,preview,connect,input,message,saved,save}){
   if(mode==='browser')synth?.sendMessage(bytes);
   else if(mode==='logic'&&dest?.state==='connected')dest.send(bytes);
  }
+ function logicVolume(){
+  // CC7 has no above-unity range: use the usual channel volume at 100% and its remaining headroom to 200%.
+  send([0xb0,7,Math.round(level<=100?level:100+(level-100)*.27)]);
+ }
+ function setLevel(value){
+  level=value;
+  if(mode==='logic')logicVolume();
+  if(keysGain){
+   const g=keysGain.gain,now=ctx.currentTime,from=g.value;
+   g.cancelScheduledValues(now);g.setValueAtTime(from,now);g.linearRampToValueAtTime(level/50,now+.012);
+  }
+ }
  function release(){
   timers.forEach(clearTimeout);timers=[];
   send([0xb0,64,0]);send([0xb0,120,0]);
@@ -22,6 +34,7 @@ function bind({route,patch,preview,connect,input,message,saved,save}){
  function apply(){
   release();
   for(const b of [[0xb0,0,0],[0xb0,32,0],[0xc0,program]])send(b);
+  if(mode==='logic')logicVolume();
   const p=book?.patches[program];
   patch.title=describe(p);preview.title='Audition '+(p?.label||'keyboard patch');
   preview.disabled=!p?.zones.length; // A tacit patch must actually be silent.
@@ -32,8 +45,8 @@ function bind({route,patch,preview,connect,input,message,saved,save}){
   patch.replaceChildren(...ids.map(id=>new Option(book.patches[id].label,id)));
   patch.value=String(program);patch.disabled=ids.length<2;apply();
  }
- function choose(id){
-  slug=id;
+ function choose(id,notes=null){
+  ++previewRequest;slug=id;cueNotes=notes;
   if(book){choices();return;}
   bookTask??=fetch('full-practice-keys.json').then(r=>{if(!r.ok)throw Error('Keyboard patch list unavailable');return r.json();})
    .then(b=>{book=b;choices();}).catch(e=>{bookTask=null;info(e.message);});
@@ -45,7 +58,14 @@ function bind({route,patch,preview,connect,input,message,saved,save}){
    const [mod,,sf]=await Promise.all([import('./vendor/solstice-keys/synth.js'),ctx.audioWorklet.addModule(asset+'processor.js'),
     fetch(asset+'solstice-keys.sf2').then(r=>{if(!r.ok)throw Error('Keyboard sound bank unavailable');return r.arrayBuffer();})]);
    const engine=new mod.WorkletSynthesizer(ctx);
-   try{await engine.soundBankManager.addSoundBank(sf,'solstice');await engine.isReady;engine.connect(ctx.destination);synth=engine;}
+   try{
+    await engine.soundBankManager.addSoundBank(sf,'solstice');await engine.isReady;
+    const gain=ctx.createGain(),guard=ctx.createDynamicsCompressor();
+    // Quiet solo patches need makeup gain. Keep velocity layers and pedal expression intact.
+    gain.gain.value=level/50;guard.threshold.value=-3;guard.knee.value=1;
+    guard.ratio.value=20;guard.attack.value=.00025;guard.release.value=.09;
+    engine.connect(gain);gain.connect(guard);guard.connect(ctx.destination);keysGain=gain;synth=engine;
+   }
    catch(e){engine.destroy();throw e;}
   })().catch(e=>{synthTask=null;throw e;});
   await Promise.all([resumed,synthTask]);
@@ -97,15 +117,25 @@ function bind({route,patch,preview,connect,input,message,saved,save}){
  patch.onchange=()=>{program=Number(patch.value);save(slug,program);apply();};
  connect.onclick=()=>{void access().catch(e=>info(e.message));};
  input.onchange=()=>{lastInput=input.value;attach(midi?.inputs.get(lastInput)||null);};
- preview.onclick=async()=>{
-  const id=slug,n=program;
-  if(mode==='off')await activate('browser');else if(mode==='browser'){try{await browserSound();}catch(e){info(e.message);return;}}
-  if(id!==slug||program!==n||mode==='off'||(mode==='logic'&&!dest))return;
-  release();const notes=book.patches[n].zones.map((z,i)=>Math.max(z.lo??0,Math.min(z.hi??127,i?76:60)));
+ async function audition(){
+  const request=++previewRequest,n=book?program:null;
+  try{await Promise.all([mode==='off'?activate('browser'):mode==='browser'?browserSound():null,bookTask]);}
+  catch(e){info(e.message);return;}
+  if(request!==previewRequest||(n!==null&&program!==n)||!book?.patches[program]?.zones.length||
+     (mode==='browser'&&!synth)||mode==='off'||(mode==='logic'&&!dest))return;
+  release();
+  if(cueNotes){
+   const notes=cueNotes;
+   notes.forEach(key=>send([0x90,key,64]));
+   timers.push(setTimeout(()=>notes.forEach(key=>send([0x80,key,0])),1500));return;
+  }
+  const selected=book.patches[program];
+  const notes=selected.zones.map((z,i)=>Math.max(z.lo??0,Math.min(z.hi??127,selected.previewNote??(i?76:60))));
   notes.forEach((key,i)=>{timers.push(setTimeout(()=>send([0x90,key,90]),i*420),setTimeout(()=>send([0x80,key,0]),i*420+340));});
- };
+ }
+ preview.onclick=audition;
  window.addEventListener('pagehide',()=>{void activate('off');});
- return {choose};
+ return {choose,audition,setLevel};
 }
 root.MeleteFullPracticeKeys={bind};
 })(globalThis);

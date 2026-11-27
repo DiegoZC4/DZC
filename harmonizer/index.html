@@ -37,10 +37,12 @@
       width: 100%;
       height: 100%;
       display: grid;
-      grid-template-columns: minmax(540px, 1fr) 286px;
+      grid-template-columns: minmax(0, 1fr) clamp(286px, 26%, 340px);
+      grid-template-rows: minmax(0, 1fr);
     }
     .stage {
       min-width: 0;
+      min-height: 0;
       display: grid;
       grid-template-rows: 54px minmax(0, 1fr) 40px;
       border-right: 1px solid var(--line);
@@ -129,31 +131,34 @@
     }
     aside {
       min-width: 0;
-      display: grid;
-      grid-template-rows: 54px repeat(9, auto) auto;
-      align-content: start;
+      min-height: 0;
       overflow-y: auto;
       background: var(--panel);
     }
     .side-title {
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      min-height: 54px;
+      margin: 0;
+      padding: 8px 14px;
       border-bottom: 1px solid var(--line);
+      font-size: 15px;
       font-weight: 700;
     }
+    .section-title { min-height: 36px; background: var(--bar); font-size: 13px; }
     .control {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
-      min-height: 54px;
-      padding: 10px 14px;
+      min-height: 44px;
+      padding: 7px 14px;
       border-bottom: 1px solid var(--line);
     }
-    .control.stacked { grid-template-columns: 1fr; }
+    .control.stacked { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-block: 10px; }
     .control label { color: var(--muted); font-size: 13px; }
-    .control.drag-number-control { display: flex; }
+    .control.drag-number-control { display: flex; flex-wrap: wrap; }
+    #keyboard-transpose { flex: 0 1 auto; width: auto; min-width: 78px; max-width: 100%; }
     select {
       width: 100%;
       min-width: 0;
@@ -164,25 +169,28 @@
       background: #151613;
       color: var(--ink);
       font-size: 13px;
+      text-overflow: ellipsis;
     }
-    .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .value { color: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
-    .levels { display: grid; gap: 5px; }
+    .row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 8px; }
+    .value { color: var(--muted); font-size: 12px; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .level-row {
       display: grid;
-      grid-template-columns: 22px minmax(0, 1fr) 34px;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 11px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 5px 8px;
+      padding-block: 3px 2px;
       font-variant-numeric: tabular-nums;
     }
-    .level-track { height: 5px; overflow: hidden; border-radius: 3px; background: rgba(242,240,232,0.1); }
+    .level-row label { color: var(--ink); font-weight: 600; }
+    .level-row output { color: var(--cyan); font-size: 15px; font-weight: 650; white-space: nowrap; }
+    #output-level-text { color: var(--green); }
+    .level-track { grid-column: 1 / -1; height: 6px; overflow: hidden; border-radius: 3px; background: rgba(242,240,232,0.14); }
     .level-fill { width: 0; height: 100%; background: var(--cyan); }
     #output-level-fill { background: var(--green); }
+    #test-tone-button { justify-self: start; margin-top: 3px; font-size: 13px; }
     .toggle { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
     .toggle input { width: 17px; height: 17px; accent-color: var(--cyan); }
-    .orientation-control { display: flex; align-items: center; justify-content: space-between; }
+    .orientation-control { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
     .orientation-control > span { color: var(--muted); font-size: 13px; }
     .pill-toggle { display: grid; gap: 6px; }
     .pill-toggle-group {
@@ -220,14 +228,20 @@
     .pill-toggle-group.is-animating .pill-thumb { transition: transform 180ms ease, width 180ms ease; }
     .pill-toggle-group.is-animating .pill-option { transition: color 180ms ease; }
     .pill-option.is-active { color: #151613; }
+    .diagnostics > summary {
+      padding: 12px 14px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
     .meter {
-      align-self: stretch;
-      min-height: 190px;
-      padding: 14px;
+      padding: 0 14px 14px;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.5;
       white-space: pre-line;
+      overflow-wrap: anywhere;
       font-variant-numeric: tabular-nums;
     }
     .start-overlay {
@@ -249,6 +263,7 @@
     }
     .start-panel h2 { margin: 0 0 8px; font-size: 22px; }
     .start-panel p { margin: 0 0 22px; color: var(--gold); font-size: 14px; }
+    #start-error { overflow-wrap: anywhere; color: var(--ink); }
     .start-panel .command { width: 100%; min-height: 42px; }
     .start-actions { display: grid; gap: 8px; }
     .download-overlay {
@@ -318,16 +333,17 @@
     .download-meta a { color: var(--cyan); }
     @media (max-width: 860px) {
       body { overflow: auto; }
-      .app { height: auto; min-height: 100%; grid-template-columns: 1fr; grid-template-rows: 620px auto; }
+      .app { height: auto; min-height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(176px, 53svh, 520px) auto; align-content: start; }
       .stage { border-right: 0; }
-      aside { grid-template-rows: 48px repeat(9, auto) auto; }
+      aside { overflow: visible; }
+      .side-title:not(.section-title) { min-height: 44px; }
     }
     @media (max-width: 560px) {
-      .app { grid-template-rows: 560px auto; }
       .stage { grid-template-rows: 54px minmax(0, 1fr) 40px; }
       .topbar { gap: 6px; padding: 0 8px; }
       h1 { font-size: 16px; }
       #midi-chip, #engine-chip { display: none; }
+      .topbar:has(#start-button:not([hidden])):has(#stop-button:not([hidden])) #pitch-chip { display: none; }
       .chip { min-width: 62px; max-width: 102px; padding: 5px 6px; }
       #download-button { width: 36px; min-width: 36px; padding: 0; font-size: 0; }
       #download-button::before { content: "\2193"; font-size: 18px; }
@@ -358,21 +374,32 @@
         </div>
       </footer>
     </section>
-    <aside>
-      <div class="side-title">Controls</div>
+    <aside aria-label="Harmonizer controls">
+      <h2 class="side-title">Audio &amp; MIDI</h2>
       <section class="control stacked">
-        <div class="row"><label for="input-device">Audio input</label><span id="input-status" class="value">permission needed</span></div>
+        <div class="row"><label for="input-device">Audio input</label><span id="input-status" class="value" role="status">permission needed</span></div>
         <select id="input-device" aria-label="Microphone input"></select>
+        <div class="level-row" title="Microphone before Monitor gain. The number holds the peak for two seconds.">
+          <label for="input-level-text">Mic peak</label>
+          <output id="input-level-text" aria-live="off">Audio off</output>
+          <div class="level-track" aria-hidden="true"><div id="input-level-fill" class="level-fill"></div></div>
+        </div>
+      </section>
+      <section class="control stacked">
         <div class="row"><label for="output-device">Audio output</label><span id="output-status" class="value">system default</span></div>
         <select id="output-device" aria-label="Audio output"><option value="">System default</option></select>
-        <div class="row"><label for="midi-input">MIDI input</label><span id="midi-status" class="value">pending</span></div>
-        <select id="midi-input" aria-label="MIDI input device"><option value="all">All MIDI devices</option><option value="none">None</option></select>
-        <div class="levels" aria-label="Audio levels">
-          <div class="level-row"><span>in</span><div class="level-track"><div id="input-level-fill" class="level-fill"></div></div><span id="input-level-text">-inf</span></div>
-          <div class="level-row"><span>out</span><div class="level-track"><div id="output-level-fill" class="level-fill"></div></div><span id="output-level-text">-inf</span></div>
+        <div class="level-row" title="Louder output channel after the limiter, before headphone volume. The number holds the peak for two seconds.">
+          <label for="output-level-text">Out peak</label>
+          <output id="output-level-text" aria-live="off">Audio off</output>
+          <div class="level-track" aria-hidden="true"><div id="output-level-fill" class="level-fill"></div></div>
         </div>
         <button id="test-tone-button" class="command" type="button">Test output</button>
       </section>
+      <section class="control stacked">
+        <div class="row"><label for="midi-input">MIDI input</label><span id="midi-status" class="value">keyboard only</span></div>
+        <select id="midi-input" aria-label="MIDI input device"><option value="none">None</option><option value="enable">Enable MIDI devices...</option></select>
+      </section>
+      <h2 class="side-title section-title">Sound</h2>
       <section class="control stacked">
         <div class="row"><label for="engine-select">Pitch shifter</label><span id="engine-status" class="value">stopped</span></div>
         <select id="engine-select" aria-label="Browser pitch shifter">
@@ -384,10 +411,12 @@
       <label class="control drag-number-control"><span>Monitor gain</span><button id="gain" class="drag-number-value" type="button" role="spinbutton" aria-label="Monitor gain"></button></label>
       <label class="control drag-number-control"><span>Gate</span><button id="gate" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch gate"></button></label>
       <label class="control drag-number-control"><span>Stability</span><button id="stability" class="drag-number-value" type="button" role="spinbutton" aria-label="Pitch stability window"></button></label>
-      <label class="control drag-number-control"><span>Keyboard octave</span><button id="keyboard-octave" class="drag-number-value" type="button" role="spinbutton" aria-label="Computer keyboard start octave"></button></label>
       <section class="control stacked">
         <label class="toggle"><input id="formants" type="checkbox" checked>Preserve formants</label>
       </section>
+      <h2 class="side-title section-title">Keyboard &amp; display</h2>
+      <label class="control drag-number-control"><span>Keyboard octave</span><button id="keyboard-octave" class="drag-number-value" type="button" role="spinbutton" aria-label="Computer keyboard start octave"></button></label>
+      <label class="control drag-number-control" title="Shifts every note you play, on the computer keys and on a MIDI keyboard, by half steps: play C major shapes and hear any key."><span>Transpose</span><button id="keyboard-transpose" class="drag-number-value" type="button" role="spinbutton" aria-label="Transpose played notes in half steps"></button></label>
       <section class="control orientation-control">
         <span>Scroll direction</span>
         <div class="pill-toggle">
@@ -398,13 +427,17 @@
           </div>
         </div>
       </section>
-      <div id="meter" class="meter">engine stopped</div>
+      <details id="diagnostics" class="diagnostics">
+        <summary>Engine diagnostics</summary>
+        <div id="meter" class="meter">engine stopped</div>
+      </details>
     </aside>
   </main>
-  <div id="start-overlay" class="start-overlay">
+  <div id="start-overlay" class="start-overlay" hidden>
     <div class="start-panel">
       <h2>Harmonizer</h2>
       <p>Use headphones to prevent microphone feedback.</p>
+      <p id="start-error" role="alert" hidden></p>
       <div class="start-actions">
         <button id="start-overlay-button" class="command" type="button">Start audio</button>
         <button id="start-download-button" class="command" type="button">Download</button>
@@ -437,17 +470,17 @@
             <span>Portable AppImage for common desktop distributions.</span>
           </a>
           <a class="download-link" href="https://github.com/DiegoZC4/harmonizer/releases/latest">
-            <strong>Source and other formats</strong>
+            <strong>Native source and other formats</strong>
             <span>Portable ZIPs, checksums, source, and release notes.</span>
           </a>
         </div>
         <div class="download-meta">
-          <span>Latest release</span>
-          <a href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/SHA256SUMS.txt">SHA-256 checksums</a>
+          <a href="https://diegozc.com/harmonizer/downloads/Harmonizer-Web-Source.zip">Browser source (ZIP)</a>
+          <a href="https://github.com/DiegoZC4/harmonizer/releases/latest/download/SHA256SUMS.txt">Native checksums</a>
         </div>
       </div>
     </section>
   </div>
-  <script type="module" src="./app.js?v=20260726-2"></script>
+  <script type="module" src="./app.js?v=20261127-1"></script>
 </body>
 </html>

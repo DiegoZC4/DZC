@@ -1,8 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="72" fill="#111318"/>
-  <path d="M74 274h58l31-104 48 202 51-238 42 174 28-82h106"
-        fill="none" stroke="#55d6be" stroke-width="30"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="256" cy="256" r="206" fill="none" stroke="#f2f5f7"
-          stroke-width="18"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- One voice enters, four leave. Triangle in front, filled with the theme background, so the rays vanish inside it. -->
+  <style>
+    .line { stroke: #1b1d22; }
+    .glass { fill: #ffffff; }
+    .red { stroke: #d92b2b; } .yellow { stroke: #d99a00; }
+    .green { stroke: #1f9e4a; } .blue { stroke: #2563d6; }
+    @media (prefers-color-scheme: dark) {
+      .line { stroke: #f2f5f7; }
+      .glass { fill: #202124; }
+      .red { stroke: #ff5d5d; } .yellow { stroke: #ffd23f; }
+      .green { stroke: #3ddc84; } .blue { stroke: #5b9dff; }
+    }
+  </style>
+  <path class="line" d="M3 36.0H26.0" fill="none" stroke-width="3.8" stroke-linecap="round"/>
+  <path class="red" d="M26.0 36.0L61.0 20.4" fill="none" stroke-width="3.8" stroke-linecap="round"/>
+  <path class="yellow" d="M26.0 36.0L61.0 31.1" fill="none" stroke-width="3.8" stroke-linecap="round"/>
+  <path class="green" d="M26.0 36.0L61.0 40.9" fill="none" stroke-width="3.8" stroke-linecap="round"/>
+  <path class="blue" d="M26.0 36.0L61.0 51.6" fill="none" stroke-width="3.8" stroke-linecap="round"/>
+  <path class="line glass" d="M26.0 12.0L10.0 48.0L42.0 48.0Z" stroke-width="4.4" stroke-linejoin="round"/>
 </svg>

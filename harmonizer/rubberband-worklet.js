@@ -1,11 +1,15 @@
-import createRubberBandLiveModule from "./vendor/RubberBandLive.js?v=20260726-2";
+import createRubberBandLiveModule from "./vendor/RubberBandLive.js?v=20261127-1";
 
 class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super(options);
     this.module = null;
     this.ready = false;
+    this.destroyed = false;
+    this.telemetry = options?.processorOptions?.telemetry !== false;
     this.quantumSize = 128;
+    this.reportCalls = options?.processorOptions?.slowMeters
+      ? Math.max(8, Math.round(sampleRate / this.quantumSize / 4)) : 8;
     this.inputPointer = 0;
     this.outputLeftPointer = 0;
     this.outputRightPointer = 0;
@@ -17,7 +21,14 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
     this.warmupCalls = 64;
 
     this.port.onmessage = (event) => {
-      if (this.ready) this.applyMessage(event.data);
+      if (event.data?.type === "destroy") {
+        if (!this.destroyed) this.module?._rb_destroy();
+        this.module = null;
+        this.destroyed = true;
+        this.ready = false;
+        this.pendingMessages.length = 0;
+      } else if (this.destroyed) return;
+      else if (this.ready) this.applyMessage(event.data);
       else this.pendingMessages.push(event.data);
     };
 
@@ -25,6 +36,7 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
       print: () => {},
       printErr: () => {},
     }).then((module) => {
+      if (this.destroyed) return;
       this.module = module;
       module._rb_init(sampleRate, this.quantumSize);
       this.inputPointer = module._rb_input_ptr();
@@ -42,6 +54,7 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
         maxVoices: 4,
       });
     }).catch((error) => {
+      if (this.destroyed) return;
       this.port.postMessage({
         type: "error",
         message: error?.message || String(error),
@@ -58,6 +71,12 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
         Number(message.pitchBend) || 0,
         message.formants === false ? 0 : 1,
       );
+    } else if (message.type === "autocorrect") {
+      this.module._rb_configure_autocorrect(
+        Number(message.strength) || 0,
+        Number(message.pitchClassMask) || 0,
+        Number(message.toleranceCents) || 0,
+      );
     } else if (message.type === "voice") {
       this.module._rb_set_voice(
         Number(message.index) || 0,
@@ -65,13 +84,11 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
         message.gate ? 1 : 0,
         Number.isFinite(message.velocity) ? message.velocity : 1,
       );
-    } else if (message.type === "destroy") {
-      this.module._rb_destroy();
-      this.ready = false;
     }
   }
 
   process(inputs, outputs) {
+    if (this.destroyed) return false;
     const output = outputs[0];
     const left = output?.[0];
     const right = output?.[1] || left;
@@ -90,12 +107,13 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
     else inputView.fill(0);
 
     this.module._rb_process(this.quantumSize);
-    const elapsedMs = this.module._rb_process_ms();
     left.set(heap.subarray(leftOffset, leftOffset + this.quantumSize));
     if (right !== left) {
       right.set(heap.subarray(rightOffset, rightOffset + this.quantumSize));
     }
 
+    if (!this.telemetry) return true;
+    const elapsedMs = this.module._rb_process_ms();
     const quantumMs = 1000 * this.quantumSize / sampleRate;
     if (this.warmupCalls > 0) {
       this.warmupCalls -= 1;
@@ -105,7 +123,7 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
       this.intervalMaxMs = Math.max(this.intervalMaxMs, elapsedMs);
       if (elapsedMs > quantumMs) this.overruns += 1;
     }
-    if (this.intervalCalls >= 8) {
+    if (this.intervalCalls >= this.reportCalls) {
       this.port.postMessage({
         type: "pitch",
         audioTime: currentTime,
@@ -121,6 +139,9 @@ class RubberBandHarmonizerProcessor extends AudioWorkletProcessor {
         unvoiced: this.module._rb_telemetry(8) > 0.5,
         sibilance: this.module._rb_telemetry(9),
         dspVoices: this.module._rb_telemetry(10),
+        targetMidi: this.module._rb_telemetry(11),
+        appliedSemitones: this.module._rb_telemetry(12),
+        correctionStrength: this.module._rb_telemetry(13),
         renderAverageMs: this.intervalTotalMs / this.intervalCalls,
         renderMaxMs: this.intervalMaxMs,
         overruns: this.overruns,

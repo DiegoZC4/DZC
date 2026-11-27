@@ -3,6 +3,7 @@ import {
   clamp,
   midiName,
 } from "./pitch.js?v=20260726-2";
+import { MidiRoll, drawMidiBars } from "./midi-roll.js?v=20261114-1";
 
 const SIGNALSMITH_VOICES = 8;
 const RUBBERBAND_VOICES = 4;
@@ -12,8 +13,14 @@ const HISTORY_SECONDS = 62;
 const NOTE_RELEASE_SECONDS = 0.09;
 const testParameters = new URLSearchParams(window.location.search);
 const SYNTHETIC_INPUT = testParameters.get("testInput") === "sine";
-const SYNTHETIC_NOTE = Number(testParameters.get("testNote"));
+const syntheticNoteParameter = testParameters.get("testNote");
+const SYNTHETIC_NOTE = syntheticNoteParameter === null ? NaN : Number(syntheticNoteParameter);
+const syntheticLevelParameter = Number(testParameters.get("testLevel"));
+const SYNTHETIC_LEVEL = Number.isFinite(syntheticLevelParameter) && syntheticLevelParameter > 0
+  ? clamp(syntheticLevelParameter, 0.0001, 0.5)
+  : 0.08;
 const embeddedWorkletUrls = globalThis.__HARMONIZER_WORKLET_URLS__ || {};
+if (embeddedWorkletUrls.signalsmith) SignalsmithStretch.moduleUrl = embeddedWorkletUrls.signalsmith;
 const $ = (selector) => document.querySelector(selector);
 
 const ui = {
@@ -28,6 +35,7 @@ const ui = {
   stopButton: $("#stop-button"),
   startOverlay: $("#start-overlay"),
   startOverlayButton: $("#start-overlay-button"),
+  startError: $("#start-error"),
   startDownloadButton: $("#start-download-button"),
   inputDevice: $("#input-device"),
   inputStatus: $("#input-status"),
@@ -44,9 +52,11 @@ const ui = {
   rmsText: $("#rms-text"),
   stableText: $("#stable-text"),
   meter: $("#meter"),
+  diagnostics: $("#diagnostics"),
   midiStatus: $("#midi-status"),
   formants: $("#formants"),
   keyboardOctave: $("#keyboard-octave"),
+  keyboardTranspose: $("#keyboard-transpose"),
   orientationGroup: $("#orientation-group"),
   horizontalFlow: $("#horizontal-flow"),
   verticalFlow: $("#vertical-flow"),
@@ -55,19 +65,21 @@ const ui = {
 const controls = {
   blend: { input: $("#blend"), min: 0, max: 100, step: 1, value: 100, suffix: "%" },
   gain: { input: $("#gain"), min: 0, max: 24, step: 1, value: 6, suffix: " dB" },
-  gate: { input: $("#gate"), min: 0.001, max: 0.04, step: 0.0005, value: 0.01, digits: 4 },
+  gate: { input: $("#gate"), min: 0.0002, max: 0.04, step: 0.0001, value: 0.001, digits: 4 },
   stability: { input: $("#stability"), min: 0.2, max: 2, step: 0.05, value: 1, suffix: " st", digits: 2 },
   keyboardOctave: { input: $("#keyboard-octave"), min: 0, max: 5, step: 1, value: 3 },
+  keyboardTranspose: { input: $("#keyboard-transpose"), min: -12, max: 12, step: 1, value: 0, format: formatKeyboardTranspose },
   timeSpan: { input: $("#time-span"), min: 1, max: 60, step: 0.5, value: 12, suffix: " s", digits: 1 },
   pitchSpan: { input: $("#pitch-span"), min: 12, max: 96, step: 1, value: 48, suffix: " st" },
 };
 
 const canvasContext = ui.canvas.getContext("2d");
 const history = [];
+const midiRoll = new MidiRoll(HISTORY_SECONDS);
 const renderDurations = [];
 const pressedComputerKeys = new Map();
-const heldNotes = new Set();
-const sustainedNotes = new Set();
+const heldNotes = new Map();
+const sustainedNotes = new Map();
 let sustainOn = false;
 let pitchBend = 0;
 let midiAccess = null;
@@ -76,6 +88,24 @@ let voices = [];
 let frameHandle = 0;
 let pianoDrag = null;
 let engineRestarting = false;
+let startingAudio = false;
+let audioAction = 0;
+let unlockOutput = null;
+const audioIntentKey = `harmonizer.audio.${SYNTHETIC_INPUT ? "test" : "mic"}.${location.pathname}`;
+
+function tabAudioIntent() {
+  try { return sessionStorage.getItem(audioIntentKey); } catch { return null; }
+}
+
+function rememberAudioIntent(value) {
+  try { sessionStorage.setItem(audioIntentKey, value); } catch {}
+}
+
+async function permissionState(name) {
+  try {
+    return (await navigator.permissions.query(name === "midi" ? { name, sysex: false } : { name })).state;
+  } catch { return "unknown"; }
+}
 
 const pitchState = {
   rawMidi: -1,
@@ -95,13 +125,17 @@ const pitchState = {
 };
 
 const view = {
-  centerMidi: Number(localStorage.getItem("harmonizer.public.centerMidi")) || 60,
+  centerMidi: Number(readLocal("harmonizer.public.centerMidi")) || 60,
   orientation: storedSetting("orientation", "horizontal") === "vertical" ? "vertical" : "horizontal",
 };
 
-function storedSetting(key, fallback = "") {
-  try { return localStorage.getItem(`harmonizer.public.v1.${key}`) ?? fallback; }
+function readLocal(key, fallback = "") {
+  try { return localStorage.getItem(key) ?? fallback; }
   catch { return fallback; }
+}
+
+function storedSetting(key, fallback = "") {
+  return readLocal(`harmonizer.public.v1.${key}`, fallback);
 }
 
 function storeSetting(key, value) {
@@ -111,11 +145,22 @@ function storeSetting(key, value) {
 
 function migrateStoredSettings() {
   try {
-    const migrationKey = "harmonizer.public.v2.fullWetDefault";
-    if (localStorage.getItem(migrationKey)) return;
-    const blendKey = "harmonizer.public.v1.blend";
-    if (localStorage.getItem(blendKey) === "56") localStorage.setItem(blendKey, "100");
-    localStorage.setItem(migrationKey, "1");
+    const blendMigrationKey = "harmonizer.public.v2.fullWetDefault";
+    if (!localStorage.getItem(blendMigrationKey)) {
+      const blendKey = "harmonizer.public.v1.blend";
+      if (localStorage.getItem(blendKey) === "56") localStorage.setItem(blendKey, "100");
+      localStorage.setItem(blendMigrationKey, "1");
+    }
+
+    const gateMigrationKey = "harmonizer.public.v3.lowGateDefault";
+    if (!localStorage.getItem(gateMigrationKey)) {
+      const gateKey = "harmonizer.public.v1.gate";
+      const savedGate = localStorage.getItem(gateKey);
+      if (savedGate === null || Math.abs(Number(savedGate) - 0.01) < 1.0e-9) {
+        localStorage.setItem(gateKey, "0.001");
+      }
+      localStorage.setItem(gateMigrationKey, "1");
+    }
   } catch {}
 }
 
@@ -125,7 +170,16 @@ function controlValue(name) {
   return controls[name].value;
 }
 
+// Shown as the key that C major fingering sounds in, which is what the control is for.
+function formatKeyboardTranspose(control) {
+  const steps = Math.round(control.value);
+  const names = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  if (steps === 0) return "0 st";
+  return `${steps > 0 ? "+" : ""}${steps} st \u00b7 C plays ${names[((steps % 12) + 12) % 12]}`;
+}
+
 function formatControl(control) {
+  if (control.format) return control.format(control);
   const digits = control.digits ?? (Number.isInteger(control.step) ? 0 : 1);
   return `${control.value.toFixed(digits)}${control.suffix ?? ""}`;
 }
@@ -143,6 +197,11 @@ function commitControl(name, rawValue, emit = true) {
   control.input.textContent = formatControl(control);
   control.input.setAttribute("aria-valuenow", String(control.value));
   if (name === "keyboardOctave") rebuildComputerKeyboardMap(control.value);
+  if (name === "keyboardTranspose") {
+    keyboardTranspose = Math.round(control.value);
+    releaseMidiNotes();
+    rebuildComputerKeyboardMap(controls.keyboardOctave.value);
+  }
   storeSetting(name, control.value);
   if (emit) applyControls();
 }
@@ -288,8 +347,6 @@ function handlePitchTelemetry(message) {
     correctionMidi: pitchState.correctionMidi,
     stable: pitchState.stable,
     voiced: pitchState.voiced,
-    pitchBend,
-    notes: [...heldNotes, ...sustainedNotes],
   });
   const oldest = receivedNow - HISTORY_SECONDS;
   while (history.length && history[0].receivedAt < oldest) history.shift();
@@ -331,7 +388,7 @@ async function buildSignalsmithEngine() {
 
 async function buildRubberBandEngine() {
   await audio.context.audioWorklet.addModule(
-    embeddedWorkletUrls.rubberband || "./rubberband-worklet.js?v=20260726-2",
+    embeddedWorkletUrls.rubberband || "./rubberband-worklet.js?v=20261127-1",
   );
   const node = new AudioWorkletNode(audio.context, "rubberband-harmonizer", {
     numberOfInputs: 1,
@@ -340,6 +397,8 @@ async function buildRubberBandEngine() {
     channelCount: 1,
     channelCountMode: "explicit",
   });
+  audio.inputGain.connect(node);
+  node.connect(audio.wetBus);
   const ready = new Promise((resolve, reject) => {
     const timeout = window.setTimeout(
       () => reject(new Error("Rubber Band worklet timed out")),
@@ -357,10 +416,17 @@ async function buildRubberBandEngine() {
       }
     };
   });
+  let details;
+  try {
+    details = await ready;
+  } catch (error) {
+    audio.inputGain.disconnect(node);
+    node.disconnect();
+    node.port.postMessage({ type: "destroy" });
+    node.port.close();
+    throw error;
+  }
   audio.inputGain.connect(audio.dryDelay);
-  audio.inputGain.connect(node);
-  node.connect(audio.wetBus);
-  const details = await ready;
   voices = Array.from({ length: details.maxVoices }, (_, index) => ({
     index,
     note: null,
@@ -435,13 +501,12 @@ async function applyOutputDevice(deviceId = "") {
 }
 
 async function openMicrophone(deviceId = "") {
-  if (audio?.stream) audio.stream.getTracks().forEach((track) => track.stop());
   if (SYNTHETIC_INPUT) {
     audio.syntheticOscillator?.stop();
     const oscillator = audio.context.createOscillator();
     const gain = audio.context.createGain();
     oscillator.frequency.value = 220;
-    gain.gain.value = 0.08;
+    gain.gain.value = SYNTHETIC_LEVEL;
     oscillator.connect(gain);
     gain.connect(audio.inputMeter);
     gain.connect(audio.inputGain);
@@ -452,6 +517,10 @@ async function openMicrophone(deviceId = "") {
     ui.inputStatus.textContent = "test 220 Hz";
     return;
   }
+  const session = audio;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("Open Harmonizer over HTTPS, on localhost, or from the offline HTML in Chrome or Edge.");
+  }
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -461,22 +530,78 @@ async function openMicrophone(deviceId = "") {
       autoGainControl: false,
     },
   });
-  const source = audio.context.createMediaStreamSource(stream);
-  source.connect(audio.inputMeter);
-  source.connect(audio.inputGain);
-  audio.stream = stream;
-  audio.source = source;
+  try {
+    if (audio !== session || session.context.state === "closed") {
+      throw new Error("Audio stopped during microphone selection.");
+    }
+    const source = session.context.createMediaStreamSource(stream);
+    source.connect(session.inputMeter);
+    source.connect(session.inputGain);
+    session.source?.disconnect();
+    session.stream?.getTracks().forEach((track) => track.stop());
+    session.stream = stream;
+    session.source = source;
+    session.inputPeak.db = -Infinity;
+  } catch (error) {
+    stream.getTracks().forEach((track) => track.stop());
+    throw error;
+  }
   const activeDeviceId = stream.getAudioTracks()[0]?.getSettings().deviceId || deviceId;
   storeSetting("audioInput", activeDeviceId);
-  await enumerateAudioDevices(activeDeviceId, ui.outputDevice.value);
+  ui.inputStatus.textContent = "ready";
+  await enumerateAudioDevices(activeDeviceId, ui.outputDevice.value).catch((error) => {
+    console.warn("Could not refresh audio device menus", error);
+  });
 }
 
-async function startAudio() {
-  if (audio) {
-    await audio.context.resume();
-    ui.startOverlay.hidden = true;
-    return;
+function audioErrorDetail(error) {
+  // A failed embedded module URL can contain hundreds of kilobytes of base64.
+  const detail = String(error?.message || error).replace(/data:[^\s"']+/gi, "embedded module");
+  return `${error?.name || "Error"}: ${detail.slice(0, 240)}`;
+}
+
+// A policy-blocked resume() can stay pending until a trusted gesture; never wait on it
+// before acquiring an already-authorized mic, or start the worklet timeout while paused.
+async function waitForOutput(context) {
+  if (context.state === "running") return;
+  let stateChanged;
+  let gestureHint;
+  try {
+    await new Promise((resolve, reject) => {
+      stateChanged = () => {
+        if (context.state === "running") resolve();
+        if (context.state === "closed") reject(new DOMException("Audio stopped", "AbortError"));
+      };
+      unlockOutput = () => context.resume().then(stateChanged, (error) => {
+        if (error.name !== "NotAllowedError") reject(error);
+      });
+      context.addEventListener("statechange", stateChanged);
+      // Normal automatic resume is asynchronous too. Don't flash a button for it.
+      gestureHint = setTimeout(() => {
+        ui.startOverlay.hidden = true;
+        ui.startButton.hidden = false;
+        ui.startButton.disabled = false;
+        ui.startButton.textContent = "Resume audio";
+        ui.stopButton.hidden = false;
+        ui.engineChip.textContent = "output paused";
+      }, 180);
+      unlockOutput();
+    });
+  } finally {
+    clearTimeout(gestureHint);
+    context.removeEventListener("statechange", stateChanged);
+    unlockOutput = null;
   }
+}
+
+async function startAudio({ restore = false } = {}) {
+  if (unlockOutput) { unlockOutput(); return; }
+  if (startingAudio || audio) return;
+  const action = ++audioAction;
+  startingAudio = true;
+  ui.startError.hidden = true;
+  ui.startError.textContent = "";
+  ui.startButton.disabled = true;
   ui.startOverlayButton.disabled = true;
   ui.startOverlayButton.textContent = "Starting...";
   ui.engineChip.textContent = "loading DSP";
@@ -485,16 +610,22 @@ async function startAudio() {
   pitchState.renderMaxMs = 0;
   pitchState.overruns = 0;
   pitchState.quantumMs = 0;
+  let stage = "Audio output";
+  let context;
   try {
+    const requestedInput = restore ? storedSetting("audioInput", ui.inputDevice.value) : ui.inputDevice.value || storedSetting("audioInput");
+    const requestedOutput = restore ? storedSetting("audioOutput", ui.outputDevice.value) : ui.outputDevice.value || storedSetting("audioOutput");
     const contextOptions = { latencyHint: "interactive" };
     if (currentEngineKey() === "rubberband") contextOptions.sampleRate = 44100;
-    const context = new AudioContext(contextOptions);
+    context = new AudioContext(contextOptions);
+    if (!restore && context.state !== "running") context.resume().catch(() => {});
     const inputGain = context.createGain();
     const inputMeter = context.createAnalyser();
     inputMeter.fftSize = 2048;
     inputMeter.smoothingTimeConstant = 0;
     const dryDelay = context.createDelay(1);
     const dryGain = context.createGain();
+    dryGain.gain.value = 1 - controlValue("blend") / 100;
     const wetBus = context.createGain();
     const wetGain = context.createGain();
     const master = context.createGain();
@@ -505,49 +636,71 @@ async function startAudio() {
     limiter.ratio.value = 14;
     limiter.attack.value = 0.002;
     limiter.release.value = 0.08;
-    const outputMeter = context.createAnalyser();
-    outputMeter.fftSize = 512;
+    const splitter = context.createChannelSplitter(2);
+    const outputMeters = [0, 1].map((channel) => {
+      const meter = context.createAnalyser();
+      meter.fftSize = 2048;
+      splitter.connect(meter, channel);
+      return meter;
+    });
     dryDelay.connect(dryGain).connect(master);
     wetBus.connect(wetGain).connect(master);
-    master.connect(limiter).connect(outputMeter).connect(context.destination);
+    master.connect(limiter).connect(context.destination);
+    limiter.connect(splitter);
     audio = {
       context,
       inputGain,
       inputMeter,
       inputMeterSamples: new Float32Array(inputMeter.fftSize),
+      inputPeak: { db: -Infinity, until: 0 },
       dryDelay,
       dryGain,
       wetBus,
       wetGain,
       master,
       limiter,
-      outputMeter,
-      outputSamples: new Float32Array(outputMeter.fftSize),
+      outputMeters,
+      outputSamples: new Float32Array(outputMeters[0].fftSize),
+      outputPeak: { db: -Infinity, until: 0 },
       stream: null,
       source: null,
       syntheticOscillator: null,
       pitchNode: null,
       engine: null,
     };
-    await applyOutputDevice(ui.outputDevice.value);
-    await openMicrophone(ui.inputDevice.value);
+    stage = "Microphone";
+    try {
+      await openMicrophone(requestedInput);
+    } catch (error) {
+      if (restore || !requestedInput || !["NotFoundError", "OverconstrainedError"].includes(error.name)) throw error;
+      await openMicrophone();
+    }
+    stage = "Audio output";
+    await applyOutputDevice(requestedOutput);
+    await waitForOutput(context);
+    if (action !== audioAction) return;
+    ui.startButton.disabled = true;
+    ui.startButton.hidden = true;
+    ui.stopButton.hidden = true;
     let engine;
     if (currentEngineKey() === "rubberband") {
+      stage = "Rubber Band";
       try {
         engine = await buildRubberBandEngine();
       } catch (error) {
         console.warn("Rubber Band WASM unavailable; using Signalsmith", error);
-        ui.engineSelect.value = "signalsmith";
-        storeSetting("engine", "signalsmith");
-        ui.engineStatus.textContent = "fallback";
+        stage = `Rubber Band (${audioErrorDetail(error)}) and Signalsmith`;
         engine = await buildSignalsmithEngine();
+        ui.engineSelect.value = "signalsmith";
       }
     } else {
+      stage = "Signalsmith";
       engine = await buildSignalsmithEngine();
     }
     audio.engine = engine;
     audio.dryDelay.delayTime.value = engine.latency;
     applyControls();
+    for (const [note, velocity] of [...sustainedNotes, ...heldNotes]) playVoice(note, velocity);
     if (SYNTHETIC_INPUT && Number.isFinite(SYNTHETIC_NOTE)) {
       noteOn(clamp(Math.round(SYNTHETIC_NOTE), 0, 127));
     }
@@ -557,38 +710,64 @@ async function startAudio() {
     ui.startOverlay.hidden = true;
     ui.startButton.hidden = true;
     ui.stopButton.hidden = false;
-    await context.resume();
+    ui.startOverlayButton.textContent = "Start audio";
+    rememberAudioIntent("on");
   } catch (error) {
-    console.error(error);
-    if (audio?.context) await audio.context.close().catch(() => {});
+    if (action !== audioAction) return;
+    console.error(`Harmonizer startup failed at ${stage}`, error);
+    audio?.stream?.getTracks().forEach((track) => track.stop());
+    audio?.source?.disconnect();
+    if (context && context.state !== "closed") await context.close().catch(() => {});
     audio = null;
     voices = [];
     ui.engineChip.textContent = "audio unavailable";
     ui.engineChip.classList.remove("good");
+    ui.engineStatus.textContent = "stopped";
+    ui.startError.textContent = stage === "Microphone" && error.name === "NotAllowedError"
+      ? "Microphone access was not granted. Check the microphone permission for this site."
+      : `${stage} failed. ${audioErrorDetail(error)}`;
+    ui.startError.hidden = false;
+    ui.startOverlay.hidden = restore;
+    if (restore) (stage === "Microphone" ? ui.inputStatus : ui.engineStatus).textContent = ui.startError.textContent;
+    ui.startButton.hidden = false;
+    ui.stopButton.hidden = true;
     ui.startOverlayButton.textContent = "Try again";
-    ui.startOverlayButton.disabled = false;
-    return;
+  } finally {
+    if (action === audioAction) {
+      startingAudio = false;
+      ui.startButton.textContent = "Start audio";
+      ui.startButton.disabled = false;
+      ui.startOverlayButton.disabled = false;
+    }
   }
-  ui.startOverlayButton.textContent = "Start audio";
-  ui.startOverlayButton.disabled = false;
 }
 
-async function stopAudio({ showOverlay = true } = {}) {
-  if (!audio) return;
+async function stopAudio({ restart = false } = {}) {
+  ++audioAction;
+  if (!restart) rememberAudioIntent("off");
+  ui.startButton.disabled = true;
+  ui.stopButton.hidden = true;
+  midiRoll.releaseAll(performance.now() / 1000);
   heldNotes.clear();
   sustainedNotes.clear();
-  audio.stream?.getTracks().forEach((track) => track.stop());
-  try { audio.syntheticOscillator?.stop(); } catch {}
-  audio.engine?.controlNode?.port.postMessage({ type: "destroy" });
-  await audio.context.close();
+  heldMidiNotes.clear();
+  pressedComputerKeys.clear();
+  sustainOn = false;
+  audio?.stream?.getTracks().forEach((track) => track.stop());
+  try { audio?.syntheticOscillator?.stop(); } catch {}
+  audio?.engine?.controlNode?.port.postMessage({ type: "destroy" });
+  if (audio && audio.context.state !== "closed") await audio.context.close();
   audio = null;
+  startingAudio = false;
   voices = [];
   ui.engineChip.textContent = "stopped";
   ui.engineChip.classList.remove("good");
   ui.engineStatus.textContent = "stopped";
   ui.startButton.hidden = false;
-  ui.stopButton.hidden = true;
-  ui.startOverlay.hidden = !showOverlay;
+  ui.startButton.disabled = false;
+  ui.startButton.textContent = "Start audio";
+  ui.startOverlayButton.disabled = false;
+  ui.startOverlay.hidden = true;
 }
 
 function activeVoices() {
@@ -649,11 +828,16 @@ function updateVoiceLevels() {
   }
 }
 
-function noteOn(note, velocity = 1) {
+function noteOn(note, velocity = 1, time = performance.now() / 1000) {
   if (!Number.isFinite(note) || note < 0 || note > 127) return;
-  heldNotes.add(note);
+  midiRoll.press(note, time);
+  heldNotes.set(note, velocity);
   sustainedNotes.delete(note);
-  if (audio && voices.length) {
+  playVoice(note, velocity);
+}
+
+function playVoice(note, velocity) {
+  if (audio?.engine && voices.length) {
     const voice = voiceForNote(note);
     voice.note = note;
     voice.velocity = velocity;
@@ -689,21 +873,26 @@ function releaseVoiceNote(note) {
   }, NOTE_RELEASE_SECONDS * 1200);
 }
 
-function noteOff(note) {
-  heldNotes.delete(note);
-  if (sustainOn) sustainedNotes.add(note);
+function noteOff(note, time = performance.now() / 1000) {
+  const velocity = heldNotes.get(note);
+  if (!heldNotes.delete(note)) return;
+  if (sustainOn) sustainedNotes.set(note, velocity);
   else {
     sustainedNotes.delete(note);
+    midiRoll.release(note, time);
     releaseVoiceNote(note);
   }
   updateVoiceLevels();
 }
 
-function setSustain(enabled) {
+function setSustain(enabled, time = performance.now() / 1000) {
   sustainOn = enabled;
   if (!enabled) {
-    for (const note of sustainedNotes) {
-      if (!heldNotes.has(note)) releaseVoiceNote(note);
+    for (const note of sustainedNotes.keys()) {
+      if (!heldNotes.has(note)) {
+        midiRoll.release(note, time);
+        releaseVoiceNote(note);
+      }
     }
     sustainedNotes.clear();
   }
@@ -739,23 +928,34 @@ function meterDb(samples) {
   return peak > 0 ? 20 * Math.log10(peak) : -Infinity;
 }
 
-function updateMeters() {
+function heldPeakText(peak, db, now) {
+  if (db >= peak.db || now >= peak.until) {
+    peak.db = db;
+    peak.until = now + 2000;
+  }
+  return Number.isFinite(peak.db) ? `${peak.db.toFixed(0)} dBFS` : "No signal";
+}
+
+function updateMeters(now) {
   if (!audio) {
     ui.inputLevelFill.style.width = "0%";
     ui.outputLevelFill.style.width = "0%";
-    ui.inputLevelText.textContent = "-inf";
-    ui.outputLevelText.textContent = "-inf";
+    ui.inputLevelText.textContent = "Audio off";
+    ui.outputLevelText.textContent = "Audio off";
     return;
   }
   audio.inputMeter.getFloatTimeDomainData(audio.inputMeterSamples);
-  audio.outputMeter.getFloatTimeDomainData(audio.outputSamples);
   const inputDb = meterDb(audio.inputMeterSamples);
-  const outputDb = meterDb(audio.outputSamples);
+  let outputDb = -Infinity;
+  for (const channel of audio.outputMeters) {
+    channel.getFloatTimeDomainData(audio.outputSamples);
+    outputDb = Math.max(outputDb, meterDb(audio.outputSamples));
+  }
   const width = (db) => `${clamp((db + 60) / 60, 0, 1) * 100}%`;
   ui.inputLevelFill.style.width = width(inputDb);
   ui.outputLevelFill.style.width = width(outputDb);
-  ui.inputLevelText.textContent = Number.isFinite(inputDb) ? `${inputDb.toFixed(0)}` : "-inf";
-  ui.outputLevelText.textContent = Number.isFinite(outputDb) ? `${outputDb.toFixed(0)}` : "-inf";
+  ui.inputLevelText.textContent = heldPeakText(audio.inputPeak, inputDb, now);
+  ui.outputLevelText.textContent = heldPeakText(audio.outputPeak, outputDb, now);
 }
 
 function visiblePitchMin() {
@@ -808,11 +1008,11 @@ function drawGrid(width, height, now) {
     canvasContext.strokeStyle = octave ? "rgba(242,240,232,0.15)" : "rgba(242,240,232,0.045)";
     canvasContext.beginPath();
     if (horizontal) {
-      const y = noteY(note, height);
+      const y = noteY(note - 0.5, height);
       canvasContext.moveTo(0, y);
       canvasContext.lineTo(rollWidth, y);
     } else {
-      const x = noteX(note, width);
+      const x = noteX(note - 0.5, width);
       canvasContext.moveTo(x, 0);
       canvasContext.lineTo(x, rollHeight);
     }
@@ -840,7 +1040,7 @@ function drawGrid(width, height, now) {
   }
 }
 
-function drawMidi(frames, now, width, height) {
+function drawMidi(now, width, height) {
   const horizontal = view.orientation === "horizontal";
   const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
   const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
@@ -848,28 +1048,12 @@ function drawMidi(frames, now, width, height) {
   canvasContext.beginPath();
   canvasContext.rect(0, 0, rollWidth, rollHeight);
   canvasContext.clip();
-  for (let index = 0; index < frames.length; index += 1) {
-    const frame = frames[index];
-    const nextTime = index + 1 < frames.length ? frames[index + 1].receivedAt : now;
-    for (const note of frame.notes || []) {
-      const bentNote = Number(note) + Number(frame.pitchBend || 0);
-      if (bentNote < visiblePitchMin() - 1 || bentNote >= visiblePitchMax() + 1) continue;
-      canvasContext.fillStyle = "#77d36a";
-      if (horizontal) {
-        const x = clamp(timeX(frame.receivedAt, now, width), 0, rollWidth);
-        const x2 = clamp(timeX(nextTime, now, width), 0, rollWidth);
-        const top = noteY(bentNote + 0.45, height);
-        const bottom = noteY(bentNote - 0.45, height);
-        canvasContext.fillRect(x, top, Math.max(1, x2 - x), Math.max(2, bottom - top));
-      } else {
-        const y = clamp(timeY(frame.receivedAt, now, height), 0, rollHeight);
-        const y2 = clamp(timeY(nextTime, now, height), 0, rollHeight);
-        const left = noteX(bentNote - 0.45, width);
-        const right = noteX(bentNote + 0.45, width);
-        canvasContext.fillRect(left, y, Math.max(2, right - left), Math.max(1, y2 - y));
-      }
-    }
-  }
+  drawMidiBars(canvasContext, midiRoll.bars, {
+    now, seconds: controlValue("timeSpan"), horizontal,
+    timeSize: horizontal ? rollWidth : rollHeight,
+    pitchSize: horizontal ? height : width,
+    minPitch: visiblePitchMin(), pitchSpan: controlValue("pitchSpan"), dpr: window.devicePixelRatio || 1,
+  });
   canvasContext.restore();
 }
 
@@ -910,19 +1094,19 @@ function drawPiano(width, height) {
   const horizontal = view.orientation === "horizontal";
   const rollWidth = horizontal ? Math.max(1, width - PIANO_WIDTH) : width;
   const rollHeight = horizontal ? height : Math.max(1, height - PIANO_HEIGHT);
-  const sounding = new Set([...heldNotes, ...sustainedNotes].map((note) => Math.round(note + pitchBend)));
+  const sounding = new Set([...heldNotes.keys(), ...sustainedNotes.keys()].map((note) => Math.round(note + pitchBend)));
   canvasContext.fillStyle = "#d8d4c8";
   if (horizontal) canvasContext.fillRect(rollWidth, 0, PIANO_WIDTH, height);
   else canvasContext.fillRect(0, rollHeight, width, PIANO_HEIGHT);
-  for (let note = Math.floor(visiblePitchMin()); note < Math.ceil(visiblePitchMax()); note += 1) {
+  for (let note = Math.floor(visiblePitchMin()) - 1; note <= Math.ceil(visiblePitchMax()) + 1; note += 1) {
     const black = [1, 3, 6, 8, 10].includes(((note % 12) + 12) % 12);
     const active = sounding.has(note);
     const keyLabel = computerKeyboardLabels.get(note);
     canvasContext.fillStyle = active ? "#76a7ff" : black ? "#31332d" : "#d8d4c8";
     canvasContext.strokeStyle = "rgba(0,0,0,0.24)";
     if (horizontal) {
-      const top = clamp(noteY(note + 1, height), 0, height);
-      const bottom = clamp(noteY(note, height), 0, height);
+      const top = clamp(noteY(note + 0.5, height), 0, height);
+      const bottom = clamp(noteY(note - 0.5, height), 0, height);
       canvasContext.fillRect(rollWidth + 1, top, PIANO_WIDTH - 1, Math.max(1, bottom - top));
       canvasContext.beginPath();
       canvasContext.moveTo(rollWidth, top);
@@ -943,8 +1127,8 @@ function drawPiano(width, height) {
         canvasContext.fillText(keyLabel, width - 5, clamp((top + bottom) / 2, 5, height - 5));
       }
     } else {
-      const left = clamp(noteX(note, width), 0, width);
-      const right = clamp(noteX(note + 1, width), 0, width);
+      const left = clamp(noteX(note - 0.5, width), 0, width);
+      const right = clamp(noteX(note + 0.5, width), 0, width);
       canvasContext.fillRect(left, rollHeight + 1, Math.max(1, right - left), PIANO_HEIGHT - 1);
       canvasContext.beginPath();
       canvasContext.moveTo(left, rollHeight);
@@ -973,7 +1157,7 @@ function drawPiano(width, height) {
 
 function draw(nowMilliseconds) {
   frameHandle = requestAnimationFrame(draw);
-  updateMeters();
+  updateMeters(nowMilliseconds);
   fitCanvas();
   const rect = ui.canvas.getBoundingClientRect();
   const now = nowMilliseconds / 1000;
@@ -983,7 +1167,7 @@ function draw(nowMilliseconds) {
   const windowStart = now - controlValue("timeSpan");
   const start = Math.max(0, history.findIndex((frame) => frame.receivedAt >= windowStart) - 1);
   const frames = history.slice(start);
-  drawMidi(frames, now, rect.width, rect.height);
+  drawMidi(now, rect.width, rect.height);
   drawContour(frames, now, rect.width, rect.height, (frame) => frame.rawMidi, () => ({ color: "rgba(245,194,87,0.54)", width: 1 }));
   drawContour(
     frames,
@@ -994,9 +1178,10 @@ function draw(nowMilliseconds) {
     (frame) => ({ color: frame.stable ? "#22d3c5" : "rgba(34,211,197,0.55)", width: frame.stable ? 2 : 1 }),
   );
   drawPiano(rect.width, rect.height);
-  ui.pitchChip.textContent = pitchState.voiced ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(1)}` : "pitch --";
-  ui.pitchChip.classList.toggle("good", pitchState.voiced);
-  ui.midiChip.textContent = `notes ${new Set([...heldNotes, ...sustainedNotes]).size}`;
+  const hasPitch = pitchState.voiced && pitchState.detectedMidi >= 0;
+  ui.pitchChip.textContent = hasPitch ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(1)}` : "pitch --";
+  ui.pitchChip.classList.toggle("good", hasPitch);
+  ui.midiChip.textContent = `notes ${heldNotes.size + sustainedNotes.size}`;
   ui.rmsText.textContent = `rms ${pitchState.rms.toFixed(4)}`;
   ui.stableText.textContent = pitchState.stable
     ? "stable"
@@ -1005,6 +1190,7 @@ function draw(nowMilliseconds) {
       : pitchState.voiced
         ? "held"
         : "unvoiced";
+  if (!ui.diagnostics.open) return;
   const baseLatencyMs = audio ? Number(audio.context.baseLatency || 0) * 1000 : 0;
   const outputLatencyMs = audio ? Number(audio.context.outputLatency || 0) * 1000 : 0;
   const renderP99 = renderPercentile(0.99);
@@ -1015,7 +1201,7 @@ function draw(nowMilliseconds) {
     `engine ${audio?.engine?.name ?? "stopped"}`,
     `DSP path ${audio?.engine ? `${(audio.engine.latency * 1000).toFixed(1)} ms` : "--"}`,
     `browser I/O ${baseLatencyMs.toFixed(1)} + ${outputLatencyMs.toFixed(1)} ms`,
-    `pitch ${pitchState.voiced ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(2)}` : "--"}`,
+    `pitch ${hasPitch ? `${midiName(pitchState.detectedMidi)} ${pitchState.detectedMidi.toFixed(2)}` : "--"}`,
     `raw ${pitchState.rawMidi > 0 ? `${midiName(pitchState.rawMidi)} ${pitchState.rawMidi.toFixed(2)}` : "--"}`,
     `clarity ${Math.round(pitchState.clarity * 100)}%`,
     `voices ${activeVoices().length}/${voiceCapacity()}`,
@@ -1047,9 +1233,20 @@ function releaseComputerKeys() {
   pressedComputerKeys.clear();
 }
 
+// Half steps added to every played note, from the computer keys and from MIDI.
+let keyboardTranspose = 0;
+// Physical MIDI key to the note it was sent as, so a note-off always ends the note
+// that was started, whatever the transposition is by then.
+const heldMidiNotes = new Map();
+
+function releaseMidiNotes() {
+  for (const note of heldMidiNotes.values()) noteOff(note);
+  heldMidiNotes.clear();
+}
+
 function rebuildComputerKeyboardMap(octave = 3) {
   if (computerKeyNotes.size > 0) releaseComputerKeys();
-  const startNote = (Math.round(octave) + 1) * 12 + 5;
+  const startNote = (Math.round(octave) + 1) * 12 + 5 + keyboardTranspose;
   computerKeyNotes = new Map();
   computerKeyboardLabels = new Map();
   for (const [code, semitone, label] of computerKeyboardLayout) {
@@ -1061,16 +1258,32 @@ function rebuildComputerKeyboardMap(octave = 3) {
 }
 
 function isTypingTarget(target) {
-  return target instanceof Element && Boolean(target.closest("input, select, button, textarea, [contenteditable='true']"));
+  return target instanceof Element && Boolean(
+    target.closest("input:not([type='checkbox']), textarea, [contenteditable='true']"),
+  );
 }
 
 function handleMidiMessage(event) {
+  const time = event.timeStamp / 1000;
   const [status, data1, data2] = event.data;
   const command = status & 0xf0;
-  if (command === 0x90 && data2 > 0) noteOn(data1, data2 / 127);
-  else if (command === 0x80 || (command === 0x90 && data2 === 0)) noteOff(data1);
-  else if (command === 0xb0 && data1 === 64) setSustain(data2 >= 64);
-  else if (command === 0xe0) pitchBend = ((((data2 << 7) | data1) - 8192) / 8192) * 2;
+  const key = `${(event.target && event.target.id) || ""}:${status & 0x0f}:${data1}`;
+  if (command === 0x90 && data2 > 0) {
+    const note = data1 + keyboardTranspose;
+    if (note < 0 || note > 127) return;
+    if (heldMidiNotes.has(key)) noteOff(heldMidiNotes.get(key), time);
+    heldMidiNotes.set(key, note);
+    noteOn(note, data2 / 127, time);
+  } else if (command === 0x80 || (command === 0x90 && data2 === 0)) {
+    if (!heldMidiNotes.has(key)) return;
+    noteOff(heldMidiNotes.get(key), time);
+    heldMidiNotes.delete(key);
+  }
+  else if (command === 0xb0 && data1 === 64) setSustain(data2 >= 64, time);
+  else if (command === 0xe0) {
+    pitchBend = ((((data2 << 7) | data1) - 8192) / 8192) * 2;
+    midiRoll.setBend(pitchBend, time);
+  }
   updateVoiceShifts(true);
 }
 
@@ -1105,17 +1318,31 @@ function attachMidiInputs() {
   ui.midiStatus.textContent = ui.midiInput.value === "none" ? "off" : count ? `${count} active` : "no devices";
 }
 
-async function initMidi() {
-  if (!navigator.requestMIDIAccess) {
-    ui.midiStatus.textContent = "unavailable";
-    return;
-  }
+let midiConnecting = false;
+async function initMidi(explicit = false) {
+  if (!navigator.requestMIDIAccess || midiAccess || midiConnecting) return;
+  midiConnecting = true;
+  ui.midiInput.disabled = true;
   try {
     midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+    if (explicit && storedSetting("midiInput") === "none") storeSetting("midiInput", "all");
     attachMidiInputs();
     midiAccess.onstatechange = attachMidiInputs;
   } catch {
-    ui.midiStatus.textContent = "permission denied";
+    ui.midiInput.value = "none";
+    ui.midiStatus.textContent = "MIDI access not granted";
+  } finally {
+    midiConnecting = false;
+    ui.midiInput.disabled = false;
+  }
+}
+
+async function restoreMidi() {
+  if (!navigator.requestMIDIAccess) {
+    ui.midiInput.disabled = true;
+    ui.midiStatus.textContent = "unavailable";
+  } else if (storedSetting("midiInput", "all") !== "none" && await permissionState("midi") === "granted") {
+    await initMidi();
   }
 }
 
@@ -1123,16 +1350,17 @@ window.addEventListener("keydown", (event) => {
   if (event.repeat || isTypingTarget(event.target)) return;
   const note = computerKeyNotes.get(event.code);
   if (note === undefined) return;
+  unlockOutput?.();
   event.preventDefault();
   pressedComputerKeys.set(event.code, note);
-  noteOn(note);
+  noteOn(note, 1, event.timeStamp / 1000);
 });
 
 window.addEventListener("keyup", (event) => {
   const note = pressedComputerKeys.get(event.code);
   if (note === undefined) return;
   pressedComputerKeys.delete(event.code);
-  noteOff(note);
+  noteOff(note, event.timeStamp / 1000);
 });
 window.addEventListener("blur", releaseComputerKeys);
 window.addEventListener("pagehide", releaseComputerKeys);
@@ -1189,9 +1417,9 @@ ui.canvas.addEventListener("pointercancel", () => {
 });
 ui.canvas.addEventListener("pointerleave", () => { if (!pianoDrag) ui.canvas.style.cursor = "default"; });
 
-ui.startOverlayButton.addEventListener("click", startAudio);
-ui.startButton.addEventListener("click", startAudio);
-ui.stopButton.addEventListener("click", stopAudio);
+ui.startOverlayButton.addEventListener("click", () => startAudio());
+ui.startButton.addEventListener("click", () => startAudio());
+ui.stopButton.addEventListener("click", () => stopAudio());
 let downloadOpener = ui.downloadButton;
 function openDownloadDialog(event) {
   downloadOpener = event.currentTarget;
@@ -1211,13 +1439,22 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !ui.downloadOverlay.hidden) ui.downloadCloseButton.click();
 });
 ui.inputDevice.addEventListener("change", async () => {
-  storeSetting("audioInput", ui.inputDevice.value);
-  if (!audio) return;
+  if (!audio) {
+    storeSetting("audioInput", ui.inputDevice.value);
+    return;
+  }
+  const previous = storedSetting("audioInput");
   ui.inputDevice.disabled = true;
+  ui.inputDevice.setAttribute("aria-busy", "true");
   ui.inputStatus.textContent = "switching";
   try { await openMicrophone(ui.inputDevice.value); }
-  catch { ui.inputStatus.textContent = "error"; }
-  finally { ui.inputDevice.disabled = false; }
+  catch (error) {
+    ui.inputDevice.value = previous;
+    ui.inputStatus.textContent = audioErrorDetail(error);
+  } finally {
+    ui.inputDevice.removeAttribute("aria-busy");
+    ui.inputDevice.disabled = false;
+  }
 });
 ui.outputDevice.addEventListener("change", async () => {
   await applyOutputDevice(ui.outputDevice.value);
@@ -1228,12 +1465,12 @@ ui.engineSelect.value = [...ui.engineSelect.options].some(
 ) ? savedEngine : "rubberband";
 ui.engineSelect.addEventListener("change", async () => {
   storeSetting("engine", ui.engineSelect.value);
-  if (!audio || engineRestarting) return;
+  if (!audio?.engine || startingAudio || engineRestarting) return;
   engineRestarting = true;
   ui.engineSelect.disabled = true;
   ui.engineStatus.textContent = "switching";
   try {
-    await stopAudio({ showOverlay: false });
+    await stopAudio({ restart: true });
     await startAudio();
   } finally {
     ui.engineSelect.disabled = false;
@@ -1241,6 +1478,7 @@ ui.engineSelect.addEventListener("change", async () => {
   }
 });
 ui.midiInput.addEventListener("change", () => {
+  if (ui.midiInput.value === "enable") { initMidi(true); return; }
   storeSetting("midiInput", ui.midiInput.value);
   if (ui.midiInput.selectedOptions[0]) storeSetting("midiInputName", ui.midiInput.selectedOptions[0].textContent);
   attachMidiInputs();
@@ -1250,6 +1488,8 @@ ui.formants.addEventListener("change", () => {
   storeSetting("formants", ui.formants.checked);
   updateVoiceShifts(true);
 });
+ui.diagnostics.open = storedSetting("diagnosticsOpen") === "true";
+ui.diagnostics.addEventListener("toggle", () => storeSetting("diagnosticsOpen", ui.diagnostics.open));
 function syncPillThumb(groupEl, activeButton) {
   if (!groupEl || !activeButton) return;
   const thumb = groupEl.querySelector(".pill-thumb");
@@ -1279,6 +1519,8 @@ function setOrientation(orientation, persist = true, animate = true) {
     ui.verticalFlow.classList.toggle("is-active", vertical);
     ui.horizontalFlow.setAttribute("aria-selected", String(!vertical));
     ui.verticalFlow.setAttribute("aria-selected", String(vertical));
+    ui.horizontalFlow.tabIndex = vertical ? -1 : 0;
+    ui.verticalFlow.tabIndex = vertical ? 0 : -1;
     syncPillThumb(ui.orientationGroup, vertical ? ui.verticalFlow : ui.horizontalFlow);
   };
   if (animate) animatePillGroup(ui.orientationGroup, update);
@@ -1289,8 +1531,15 @@ function setOrientation(orientation, persist = true, animate = true) {
     : "Drag the bottom piano horizontally to change the visible pitch range.";
   ui.canvas.style.cursor = "default";
 }
-ui.horizontalFlow.addEventListener("click", () => setOrientation("horizontal"));
-ui.verticalFlow.addEventListener("click", () => setOrientation("vertical"));
+ui.orientationGroup.addEventListener("click", () => {
+  setOrientation(view.orientation === "horizontal" ? "vertical" : "horizontal");
+});
+ui.orientationGroup.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  setOrientation(event.key === "ArrowLeft" ? "horizontal" : "vertical");
+  (view.orientation === "horizontal" ? ui.horizontalFlow : ui.verticalFlow).focus();
+});
 setOrientation(view.orientation, false, false);
 window.addEventListener("resize", () => {
   syncPillThumb(ui.orientationGroup, view.orientation === "vertical" ? ui.verticalFlow : ui.horizontalFlow);
@@ -1302,18 +1551,46 @@ ui.testToneButton.addEventListener("click", () => {
   oscillator.frequency.value = 440;
   gain.gain.setValueAtTime(0.08, audio.context.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.0001, audio.context.currentTime + 0.35);
-  oscillator.connect(gain).connect(audio.context.destination);
+  oscillator.connect(gain).connect(audio.master);
   oscillator.start();
   oscillator.stop(audio.context.currentTime + 0.36);
 });
 
 Object.keys(controls).forEach(bindDraggableNumber);
-const initialMidiInput = storedSetting("midiInput", "all");
-if ([...ui.midiInput.options].some((option) => option.value === initialMidiInput)) {
-  ui.midiInput.value = initialMidiInput;
+async function restoreAudioOnReload(devicesReady) {
+  const intent = tabAudioIntent();
+  const reload = performance.getEntriesByType("navigation")[0]?.type === "reload";
+  if (intent !== "on" || !reload) {
+    // A new tab can inherit a copy of its opener's sessionStorage.
+    if (intent === "on") rememberAudioIntent("off");
+    ui.startOverlay.hidden = intent === "off";
+    return;
+  }
+  ui.startButton.hidden = true;
+  ui.engineChip.textContent = "reconnecting";
+  const action = audioAction;
+  if (document.hidden) {
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && action === audioAction) restoreAudioOnReload(devicesReady);
+    }, { once: true });
+    return;
+  }
+  await devicesReady;
+  const permission = SYNTHETIC_INPUT ? "granted" : await permissionState("microphone");
+  if (action !== audioAction || tabAudioIntent() !== "on") return;
+  if (document.hidden) { restoreAudioOnReload(devicesReady); return; }
+  if (permission === "granted") {
+    await startAudio({ restore: true });
+  } else {
+    ui.inputStatus.textContent = permission === "denied" ? "blocked in site settings" : "permission needed";
+    ui.startButton.textContent = "Enable mic";
+    ui.startButton.hidden = false;
+    ui.engineChip.textContent = "stopped";
+  }
 }
-enumerateAudioDevices().catch(() => { ui.inputStatus.textContent = "permission needed"; });
-initMidi();
+const devicesReady = enumerateAudioDevices().catch(() => { ui.inputStatus.textContent = "permission needed"; });
+restoreAudioOnReload(devicesReady);
+restoreMidi();
 if (navigator.mediaDevices?.addEventListener) {
   navigator.mediaDevices.addEventListener("devicechange", () => {
     enumerateAudioDevices(ui.inputDevice.value, ui.outputDevice.value).catch(() => {});
